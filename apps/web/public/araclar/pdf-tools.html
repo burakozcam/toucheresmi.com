@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF ve Excel Araçları | kurumsalsinav.com</title>
+  <meta name="description" content="PDF birleştirin, bölün, PNG'ye dönüştürün; görsellerden PDF oluşturun, Excel ve PDF dosyalarını tarayıcınızda dönüştürün.">
+  <meta name="theme-color" content="#0b1120">
+  <link rel="stylesheet" href="../static/css/site.2c7bd28cc7f4.css">
+  <script>tailwind = { config: { corePlugins: { preflight: false }, darkMode: "class" } };</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html[data-theme="light"] {
+      color-scheme: dark;
+      --primary: #ff8a65;
+      --accent: #ffbd80;
+      --ink: #f8fafc;
+      --text: #e2e8f0;
+      --muted: #9aa9bd;
+      --line: #273449;
+      --bg: #0b1120;
+      --bg-alt: #111b2d;
+      --card: #121c2d;
+      --primary-soft: rgba(255, 138, 101, .12);
+      --accent-soft: rgba(255, 189, 128, .12);
+      --primary-dark: #ffad8e;
+    }
+    body.pdf-tools { min-height: 100vh; color: #e2e8f0; background: #0b1120; }
+    .pdf-tools .site-header { background: rgba(11,17,32,.92); }
+    .pdf-tools .brand-mark { display: grid; place-items: center; border-radius: 10px 10px 10px 3px; color: #fff; background: #416eaf; font: 800 17px Manrope, sans-serif; text-decoration: none; }
+    .pdf-tools main { min-height: 75vh; }
+    .pdf-hero { position: relative; overflow: hidden; padding: 62px 20px 34px; text-align: center; }
+    .pdf-hero::before { position: absolute; inset: -160px 15% auto; height: 340px; border-radius: 50%; background: rgba(255,122,89,.13); filter: blur(100px); content: ""; pointer-events: none; }
+    .pdf-hero > * { position: relative; }
+    .pdf-shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    .pdf-tool-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+    .pdf-tool-tab { min-height: 104px; padding: 14px 12px; border: 1px solid #273449; border-radius: 15px; color: #aab8ca; background: rgba(18,28,45,.8); text-align: left; transition: .18s ease; }
+    .pdf-tool-tab:hover, .pdf-tool-tab[aria-selected="true"] { border-color: rgba(255,138,101,.72); color: #fff; background: linear-gradient(145deg, rgba(255,122,89,.17), rgba(18,28,45,.94)); box-shadow: 0 10px 32px rgba(255,122,89,.09); }
+    .pdf-tool-tab .tab-icon { display: grid; width: 34px; height: 34px; margin-bottom: 10px; place-items: center; border-radius: 10px; color: #ffb49a; background: rgba(255,122,89,.13); font-size: 17px; }
+    .pdf-tool-tab strong { display: block; font-size: 12px; line-height: 1.35; }
+    .pdf-tool-tab small { display: block; margin-top: 4px; color: #8190a6; font-size: 10px; }
+    .pdf-panel { margin: 18px auto 50px; padding: clamp(20px,4vw,36px); border: 1px solid #273449; border-radius: 20px; background: linear-gradient(145deg,rgba(18,28,45,.98),rgba(14,22,37,.98)); box-shadow: 0 24px 80px rgba(0,0,0,.24); }
+    .pdf-dropzone { display: grid; min-height: 210px; padding: 24px; place-content: center; justify-items: center; border: 1.5px dashed #46546b; border-radius: 16px; background: rgba(8,14,26,.42); text-align: center; cursor: pointer; transition: .2s ease; }
+    .pdf-dropzone:hover, .pdf-dropzone.is-dragging { border-color: #ff9a79; background: rgba(255,122,89,.08); }
+    .pdf-dropzone .drop-icon { display: grid; width: 52px; height: 52px; margin-bottom: 12px; place-items: center; border: 1px solid rgba(255,154,121,.25); border-radius: 15px; color: #ffb49a; background: rgba(255,122,89,.1); font-size: 23px; }
+    .pdf-dropzone strong { color: #f8fafc; font-size: 15px; }
+    .pdf-dropzone span { margin-top: 5px; color: #9aa9bd; font-size: 12px; }
+    .pdf-dropzone input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+    .pdf-file-list { display: grid; gap: 8px; margin-top: 14px; }
+    .pdf-file-row { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 10px 12px; border: 1px solid #273449; border-radius: 11px; background: rgba(8,14,26,.5); }
+    .pdf-file-row .file-kind { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: #ffb49a; background: rgba(255,122,89,.11); font-size: 10px; font-weight: 800; }
+    .pdf-file-row .file-name { overflow: hidden; color: #e2e8f0; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .pdf-file-row .file-meta { margin-left: auto; flex: 0 0 auto; color: #8190a6; font-size: 10px; }
+    .pdf-field { display: grid; gap: 7px; color: #cbd5e1; font-size: 12px; font-weight: 650; }
+    .pdf-field input, .pdf-field select { min-height: 42px; width: 100%; padding: 9px 12px; border: 1px solid #334155; border-radius: 10px; outline: 0; color: #f1f5f9; background: #0d1626; font: inherit; }
+    .pdf-field input:focus, .pdf-field select:focus { border-color: #ff9a79; box-shadow: 0 0 0 3px rgba(255,122,89,.12); }
+    .pdf-action { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 11px; color: white; background: linear-gradient(100deg,#ff7a59,#f97316); font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; transition: .18s ease; }
+    .pdf-action:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(255,122,89,.2); }
+    .pdf-action:disabled { opacity: .42; cursor: not-allowed; }
+    .pdf-status { min-height: 22px; color: #94a3b8; font-size: 12px; }
+    .pdf-status[data-kind="error"] { color: #fda4af; }
+    .pdf-status[data-kind="success"] { color: #6ee7b7; }
+    .pdf-note { border: 1px solid rgba(96,165,250,.2); border-radius: 11px; color: #a9bad0; background: rgba(59,130,246,.06); font-size: 11px; line-height: 1.6; }
+    .pdf-text-preview { overflow: auto; max-height: 72vh; padding: 18px; border: 1px solid #273449; border-radius: 14px; background: #080e1a; }
+    .pdf-text-page { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 8px 32px rgba(0,0,0,.35); }
+    .pdf-text-page canvas { display: block; }
+    .pdf-text-layer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-align: initial; transform-origin: 0 0; }
+    .pdf-text-layer span, .pdf-text-layer br { position: absolute; color: transparent; white-space: pre; cursor: text; transform-origin: 0 0; }
+    .pdf-text-layer ::selection { color: transparent; background: rgba(255,122,89,.38); }
+    .selection-controls button:disabled { opacity: .42; cursor: not-allowed; }
+    .pdf-tools [hidden] { display: none !important; }
+    .pdf-footer { border-top: 1px solid #273449; color: #8190a6; font-size: 11px; }
+    @media (max-width: 900px) { .pdf-tool-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+    @media (max-width: 600px) {
+      .pdf-hero { padding: 42px 12px 26px; }
+      .pdf-shell { width: calc(100% - 24px); }
+      .pdf-tool-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+      .pdf-tool-tab { min-height: 92px; padding: 11px; }
+      .pdf-tool-tab .tab-icon { width: 30px; height: 30px; margin-bottom: 7px; }
+      .pdf-panel { margin-top: 12px; padding: 18px 14px; border-radius: 15px; }
+      .pdf-dropzone { min-height: 180px; padding: 18px; }
+    }
+  </style>
+</head>
+<body class="pdf-tools">
+  <a class="skip-link" href="#pdf-main">İçeriğe geç</a>
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="/panel" class="brand">
+        <span class="brand-mark" aria-hidden="true">K</span>
+        <span class="brand-text"><b>kurumsal</b><small>sinav.com</small></span>
+      </a>
+      <span class="text-xs text-slate-400">Dosyalarınız bu cihazda işlenir</span>
+    </div>
+  </header>
+
+  <main id="pdf-main">
+    <section class="pdf-hero">
+      <div class="mx-auto max-w-3xl">
+        <span class="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-orange-200">✦ ÜCRETSİZ PDF ARAÇ KUTUSU</span>
+        <h1 class="mb-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Dosyaların, <span class="bg-gradient-to-r from-orange-300 to-amber-200 bg-clip-text text-transparent">kontrolün altında.</span></h1>
+        <p class="mx-auto max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">PDF ve Excel dosyalarını dönüştür, birleştir veya böl. Dosyaların cihazından çıkmadan, doğrudan tarayıcında çalış.</p>
+        <div class="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-slate-400"><span>✓ Kayıt yok</span><span>✓ Ücretsiz</span><span>✓ Dosyalar sunucuya yüklenmez</span></div>
+      </div>
+    </section>
+
+    <div class="pdf-shell">
+      <div class="pdf-tool-tabs" role="tablist" aria-label="PDF ve Excel araçları">
+        <button class="pdf-tool-tab" role="tab" id="tab-merge" aria-controls="tool-panel" aria-selected="true" data-tool="merge"><span class="tab-icon">⊕</span><strong>PDF Birleştir</strong><small>Birden çok dosyayı birleştir</small></button>
+        <button class="pdf-tool-tab" role="tab" id="tab-split" aria-controls="tool-panel" aria-selected="false" data-tool="split"><span class="tab-icon">⤓</span><strong>PDF Böl</strong><small>Sayfa aralıklarını ayır</small></button>
+        <button class="pdf-tool-tab" role="tab" id="tab-pdf-image" aria-controls="tool-panel" aria-selected="false" data-tool="pdf-image"><span class="tab-icon">▧</span><strong>PDF → PNG</strong><small>Sayfaları görsel indir</small></button>
+        <button class="pdf-tool-tab" role="tab" id="tab-image-pdf" aria-controls="tool-panel" aria-selected="false" data-tool="image-pdf"><span class="tab-icon">▤</span><strong>Görsel → PDF</strong><small>Görsellerden PDF oluştur</small></button>
+        <button class="pdf-tool-tab" role="tab" id="tab-excel-pdf" aria-controls="tool-panel" aria-selected="false" data-tool="excel-pdf"><span class="tab-icon">▦</span><strong>Excel → PDF</strong><small>Tablolarını PDF kaydet</small></button>
+        <button class="pdf-tool-tab" role="tab" id="tab-pdf-excel" aria-controls="tool-panel" aria-selected="false" data-tool="pdf-excel"><span class="tab-icon">▧</span><strong>PDF → Excel</strong><small>Metinleri tabloya aktar</small></button>
+        <button class="pdf-tool-tab" role="tab" id="tab-split-text" aria-controls="tool-panel" aria-selected="false" data-tool="split-text"><span class="tab-icon">⌕</span><strong>Metne göre böl</strong><small>Öğrenci / isim bazlı</small></button>
+      </div>
+
+      <section class="pdf-panel" id="tool-panel" role="tabpanel" aria-labelledby="tab-merge">
+        <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div><p class="mb-1 text-xs font-bold uppercase tracking-[.16em] text-orange-300" id="tool-kicker">PDF ARAÇLARI</p><h2 class="text-2xl font-bold text-white" id="tool-title">PDF dosyalarını birleştir</h2><p class="mt-2 max-w-2xl text-sm leading-6 text-slate-400" id="tool-description">Birleştirmek istediğin PDF dosyalarını seç. Dosya sıralaması, seçtiğin sırayla korunur.</p></div>
+          <span class="rounded-full border border-emerald-400/20 bg-emerald-400/5 px-3 py-1.5 text-[11px] font-medium text-emerald-200">🔒 %100 cihazında</span>
+        </div>
+        <div class="pdf-note mb-5 px-4 py-3" id="tool-note" hidden></div>
+        <label class="pdf-dropzone" id="pdf-dropzone" for="tool-files">
+          <span class="drop-icon" id="drop-icon">↑</span><strong id="drop-title">PDF dosyalarını buraya bırak</strong><span id="drop-description">veya cihazından seç · PDF · en fazla 100 MB / dosya</span>
+          <input id="tool-files" type="file" accept="application/pdf,.pdf" multiple>
+        </label>
+        <div class="pdf-file-list" id="pdf-file-list" aria-live="polite"></div>
+        <div id="text-split-preview" class="mt-5" hidden></div>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2" id="tool-options"></div>
+        <div class="mt-5 flex flex-wrap items-center gap-4">
+          <button type="button" class="pdf-action w-full px-5 sm:w-auto" id="run-tool" disabled><span id="action-label">PDF'leri birleştir</span><span aria-hidden="true">→</span></button>
+          <p class="pdf-status" id="pdf-status" role="status" aria-live="polite">Başlamak için dosya seç.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer class="pdf-footer py-5"><div class="pdf-shell flex flex-wrap justify-between gap-3"><span class="font-bold text-slate-300">kurumsalsinav.com</span><span>PDF ve Excel Araçları</span></div></footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      var definitions = {
+        merge: { title: "PDF dosyalarını birleştir", description: "Birleştirmek istediğin PDF dosyalarını seç. Dosya sıralaması, seçtiğin sırayla korunur.", action: "PDF'leri birleştir", accept: "application/pdf,.pdf", multiple: true, minFiles: 2, drop: "PDF dosyalarını buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB / dosya", icon: "↑" },
+        split: { title: "PDF sayfalarını böl", description: "Tek bir PDF seç ve ayırmak istediğin sayfa aralıklarını yaz.", action: "Sayfaları ayır ve indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "Bölmek istediğin PDF'yi buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Örnek: 1-3, 5, 8-10. Birden fazla aralık ZIP olarak indirilir." },
+        "pdf-image": { title: "PDF sayfalarını PNG'ye dönüştür", description: "PDF sayfalarını yüksek çözünürlüklü PNG görselleri olarak dışa aktar.", action: "PNG'leri oluştur ve indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "PNG'ye dönüştürülecek PDF'yi buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Tüm sayfalar ayrı PNG dosyaları olarak hazırlanır ve ZIP içinde indirilir.", options: "scale" },
+        "image-pdf": { title: "Görselleri PDF'e dönüştür", description: "Birden fazla görsel seçerek sayfa başına bir görsel içeren PDF oluştur.", action: "PDF oluştur ve indir", accept: "image/*", multiple: true, minFiles: 1, drop: "Görselleri buraya bırak", hint: "veya cihazından seç · JPG, PNG, WebP · en fazla 100 MB / dosya", icon: "▧", options: "page-size" },
+        "excel-pdf": { title: "Excel dosyasını PDF'e dönüştür", description: "Çalışma kitabındaki sayfaları tablo düzeninde PDF olarak indir.", action: "PDF oluştur ve indir", accept: ".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv", multiple: false, minFiles: 1, drop: "Excel dosyanı buraya bırak", hint: "veya cihazından seç · XLSX, XLS, CSV · en fazla 100 MB", icon: "▦", note: "Her çalışma sayfası ayrı bir PDF bölümüne aktarılır. Yazdırma önizlemesi için yatay A4 sayfa kullanılır." },
+        "pdf-excel": { title: "PDF dosyasını Excel'e dönüştür", description: "PDF içindeki seçilebilir metinleri sayfa ve satır düzeninde Excel çalışma kitabına aktar.", action: "Excel dosyasını indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "Excel'e dönüştürülecek PDF'yi buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Metin tabanlı PDF'ler desteklenir. Taranmış belgelerde OCR yapılmaz; tablo sütunları ve biçim birebir korunamayabilir." },
+        "split-text": { title: "PDF'i seçtiğin metne göre böl", description: "Önizlemede öğrenci numarası, isim veya başka bir alanı fareyle seç. Aynı konumdaki değerleri tüm sayfalarda bulup her değer için ayrı PDF hazırla.", action: "PDF'leri ZIP olarak indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "Öğrenci kayıtlarının bulunduğu PDF'yi yükle", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Metin tabanlı PDF gerekir. Her sayfada aynı konumdaki metin okunur; aynı değerli sayfalar aynı PDF'te gruplanır. Tarama görüntülerinde OCR yapılmaz." }
+      };
+      var tabButtons = Array.from(document.querySelectorAll(".pdf-tool-tab"));
+      var panel = document.getElementById("tool-panel");
+      var fileInput = document.getElementById("tool-files");
+      var dropzone = document.getElementById("pdf-dropzone");
+      var fileList = document.getElementById("pdf-file-list");
+      var options = document.getElementById("tool-options");
+      var textSplitPreview = document.getElementById("text-split-preview");
+      var actionButton = document.getElementById("run-tool");
+      var actionLabel = document.getElementById("action-label");
+      var status = document.getElementById("pdf-status");
+      var selectedFiles = [];
+      var activeTool = "merge";
+      var busy = false;
+      var maxFileSize = 100 * 1024 * 1024;
+      var splitTextDocument = null;
+      var splitTextPageNumber = 1;
+      var splitTextAnchor = null;
+      var splitTextRenderId = 0;
+      if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+      function setStatus(message, kind) {
+        status.textContent = message;
+        status.dataset.kind = kind || "";
+      }
+
+      function formatBytes(bytes) {
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+      }
+
+      function renderFiles() {
+        fileList.replaceChildren();
+        selectedFiles.forEach(function (file, index) {
+          var row = document.createElement("div");
+          row.className = "pdf-file-row";
+          var kind = document.createElement("span");
+          kind.className = "file-kind";
+          kind.textContent = file.name.split(".").pop().slice(0, 4).toUpperCase();
+          var name = document.createElement("span");
+          name.className = "file-name";
+          name.textContent = file.name;
+          var size = document.createElement("span");
+          size.className = "file-meta";
+          size.textContent = formatBytes(file.size);
+          row.append(kind, name, size);
+          if (selectedFiles.length > 1 && activeTool === "merge") {
+            var up = document.createElement("button");
+            up.type = "button";
+            up.className = "rounded px-2 py-1 text-xs text-slate-300 hover:bg-slate-700";
+            up.textContent = "↑";
+            up.setAttribute("aria-label", file.name + " dosyasını yukarı taşı");
+            up.disabled = index === 0;
+            up.addEventListener("click", function () { selectedFiles.splice(index - 1, 0, selectedFiles.splice(index, 1)[0]); renderFiles(); });
+            var down = document.createElement("button");
+            down.type = "button";
+            down.className = "rounded px-2 py-1 text-xs text-slate-300 hover:bg-slate-700";
+            down.textContent = "↓";
+            down.setAttribute("aria-label", file.name + " dosyasını aşağı taşı");
+            down.disabled = index === selectedFiles.length - 1;
+            down.addEventListener("click", function () { selectedFiles.splice(index + 1, 0, selectedFiles.splice(index, 1)[0]); renderFiles(); });
+            row.append(up, down);
+          }
+          fileList.appendChild(row);
+        });
+        actionButton.disabled = busy || selectedFiles.length < definitions[activeTool].minFiles || selectedFiles.length === 0 || (activeTool === "split-text" && !splitTextAnchor);
+      }
+
+      function addFiles(files) {
+        var incoming = Array.from(files || []);
+        if (!incoming.length) return;
+        var valid = incoming.filter(function (file) {
+          var matches = definitions[activeTool].accept.split(",").some(function (type) {
+            return type.charAt(0) === "." ? file.name.toLowerCase().endsWith(type.toLowerCase()) : type.slice(-2) === "/*" ? file.type.indexOf(type.slice(0, -1)) === 0 : file.type === type;
+          });
+          if (!matches) {
+            setStatus(file.name + " bu araç için desteklenen dosya türünde değil.", "error");
+            return false;
+          }
+          if (file.size > maxFileSize) {
+            setStatus(file.name + " 100 MB dosya sınırını aşıyor.", "error");
+            return false;
+          }
+          return true;
+        });
+        if (!valid.length) return;
+        selectedFiles = definitions[activeTool].multiple ? selectedFiles.concat(valid) : valid.slice(0, 1);
+        renderFiles();
+        if (selectedFiles.length < definitions[activeTool].minFiles) {
+          setStatus("Birleştirmek için en az iki dosya seç.");
+        } else {
+          setStatus(selectedFiles.length + " dosya hazır.");
+        }
+        if (activeTool === "split-text" && selectedFiles.length) loadSplitTextDocument(selectedFiles[0]);
+      }
+
+      function renderOptions(tool) {
+        options.replaceChildren();
+        if (tool === "split") {
+          options.innerHTML = '<label class="pdf-field sm:col-span-2" for="page-ranges">Sayfa aralıkları <span class="text-slate-500">· örn. 1-3, 5, 8-10</span><input id="page-ranges" type="text" inputmode="text" placeholder="1-3, 5, 8-10" autocomplete="off"></label>';
+        } else if (tool === "pdf-image") {
+          options.innerHTML = '<label class="pdf-field" for="render-scale">Görsel çözünürlüğü<select id="render-scale"><option value="1.5">Standart · 1.5×</option><option value="2" selected>Yüksek · 2×</option><option value="3">Çok yüksek · 3×</option></select></label>';
+        } else if (tool === "image-pdf") {
+          options.innerHTML = '<label class="pdf-field" for="image-page-size">PDF sayfa boyutu<select id="image-page-size"><option value="image">Görsele sığdır</option><option value="a4">A4</option><option value="letter">Letter</option></select></label>';
+        }
+        textSplitPreview.hidden = tool !== "split-text";
+        if (tool === "split-text") {
+          textSplitPreview.innerHTML = '<div class="pdf-note mb-3 px-4 py-3">Önizlemede ayırmak istediğin alanı fareyle sürükleyerek seç. En iyi sonuç için her sayfada aynı yerde bulunan yalnızca öğrenci numarası veya isim gibi değişken değeri seç.</div><div class="selection-controls mb-3 flex items-center justify-between gap-3"><button type="button" class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800" id="text-page-prev" disabled>← Önceki sayfa</button><span class="text-xs text-slate-400" id="text-page-count">PDF yüklenince önizleme açılır</span><button type="button" class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800" id="text-page-next" disabled>Sonraki sayfa →</button></div><div class="pdf-text-preview"><div class="pdf-text-page mx-auto" id="text-page-canvas-wrap" hidden><canvas id="text-page-canvas"></canvas><div class="pdf-text-layer" id="text-page-layer"></div></div><div class="grid min-h-48 place-content-center text-center text-sm text-slate-500" id="text-page-empty">PDF yükledikten sonra ilk sayfa burada görüntülenir.</div></div><p id="text-selection-status" class="mt-3 text-xs text-slate-400" aria-live="polite">PDF içinden bir metin seç.</p>';
+          document.getElementById("text-page-prev").addEventListener("click", function () { renderSplitTextPage(splitTextPageNumber - 1); });
+          document.getElementById("text-page-next").addEventListener("click", function () { renderSplitTextPage(splitTextPageNumber + 1); });
+          document.getElementById("text-page-layer").addEventListener("mouseup", function () { setTimeout(captureSplitTextSelection, 0); });
+          document.getElementById("text-page-layer").addEventListener("keyup", captureSplitTextSelection);
+        }
+      }
+
+      function selectTool(tool) {
+        activeTool = tool;
+        selectedFiles = [];
+        fileInput.value = "";
+        splitTextDocument = null;
+        splitTextAnchor = null;
+        splitTextPageNumber = 1;
+        splitTextRenderId += 1;
+        var definition = definitions[tool];
+        tabButtons.forEach(function (button) {
+          var selected = button.dataset.tool === tool;
+          button.setAttribute("aria-selected", selected ? "true" : "false");
+          button.tabIndex = selected ? 0 : -1;
+        });
+        panel.setAttribute("aria-labelledby", "tab-" + (tool === "pdf-image" ? "pdf-image" : tool === "image-pdf" ? "image-pdf" : tool === "excel-pdf" ? "excel-pdf" : tool === "pdf-excel" ? "pdf-excel" : tool));
+        document.getElementById("tool-title").textContent = definition.title;
+        document.getElementById("tool-description").textContent = definition.description;
+        document.getElementById("action-label").textContent = definition.action;
+        document.getElementById("drop-title").textContent = definition.drop;
+        document.getElementById("drop-description").textContent = definition.hint;
+        document.getElementById("drop-icon").textContent = definition.icon;
+        var note = document.getElementById("tool-note");
+        note.textContent = definition.note || "";
+        note.hidden = !definition.note;
+        fileInput.accept = definition.accept;
+        fileInput.multiple = definition.multiple;
+        renderOptions(tool);
+        renderFiles();
+        setStatus("Başlamak için dosya seç.");
+      }
+
+      async function loadSplitTextDocument(file) {
+        var renderId = ++splitTextRenderId;
+        splitTextAnchor = null;
+        renderFiles();
+        document.getElementById("text-page-empty").textContent = "PDF yükleniyor…";
+        try {
+          if (!window.pdfjsLib) throw new Error("PDF önizleme kütüphanesi yüklenemedi.");
+          var loadedDocument = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+          if (activeTool !== "split-text" || selectedFiles[0] !== file || renderId !== splitTextRenderId) return;
+          splitTextDocument = loadedDocument;
+          splitTextPageNumber = 1;
+          await renderSplitTextPage(1);
+        } catch (error) {
+          if (renderId === splitTextRenderId) setStatus(error.message || "PDF önizlemesi açılamadı.", "error");
+        }
+      }
+
+      async function renderSplitTextPage(pageNumber) {
+        if (!splitTextDocument || pageNumber < 1 || pageNumber > splitTextDocument.numPages) return;
+        var renderId = ++splitTextRenderId;
+        splitTextPageNumber = pageNumber;
+        splitTextAnchor = null;
+        renderFiles();
+        var pageCount = document.getElementById("text-page-count");
+        var previousButton = document.getElementById("text-page-prev");
+        var nextButton = document.getElementById("text-page-next");
+        var wrap = document.getElementById("text-page-canvas-wrap");
+        var empty = document.getElementById("text-page-empty");
+        var canvas = document.getElementById("text-page-canvas");
+        var layer = document.getElementById("text-page-layer");
+        var frame = layer.parentElement.parentElement;
+        previousButton.disabled = pageNumber <= 1;
+        nextButton.disabled = pageNumber >= splitTextDocument.numPages;
+        pageCount.textContent = "Sayfa " + pageNumber + " / " + splitTextDocument.numPages;
+        document.getElementById("text-selection-status").textContent = "Ayırmak istediğin metni fareyle seç.";
+        empty.hidden = false;
+        empty.textContent = "Sayfa " + pageNumber + " yükleniyor…";
+        wrap.hidden = true;
+        layer.replaceChildren();
+
+        try {
+          var page = await splitTextDocument.getPage(pageNumber);
+          var naturalViewport = page.getViewport({ scale: 1 });
+          var maxWidth = Math.max(240, frame.clientWidth - 36);
+          var scale = Math.min(1.5, maxWidth / naturalViewport.width);
+          var viewport = page.getViewport({ scale: scale });
+          var outputScale = Math.min(window.devicePixelRatio || 1, 2);
+          canvas.width = Math.ceil(viewport.width * outputScale);
+          canvas.height = Math.ceil(viewport.height * outputScale);
+          canvas.style.width = viewport.width + "px";
+          canvas.style.height = viewport.height + "px";
+          wrap.style.width = viewport.width + "px";
+          wrap.style.height = viewport.height + "px";
+          layer.style.width = viewport.width + "px";
+          layer.style.height = viewport.height + "px";
+          layer.style.setProperty("--scale-factor", String(scale));
+          var context = canvas.getContext("2d");
+          await page.render({ canvasContext: context, viewport: viewport, transform: outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0] }).promise;
+          if (renderId !== splitTextRenderId) return;
+          var textContent = await page.getTextContent();
+          var textDivs = [];
+          await pdfjsLib.renderTextLayer({ textContent: textContent, container: layer, viewport: viewport, textDivs: textDivs }).promise;
+          if (renderId !== splitTextRenderId) return;
+          wrap.hidden = false;
+          empty.hidden = true;
+          if (!textContent.items.some(function (item) { return item.str && item.str.trim(); })) {
+            document.getElementById("text-selection-status").textContent = "Bu sayfada seçilebilir metin yok; taranmış olabilir.";
+          }
+          layer.dataset.textDivCount = String(textDivs.length);
+          layer._pdfTextDivs = textDivs;
+          layer._pdfTextItems = textContent.items.filter(function (item) { return typeof item.str === "string"; });
+          layer._pdfViewport = viewport;
+        } catch (error) {
+          if (renderId === splitTextRenderId) {
+            empty.hidden = false;
+            empty.textContent = "Sayfa görüntülenemedi: " + (error.message || "Bilinmeyen hata");
+          }
+        }
+      }
+
+      function captureSplitTextSelection() {
+        if (activeTool !== "split-text") return;
+        var layer = document.getElementById("text-page-layer");
+        var selection = window.getSelection();
+        if (!selection || !selection.rangeCount || !selection.toString().trim() || !layer.contains(selection.anchorNode)) return;
+        var range = selection.getRangeAt(0);
+        var bounds = range.getBoundingClientRect();
+        var pageBounds = layer.getBoundingClientRect();
+        if (!bounds.width || !bounds.height || !pageBounds.width || !pageBounds.height) return;
+        var textDivs = layer._pdfTextDivs || [];
+        var segments = [];
+        textDivs.forEach(function (span, index) {
+          if (!range.intersectsNode(span)) return;
+          var text = span.textContent || "";
+          var start = span.contains(range.startContainer) ? range.startOffset : 0;
+          var end = span.contains(range.endContainer) ? range.endOffset : text.length;
+          segments.push({ index: index, start: start, end: end });
+        });
+        splitTextAnchor = {
+          text: selection.toString().replace(/\s+/g, " ").trim(),
+          xStart: Math.max(0, bounds.left - pageBounds.left) / pageBounds.width,
+          xEnd: Math.min(pageBounds.width, bounds.right - pageBounds.left) / pageBounds.width,
+          yCenter: (bounds.top + bounds.height / 2 - pageBounds.top) / pageBounds.height,
+          segments: segments
+        };
+        document.getElementById("text-selection-status").textContent = "Seçilen alan: “" + splitTextAnchor.text.slice(0, 100) + (splitTextAnchor.text.length > 100 ? "…" : "") + "” · Şimdi tüm sayfalara göre PDF'leri hazırla.";
+        setStatus("Metin seçildi. Sayfaları ayırmaya hazırsın.");
+        renderFiles();
+      }
+
+      function extractTextAtAnchor(items, viewport, anchor) {
+        var entries = items.filter(function (item) { return typeof item.str === "string" && item.str.trim(); }).map(function (item, index) {
+          var point = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
+          var direction = item.dir === "rtl" ? -1 : 1;
+          var xEnd = point[0] + item.width * viewport.scale * direction;
+          return {
+            text: item.str,
+            textIndex: index,
+            xStart: Math.min(point[0], xEnd),
+            xEnd: Math.max(point[0], xEnd),
+            y: point[1]
+          };
+        });
+        if (!entries.length) return "";
+        var targetY = anchor.yCenter * viewport.height;
+        var targetXStart = anchor.xStart * viewport.width;
+        var targetXEnd = anchor.xEnd * viewport.width;
+        var targetXCenter = (targetXStart + targetXEnd) / 2;
+        var nearestY = entries.reduce(function (closest, entry) {
+          return Math.abs(entry.y - targetY) < Math.abs(closest - targetY) ? entry.y : closest;
+        }, entries[0].y);
+        var rowTolerance = Math.max(9, viewport.height * 0.012);
+        var row = entries.filter(function (entry) { return Math.abs(entry.y - nearestY) < rowTolerance; });
+        var matching = row.filter(function (entry) { return entry.xEnd >= targetXStart - 2 && entry.xStart <= targetXEnd + 2; });
+        if (!matching.length) {
+          matching = [row.reduce(function (closest, entry) {
+            var distance = targetXCenter < entry.xStart ? entry.xStart - targetXCenter : targetXCenter > entry.xEnd ? targetXCenter - entry.xEnd : 0;
+            var best = targetXCenter < closest.xStart ? closest.xStart - targetXCenter : targetXCenter > closest.xEnd ? targetXCenter - closest.xEnd : 0;
+            return distance < best ? entry : closest;
+          }, row[0])];
+        }
+        matching.sort(function (a, b) { return a.xStart - b.xStart; });
+        var singleSegment = anchor.segments.length === 1 ? anchor.segments[0] : null;
+        return matching.map(function (entry) {
+          if (singleSegment && entry.textIndex === singleSegment.index && singleSegment.end > singleSegment.start) {
+            return entry.text.slice(singleSegment.start, singleSegment.end);
+          }
+          var itemWidth = Math.max(1, entry.xEnd - entry.xStart);
+          var from = Math.max(0, Math.min(1, (targetXStart - entry.xStart) / itemWidth));
+          var to = Math.max(0, Math.min(1, (targetXEnd - entry.xStart) / itemWidth));
+          if (to - from < 0.08) return entry.text;
+          var start = Math.floor(from * entry.text.length);
+          var end = Math.max(start + 1, Math.ceil(to * entry.text.length));
+          return entry.text.slice(start, end);
+        }).join(" ").replace(/\s+/g, " ").trim();
+      }
+
+      function filenameFromValue(value) {
+        var normalized = value.normalize("NFKD")
+          .replace(/[çÇ]/g, "c").replace(/[ğĞ]/g, "g").replace(/[ıİ]/g, "i")
+          .replace(/[öÖ]/g, "o").replace(/[şŞ]/g, "s").replace(/[üÜ]/g, "u")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+        return normalized.slice(0, 80) || "kayit";
+      }
+
+      async function splitPdfByText() {
+        if (!splitTextAnchor || !splitTextDocument) throw new Error("Önce PDF'deki ayırma alanını fareyle seç.");
+        var source = await readPdf(selectedFiles[0]);
+        var pageValues = [];
+        var unmatchedPages = [];
+        for (var pageNumber = 1; pageNumber <= splitTextDocument.numPages; pageNumber += 1) {
+          setStatus(pageNumber + " / " + splitTextDocument.numPages + " sayfa taranıyor…");
+          var page = await splitTextDocument.getPage(pageNumber);
+          var viewport = page.getViewport({ scale: 1 });
+          var textContent = await page.getTextContent();
+          var value = extractTextAtAnchor(textContent.items, viewport, splitTextAnchor).trim();
+          if (!value) {
+            unmatchedPages.push(pageNumber - 1);
+            continue;
+          }
+          pageValues.push({ value: value, page: pageNumber - 1 });
+        }
+        if (!pageValues.length) throw new Error("Seçtiğin konumda sayfalarda okunabilir metin bulunamadı.");
+        var groups = new Map();
+        pageValues.forEach(function (record) {
+          var value = record.value.replace(/^[^:\n]{1,80}:\s*/, "").trim();
+          if (!groups.has(value)) groups.set(value, []);
+          groups.get(value).push(record.page);
+        });
+
+        var zip = new JSZip();
+        var usedNames = new Set();
+        for (var entry of groups) {
+          var baseName = filenameFromValue(entry[0]);
+          var uniqueName = baseName;
+          var suffix = 2;
+          while (usedNames.has(uniqueName)) uniqueName = baseName + "-" + suffix++;
+          usedNames.add(uniqueName);
+          var documentForValue = await PDFLib.PDFDocument.create();
+          var pages = await documentForValue.copyPages(source, entry[1]);
+          pages.forEach(function (pdfPage) { documentForValue.addPage(pdfPage); });
+          zip.file(uniqueName + ".pdf", await documentForValue.save());
+        }
+        if (unmatchedPages.length) {
+          var unmatched = await PDFLib.PDFDocument.create();
+          (await unmatched.copyPages(source, unmatchedPages)).forEach(function (pdfPage) { unmatched.addPage(pdfPage); });
+          zip.file("eslesmeyen-sayfalar.pdf", await unmatched.save());
+        }
+        downloadBlob(await zip.generateAsync({ type: "blob" }), safeBaseName(selectedFiles[0].name) + "-ogrencilere-gore.zip");
+        return groups.size + " farklı değer için PDF hazırlandı; " + (splitTextDocument.numPages - unmatchedPages.length) + " sayfa eşleşti" + (unmatchedPages.length ? ", " + unmatchedPages.length + " sayfa eşleşmedi (ZIP'e eklendi)." : ".");
+      }
+
+      tabButtons.forEach(function (button, index) {
+        button.addEventListener("click", function () { selectTool(button.dataset.tool); });
+        button.addEventListener("keydown", function (event) {
+          if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+          event.preventDefault();
+          var nextIndex = (index + (event.key === "ArrowRight" ? 1 : -1) + tabButtons.length) % tabButtons.length;
+          tabButtons[nextIndex].focus();
+          tabButtons[nextIndex].click();
+        });
+      });
+      fileInput.addEventListener("change", function () { addFiles(fileInput.files); });
+      ["dragenter", "dragover"].forEach(function (name) {
+        dropzone.addEventListener(name, function (event) { event.preventDefault(); dropzone.classList.add("is-dragging"); });
+      });
+      ["dragleave", "drop"].forEach(function (name) {
+        dropzone.addEventListener(name, function (event) { event.preventDefault(); dropzone.classList.remove("is-dragging"); });
+      });
+      dropzone.addEventListener("drop", function (event) { addFiles(event.dataTransfer.files); });
+
+      function downloadBlob(blob, filename) {
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      }
+
+      function safeBaseName(filename) {
+        return filename.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "_") || "dosya";
+      }
+
+      async function readPdf(file) {
+        return PDFLib.PDFDocument.load(await file.arrayBuffer());
+      }
+
+      async function mergePdfs() {
+        if (selectedFiles.length < 2) throw new Error("Birleştirmek için en az iki PDF seç.");
+        var merged = await PDFLib.PDFDocument.create();
+        for (var file of selectedFiles) {
+          var source = await readPdf(file);
+          var copiedPages = await merged.copyPages(source, source.getPageIndices());
+          copiedPages.forEach(function (page) { merged.addPage(page); });
+        }
+        downloadBlob(new Blob([await merged.save()], { type: "application/pdf" }), "birlesik-dosya.pdf");
+      }
+
+      function parseRanges(value, pageCount) {
+        if (!value.trim()) throw new Error("Lütfen ayırmak istediğin sayfa aralıklarını yaz.");
+        var pages = [];
+        value.split(",").forEach(function (part) {
+          var match = part.trim().match(/^(\d+)\s*(?:-\s*(\d+))?$/);
+          if (!match) throw new Error('"' + part.trim() + '" geçerli değil. Örn. 1-3, 5.');
+          var first = Number(match[1]);
+          var last = Number(match[2] || match[1]);
+          if (first < 1 || last < first || last > pageCount) throw new Error("Sayfa aralığı 1 ile " + pageCount + " arasında olmalı.");
+          for (var page = first; page <= last; page += 1) pages.push(page - 1);
+        });
+        if (new Set(pages).size !== pages.length) throw new Error("Aynı sayfa aralıkta birden fazla kez seçilmiş.");
+        return value.split(",").map(function (part) {
+          var match = part.trim().match(/^(\d+)\s*(?:-\s*(\d+))?$/);
+          return { label: match[1] + (match[2] ? "-" + match[2] : ""), pages: Array.from({ length: Number(match[2] || match[1]) - Number(match[1]) + 1 }, function (_, index) { return Number(match[1]) - 1 + index; }) };
+        });
+      }
+
+      async function splitPdf() {
+        var source = await readPdf(selectedFiles[0]);
+        var ranges = parseRanges(document.getElementById("page-ranges").value, source.getPageCount());
+        var baseName = safeBaseName(selectedFiles[0].name);
+        if (ranges.length === 1) {
+          var output = await PDFLib.PDFDocument.create();
+          (await output.copyPages(source, ranges[0].pages)).forEach(function (page) { output.addPage(page); });
+          downloadBlob(new Blob([await output.save()], { type: "application/pdf" }), baseName + "-sayfa-" + ranges[0].label + ".pdf");
+          return;
+        }
+        var zip = new JSZip();
+        for (var range of ranges) {
+          var piece = await PDFLib.PDFDocument.create();
+          (await piece.copyPages(source, range.pages)).forEach(function (page) { piece.addPage(page); });
+          zip.file(baseName + "-sayfa-" + range.label + ".pdf", await piece.save());
+        }
+        downloadBlob(await zip.generateAsync({ type: "blob" }), baseName + "-bolunmus.zip");
+      }
+
+      async function pdfToPng() {
+        var file = selectedFiles[0];
+        var documentPdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+        var scale = Number(document.getElementById("render-scale").value);
+        var zip = new JSZip();
+        for (var pageNumber = 1; pageNumber <= documentPdf.numPages; pageNumber += 1) {
+          setStatus("Sayfa " + pageNumber + " / " + documentPdf.numPages + " PNG'ye dönüştürülüyor…");
+          var page = await documentPdf.getPage(pageNumber);
+          var viewport = page.getViewport({ scale: scale });
+          if (viewport.width * viewport.height > 40000000) throw new Error("Sayfa " + pageNumber + " seçilen çözünürlükte çok büyük. Daha düşük çözünürlük seç.");
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          var context = canvas.getContext("2d");
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+          var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, "image/png"); });
+          if (!blob) throw new Error("Sayfa " + pageNumber + " görseli oluşturulamadı.");
+          zip.file("sayfa-" + String(pageNumber).padStart(3, "0") + ".png", blob);
+          canvas.width = 0;
+          canvas.height = 0;
+        }
+        downloadBlob(await zip.generateAsync({ type: "blob" }), safeBaseName(file.name) + "-png.zip");
+      }
+
+      function imageAsPng(file) {
+        return new Promise(function (resolve, reject) {
+          var url = URL.createObjectURL(file);
+          var image = new Image();
+          image.onload = function () {
+            URL.revokeObjectURL(url);
+            var canvas = document.createElement("canvas");
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
+            var context = canvas.getContext("2d");
+            if (!context) { reject(new Error("Tarayıcı görseli işleyemedi.")); return; }
+            context.drawImage(image, 0, 0);
+            canvas.toBlob(function (blob) {
+              if (!blob) { reject(new Error(file.name + " görseli dönüştürülemedi.")); return; }
+              resolve({ bytes: blob, width: canvas.width, height: canvas.height });
+            }, "image/png");
+          };
+          image.onerror = function () { URL.revokeObjectURL(url); reject(new Error(file.name + " görseli açılamadı.")); };
+          image.src = url;
+        });
+      }
+
+      async function imagesToPdf() {
+        var pdf = await PDFLib.PDFDocument.create();
+        var pageSize = document.getElementById("image-page-size").value;
+        for (var file of selectedFiles) {
+          var imageData = await imageAsPng(file);
+          var image = await pdf.embedPng(await imageData.bytes.arrayBuffer());
+          var imageWidth = imageData.width * 0.75;
+          var imageHeight = imageData.height * 0.75;
+          var pageWidth = pageSize === "a4" ? 595.28 : pageSize === "letter" ? 612 : imageWidth;
+          var pageHeight = pageSize === "a4" ? 841.89 : pageSize === "letter" ? 792 : imageHeight;
+          var scale = Math.min(pageWidth / imageWidth, pageHeight / imageHeight);
+          var width = imageWidth * scale;
+          var height = imageHeight * scale;
+          var page = pdf.addPage([pageWidth, pageHeight]);
+          page.drawImage(image, { x: (pageWidth - width) / 2, y: (pageHeight - height) / 2, width: width, height: height });
+        }
+        downloadBlob(new Blob([await pdf.save()], { type: "application/pdf" }), "gorseller.pdf");
+      }
+
+      async function excelToPdf() {
+        var file = selectedFiles[0];
+        var workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+        var Constructor = window.jspdf && window.jspdf.jsPDF;
+        if (!Constructor) throw new Error("PDF kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar dene.");
+        var pdf = new Constructor({ orientation: "landscape", unit: "pt", format: "a4" });
+        var hasSheet = false;
+        workbook.SheetNames.forEach(function (sheetName) {
+          var sheet = workbook.Sheets[sheetName];
+          var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: "" });
+          while (rows.length && rows[rows.length - 1].every(function (cell) { return cell === ""; })) rows.pop();
+          if (!rows.length) return;
+          if (hasSheet) pdf.addPage("a4", "landscape");
+          hasSheet = true;
+          pdf.setFontSize(15);
+          pdf.text(String(sheetName).slice(0, 90), 36, 34);
+          var headers = rows[0].map(function (cell, index) { return String(cell || ("Sütun " + (index + 1))); });
+          var body = rows.slice(1, 5001).map(function (row) {
+            return headers.map(function (_, index) { return String(row[index] == null ? "" : row[index]).slice(0, 500); });
+          });
+          pdf.autoTable({ head: [headers], body: body, startY: 46, margin: { left: 30, right: 30, bottom: 30 }, styles: { fontSize: 7, cellPadding: 3, overflow: "linebreak" }, headStyles: { fillColor: [91, 63, 165] }, horizontalPageBreak: true, horizontalPageBreakRepeat: 0, showHead: "everyPage" });
+          if (rows.length > 5001) {
+            pdf.addPage("a4", "landscape");
+            pdf.setFontSize(10);
+            pdf.text("Not: Bu sayfa için ilk 5.000 satır PDF'e aktarıldı.", 36, 42);
+          }
+        });
+        if (!hasSheet) throw new Error("Excel dosyasında aktarılabilir veri bulunamadı.");
+        pdf.save(safeBaseName(file.name) + ".pdf");
+      }
+
+      function pdfTextRows(items) {
+        var textItems = items.filter(function (item) { return item.str && item.str.trim(); }).map(function (item) {
+          return { text: item.str.trim(), x: item.transform[4], y: item.transform[5] };
+        }).sort(function (a, b) { return b.y - a.y || a.x - b.x; });
+        var rows = [];
+        textItems.forEach(function (item) {
+          var row = rows[rows.length - 1];
+          if (row && Math.abs(row.y - item.y) >= 3) row = null;
+          if (!row) { row = { y: item.y, items: [] }; rows.push(row); }
+          row.items.push(item);
+        });
+        return rows.map(function (row) {
+          row.items.sort(function (a, b) { return a.x - b.x; });
+          var cells = [];
+          row.items.forEach(function (item) {
+            var last = cells[cells.length - 1];
+            if (last && item.x - last.endX < 18) {
+              last.text += " " + item.text;
+              last.endX = item.x + item.text.length * 4;
+            } else {
+              cells.push({ text: item.text, endX: item.x + item.text.length * 4 });
+            }
+          });
+          return cells.map(function (cell) { return cell.text; });
+        }).filter(function (row) { return row.length; });
+      }
+
+      async function pdfToExcel() {
+        var file = selectedFiles[0];
+        var documentPdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+        var workbook = XLSX.utils.book_new();
+        for (var pageNumber = 1; pageNumber <= documentPdf.numPages; pageNumber += 1) {
+          setStatus("PDF sayfa " + pageNumber + " / " + documentPdf.numPages + " okunuyor…");
+          var page = await documentPdf.getPage(pageNumber);
+          var content = await page.getTextContent();
+          var rows = pdfTextRows(content.items);
+          if (!rows.length) rows = [["Bu sayfada seçilebilir metin bulunamadı"]];
+          var sheet = XLSX.utils.aoa_to_sheet(rows);
+          sheet["!cols"] = Array.from({ length: Math.max.apply(null, rows.map(function (row) { return row.length; })) }, function (_, index) {
+            return { wch: Math.min(42, Math.max(12, ...rows.map(function (row) { return String(row[index] || "").length; }))) };
+          });
+          XLSX.utils.book_append_sheet(workbook, sheet, "Sayfa " + pageNumber);
+        }
+        XLSX.writeFile(workbook, safeBaseName(file.name) + ".xlsx");
+      }
+
+      var actions = { merge: mergePdfs, split: splitPdf, "pdf-image": pdfToPng, "image-pdf": imagesToPdf, "excel-pdf": excelToPdf, "pdf-excel": pdfToExcel, "split-text": splitPdfByText };
+      actionButton.addEventListener("click", async function () {
+        if (busy) return;
+        if (!selectedFiles.length) { setStatus("Önce dosya seç.", "error"); return; }
+        if (selectedFiles.length < definitions[activeTool].minFiles) { setStatus("Birleştirmek için en az iki PDF dosyası seç.", "error"); return; }
+        if (!window.PDFLib || !window.pdfjsLib || !window.XLSX || !window.jspdf || !window.JSZip) {
+          setStatus("Gerekli araç kütüphaneleri yüklenemedi. İnternet bağlantını kontrol edip sayfayı yenile.", "error");
+          return;
+        }
+        busy = true;
+        actionButton.disabled = true;
+        actionButton.classList.add("opacity-70");
+        setStatus("Dosyan cihazında işleniyor…");
+        try {
+          var resultMessage = await actions[activeTool]();
+          setStatus(resultMessage || "İşlem tamamlandı. Dosyan indirilmeye hazır.", "success");
+        } catch (error) {
+          setStatus(error && error.message ? error.message : "Dosya işlenirken bir hata oluştu.", "error");
+        } finally {
+          busy = false;
+          actionButton.classList.remove("opacity-70");
+          renderFiles();
+        }
+      });
+
+      selectTool("merge");
+    }());
+  </script>
+</body>
+</html>

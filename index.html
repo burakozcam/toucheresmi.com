@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f9fc">
+  <title>kurumsalsinav.com | Optik Okuma ve Sınav Yönetimi</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #172b4d;
+      --blue: #416eaf;
+      --ink: #1b2c45;
+      --muted: #77869b;
+      --line: #e5ebf2;
+      --surface: #fff;
+      --canvas: #f7f9fc;
+      --pale: #edf3fc;
+      --shadow: 0 22px 65px #12264a1a;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --navy: #dfe9ff;
+      --blue: #8bb2ff;
+      --ink: #e1e9f5;
+      --muted: #9caac0;
+      --line: #29364c;
+      --surface: #17243a;
+      --canvas: #111c30;
+      --pale: #243653;
+      --shadow: 0 22px 65px #0005;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); font-family: Arial, Helvetica, sans-serif; transition: background .2s, color .2s; }
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; }
+    .wrap { max-width: 1240px; min-height: 100vh; margin: auto; padding: 0 48px; }
+    .header { height: 82px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+    .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 800; letter-spacing: -.5px; }
+    .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px 10px 10px 3px; background: #192e53; color: #fff; font-size: 17px; }
+    .brand-light { color: var(--blue); font-weight: 600; }
+    .actions { display: flex; align-items: center; gap: 20px; }
+    .link { color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600; }
+    .theme { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; font-size: 12px; }
+    .theme span { color: var(--blue); font-size: 15px; }
+    .theme:hover span { animation: theme-spin .8s ease; }
+    @keyframes theme-spin { to { transform: rotate(360deg); } }
+    .btn { display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 12px 18px; border: 0; border-radius: 8px; background: #192e53; color: white; text-decoration: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: transform .2s, background .2s; }
+    .btn:hover { transform: translateY(-2px); background: #25426f; }
+    .hero { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 25px; min-height: 510px; padding: 35px 0; }
+    .eyebrow { margin: 0 0 16px; color: #58749e; font-size: 10px; font-weight: 700; letter-spacing: 1.3px; }
+    h1, h2, h3 { font-family: Arial, Helvetica, sans-serif; }
+    h1 { margin: 0; color: var(--navy); font-size: clamp(42px, 6vw, 66px); line-height: 1.1; letter-spacing: -3px; }
+    h1 em { color: #4d77b8; font-style: normal; }
+    .description { max-width: 460px; margin: 21px 0 24px; color: var(--muted); font-size: 15px; line-height: 1.8; }
+    .hero-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .quiet { background: transparent; color: var(--ink); }
+    .quiet:hover { background: var(--pale); }
+    .proof { margin-top: 25px; color: var(--muted); font-size: 12px; }
+    .proof b { color: var(--blue); }
+    .visual { position: relative; height: 420px; display: grid; place-items: center; isolation: isolate; }
+    .visual:before { position: absolute; z-index: -2; width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle, #e7eefb, #f0f4fb 55%, var(--canvas) 74%); content: ""; }
+    :root[data-theme="dark"] .visual:before { background: radial-gradient(circle, #243a60, #1b2b46 55%, var(--canvas) 74%); }
+    .orbit { position: absolute; width: 390px; height: 270px; border: 1px solid #9db2d229; border-radius: 50%; transform: rotate(-25deg); }
+    .paper { position: absolute; width: 260px; height: 322px; padding: 22px; border: 1px solid #e6eaf0; border-radius: 5px; background: #fff; box-shadow: 0 24px 55px #152b4d20; color: #354c6f; }
+    .paper-back { z-index: -1; transform: translate(27px, -1px) rotate(8deg); animation: drift-back 6s ease-in-out infinite; }
+    .paper-main { animation: drift 5s ease-in-out infinite; transform: rotate(-4deg); }
+    .form-brand { display: flex; align-items: center; gap: 7px; font-size: 8px; font-weight: 800; letter-spacing: .4px; }
+    .mini { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 6px 6px 6px 1px; background: #203b65; color: white; font-size: 12px; }
+    .form-brand small { display: block; margin-top: 2px; color: #8492a6; font-size: 6px; }
+    .form-brand .number { margin-left: auto; color: #8293ad; }
+    .student-fields { display: grid; gap: 9px; margin: 17px 0; }
+    .student-fields span { display: flex; justify-content: space-between; align-items: center; color: #8390a3; font-size: 6px; font-weight: 700; }
+    .student-fields i { display: inline-block; width: 110px; height: 13px; border: 1px solid #e7ebf1; border-radius: 2px; }
+    .answer-table { display: grid; gap: 5px; }
+    .answer-head, .answer-row { display: grid; grid-template-columns: 1fr repeat(5, 20px); align-items: center; justify-items: center; }
+    .answer-head { padding-bottom: 6px; border-bottom: 1px solid #e6ebf2; color: #718098; font-size: 6px; }
+    .answer-row { min-height: 24px; color: #526580; font-size: 7px; }
+    .answer-row > b { justify-self: start; color: #76859b; }
+    .bubble { display: grid; width: 14px; height: 14px; place-items: center; border: 1px solid #d5ddea; border-radius: 50%; color: #95a2b5; font-size: 6px; }
+    .bubble.filled { border-color: #284a7e; background: #284a7e; color: white; }
+    .barcode { margin-top: 14px; padding-top: 8px; border-top: 1px solid #e7ebf1; color: #8290a5; text-align: right; font-size: 10px; letter-spacing: -1px; }
+    .float { position: absolute; z-index: 2; display: flex; align-items: center; gap: 9px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 12px 30px #14264a14; animation: label-drift 4s ease-in-out infinite; }
+    .float b, .float small { display: block; }
+    .float b { color: var(--ink); font-size: 10px; }
+    .float small { margin-top: 3px; color: var(--muted); font-size: 8px; }
+    .float-icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; color: #416eaf; background: #edf3ff; }
+    .float-top { top: 48px; right: -5px; }
+    .float-bottom { bottom: 38px; left: -3px; animation-delay: -2s; }
+    @keyframes drift { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-12px) rotate(-2deg); } }
+    @keyframes drift-back { 0%,100% { transform: translate(27px,-1px) rotate(8deg); } 50% { transform: translate(29px,-12px) rotate(9deg); } }
+    @keyframes label-drift { 0%,100% { translate: 0 0; } 50% { translate: 0 -7px; } }
+    .metrics { display: flex; justify-content: center; align-items: center; gap: 50px; min-height: 85px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .metrics div { display: flex; align-items: baseline; gap: 8px; }
+    .metrics b { color: var(--navy); font-size: 14px; }
+    .metrics span { color: var(--muted); font-size: 11px; }
+    .metrics i { width: 4px; height: 4px; border-radius: 50%; background: #a8b8cf; }
+    .solutions { padding: 65px 0 70px; text-align: center; }
+    .solutions h2 { margin: 0; color: var(--navy); font-size: 29px; line-height: 1.35; letter-spacing: -.8px; }
+    .solutions h2 span { color: #6482b0; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 30px; text-align: left; }
+    .card { padding: 22px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+    .card-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 8px; color: #456fae; background: var(--pale); font-size: 16px; }
+    .card h3 { margin: 15px 0 7px; color: var(--ink); font-size: 14px; }
+    .card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .footer { display: flex; justify-content: space-between; align-items: center; min-height: 70px; border-top: 1px solid var(--line); }
+    .footer > span { color: var(--muted); font-size: 11px; }
+
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: block; }
+    .login-layout { display: grid; grid-template-columns: 1fr minmax(350px, 440px); align-items: center; gap: 70px; max-width: 1020px; margin: 40px auto; padding: 20px; }
+    .login-aside h1 { font-size: 43px; letter-spacing: -2px; }
+    .login-aside p { max-width: 370px; color: var(--muted); line-height: 1.7; font-size: 13px; }
+    .login-card { padding: 30px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-shadow: var(--shadow); }
+    .login-card h2 { margin: 0; color: var(--navy); font-size: 23px; }
+    .login-card > p { color: var(--muted); font-size: 12px; }
+    .role-list { display: grid; gap: 8px; margin: 20px 0; }
+    .role { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }
+    .role.selected { border-color: #829dca; background: var(--pale); }
+    .role-icon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 7px; background: var(--pale); color: var(--blue); }
+    .role-copy { flex: 1; }
+    .role strong, .role small { display: block; }
+    .role strong { font-size: 11px; }
+    .role small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .role-status { color: var(--blue); font-size: 10px; }
+    .field { display: grid; gap: 6px; margin: 13px 0; font-size: 11px; font-weight: 700; }
+    .field input { height: 39px; padding: 0 11px; border: 1px solid var(--line); border-radius: 7px; outline-color: #7997c7; color: var(--ink); background: var(--surface); font-size: 11px; }
+    .login-submit { width: 100%; margin-top: 7px; }
+    .message { display: none; margin-top: 13px; padding: 10px; border: 1px solid #f1c6c6; border-radius: 7px; color: #b13b3b; background: #fff5f5; font-size: 11px; }
+    .message.show { display: block; }
+    .message.ok { border-color: #bfdfce; color: #28774e; background: #f0fbf5; }
+    .demo-note { margin: 14px 0 0 !important; font-size: 10px !important; }
+    .panel { min-height: 100vh; }
+    .dashboard { display: flex; min-height: 100vh; }
+    .sidebar { position: sticky; top: 0; display: flex; flex: 0 0 245px; flex-direction: column; height: 100vh; padding: 0 15px; border-right: 1px solid var(--line); background: var(--surface); }
+    .sidebar .brand { height: 72px; border-bottom: 1px solid var(--line); }
+    .profile { display: flex; align-items: center; gap: 10px; margin: 18px 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+    .avatar { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; color: white; background: #536f9b; font-size: 12px; font-weight: 700; }
+    .profile strong, .profile small { display: block; }
+    .profile strong { font-size: 11px; }
+    .profile small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .nav-group { margin-bottom: 18px; }
+    .nav-group > p { margin: 0 0 7px 8px; color: #9ba7b8; font-size: 8px; font-weight: 700; letter-spacing: 1px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 35px; padding: 0 9px; border: 0; border-radius: 6px; color: var(--muted); background: transparent; text-align: left; font-size: 11px; cursor: pointer; }
+    .nav-item:hover, .nav-item.current { color: var(--ink); background: var(--pale); }
+    .nav-item.current { font-weight: 700; }
+    .side-bottom { margin-top: auto; padding: 12px 0; }
+    .logout { width: 100%; padding: 10px; border: 0; color: var(--muted); background: transparent; text-align: left; cursor: pointer; font-size: 11px; }
+    .main { flex: 1; min-width: 0; }
+    .dash-header { display: flex; align-items: center; justify-content: space-between; height: 72px; padding: 0 28px; border-bottom: 1px solid var(--line); background: var(--surface); }
+    .crumb { color: var(--muted); font-size: 11px; }
+    .dash-content { max-width: 1050px; margin: auto; padding: 28px; }
+    .welcome { padding: 15px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--pale); font-size: 12px; }
+    .welcome small { display: block; margin-top: 4px; color: var(--muted); }
+    .dash-title { display: flex; justify-content: space-between; align-items: end; gap: 15px; margin: 34px 0 20px; }
+    .dash-title h1 { font-size: 27px; letter-spacing: -.8px; }
+    .dash-title p { color: var(--muted); font-size: 11px; }
+    .empty { display: flex; min-height: 330px; flex-direction: column; align-items: center; justify-content: center; padding: 25px; border: 1px dashed #d4deeb; border-radius: 10px; background: var(--surface); text-align: center; }
+    .empty-art { display: grid; width: 90px; height: 90px; margin-bottom: 12px; place-items: center; border-radius: 50%; background: var(--pale); font-size: 38px; }
+    .empty h2 { margin: 5px 0; font-size: 15px; }
+    .empty p { max-width: 330px; color: var(--muted); font-size: 10px; line-height: 1.7; }
+    .toast { position: fixed; right: 20px; bottom: 20px; display: none; padding: 12px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow); font-size: 12px; }
+    .toast.show { display: block; }
+    .contact-wrap { max-width: 1100px; margin: 30px auto; padding: 20px; }
+    .contact-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 18px; }
+    .contact-card { display: grid; gap: 13px; padding: 23px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+    .contact-card h2 { margin: 0; font-size: 19px; }
+    .contact-card > p, .contact-card small { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .contact-card label, .profile-fields label { display: grid; gap: 6px; color: var(--ink); font-size: 11px; font-weight: 700; }
+    .contact-card input, .contact-card textarea, .profile-fields input { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 7px; outline-color: #7997c7; color: var(--ink); background: var(--surface); font: inherit; font-size: 12px; }
+    .contact-card textarea { resize: vertical; }
+    .contact-card iframe { width: 100%; min-height: 300px; border: 0; border-radius: 7px; background: var(--pale); }
+    .contact-card a { color: var(--blue); text-decoration: none; font-size: 11px; }
+    .contact-note { color: #28774e !important; }
+    .profile-button { display: flex; align-items: center; gap: 10px; width: 100%; margin: 18px 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }
+    .profile-button:hover { background: var(--pale); }
+    .profile-button span:last-child { font-size: 10px; }
+    .user-avatar { display: grid; width: 32px; height: 32px; place-items: center; border: 0; border-radius: 50%; color: #fff; background: #536f9b; font-weight: 700; cursor: pointer; }
+    .profile-panel { display: none; padding: 23px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+    .profile-panel.visible { display: block; }
+    .profile-panel h2 { margin: 0 0 8px; font-size: 17px; }
+    .profile-panel > p { color: var(--muted); font-size: 11px; }
+    .profile-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 650px; margin-top: 20px; }
+    .profile-fields .btn, .profile-message { grid-column: 1 / -1; justify-self: start; }
+    .brand:hover .brand-mark { animation: logo-pop .45s ease; }
+    @keyframes logo-pop { 50% { transform: rotate(-8deg) scale(1.08); } }
+    .nav-item { transition: color .16s ease, background .16s ease, transform .16s ease, padding-left .16s ease; }
+    .nav-item:hover { transform: translateX(3px); padding-left: 12px; }
+    .message.show { animation: status-in .28s ease both, status-shake .38s .12s ease; }
+    .message.show.ok { animation: status-in .28s ease both, status-glow 1.1s .15s ease; }
+    @keyframes status-in { from { opacity: 0; transform: translateY(7px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes status-shake { 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
+    @keyframes status-glow { 50% { box-shadow: 0 0 0 4px #55ad7620, 0 0 18px #55ad7630; } }
+    .dash-actions { display: flex; align-items: center; gap: 10px; }
+    .header-logout { padding: 8px 11px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: transparent; cursor: pointer; font-size: 11px; transition: color .15s, border-color .15s, transform .15s; }
+    .header-logout:hover { transform: translateY(-1px); border-color: #d99696; color: #bd5656; }
+    .logout-toast { position: fixed; z-index: 10; top: 84px; right: 24px; padding: 12px 15px; border: 1px solid #bfdfce; border-radius: 9px; color: #28774e; background: var(--surface); box-shadow: var(--shadow); font-size: 12px; animation: status-in .3s ease both; }
+    .calendar-panel, .break-panel, .tool-panel { display: none; padding: 23px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+    .calendar-panel.visible, .break-panel.visible, .tool-panel.visible { display: block; animation: status-in .25s ease both; }
+    .tool-panel { padding: 0; overflow: hidden; }
+    .tool-frame { display: block; width: 100%; height: max(760px, calc(100vh - 220px)); border: 0; background: #f5f7fb; }
+    .pdf-tool-frame { height: max(960px, calc(100vh - 220px)); background: #0b1120; }
+    .calendar-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 15px; }
+    .calendar-heading h2, .break-heading h2 { margin: 0; color: var(--ink); font-size: 18px; }
+    .calendar-controls { display: flex; gap: 6px; }
+    .calendar-controls button { min-width: 34px; height: 31px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--surface); cursor: pointer; }
+    .calendar-controls button:hover { background: var(--pale); }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .calendar-weekday { padding: 8px 2px; color: var(--muted); text-align: center; font-size: 10px; font-weight: 700; }
+    .calendar-day { position: relative; display: grid; min-height: 43px; place-items: center; border: 1px solid transparent; border-radius: 7px; color: var(--ink); font-size: 11px; }
+    .calendar-day:hover { background: var(--pale); }
+    .calendar-day.weekend { color: var(--muted); background: var(--canvas); }
+    .calendar-day.today { border-color: #6b8fc7; color: var(--blue); font-weight: 800; }
+    .calendar-day.holiday { color: #a64c4c; background: #fff1f0; font-weight: 700; }
+    :root[data-theme="dark"] .calendar-day.holiday { color: #ffc2bc; background: #3b252b; }
+    .calendar-day.holiday:after { position: absolute; right: 6px; bottom: 5px; width: 5px; height: 5px; border-radius: 50%; background: #cf716c; content: ""; }
+    .calendar-legend { display: flex; gap: 16px; margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+    .calendar-legend i { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: #6b8fc7; }
+    .calendar-legend .weekend-mark { background: #a8b2c1; }
+    .calendar-legend .holiday-mark { background: #cf716c; }
+    .calendar-note { margin: 11px 0 0; color: var(--muted); font-size: 9px; line-height: 1.6; }
+    .break-heading { display: flex; align-items: center; gap: 10px; }
+    .break-heading > span { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 9px; background: var(--pale); }
+    .break-heading h2 { font-size: 17px; }
+    .break-panel > p { color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .break-stage { position: relative; overflow: hidden; border: 1px solid #d6e5f3; border-radius: 12px; background: linear-gradient(180deg,#8bd5f1 0%,#d4f1fb 65%,#d9efbf 66%,#9acb78 100%); box-shadow: inset 0 1px #fff8,0 12px 30px #4c80a016; cursor: pointer; }
+    :root[data-theme="dark"] .break-stage { border-color: #37516b; background: linear-gradient(180deg,#1d3858 0%,#385e78 65%,#486b58 66%,#345342 100%); }
+    .break-stage canvas { display: block; width: 100%; height: 210px; }
+    .break-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 9px; background: linear-gradient(120deg,#10243b77,#10243b24 55%,#10243b66); text-align: center; }
+    .break-overlay strong { color: #fff; font-size: 18px; text-shadow: 0 2px 12px #142b45a8; }
+    .break-overlay > span { color: #f2f8ff; font-size: 10px; text-shadow: 0 1px 5px #142b45a8; }
+    .break-overlay .bird-mascot { font-size: 35px; filter: drop-shadow(0 5px 5px #142b4550); animation: bird-hover 1.8s ease-in-out infinite; }
+    @keyframes bird-hover { 50% { transform: translateY(-6px) rotate(-5deg); } }
+    .break-overlay .btn { border-radius: 999px; background: linear-gradient(110deg,#ff9a58,#f16f56); box-shadow: 0 7px 18px #922e2860; }
+    .break-footer { display: flex; justify-content: space-between; margin-top: 10px; color: var(--muted); font-size: 10px; }
+    .profile-message { color: #28774e; font-size: 11px; }
+    @media (max-width: 760px) {
+      .wrap { padding: 0 20px; }
+      .header { height: 70px; }
+      .actions { gap: 9px; }
+      .actions > .link { display: none; }
+      .theme-label { display: none; }
+      .theme { width: 35px; height: 35px; padding: 0; }
+      .hero { grid-template-columns: 1fr; padding-top: 52px; }
+      h1 { font-size: 48px; }
+      .description { font-size: 13px; }
+      .visual { height: 360px; margin: 0 -12px; }
+      .paper { scale: .9; }
+      .float-top { right: -5px; }
+      .float-bottom { left: -5px; }
+      .metrics { gap: 14px; min-height: 75px; }
+      .metrics div { flex-direction: column; gap: 3px; text-align: center; }
+      .metrics b { font-size: 11px; }
+      .metrics span { font-size: 8px; }
+      .cards { grid-template-columns: 1fr; gap: 10px; }
+      .solutions { padding: 50px 0; }
+      .solutions h2 { font-size: 24px; }
+      .footer .brand { font-size: 12px; }
+      .footer > span { font-size: 9px; }
+      .login-layout { grid-template-columns: 1fr; gap: 20px; margin: 18px auto; padding: 15px 0; }
+      .login-aside h1 { font-size: 34px; }
+      .login-card { padding: 22px; }
+      .sidebar { flex-basis: 195px; padding: 0 9px; }
+      .dash-content { padding: 18px 12px; }
+      .dash-header { padding: 0 13px; }
+      .dash-title { align-items: flex-start; flex-direction: column; }
+      .contact-wrap { padding: 15px 0; }
+      .contact-grid, .profile-fields { grid-template-columns: 1fr; }
+      .profile-fields .btn, .profile-message { grid-column: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main id="home" class="screen active">
+    <div class="wrap">
+      <header class="header">
+        <a class="brand" href="#" aria-label="Kurumsal Sınav ana sayfa"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a>
+        <nav class="actions" aria-label="Ana menü">
+          <a class="link" href="#cozumler">Çözümler</a>
+          <button class="theme" type="button" onclick="toggleTheme()"><span id="themeIcon">☀</span> <span class="theme-label" id="themeLabel">Aydınlık</span></button>
+          <button class="btn" onclick="showScreen('login')">Giriş Yap <span>↗</span></button>
+        </nav>
+      </header>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">● &nbsp;SINAV SÜREÇLERİNDE YENİ NESİL DENEYİM</p>
+          <h1>Sınavlarınızda<br>başarıyı <em>ölçün.</em></h1>
+          <p class="description">Optik formlardan anlamlı sonuçlara. Sınav değerlendirme, öğrenci analizi ve raporlama süreçleriniz tek bir platformda.</p>
+          <div class="hero-actions">
+            <button class="btn" onclick="showScreen('login')">Hemen Giriş Yap <span>→</span></button>
+            <a class="btn quiet" href="#cozumler">Platformu Keşfet <span>↓</span></a>
+          </div>
+          <p class="proof"><b>✓</b> &nbsp;Kurumlar için güvenilir sınav yönetimi</p>
+        </div>
+        <div class="visual" aria-label="Havada süzülen optik form çizimi">
+          <div class="orbit"></div>
+          <div class="paper paper-back"><b style="font-size:7px">ÖĞRENCİ BİLGİLERİ</b><hr style="border:0;border-top:1px solid #dce4ef;margin-top:12px"><div style="display:grid;gap:10px;margin-top:24px"><i style="height:5px;background:#eff2f7"></i><i style="height:5px;background:#eff2f7"></i><i style="height:5px;background:#eff2f7"></i></div></div>
+          <div class="paper paper-main">
+            <div class="form-brand"><span class="mini">K</span><span>KURUMSAL SINAV<small>CEVAP FORMU</small></span><span class="number">01</span></div>
+            <div class="student-fields"><span>ÖĞRENCİ NO <i></i></span><span>ADI SOYADI <i></i></span></div>
+            <div class="answer-table"><div class="answer-head"><b>SORU</b><b>A</b><b>B</b><b>C</b><b>D</b><b>E</b></div>
+              <div class="answer-row"><b>01</b><i class="bubble filled">A</i><i class="bubble">B</i><i class="bubble">C</i><i class="bubble">D</i><i class="bubble">E</i></div>
+              <div class="answer-row"><b>02</b><i class="bubble">A</i><i class="bubble">B</i><i class="bubble filled">C</i><i class="bubble">D</i><i class="bubble">E</i></div>
+              <div class="answer-row"><b>03</b><i class="bubble">A</i><i class="bubble">B</i><i class="bubble">C</i><i class="bubble filled">D</i><i class="bubble">E</i></div>
+              <div class="answer-row"><b>04</b><i class="bubble">A</i><i class="bubble filled">B</i><i class="bubble">C</i><i class="bubble">D</i><i class="bubble">E</i></div>
+              <div class="answer-row"><b>05</b><i class="bubble">A</i><i class="bubble">B</i><i class="bubble">C</i><i class="bubble">D</i><i class="bubble filled">E</i></div>
+              <div class="answer-row"><b>06</b><i class="bubble">A</i><i class="bubble">B</i><i class="bubble filled">C</i><i class="bubble">D</i><i class="bubble">E</i></div>
+              <div class="answer-row"><b>07</b><i class="bubble">A</i><i class="bubble">B</i><i class="bubble">C</i><i class="bubble filled">D</i><i class="bubble">E</i></div>
+            </div><div class="barcode">▥▥▥▥▥▥▥</div>
+          </div>
+          <div class="float float-top"><span class="float-icon">✓</span><span><b>Optik okuma</b><small>Hızlı ve güvenilir</small></span></div>
+          <div class="float float-bottom"><span class="float-icon">↗</span><span><b>Sonuçlar hazır</b><small>Detaylı analiz raporu</small></span></div>
+        </div>
+      </section>
+      <section class="metrics"><div><b>Hızlı</b><span>optik değerlendirme</span></div><i></i><div><b>Kolay</b><span>sınav yönetimi</span></div><i></i><div><b>Anlaşılır</b><span>başarı raporları</span></div></section>
+      <section id="cozumler" class="solutions"><p class="eyebrow">KURUMUNUZ İÇİN TASARLANDI</p><h2>Sınav sürecinin her adımı,<br><span>kontrolünüz altında.</span></h2>
+        <div class="cards">
+          <article class="card"><span class="card-icon">▤</span><h3>Optik okuma</h3><p>Optik form verilerinizi hızlıca işleyin, sınav sonuçlarına zahmetsizce ulaşın.</p></article>
+          <article class="card"><span class="card-icon">⌘</span><h3>Esnek sınav yönetimi</h3><p>Sınavlarınızı, cevap anahtarlarınızı ve kurum bilgilerinizi tek yerden yönetin.</p></article>
+          <article class="card"><span class="card-icon">▥</span><h3>Detaylı raporlama</h3><p>Öğrenci ve sınıf bazlı analizlerle performansı kolayca değerlendirin.</p></article>
+        </div>
+      </section>
+      <footer class="footer"><a class="brand" href="#"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><span><a class="link" href="#" onclick="showScreen('contact');return false">İletişim</a> &nbsp;·&nbsp; Ölçün. Değerlendirin. Geliştirin.</span></footer>
+    </div>
+  </main>
+
+  <main id="login" class="screen">
+    <div class="wrap">
+      <header class="header"><a class="brand" href="#" onclick="showScreen('home');return false"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><div class="actions"><button class="theme" onclick="toggleTheme()"><span id="themeIconLogin">☀</span> <span class="theme-label" id="themeLabelLogin">Aydınlık</span></button><button class="link" style="border:0;background:none;cursor:pointer" onclick="showScreen('home')">← Ana sayfa</button></div></header>
+      <section class="login-layout">
+        <div class="login-aside"><p class="eyebrow">KURUMSAL SINAV PLATFORMU</p><h1>Tek yerden yönetin,<br><em style="color:#4d77b8;font-style:normal">güvenle değerlendirin.</em></h1><p>Optik sınav süreçlerinize devam etmek için hesabınızla giriş yapın.</p></div>
+        <form id="loginForm" class="login-card" onsubmit="login(event)">
+          <p class="eyebrow">HOŞ GELDİNİZ</p><h2>Hesabınıza giriş yapın</h2><p>Devam etmek için giriş türünüzü seçin.</p>
+          <div class="role-list">
+            <button type="button" class="role selected" data-role="dealer" onclick="selectRole(this)"><span class="role-icon">⌂</span><span class="role-copy"><strong>Bayi Girişi</strong><small>Bayi hesabınızla giriş yapın</small></span><span class="role-status">●</span></button>
+            <button type="button" class="role" data-role="institution" onclick="selectRole(this)"><span class="role-icon">▦</span><span class="role-copy"><strong>Kurum Girişi</strong><small>Okul veya kurum hesabınızla giriş yapın</small></span><span class="role-status">○</span></button>
+            <button type="button" class="role" data-role="student" onclick="selectRole(this)"><span class="role-icon">♙</span><span class="role-copy"><strong>Öğrenci Girişi</strong><small>Sınav sonuçlarınıza ulaşın</small></span><span class="role-status">○</span></button>
+          </div>
+          <div id="loginFields"><label class="field">Kullanıcı adı<input name="username" autocomplete="username" placeholder="Kullanıcı adınızı girin" required></label><label class="field">Şifre<input name="password" type="password" autocomplete="current-password" placeholder="Şifrenizi girin" required></label><button class="btn login-submit" type="submit">Giriş Yap <span>→</span></button></div>
+          <div id="loginMessage" class="message" role="status"></div>
+          <p class="demo-note">Demo giriş bilgileri: <b>burak</b> / <b>burak</b></p>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <main id="panel" class="screen">
+    <div class="dashboard">
+      <aside class="sidebar">
+        <a class="brand" href="#" onclick="showScreen('panel');return false"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a>
+        <button class="profile-button" onclick="setSection(document.querySelector('[data-section=account]'),'Hesap Ayarları')"><span class="avatar" id="sideAvatar">B</span><span><strong id="sideName">Burak</strong><small>Bayi hesabı</small></span></button>
+        <nav>
+          <div class="nav-group"><p>SINAV İŞLEMLERİ</p><button class="nav-item current" onclick="setSection(this,'Sınav Yükle')"><span>⇧</span>Sınav Yükle</button></div>
+          <div class="nav-group"><p>FMT YÖNETİMİ</p><button class="nav-item" onclick="setSection(this,'FMT Yükle')"><span>＋</span>FMT Yükle</button><button class="nav-item" onclick="setSection(this,'FMT Düzenle')"><span>✎</span>FMT Düzenle</button><button class="nav-item" onclick="setSection(this,'FMT Sil')"><span>⌫</span>FMT Sil</button></div>
+          <div class="nav-group"><p>KURUM YÖNETİMİ</p><button class="nav-item" onclick="setSection(this,'Kurum Ekle')"><span>＋</span>Kurum Ekle</button><button class="nav-item" onclick="setSection(this,'Kurum Düzenle')"><span>✎</span>Kurum Düzenle</button><button class="nav-item" onclick="setSection(this,'Kurum Sil')"><span>⌫</span>Kurum Sil</button></div>
+          <div class="nav-group"><p>ÖĞRENCİLER</p><button class="nav-item" onclick="setSection(this,'Öğrenciler')"><span>♙</span>Öğrenciler</button></div>
+          <div class="nav-group"><p>ARAÇLAR</p><button class="nav-item" data-section="calendar" onclick="setSection(this,'Takvim')"><span>▦</span>Takvim</button><button class="nav-item" data-section="break" onclick="setSection(this,'Mola')"><span>☕</span>Mola</button><button class="nav-item" data-section="rebuilder" onclick="setSection(this,'Sınav Listesi Düzenleyici')"><span>▤</span>Sınav Listesi</button><button class="nav-item" data-section="pdf-tools" onclick="setSection(this,'PDF ve Excel Araçları')"><span>▧</span>PDF / Excel</button></div>
+          <div class="nav-group"><p>HESAP</p><button class="nav-item" data-section="account" onclick="setSection(this,'Hesap Ayarları')"><span>⚙</span>Hesap Ayarları</button></div>
+        </nav>
+        <div class="side-bottom"><button class="logout" onclick="showScreen('login')">↪ &nbsp; Güvenli çıkış yap</button></div>
+      </aside>
+      <section class="main"><header class="dash-header"><span class="crumb">Yönetim Paneli &nbsp;/&nbsp; <b id="crumbTitle">Sınav Yükle</b></span><div class="dash-actions"><button class="theme" onclick="toggleTheme()"><span id="themeIconPanel">☀</span> Tema</button><button class="user-avatar" id="headerAvatar" aria-label="Hesap ayarları" onclick="setSection(document.querySelector('[data-section=account]'),'Hesap Ayarları')">B</button><button class="header-logout" onclick="logout()">Çıkış Yap ↪</button></div></header>
+        <div class="dash-content"><div class="welcome"><b>✦ &nbsp;Hoş geldiniz, Burak</b><small>Sınav süreçlerinizi buradan yönetebilirsiniz.</small></div>
+          <div class="dash-title"><div><p class="eyebrow">SINAV YÖNETİMİ</p><h1 id="sectionTitle">Sınav Yükle</h1><p id="sectionDescription">Sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.</p></div><button class="btn" onclick="demoAction()">＋ &nbsp;<span id="actionTitle">Sınav dosyası seç</span></button></div>
+          <section id="dashboardEmpty" class="empty"><div class="empty-art">▤</div><h2 id="emptyTitle">İlk sınavınızı yükleyin</h2><p id="emptyDescription">Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın.</p><button class="btn" onclick="demoAction()">＋ &nbsp;Başlayın</button></section>
+          <section id="calendarPanel" class="calendar-panel">
+            <div class="calendar-heading"><h2 id="calendarMonthTitle"></h2><div class="calendar-controls"><button onclick="changeCalendarMonth(-1)" aria-label="Önceki ay">‹</button><button onclick="goCalendarToday()">Bugün</button><button onclick="changeCalendarMonth(1)" aria-label="Sonraki ay">›</button></div></div>
+            <div id="calendarGrid" class="calendar-grid"></div><div class="calendar-legend"><span><i></i>Bugün</span><span><i class="weekend-mark"></i>Hafta sonu</span><span><i class="holiday-mark"></i>Resmî tatil</span></div>
+            <p class="calendar-note">Dinî bayram günleri 2025–2030 takvim bilgilerine göre listelenmiştir.</p>
+          </section>
+          <section id="breakPanel" class="break-panel">
+            <div class="break-heading"><span>☕</span><div><p class="eyebrow">KISA BİR MOLA</p><h2>Kuşunla engelleri aş</h2></div></div>
+            <p>Minik kuşu engellerin üzerinden uçur. Zıplamak için Boşluk, ↑ veya oyun alanına tıkla.</p>
+            <div id="breakStage" class="break-stage" onclick="jumpGame()"><canvas id="breakCanvas" width="720" height="210"></canvas><div id="breakOverlay" class="break-overlay"><span class="bird-mascot" aria-hidden="true">🐦</span><strong id="gameMessage">Hazır olduğunda başla</strong><span id="gameSubMessage">Kısa bir mola ver, reflekslerini dene.</span><button class="btn" onclick="event.stopPropagation();startGame()">Oyuna başla</button></div></div>
+            <div class="break-footer"><span>Skor <b id="gameScore">0</b></span><span>Oyun yalnızca bu bölüm açıkken çalışır.</span></div>
+          </section>
+          <section id="rebuilderPanel" class="tool-panel"><iframe class="tool-frame" src="./rebuilder.html" title="Sınav Listesi Düzenleyici" sandbox="allow-scripts allow-downloads" referrerpolicy="no-referrer"></iframe></section>
+          <section id="pdfToolsPanel" class="tool-panel"><iframe class="tool-frame pdf-tool-frame" src="./apps/web/public/araclar/pdf-tools.html" title="PDF ve Excel Araçları" sandbox="allow-scripts allow-downloads" referrerpolicy="no-referrer"></iframe></section>
+          <section id="profilePanel" class="profile-panel">
+            <h2>Hesap bilgileri</h2><p>Ad, soyad ve iletişim bilgilerinizi düzenleyin.</p>
+            <form id="profileForm" class="profile-fields" onsubmit="saveProfile(event)">
+              <label>Ad<input name="firstName" id="profileFirstName" value="Burak" required maxlength="80"></label>
+              <label>Soyad<input name="lastName" id="profileLastName" maxlength="80"></label>
+              <label>E-posta<input name="email" id="profileEmail" type="email" maxlength="254"></label>
+              <label>Telefon<input name="phone" id="profilePhone" type="tel" maxlength="30"></label>
+              <button class="btn" type="submit">Bilgileri kaydet</button>
+              <span id="profileMessage" class="profile-message" role="status"></span>
+            </form>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+  <main id="contact" class="screen">
+    <div class="wrap">
+      <header class="header"><a class="brand" href="#" onclick="showScreen('home');return false"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><div class="actions"><button class="theme" onclick="toggleTheme()"><span id="themeIconContact">☾</span> <span class="theme-label" id="themeLabelContact">Karanlık</span></button><button class="link" style="border:0;background:none;cursor:pointer" onclick="goBackFromContact()">← Geri</button></div></header>
+      <section class="contact-wrap">
+        <p class="eyebrow">BİZİMLE İLETİŞİME GEÇİN</p><h1 style="font-size:clamp(38px,5vw,55px)">Size nasıl yardımcı<br><em>olabiliriz?</em></h1>
+        <p class="description">Sorularınız, önerileriniz veya destek talepleriniz için bize mesaj gönderin.</p>
+        <div class="contact-grid">
+          <form id="contactForm" class="contact-card" onsubmit="sendContact(event)">
+            <h2>Mesaj gönderin</h2><p>Formu gönderdiğinizde e-posta uygulamanız açılır.</p>
+            <label>Ad Soyad<input name="name" required minlength="2" maxlength="120"></label>
+            <label>E-posta<input name="email" type="email" required maxlength="254"></label>
+            <label>Telefon (isteğe bağlı)<input name="phone" type="tel" maxlength="30"></label>
+            <label>Mesajınız<textarea name="message" rows="5" required minlength="5" maxlength="3000"></textarea></label>
+            <button class="btn" type="submit">E-posta ile gönder →</button>
+            <small>Mesajınız destek@kurumsalsinav.com adresine taslak e-posta olarak hazırlanır; göndermeyi e-posta uygulamanızda onaylamanız gerekir.</small>
+            <span id="contactNotice" class="contact-note" role="status"></span>
+          </form>
+          <div class="contact-card"><h2>İstanbul, Maltepe</h2><p>Kurumsal Sınav · İstanbul</p>
+            <iframe title="İstanbul Maltepe haritası" src="https://maps.google.com/maps?q=Maltepe%2C%20Istanbul%2C%20Turkey&t=&z=13&ie=UTF8&iwloc=&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+            <a href="https://www.google.com/maps/search/?api=1&query=Maltepe%2C+Istanbul%2C+Turkey" target="_blank" rel="noreferrer">Google Haritalar'da aç ↗</a>
+            <a href="mailto:destek@kurumsalsinav.com">destek@kurumsalsinav.com</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+    let selectedRole = "dealer";
+    let previousScreen = "home";
+    let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    let gameRunning = false;
+    let gameFrame = 0;
+    let gameState = { y: 0, velocity: 0, obstacles: [], frame: 0, score: 0 };
+    const sectionDescriptions = {
+      "Sınav Yükle": "Sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.",
+      "FMT Yükle": "Optik verilerinizin okunacağı FMT format şablonunu ekleyin.",
+      "FMT Düzenle": "Kayıtlı FMT şablonlarını ve alan eşlemelerini düzenleyin.",
+      "FMT Sil": "Kullanılmayan format şablonlarını kontrol edin ve kaldırın.",
+      "Kurum Ekle": "Sisteme yeni bir okul veya kurum kaydı ekleyin.",
+      "Kurum Düzenle": "Kayıtlı kurum bilgilerini görüntüleyip güncelleyin.",
+      "Kurum Sil": "Sisteminizde kayıtlı kurumları yönetin.",
+      "Öğrenciler": "Öğrenci kayıtlarını ve sınav katılımlarını görüntüleyin.",
+      "Takvim": "Ayları gezin; hafta sonlarını ve resmî tatilleri görüntüleyin.",
+      "Mola": "Kısa bir mola verip mini kuş oyununu oynayabilirsiniz.",
+      "Sınav Listesi Düzenleyici": "Öğrenci listenizi düzenleyin, derslik dağılımını planlayın ve çıktınızı indirin.",
+      "PDF ve Excel Araçları": "PDF ve Excel dosyalarını tarayıcınızda birleştirin, bölün veya dönüştürün."
+    };
+    function showScreen(id) {
+      if (id !== "contact") {
+        previousScreen = id;
+      }
+      if (id !== "panel") {
+        stopGame();
+      }
+      document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      const nextUrl = new URL(window.location.href);
+      nextUrl.hash = id;
+      window.history.replaceState(null, "", nextUrl);
+      window.scrollTo(0, 0);
+    }
+    function toggleTheme() {
+      const dark = document.documentElement.dataset.theme !== "dark";
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+      try { localStorage.setItem("kurumsal-theme", dark ? "dark" : "light"); } catch (_) {}
+      ["themeIcon", "themeIconLogin", "themeIconPanel", "themeIconContact"].forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = dark ? "☀" : "☾";
+      });
+      ["themeLabel", "themeLabelLogin", "themeLabelContact"].forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = dark ? "Aydınlık" : "Karanlık";
+      });
+      const panelThemeButton = document.getElementById("themeIconPanel");
+      if (panelThemeButton) panelThemeButton.parentElement.lastChild.textContent = dark ? " Tema" : " Tema";
+    }
+    function selectRole(button) {
+      selectedRole = button.dataset.role;
+      document.querySelectorAll(".role").forEach((role) => {
+        role.classList.toggle("selected", role === button);
+        role.querySelector(".role-status").textContent = role === button ? "●" : "○";
+      });
+      const fields = document.getElementById("loginFields");
+      const message = document.getElementById("loginMessage");
+      message.className = "message";
+      message.textContent = "";
+      fields.style.display = selectedRole === "dealer" ? "block" : "none";
+      if (selectedRole !== "dealer") {
+        message.textContent = "Bu giriş yöntemi henüz aktif değil. Lütfen sistem yöneticisine başvurun.";
+        message.className = "message show";
+      }
+    }
+    function login(event) {
+      event.preventDefault();
+      const message = document.getElementById("loginMessage");
+      if (selectedRole !== "dealer") {
+        message.textContent = "Bu giriş yöntemi henüz aktif değil. Lütfen sistem yöneticisine başvurun.";
+        message.className = "message show";
+        return;
+      }
+      const form = new FormData(event.currentTarget);
+      if (form.get("username") === "burak" && form.get("password") === "burak") {
+        try { sessionStorage.setItem("kurumsal-demo-session", "dealer"); } catch (_) {}
+        message.textContent = "Giriş başarılı. Yönetim paneli açılıyor...";
+        message.className = "message show ok";
+        window.setTimeout(() => {
+          showScreen("panel");
+          setSection(document.querySelector(".nav-item.current"), "Sınav Yükle");
+        }, 450);
+      } else {
+        message.textContent = "Kullanıcı adı veya şifre yanlış.";
+        message.className = "message show";
+      }
+    }
+    function setSection(button, title) {
+      document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("current"));
+      if (button) button.classList.add("current");
+      document.getElementById("crumbTitle").textContent = title;
+      document.getElementById("sectionTitle").textContent = title;
+      document.getElementById("sectionDescription").textContent = sectionDescriptions[title] || "Kişisel bilgilerinizi görüntüleyip güncelleyin.";
+      document.getElementById("actionTitle").textContent = title === "Sınav Yükle" ? "Sınav dosyası seç" : title;
+      const isAccount = title === "Hesap Ayarları";
+      const isCalendar = title === "Takvim";
+      const isBreak = title === "Mola";
+      const isRebuilder = title === "Sınav Listesi Düzenleyici";
+      const isPdfTools = title === "PDF ve Excel Araçları";
+      const hasTool = isRebuilder || isPdfTools;
+      document.getElementById("dashboardEmpty").style.display = isAccount || isCalendar || isBreak || hasTool ? "none" : "flex";
+      document.getElementById("profilePanel").classList.toggle("visible", isAccount);
+      document.getElementById("calendarPanel").classList.toggle("visible", isCalendar);
+      document.getElementById("breakPanel").classList.toggle("visible", isBreak);
+      document.getElementById("rebuilderPanel").classList.toggle("visible", isRebuilder);
+      document.getElementById("pdfToolsPanel").classList.toggle("visible", isPdfTools);
+      document.querySelector(".dash-title > .btn").style.display = isAccount || isCalendar || isBreak || hasTool ? "none" : "inline-flex";
+      if (!isAccount && !isCalendar && !isBreak && !hasTool) {
+        document.getElementById("emptyTitle").textContent = title === "Sınav Yükle" ? "İlk sınavınızı yükleyin" : title + " işlemlerine başlayın";
+        document.getElementById("emptyDescription").textContent = sectionDescriptions[title];
+      }
+      if (isCalendar) renderCalendar();
+      if (!isBreak) stopGame();
+    }
+    function saveProfile(event) {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const profile = {
+        firstName: String(form.get("firstName") || "").trim(),
+        lastName: String(form.get("lastName") || "").trim(),
+        email: String(form.get("email") || "").trim(),
+        phone: String(form.get("phone") || "").trim()
+      };
+      try { localStorage.setItem("kurumsal-profile", JSON.stringify(profile)); } catch (_) {}
+      document.getElementById("sideName").textContent = `${profile.firstName} ${profile.lastName}`.trim();
+      const initial = profile.firstName.charAt(0).toUpperCase() || "B";
+      ["sideAvatar", "headerAvatar"].forEach((id) => { document.getElementById(id).textContent = initial; });
+      document.getElementById("profileMessage").textContent = "Hesap bilgileriniz bu tarayıcıda kaydedildi.";
+    }
+    function sendContact(event) {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const subject = encodeURIComponent(`Web sitesi iletişim formu: ${form.get("name")}`);
+      const body = encodeURIComponent(
+        `Ad Soyad: ${form.get("name")}\nE-posta: ${form.get("email")}\nTelefon: ${form.get("phone") || "-"}\n\nMesaj:\n${form.get("message")}`
+      );
+      document.getElementById("contactNotice").textContent = "E-posta uygulamanız açılıyor. Mesajı göndermek için gönderimi uygulamanızda onaylayın.";
+      window.location.href = `mailto:destek@kurumsalsinav.com?subject=${subject}&body=${body}`;
+    }
+    function goBackFromContact() {
+      showScreen(previousScreen);
+    }
+    function logout() {
+      const toast = document.getElementById("toast");
+      try { sessionStorage.removeItem("kurumsal-demo-session"); } catch (_) {}
+      toast.textContent = "Güvenli çıkış yaptınız. Ana sayfaya yönlendiriliyorsunuz.";
+      toast.classList.add("show");
+      window.setTimeout(() => {
+        toast.classList.remove("show");
+        showScreen("home");
+      }, 1100);
+    }
+    const monthLabels = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const weekdayLabels = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+    const fixedHolidays = {
+      "01-01": "Yılbaşı", "04-23": "Ulusal Egemenlik ve Çocuk Bayramı", "05-01": "Emek ve Dayanışma Günü",
+      "05-19": "Atatürk'ü Anma, Gençlik ve Spor Bayramı", "07-15": "Demokrasi ve Millî Birlik Günü",
+      "08-30": "Zafer Bayramı", "10-29": "Cumhuriyet Bayramı"
+    };
+    const religiousHolidays = {
+      2025: [["2025-03-30", "2025-04-01", "Ramazan Bayramı"], ["2025-06-06", "2025-06-09", "Kurban Bayramı"]],
+      2026: [["2026-03-20", "2026-03-22", "Ramazan Bayramı"], ["2026-05-27", "2026-05-30", "Kurban Bayramı"]],
+      2027: [["2027-03-10", "2027-03-12", "Ramazan Bayramı"], ["2027-05-17", "2027-05-20", "Kurban Bayramı"]],
+      2028: [["2028-02-27", "2028-02-29", "Ramazan Bayramı"], ["2028-05-06", "2028-05-09", "Kurban Bayramı"]],
+      2029: [["2029-02-15", "2029-02-17", "Ramazan Bayramı"], ["2029-04-24", "2029-04-27", "Kurban Bayramı"]],
+      2030: [["2030-02-05", "2030-02-07", "Ramazan Bayramı"], ["2030-04-13", "2030-04-16", "Kurban Bayramı"]]
+    };
+    function isoDate(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+    function holidayName(date) {
+      const key = isoDate(date);
+      const fixed = fixedHolidays[key.slice(5)];
+      if (fixed) return fixed;
+      return (religiousHolidays[date.getFullYear()] || []).find(([start, end]) => key >= start && key <= end)?.[2] || "";
+    }
+    function renderCalendar() {
+      document.getElementById("calendarMonthTitle").textContent = `${monthLabels[calendarMonth.getMonth()]} ${calendarMonth.getFullYear()}`;
+      const grid = document.getElementById("calendarGrid");
+      grid.replaceChildren();
+      weekdayLabels.forEach((label) => {
+        const day = document.createElement("span");
+        day.className = "calendar-weekday";
+        day.textContent = label;
+        grid.append(day);
+      });
+      const offset = (new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay() + 6) % 7;
+      const count = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate();
+      for (let index = 0; index < offset + count; index += 1) {
+        const cell = document.createElement("span");
+        if (index >= offset) {
+          const date = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), index - offset + 1);
+          const holiday = holidayName(date);
+          cell.className = `calendar-day${[0, 6].includes(date.getDay()) ? " weekend" : ""}${isoDate(date) === isoDate(new Date()) ? " today" : ""}${holiday ? " holiday" : ""}`;
+          cell.textContent = String(date.getDate());
+          if (holiday) cell.title = holiday;
+        } else {
+          cell.className = "calendar-day";
+          cell.setAttribute("aria-hidden", "true");
+        }
+        grid.append(cell);
+      }
+    }
+    function changeCalendarMonth(amount) {
+      calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + amount, 1);
+      renderCalendar();
+    }
+    function goCalendarToday() {
+      calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      renderCalendar();
+    }
+    function startGame() {
+      stopGame();
+      gameState = { y: 0, velocity: 0, obstacles: [], frame: 0, score: 0 };
+      document.getElementById("gameScore").textContent = "0";
+      document.getElementById("gameMessage").textContent = "Hazır olduğunda başla";
+      document.getElementById("gameSubMessage").textContent = "Boşluk, ↑ veya tıkla: engellerin üzerinden zıpla.";
+      document.getElementById("breakOverlay").style.display = "none";
+      gameRunning = true;
+      gameFrame = window.requestAnimationFrame(drawGame);
+    }
+    function stopGame() {
+      gameRunning = false;
+      if (gameFrame) window.cancelAnimationFrame(gameFrame);
+      gameFrame = 0;
+    }
+    function jumpGame() {
+      if (!gameRunning) return;
+      if (gameState.y === 0) gameState.velocity = -11;
+    }
+    function drawBird(context, x, y, frame) {
+      context.save();
+      context.translate(x, y);
+      context.fillStyle = "#f5a640";
+      context.beginPath();
+      context.moveTo(-15, 0); context.lineTo(-29, -7); context.lineTo(-24, 5); context.closePath();
+      context.fill();
+      context.fillStyle = "#fff8e9";
+      context.beginPath(); context.ellipse(0, 0, 19, 14, -.12, 0, Math.PI * 2); context.fill();
+      context.fillStyle = "#f1c96a";
+      context.save(); context.translate(-3, 3); context.rotate(Math.sin(frame / 5) * .5);
+      context.beginPath(); context.ellipse(-3, 1, 10, 5, -.2, 0, Math.PI * 2); context.fill(); context.restore();
+      context.fillStyle = "#f5a640";
+      context.beginPath(); context.moveTo(15, -3); context.lineTo(27, 1); context.lineTo(15, 5); context.closePath(); context.fill();
+      context.fillStyle = "#20334c";
+      context.beginPath(); context.arc(9, -6, 2, 0, Math.PI * 2); context.fill();
+      context.strokeStyle = "#c87939"; context.lineWidth = 2;
+      context.beginPath(); context.moveTo(-5, 12); context.lineTo(-5, 16); context.moveTo(5, 12); context.lineTo(5, 16); context.stroke();
+      context.restore();
+    }
+    function drawGame() {
+      if (!gameRunning || !document.getElementById("breakPanel").classList.contains("visible")) {
+        stopGame();
+        return;
+      }
+      const canvas = document.getElementById("breakCanvas");
+      const context = canvas.getContext("2d");
+      const ground = canvas.height - 30;
+      const state = gameState;
+      state.frame += 1;
+      state.velocity += 0.55;
+      state.y = Math.min(0, state.y + state.velocity);
+      if (state.y === 0) state.velocity = 0;
+      if (state.frame % 92 === 0) state.obstacles.push({ x: canvas.width, width: 20, height: 29 });
+      const sky = context.createLinearGradient(0, 0, 0, canvas.height);
+      sky.addColorStop(0, "#8bd5f1"); sky.addColorStop(.7, "#d4f1fb"); sky.addColorStop(.701, "#d9efbf"); sky.addColorStop(1, "#9acb78");
+      context.fillStyle = sky; context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "#fff2bd"; context.beginPath(); context.arc(610, 46, 22, 0, Math.PI * 2); context.fill();
+      for (let index = 0; index < 4; index += 1) {
+        const cloudX = (index * 205 + 65 - state.frame * (.18 + index * .025) % (canvas.width + 90) + canvas.width + 90) % (canvas.width + 90) - 45;
+        const cloudY = 37 + (index % 2) * 28;
+        context.fillStyle = "#ffffffb8"; context.beginPath();
+        context.ellipse(cloudX, cloudY, 27, 8, 0, 0, Math.PI * 2);
+        context.ellipse(cloudX - 13, cloudY + 1, 12, 7, 0, 0, Math.PI * 2);
+        context.ellipse(cloudX + 11, cloudY - 5, 13, 10, 0, 0, Math.PI * 2); context.fill();
+      }
+      context.fillStyle = "#a9d8bd"; context.beginPath();
+      context.moveTo(0, ground - 27); context.quadraticCurveTo(150, ground - 72, 300, ground - 26);
+      context.quadraticCurveTo(510, ground - 83, canvas.width, ground - 28); context.lineTo(canvas.width, ground); context.lineTo(0, ground); context.fill();
+      context.fillStyle = "#80bd75"; context.fillRect(0, ground, canvas.width, canvas.height - ground);
+      context.fillStyle = "#e9f5d2"; context.fillRect(0, ground, canvas.width, 3);
+      context.fillStyle = "#719f5f";
+      for (let index = 0; index < 23; index += 1) {
+        const grassX = (index * 43 - state.frame * 2.4 % (canvas.width + 20) + canvas.width + 20) % (canvas.width + 20);
+        context.fillRect(grassX, ground + 10 + (index % 3) * 4, 12, 2);
+      }
+      drawBird(context, 72, ground - 20 + state.y, state.frame);
+      state.obstacles = state.obstacles.filter((obstacle) => obstacle.x + obstacle.width > 0);
+      let collided = false;
+      for (const obstacle of state.obstacles) {
+        obstacle.x -= 4 + Math.min(3, state.score / 350);
+        const top = ground - obstacle.height;
+        context.fillStyle = "#357b58";
+        context.fillRect(obstacle.x + 7, top, 8, obstacle.height);
+        context.fillRect(obstacle.x, top + 8, 11, 6);
+        context.fillRect(obstacle.x + 12, top + 15, 8, 6);
+        context.fillStyle = "#65ad70"; context.fillRect(obstacle.x + 9, top + 2, 3, obstacle.height - 3);
+        if (obstacle.x < 90 && obstacle.x + obstacle.width > 48 && state.y > -obstacle.height + 8) collided = true;
+      }
+      if (collided) { gameOver(); return; }
+      state.score += 1;
+      if (state.frame % 8 === 0) document.getElementById("gameScore").textContent = String(state.score);
+      gameFrame = window.requestAnimationFrame(drawGame);
+    }
+    function gameOver() {
+      stopGame();
+      document.getElementById("gameMessage").textContent = "Oyun bitti";
+      document.getElementById("gameSubMessage").textContent = `Skorun: ${gameState.score}`;
+      document.querySelector("#breakOverlay .btn").textContent = "Tekrar oyna";
+      document.getElementById("breakOverlay").style.display = "flex";
+    }
+    window.addEventListener("keydown", (event) => {
+      if ((event.code === "Space" || event.code === "ArrowUp") && document.getElementById("breakPanel").classList.contains("visible")) {
+        event.preventDefault();
+        jumpGame();
+      }
+    });
+    function demoAction() {
+      const toast = document.getElementById("toast");
+      toast.textContent = "Bu özellik demo sayfasında henüz aktif değil.";
+      toast.classList.add("show");
+      window.setTimeout(() => toast.classList.remove("show"), 2800);
+    }
+    try {
+      const savedTheme = localStorage.getItem("kurumsal-theme");
+      const isDark = savedTheme !== "light";
+      document.documentElement.dataset.theme = isDark ? "dark" : "light";
+      if (isDark) {
+        ["themeIcon", "themeIconLogin", "themeIconPanel", "themeIconContact"].forEach((id) => {
+          const element = document.getElementById(id);
+          if (element) element.textContent = "☀";
+        });
+        ["themeLabel", "themeLabelLogin", "themeLabelContact"].forEach((id) => {
+          const element = document.getElementById(id);
+          if (element) element.textContent = "Aydınlık";
+        });
+      } else {
+        ["themeIcon", "themeIconLogin", "themeIconPanel", "themeIconContact"].forEach((id) => {
+          const element = document.getElementById(id);
+          if (element) element.textContent = "☾";
+        });
+        ["themeLabel", "themeLabelLogin", "themeLabelContact"].forEach((id) => {
+          const element = document.getElementById(id);
+          if (element) element.textContent = "Karanlık";
+        });
+      }
+      const savedProfile = JSON.parse(localStorage.getItem("kurumsal-profile") || "null");
+      if (savedProfile) {
+        document.getElementById("profileFirstName").value = savedProfile.firstName || "";
+        document.getElementById("profileLastName").value = savedProfile.lastName || "";
+        document.getElementById("profileEmail").value = savedProfile.email || "";
+        document.getElementById("profilePhone").value = savedProfile.phone || "";
+        document.getElementById("sideName").textContent = `${savedProfile.firstName || ""} ${savedProfile.lastName || ""}`.trim();
+        const initial = (savedProfile.firstName || "B").charAt(0).toUpperCase();
+        document.getElementById("sideAvatar").textContent = initial;
+        document.getElementById("headerAvatar").textContent = initial;
+      }
+    } catch (_) {}
+    const requestedScreen = window.location.hash.slice(1);
+    if (requestedScreen === "panel") {
+      try { sessionStorage.removeItem("kurumsal-demo-session"); } catch (_) {}
+      document.getElementById("loginForm").reset();
+      showScreen("login");
+    } else if (["login", "contact"].includes(requestedScreen)) {
+      showScreen(requestedScreen);
+    } else {
+      showScreen("home");
+    }
+  </script>
+</body>
+</html>

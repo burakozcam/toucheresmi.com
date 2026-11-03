@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  DEALER
+  SCHOOL_ADMIN
+  STUDENT
+}
+
+enum ApplicationType {
+  DEALER
+  SCHOOL
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  APPROVED
+  REJECTED
+}
+
+enum UploadStatus {
+  RECEIVED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role
+  dealerId     String?
+  schoolId     String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  dealer       Dealer?  @relation(fields: [dealerId], references: [id], onDelete: SetNull)
+  school       School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  createdFmts  FmtTemplate[] @relation("FmtCreator")
+
+  @@index([dealerId])
+  @@index([schoolId])
+  @@index([role, active])
+}
+
+model Dealer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users  User[]
+  schools School[]
+}
+
+model School {
+  id        String   @id @default(cuid())
+  dealerId  String?
+  name      String
+  code      String?  @unique
+  city      String?
+  district  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dealer        Dealer?       @relation(fields: [dealerId], references: [id], onDelete: SetNull)
+  users         User[]
+  exams         Exam[]
+  uploads       UploadBatch[]
+
+  @@index([dealerId])
+  @@index([name])
+}
+
+model Application {
+  id           String            @id @default(cuid())
+  type         ApplicationType
+  organization String
+  contactName String
+  email        String
+  phone        String
+  message      String?
+  status       ApplicationStatus @default(PENDING)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([status, createdAt])
+  @@index([type, createdAt])
+}
+
+model FmtTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  recordWidth Int
+  createdById String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User          @relation("FmtCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  fields    FmtField[]
+  uploads   UploadBatch[]
+
+  @@index([active, name])
+}
+
+model FmtField {
+  id           String   @id @default(cuid())
+  fmtTemplateId String
+  key          String
+  label        String
+  startIndex   Int
+  endIndex     Int
+  dataType     String   @default("TEXT")
+  required     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  fmtTemplate FmtTemplate @relation(fields: [fmtTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([fmtTemplateId, key])
+  @@index([fmtTemplateId, startIndex])
+}
+
+model UploadBatch {
+  id             String       @id @default(cuid())
+  schoolId       String
+  fmtTemplateId  String
+  originalName   String
+  storageKey     String
+  checksum       String?
+  status         UploadStatus @default(RECEIVED)
+  errorMessage   String?
+  uploadedAt     DateTime     @default(now())
+  processedAt    DateTime?
+
+  school      School      @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  fmtTemplate FmtTemplate @relation(fields: [fmtTemplateId], references: [id], onDelete: Restrict)
+  records     ScanRecord[]
+
+  @@index([schoolId, uploadedAt])
+  @@index([fmtTemplateId, status])
+}
+
+model Exam {
+  id          String   @id @default(cuid())
+  schoolId    String
+  name        String
+  examDate    DateTime
+  academicYear String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  school   School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  subjects ExamSubject[]
+
+  @@index([schoolId, examDate])
+}
+
+model ExamSubject {
+  id              String  @id @default(cuid())
+  examId          String
+  name            String
+  questionCount   Int
+  wrongPerCorrect Int     @default(0)
+
+  exam       Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  answerKey  AnswerKey?
+
+  @@unique([examId, name])
+}
+
+model AnswerKey {
+  id            String   @id @default(cuid())
+  examSubjectId String   @unique
+  answers       Json
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  examSubject ExamSubject @relation(fields: [examSubjectId], references: [id], onDelete: Cascade)
+}
+
+model ScanRecord {
+  id            String   @id @default(cuid())
+  uploadBatchId String
+  studentNumber String
+  studentName   String?
+  classroom     String?
+  answers       Json
+  rawLineNumber Int?
+  createdAt     DateTime @default(now())
+
+  uploadBatch UploadBatch @relation(fields: [uploadBatchId], references: [id], onDelete: Cascade)
+
+  @@unique([uploadBatchId, studentNumber])
+  @@index([studentNumber])
+  @@index([classroom])
+}

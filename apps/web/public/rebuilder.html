@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Sınav Listesi Düzenleyici</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .glass { background: rgba(255,255,255,.82); backdrop-filter: blur(14px); }
+    .table-scroll { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+    input, select, button { font: inherit; }
+    .field { width: 100%; border: 1px solid #dbe2ea; border-radius: .65rem; background: #fff; padding: .6rem .75rem; color: #172033; outline: none; }
+    .field:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.13); }
+    .cell-input { width: 100%; min-width: 90px; border: 1px solid transparent; border-radius: .45rem; background: transparent; padding: .4rem .5rem; }
+    .cell-input:hover, .cell-input:focus { border-color: #dbe2ea; background: #fff; outline: none; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .7rem; padding: .65rem 1rem; font-size: .875rem; font-weight: 650; transition: .15s ease; }
+    .btn:disabled { opacity: .48; cursor: not-allowed; }
+    .btn-primary { background: #4f46e5; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #4338ca; }
+    .btn-secondary { background: #fff; color: #334155; border: 1px solid #dbe2ea; }
+    .btn-secondary:hover:not(:disabled) { background: #f8fafc; }
+    .btn-soft { background: #eef2ff; color: #4338ca; }
+    .btn-danger { background: #fff1f2; color: #be123c; }
+    .drop-zone.dragover { border-color: #6366f1; background: #eef2ff; }
+  </style>
+</head>
+<body class="min-h-screen bg-[#f5f7fb] text-slate-800">
+  <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl"></div>
+    <div class="absolute -left-32 top-[28rem] h-96 w-96 rounded-full bg-cyan-100/40 blur-3xl"></div>
+  </div>
+
+  <header class="border-b border-slate-200/80 bg-white/75">
+    <div class="mx-auto flex max-w-[1480px] items-center justify-between px-5 py-4 sm:px-8">
+      <a href="#" class="flex items-center gap-3" aria-label="Sınav Listesi Düzenleyici ana sayfa">
+        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3.75h7.5L19 8.25v12A1.75 1.75 0 0 1 17.25 22h-10A1.75 1.75 0 0 1 5.5 20.25V5.5A1.75 1.75 0 0 1 7.25 3.75Z" stroke="currentColor" stroke-width="1.7"/><path d="M14 4v5h5M8.5 13h7M8.5 17h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </span>
+        <span>
+          <span class="block text-sm font-bold tracking-tight text-slate-900">Sınav Listesi</span>
+          <span class="block text-xs text-slate-500">Düzenleyici · Yerel çalışma alanı</span>
+        </span>
+      </a>
+      <span class="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 sm:flex">
+        <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Verileriniz tarayıcıda işlenir
+      </span>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-[1480px] px-5 py-8 sm:px-8 sm:py-10">
+    <section class="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+      <div>
+        <p class="mb-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+          <span class="h-1.5 w-1.5 rounded-full bg-indigo-500"></span> SINAV OPERASYONLARI
+        </p>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Sınav listenizi hazırlayın.</h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">Öğrenci dosyanızı yükleyin, sütunları eşleştirin ve derslik dağıtımını birkaç adımda tamamlayın.</p>
+      </div>
+      <div class="flex flex-col items-start gap-3 sm:items-end">
+        <label class="flex items-center gap-2 text-xs font-medium text-slate-500">
+          <input id="opticalNamePrefix" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+          Ad sütununa ### öneki ekle
+        </label>
+        <div class="flex flex-wrap gap-2">
+          <button id="exportCsvBtn" class="btn btn-secondary" disabled>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            CSV indir
+          </button>
+          <button id="exportXlsxBtn" class="btn btn-primary" disabled>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Excel indir
+          </button>
+        </div>
+        <p id="exportStatus" class="text-right text-[11px] text-slate-400"></p>
+      </div>
+    </section>
+
+    <section class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <article class="glass rounded-2xl border border-white p-4 shadow-sm sm:p-5">
+        <p class="text-xs font-medium text-slate-500">Toplam öğrenci</p><p id="statStudents" class="mt-2 text-2xl font-bold tracking-tight">0</p>
+        <p class="mt-1 text-xs text-slate-400">Aktif listedeki kayıtlar</p>
+      </article>
+      <article class="glass rounded-2xl border border-white p-4 shadow-sm sm:p-5">
+        <p class="text-xs font-medium text-slate-500">Derslik kapasitesi</p><p id="statCapacity" class="mt-2 text-2xl font-bold tracking-tight">0</p>
+        <p class="mt-1 text-xs text-slate-400">Tanımlı toplam koltuk</p>
+      </article>
+      <article class="glass rounded-2xl border border-white p-4 shadow-sm sm:p-5">
+        <p class="text-xs font-medium text-slate-500">Yerleştirilen</p><p id="statAssigned" class="mt-2 text-2xl font-bold tracking-tight text-emerald-600">0</p>
+        <p class="mt-1 text-xs text-slate-400">Dersliği ve sırası atanan</p>
+      </article>
+      <article class="glass rounded-2xl border border-white p-4 shadow-sm sm:p-5">
+        <p class="text-xs font-medium text-slate-500">Yerleşemeyen</p><p id="statUnassigned" class="mt-2 text-2xl font-bold tracking-tight text-rose-600">0</p>
+        <p class="mt-1 text-xs text-slate-400">Kapasite veya kısıt nedeniyle</p>
+      </article>
+    </section>
+
+    <section class="mb-6 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,.95fr)_minmax(0,1.35fr)]">
+      <article class="glass min-w-0 rounded-2xl border border-white p-5 shadow-sm sm:p-6">
+        <div class="mb-4 flex items-start justify-between gap-3">
+          <div><p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">01 · Veri yükleme</p><h2 class="mt-1 text-lg font-bold text-slate-900">Öğrenci dosyası</h2></div>
+          <span class="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">XLSX · XLS · CSV</span>
+        </div>
+        <label id="dropZone" for="fileInput" class="drop-zone flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 px-4 py-5 text-center transition hover:border-indigo-300 hover:bg-indigo-50/50">
+          <span class="mb-2 grid h-10 w-10 place-items-center rounded-xl bg-white text-indigo-600 shadow-sm">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v4.25c0 .97.78 1.75 1.75 1.75h10.5c.97 0 1.75-.78 1.75-1.75V14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="text-sm font-semibold text-slate-700">Dosya seçin veya buraya bırakın</span>
+          <span id="fileName" class="mt-1 text-xs text-slate-400">Sayfa ve başlık satırı seçilebilir · Dosya sunucuya gönderilmez</span>
+        </label>
+        <input id="fileInput" type="file" accept=".xlsx,.xls,.csv,.tsv" class="sr-only">
+        <div id="mappingPanel" class="mt-5 hidden">
+          <div class="mb-3 flex items-center justify-between">
+            <p class="text-sm font-semibold text-slate-800">Sütun eşleştirme</p>
+            <span id="sourceColumnCount" class="text-xs text-slate-400"></span>
+          </div>
+          <div class="mb-4 grid gap-3 sm:grid-cols-2">
+            <label class="text-xs font-medium text-slate-600">Çalışma sayfası
+              <select id="sourceSheetSelect" class="field mt-1.5 py-2 text-sm"></select>
+            </label>
+            <div>
+              <label for="headerRowNumber" class="mb-1.5 block text-xs font-medium text-slate-600">Başlık satırı (Excel satır numarası)</label>
+              <div class="flex items-center gap-3">
+                <input id="headerRowNumber" type="number" min="1" value="1" class="field w-28 py-2 text-sm">
+                <label class="flex items-center gap-2 text-xs text-slate-500">
+                  <input id="headerRowEnabled" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                  Dosyada başlık satırı var
+                </label>
+              </div>
+            </div>
+          </div>
+          <div id="mappingFields" class="grid grid-cols-1 gap-3 sm:grid-cols-2"></div>
+          <div class="mt-4">
+            <div class="mb-2 flex items-center justify-between gap-2">
+              <p class="text-xs font-semibold text-slate-600">Dosya önizlemesi</p>
+              <span id="previewInfo" class="text-[11px] text-slate-400"></span>
+            </div>
+            <div class="table-scroll max-h-52 overflow-auto rounded-lg border border-slate-200">
+              <table class="min-w-full text-left text-[11px]">
+                <thead id="sourcePreviewHead" class="sticky top-0 bg-slate-50 text-slate-600"></thead>
+                <tbody id="sourcePreviewBody" class="divide-y divide-slate-100 bg-white"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <button id="importBtn" class="btn btn-primary">Eşleştir ve listeye aktar</button>
+          </div>
+        </div>
+        <div id="uploadMessage" class="mt-3 hidden rounded-lg px-3 py-2 text-sm" role="status"></div>
+      </article>
+
+      <article class="glass min-w-0 overflow-hidden rounded-2xl border border-white p-5 shadow-sm sm:p-6">
+        <div class="mb-4 flex items-start justify-between gap-3">
+          <div><p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">02 · Sınav ayarları</p><h2 class="mt-1 text-lg font-bold text-slate-900">Sınav bilgileri ve toplu işlemler</h2></div>
+          <span id="selectedCount" class="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">0 seçili</span>
+        </div>
+        <div class="mb-4 grid min-w-0 gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 sm:grid-cols-2">
+          <label class="text-xs font-semibold text-slate-600">Yayınevi / sınav adı
+            <input id="examName" class="field mt-1.5 min-w-0" placeholder="Örn. Kasım Türkiye Geneli Deneme Sınavı">
+          </label>
+          <label class="text-xs font-semibold text-slate-600">Alternatif sınav adı
+            <input id="alternateExamName" class="field mt-1.5 min-w-0" value="ALTERNATİF SINAV">
+          </label>
+          <p class="text-[11px] leading-4 text-slate-500 sm:col-span-2">Bu adlar Excel’den alınmaz. Alternatif sınav seçtiğiniz öğrenciler için çıktıdaki sınav adı alternatif adla değiştirilir.</p>
+        </div>
+        <div class="mb-4 min-w-0 rounded-xl border border-slate-100 bg-white/70 p-4">
+          <div class="mb-2 flex items-center justify-between gap-2">
+            <p class="text-xs font-semibold text-slate-600">Kullanılabilir seanslar</p>
+            <span class="text-[11px] text-slate-400">Gerekmeyen seansları kapatabilirsiniz</span>
+          </div>
+          <div id="sessionToggles" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="grid min-w-0 gap-4 sm:grid-cols-2">
+          <div class="rounded-xl border border-slate-100 bg-white/70 p-4">
+            <label for="selectedCampus" class="mb-2 block text-xs font-semibold text-slate-600">Seçilen öğrencilere kampüs ata</label>
+            <div class="flex min-w-0 flex-wrap gap-2"><input id="selectedCampus" list="campusSuggestions" class="field min-w-0 flex-1" placeholder="Excel’deki kampüs adı"><button id="applyCampusBtn" class="btn btn-soft whitespace-nowrap" disabled>Uygula</button></div>
+            <div class="mt-3 flex min-w-0 flex-wrap gap-2"><input id="otherCampus" list="campusSuggestions" class="field min-w-0 flex-1" placeholder="Diğer öğrencilerin kampüsü"><button id="applyOtherCampusBtn" class="btn btn-secondary whitespace-nowrap" disabled>Diğerlerine</button></div>
+            <p class="mt-2 text-[11px] leading-4 text-slate-400">“Diğerlerine” seçili olmayan tüm öğrencilere uygulanır.</p>
+          </div>
+          <div class="rounded-xl border border-slate-100 bg-white/70 p-4">
+            <label for="bulkSession" class="mb-2 block text-xs font-semibold text-slate-600">Seçilen öğrencilere seans ata</label>
+            <div class="flex min-w-0 flex-wrap gap-2"><select id="bulkSession" class="field min-w-0 flex-1"><option value="">Seans seçin</option></select><button id="applySessionBtn" class="btn btn-soft whitespace-nowrap" disabled>Uygula</button></div>
+            <button id="cloneNumericBtn" class="btn btn-secondary mt-3 w-full" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 8V5.75C8 4.78 8.78 4 9.75 4h8.5c.97 0 1.75.78 1.75 1.75v8.5c0 .97-.78 1.75-1.75 1.75H16M6 8h8.25C15.22 8 16 8.78 16 9.75v8.5c0 .97-.78 1.75-1.75 1.75h-8.5C4.78 20 4 19.22 4 18.25v-8.5C4 8.78 4.78 8 5.75 8H6Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              Sözel yerleşimi onayla · Sayısalı oluştur
+            </button>
+          </div>
+          <div class="min-w-0 rounded-xl border border-slate-100 bg-white/70 p-4 sm:col-span-2">
+            <label for="examDate" class="mb-2 block text-xs font-semibold text-slate-600">Sınav tarihi</label>
+            <div class="flex flex-wrap gap-2">
+              <input id="examDate" class="field w-full sm:max-w-xs" type="date" aria-label="Sınav tarihi">
+              <button id="applyDateBtn" class="btn btn-soft whitespace-nowrap" disabled>Tarihi tüm listeye uygula</button>
+            </div>
+            <p class="mt-2 text-[11px] leading-4 text-slate-400">Tarih Excel’den alınmaz. Seçip uyguladığınızda sözel ve oluşturulmuş sayısal listedeki herkese aktarılır.</p>
+          </div>
+          <div id="numericApprovalStatus" class="min-w-0 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-500 sm:col-span-2">
+            Önce sözel oturum öğrencilerini dersliklere yerleştirin. Sayısal oturum, onayınızdan sonra aynı yerleşimle oluşturulur.
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="mb-6 grid gap-5 xl:grid-cols-[1fr_1fr]">
+      <article class="glass rounded-2xl border border-white p-5 shadow-sm sm:p-6">
+        <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div><p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">03 · Dağıtım planı</p><h2 class="mt-1 text-lg font-bold text-slate-900">Derslikler ve kapasiteler</h2></div>
+          <div class="flex flex-wrap gap-2">
+            <button id="addRoomBtn" class="btn btn-secondary">＋ Derslik ekle</button>
+            <button id="distributeBtn" type="button" class="btn btn-primary">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 19h16M6 19V9l6-4 6 4v10M9 19v-5h6v5M9 10h.01M15 10h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Öğrencileri dağıt
+            </button>
+          </div>
+        </div>
+        <form id="roomForm" class="mb-4 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+          <select id="roomCampus" class="field min-w-0" required>
+            <option value="">Önce öğrenci listesini yükleyin</option>
+          </select>
+          <input id="roomName" class="field min-w-0" placeholder="Derslik adı (Örn. 3. kat 304)" required>
+          <datalist id="campusSuggestions"></datalist>
+          <div class="flex min-w-0 gap-2 sm:col-span-2">
+            <input id="roomCapacity" class="field min-w-0" type="number" min="1" step="1" placeholder="Kapasite" required>
+            <input id="roomFloor" class="field min-w-0 max-w-24" type="number" step="1" placeholder="Kat" aria-label="Derslik katı">
+            <button class="btn btn-primary shrink-0" type="submit">Ekle</button>
+          </div>
+        </form>
+        <div id="roomList" class="space-y-2"></div>
+        <p class="mt-3 text-xs leading-5 text-slate-400">Kampüs seçenekleri Excel’in L sütunundan gelir. Önce kampüsü seçip o kampüse ait derslikleri ekleyin; dağıtımda öğrenciler yalnızca kendi kampüslerinin dersliklerine yerleştirilir. Kat bilgisi boşsa derslik adından tahmin edilir.</p>
+      </article>
+
+      <article class="glass rounded-2xl border border-white p-5 shadow-sm sm:p-6">
+        <div class="mb-4">
+          <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">04 · Öğrenci kısıtları</p>
+          <h2 class="mt-1 text-lg font-bold text-slate-900">Özel yerleştirme kuralları</h2>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="rounded-xl border border-slate-100 bg-white/70 p-4">
+            <label for="fixedRoomStudent" class="mb-2 block text-xs font-semibold text-slate-600">Öğrenciyi belirli dersliğe sabitle</label>
+            <select id="fixedRoomStudent" class="field"><option value="">Öğrenci seçin</option></select>
+            <div class="mt-2 flex gap-2">
+              <select id="fixedRoomSelect" class="field min-w-0"><option value="">Derslik seçin</option></select>
+              <button id="setFixedRoomBtn" class="btn btn-soft whitespace-nowrap" disabled>Sabitle</button>
+            </div>
+            <button id="clearFixedRoomBtn" class="mt-2 text-xs font-medium text-slate-500 hover:text-rose-600" disabled>Seçilen öğrencinin sabitlemesini kaldır</button>
+            <p class="mt-2 text-[11px] leading-4 text-slate-400">Dağıtımda öğrenci yalnızca seçtiğiniz dersliğe yerleştirilir. Kişi kapasitesi ve diğer kısıtlar yine uygulanır.</p>
+          </div>
+          <div class="rounded-xl border border-slate-100 bg-white/70 p-4">
+            <label class="mb-2 block text-xs font-semibold text-slate-600">Aynı derslikte olmasın</label>
+            <div class="grid gap-2">
+              <select id="apartStudentA" class="field"><option value="">İlk öğrenci</option></select>
+              <div class="flex gap-2"><select id="apartStudentB" class="field min-w-0"><option value="">İkinci öğrenci</option></select><button id="addApartBtn" class="btn btn-soft whitespace-nowrap" disabled>Ekle</button></div>
+            </div>
+          </div>
+        </div>
+        <div id="constraintSummary" class="mt-3 text-xs text-slate-400">Henüz özel kısıt eklenmedi.</div>
+      </article>
+    </section>
+
+    <section class="glass overflow-hidden rounded-2xl border border-white shadow-sm">
+      <div class="flex flex-col justify-between gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:px-6">
+        <div><p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">05 · Öğrenci listesi</p><h2 class="mt-1 text-lg font-bold text-slate-900">Kayıtlar <span id="tableCount" class="ml-1 text-sm font-medium text-slate-400">0</span></h2></div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="selectAllBtn" class="btn btn-secondary px-3 py-2 text-xs" disabled>Tümünü seç</button>
+          <button id="clearBtn" class="btn btn-secondary px-3 py-2 text-xs" disabled>Listeyi temizle</button>
+        </div>
+      </div>
+      <div id="emptyState" class="px-6 py-14 text-center">
+        <span class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <p class="font-semibold text-slate-700">Henüz öğrenci eklenmedi</p><p class="mt-1 text-sm text-slate-400">Başlamak için yukarıdan bir Excel veya CSV dosyası yükleyin.</p>
+      </div>
+      <div id="tableWrap" class="table-scroll hidden max-h-[620px] overflow-auto">
+        <table class="w-full min-w-[1760px] border-collapse text-left text-xs">
+          <thead id="studentHead" class="sticky top-0 z-10 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"></thead>
+          <tbody id="studentBody" class="divide-y divide-slate-100 bg-white/70"></tbody>
+        </table>
+      </div>
+      <div id="tableFooter" class="hidden border-t border-slate-100 px-5 py-3 text-xs text-slate-400 sm:px-6">
+        Hücreleri doğrudan düzenleyebilirsiniz. Derslik dağıtımı yapılınca sıra numarası otomatik güncellenir.
+      </div>
+    </section>
+    <p class="mt-5 text-center text-xs text-slate-400">Dosyalarınız bu sayfada işlenir. Excel içe/dışa aktarma için internet bağlantısı ve SheetJS kütüphanesinin yüklenmesi gerekir.</p>
+  </main>
+
+  <div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-50 hidden -translate-x-1/2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-xl" role="status"></div>
+
+  <script>
+    (() => {
+      "use strict";
+      const $ = (selector) => document.querySelector(selector);
+      const columns = [
+        ["order", "Sıra Numarası"], ["studentNo", "Öğrenci No"], ["tcNo", "TC No"],
+        ["firstName", "Ad"], ["lastName", "Soyad"], ["fullName", "Ad Soyad"],
+        ["grade", "Sınıf"], ["campus", "Kampüs"], ["session", "Seans"],
+        ["examType", "Sınav Türü"], ["date", "Tarih"], ["examSession", "Oturum"],
+        ["room", "Derslik"]
+      ];
+      const mapTargets = [
+        ["studentNo", "Öğrenci No"], ["tcNo", "TC No"], ["firstName", "Ad"],
+        ["lastName", "Soyad"], ["grade", "Sınıf"],
+        ["campus", "Kampüs (Excel L sütunu)"], ["session", "Seans"]
+      ];
+      const sessionOptions = [
+        { name: "Sabah", enabled: true },
+        { name: "Öğle", enabled: true },
+        { name: "İkindi", enabled: true }
+      ];
+      let students = [];
+      let rooms = [];
+      let sourceWorkbook = null;
+      let sourceRows = [];
+      let sourceHeaders = [];
+      let nextId = 1;
+      let numericCreated = false;
+      let toastTimer;
+
+      const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[char]);
+      const normalize = (value) => String(value ?? "").toLocaleLowerCase("tr-TR").replace(/ı/g, "i").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+      const excelColumnName = (index) => {
+        let value = index + 1;
+        let name = "";
+        while (value > 0) {
+          value -= 1;
+          name = String.fromCharCode(65 + value % 26) + name;
+          value = Math.floor(value / 26);
+        }
+        return name;
+      };
+      const showToast = (message, error = false) => {
+        const toast = $("#toast");
+        toast.textContent = message;
+        toast.className = `pointer-events-none fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-xl ${error ? "bg-rose-700" : "bg-slate-900"}`;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.add("hidden"), 3200);
+      };
+      const showUploadMessage = (message, error = false) => {
+        const box = $("#uploadMessage");
+        box.textContent = message;
+        box.className = `mt-3 rounded-lg px-3 py-2 text-sm ${error ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`;
+      };
+      const setFileName = (name) => { $("#fileName").textContent = name; };
+      const gradeNumber = (student) => {
+        const match = String(student.grade ?? "").match(/\d+/);
+        return match ? Number(match[0]) : -1;
+      };
+      const inferredFloor = (room) => {
+        if (Number.isInteger(room.floor)) return room.floor;
+        const explicitFloor = room.name.match(/(-?\d+)\s*\.?\s*kat/i);
+        if (explicitFloor) return Number(explicitFloor[1]);
+        const roomNumber = room.name.match(/\b(\d{3})\b/);
+        return roomNumber ? Number(roomNumber[1][0]) : null;
+      };
+      const verbalStudents = () => students.filter((student) => student.examSession !== "SAYISAL OTURUM");
+      const selectedStudents = () => verbalStudents().filter((student) => student.selected);
+      const studentFullName = (student) => [student.firstName, student.lastName].filter(Boolean).join(" ");
+      const studentLabel = (student) => `${studentFullName(student) || "İsimsiz öğrenci"}${student.studentNo ? ` · ${student.studentNo}` : ""}`;
+      const activeSessions = () => sessionOptions.filter((session) => session.enabled).map((session) => session.name);
+      const campusNames = () => [...new Map([
+        ...students.map((student) => student.campus),
+        ...rooms.map((room) => room.campus)
+      ].map((value) => {
+        const campus = String(value || "").trim();
+        return [normalize(campus), campus];
+      }).filter(([key, campus]) => key && campus)).values()];
+      const resolveCampusName = (value) => {
+        const campus = String(value || "").trim();
+        return campusNames().find((name) => normalize(name) === normalize(campus)) || campus;
+      };
+      const studentExamName = (student) => student.alternativeExam
+        ? $("#alternateExamName").value.trim() || "ALTERNATİF SINAV"
+        : $("#examName").value.trim();
+      const assignCampus = (student, campus) => {
+        student.campus = resolveCampusName(campus);
+        const fixedRoom = rooms.find((room) => room.id === student.fixedRoomId);
+        if (fixedRoom && normalize(fixedRoom.campus) !== normalize(student.campus)) student.fixedRoomId = null;
+      };
+      const clearAssignments = () => students.forEach((student) => {
+        student.room = "";
+        student.roomId = null;
+        student.seat = null;
+        student.order = "";
+      });
+      const discardNumericCopies = () => {
+        if (!numericCreated) return false;
+        students = students.filter((student) => student.examSession !== "SAYISAL OTURUM");
+        numericCreated = false;
+        return true;
+      };
+
+      function updateControls() {
+        const count = students.length;
+        const selectedCount = selectedStudents().length;
+        const capacity = rooms.reduce((sum, room) => sum + room.capacity, 0);
+        const assigned = students.filter((student) => student.room).length;
+        const verbalRoster = verbalStudents();
+        const verbalPlacementComplete = verbalRoster.length > 0 && verbalRoster.every((student) => student.room);
+        $("#statStudents").textContent = count.toLocaleString("tr-TR");
+        $("#statCapacity").textContent = capacity.toLocaleString("tr-TR");
+        $("#statAssigned").textContent = assigned.toLocaleString("tr-TR");
+        $("#statUnassigned").textContent = Math.max(0, count - assigned).toLocaleString("tr-TR");
+        $("#selectedCount").textContent = `${selectedCount} seçili`;
+        $("#tableCount").textContent = count.toLocaleString("tr-TR");
+        const selectedDate = $("#examDate").value;
+        const dateAppliedToAll = Boolean(selectedDate) && students.every((student) => student.date === selectedDate);
+        const exportReady = count > 0 && Boolean($("#examName").value.trim()) && dateAppliedToAll;
+        $("#exportCsvBtn").disabled = !exportReady;
+        $("#exportXlsxBtn").disabled = !exportReady;
+        $("#exportStatus").textContent = count === 0
+          ? "İndirme için önce öğrenci listesi yükleyin."
+          : !$("#examName").value.trim()
+            ? "İndirme için yayınevi / sınav adını girin."
+            : !dateAppliedToAll
+              ? "İndirme için tarihi seçip tüm listeye uygulayın."
+              : numericCreated ? "Sözel ve sayısal çıktılar hazır." : "Sözel çıktı hazır.";
+        $("#cloneNumericBtn").disabled = !verbalPlacementComplete || numericCreated;
+        $("#applyDateBtn").disabled = count === 0 || !$("#examDate").value;
+        $("#applyCampusBtn").disabled = selectedCount === 0;
+        $("#applySessionBtn").disabled = selectedCount === 0;
+        $("#applyOtherCampusBtn").disabled = count === 0;
+        $("#selectAllBtn").disabled = count === 0;
+        $("#clearBtn").disabled = count === 0;
+        $("#emptyState").classList.toggle("hidden", count > 0);
+        $("#tableWrap").classList.toggle("hidden", count === 0);
+        $("#tableFooter").classList.toggle("hidden", count === 0);
+        const fixedRoomStudent = verbalStudents().find((student) => String(student.id) === $("#fixedRoomStudent").value);
+        $("#setFixedRoomBtn").disabled = !fixedRoomStudent || !$("#fixedRoomSelect").value;
+        $("#clearFixedRoomBtn").disabled = !fixedRoomStudent || fixedRoomStudent.fixedRoomId === null;
+        $("#addApartBtn").disabled = !$("#apartStudentA").value || !$("#apartStudentB").value;
+        $("#numericApprovalStatus").textContent = numericCreated
+          ? "Sözel yerleşim onaylandı. Sayısal oturum, yerleşen öğrencilerin aynı derslik ve sıra düzenindeki kopyasıdır."
+          : verbalPlacementComplete
+            ? `${verbalRoster.length} öğrencinin sözel yerleşimi tamam. Sayısal oturumu oluşturmak için onay düğmesine basın.`
+            : "Önce sözel oturum öğrencilerini dersliklere yerleştirin. Sayısal oturum, onayınızdan sonra aynı yerleşimle oluşturulur.";
+      }
+
+      function renderSessionControls() {
+        const enabledSessions = activeSessions();
+        $("#sessionToggles").innerHTML = sessionOptions.map((session) => `
+          <label class="inline-flex cursor-pointer items-center gap-2 rounded-full border ${session.enabled ? "border-indigo-200 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-slate-50 text-slate-400"} px-3 py-1.5 text-xs font-semibold transition">
+            <input type="checkbox" data-session-toggle="${escapeHtml(session.name)}" ${session.enabled ? "checked" : ""} class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+            ${escapeHtml(session.name)}
+          </label>
+        `).join("");
+        const bulkSelect = $("#bulkSession");
+        const previous = bulkSelect.value;
+        bulkSelect.innerHTML = '<option value="">Seans seçin</option>' + enabledSessions.map((session) =>
+          `<option value="${escapeHtml(session)}">${escapeHtml(session)}</option>`
+        ).join("");
+        if (enabledSessions.includes(previous)) bulkSelect.value = previous;
+        updateControls();
+      }
+
+      function renderCampusSuggestions() {
+        const campusSelect = $("#roomCampus");
+        const previous = campusSelect.value;
+        const campuses = campusNames();
+        $("#campusSuggestions").innerHTML = campuses.map((campus) =>
+          `<option value="${escapeHtml(campus)}"></option>`
+        ).join("");
+        campusSelect.innerHTML = campuses.length
+          ? `<option value="">Kampüs seçin</option>${campuses.map((campus) =>
+            `<option value="${escapeHtml(campus)}">${escapeHtml(campus)}</option>`
+          ).join("")}`
+          : '<option value="">Önce öğrenci listesini yükleyin</option>';
+        if (campuses.some((campus) => normalize(campus) === normalize(previous))) {
+          campusSelect.value = campuses.find((campus) => normalize(campus) === normalize(previous));
+        }
+      }
+
+      function renderRooms() {
+        const list = $("#roomList");
+        const campuses = campusNames();
+        if (!campuses.length) {
+          list.innerHTML = '<div class="rounded-xl border border-dashed border-slate-200 px-4 py-5 text-center text-sm text-slate-400">Derslik eklemek için önce kampüs bilgisi içeren öğrenci listesi yükleyin.</div>';
+        } else {
+          list.innerHTML = campuses.map((campus) => {
+            const campusRooms = rooms.filter((room) => normalize(room.campus) === normalize(campus));
+            const roomItems = campusRooms.length ? campusRooms.map((room) => {
+              const floor = inferredFloor(room);
+              return `<div class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-white/70 px-4 py-3">
+              <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-700">${escapeHtml(room.name)}</p><p class="mt-0.5 truncate text-xs text-slate-400">${escapeHtml(room.campus)} · ${floor === null ? "Kat belirtilmedi" : `${floor}. kat`} · ${room.capacity} kişilik</p></div>
+              <button class="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" data-remove-room="${room.id}" aria-label="${escapeHtml(room.name)} dersliğini sil">✕</button>
+            </div>`;
+            }).join("") : '<p class="rounded-lg border border-dashed border-slate-200 px-3 py-3 text-xs text-slate-400">Bu kampüse henüz derslik eklenmedi.</p>';
+            const totalCapacity = campusRooms.reduce((sum, room) => sum + room.capacity, 0);
+            return `<section class="space-y-2 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-sm font-bold text-indigo-900">${escapeHtml(campus)}</h3>
+                <span class="text-xs font-medium text-indigo-700">${campusRooms.length} derslik · ${totalCapacity} kişilik kapasite</span>
+              </div>
+              <div class="space-y-2">${roomItems}</div>
+            </section>`;
+          }).join("");
+        }
+        updateControls();
+      }
+
+      function renderStudentSelects() {
+        const primaryStudents = verbalStudents();
+        renderCampusSuggestions();
+        const selectors = ["#fixedRoomStudent", "#apartStudentA", "#apartStudentB"];
+        selectors.forEach((selector) => {
+          const element = $(selector);
+          const placeholder = selector === "#fixedRoomStudent" ? "Öğrenci seçin" : selector === "#apartStudentA" ? "İlk öğrenci" : "İkinci öğrenci";
+          const previous = element.value;
+          element.innerHTML = `<option value="">${placeholder}</option>` + primaryStudents.map((student) =>
+            `<option value="${student.id}">${escapeHtml(studentLabel(student))}</option>`
+          ).join("");
+          if (primaryStudents.some((student) => String(student.id) === previous)) element.value = previous;
+        });
+        const roomSelect = $("#fixedRoomSelect");
+        const previousRoom = roomSelect.value;
+        const fixedStudent = primaryStudents.find((student) => String(student.id) === $("#fixedRoomStudent").value);
+        const eligibleRooms = fixedStudent
+          ? rooms.filter((room) => normalize(room.campus) === normalize(fixedStudent.campus))
+          : rooms;
+        roomSelect.innerHTML = '<option value="">Derslik seçin</option>' + eligibleRooms.map((room) =>
+          `<option value="${room.id}">${escapeHtml(room.campus)} · ${escapeHtml(room.name)} · ${room.capacity} kişi</option>`
+        ).join("");
+        if (eligibleRooms.some((room) => String(room.id) === previousRoom)) roomSelect.value = previousRoom;
+        const rules = [];
+        const fixed = primaryStudents.filter((student) => student.fixedRoomId !== null);
+        if (fixed.length) rules.push(`${fixed.length} öğrenci sabit dersliğe atandı`);
+        const pairCount = primaryStudents.reduce((sum, student) => sum + student.avoidIds.filter((id) => student.id < id).length, 0);
+        if (pairCount) rules.push(`${pairCount} ayrı derslik kuralı`);
+        $("#constraintSummary").textContent = rules.length ? rules.join(" · ") : "Henüz özel kısıt eklenmedi.";
+        updateControls();
+      }
+
+      function renderTable() {
+        const head = $("#studentHead");
+        const body = $("#studentBody");
+        head.innerHTML = `<tr><th class="w-10 px-4 py-3"><input id="headerSelect" type="checkbox" aria-label="Tüm öğrencileri seç" class="h-4 w-4 rounded border-slate-300 text-indigo-600"></th><th class="px-3 py-3">Sıra no</th><th class="px-3 py-3">Öğrenci no</th><th class="px-3 py-3">TC no</th><th class="px-3 py-3">Ad</th><th class="px-3 py-3">Soyad</th><th class="px-3 py-3">Ad Soyad</th><th class="px-3 py-3">Sınıf</th><th class="px-3 py-3">Kampüs</th><th class="px-3 py-3">Seans</th><th class="px-3 py-3">Sınav adı</th><th class="px-3 py-3">Öğrenci seçeneği</th><th class="px-3 py-3">Tarih</th><th class="px-3 py-3">Oturum</th><th class="px-3 py-3">Derslik</th><th class="px-3 py-3">Sabit derslik</th><th class="px-3 py-3">İşlem</th></tr>`;
+        body.innerHTML = students.map((student) => `<tr class="hover:bg-indigo-50/40">
+          <td class="px-4 py-2.5"><input type="checkbox" data-select-student="${student.id}" ${student.selected ? "checked" : ""} ${student.examSession === "SAYISAL OTURUM" ? "disabled" : ""} aria-label="${escapeHtml(studentLabel(student))} seç" class="h-4 w-4 rounded border-slate-300 text-indigo-600"></td>
+          <td class="px-3 py-2.5 font-semibold text-slate-700">${escapeHtml(student.order)}</td>
+          ${["studentNo", "tcNo", "firstName", "lastName"].map((key) => `<td class="px-2 py-1.5"><input class="cell-input" data-student-id="${student.id}" data-key="${key}" value="${escapeHtml(student[key])}" ${student.examSession === "SAYISAL OTURUM" ? "readonly" : ""} aria-label="${columns.find(([columnKey]) => columnKey === key)[1]}"></td>`).join("")}
+          <td class="px-3 py-2.5 font-medium text-slate-600">${escapeHtml(studentFullName(student))}</td>
+          ${["grade", "campus"].map((key) => `<td class="px-2 py-1.5"><input class="cell-input" data-student-id="${student.id}" data-key="${key}" value="${escapeHtml(student[key])}" ${student.examSession === "SAYISAL OTURUM" ? "readonly" : ""} aria-label="${columns.find(([columnKey]) => columnKey === key)[1]}"></td>`).join("")}
+          <td class="px-2 py-1.5"><select class="cell-input" data-student-id="${student.id}" data-key="session" aria-label="Seans" ${student.examSession === "SAYISAL OTURUM" ? "disabled" : ""}><option value="">—</option>${activeSessions().map((session) => `<option value="${escapeHtml(session)}" ${student.session === session ? "selected" : ""}>${escapeHtml(session)}</option>`).join("")}</select></td>
+          <td class="px-3 py-2.5"><span class="max-w-48 truncate font-medium text-slate-700" title="${escapeHtml(studentExamName(student))}">${escapeHtml(studentExamName(student) || "Sınav adı girilmedi")}</span></td>
+          <td class="px-3 py-2.5"><label class="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium text-amber-700"><input type="checkbox" data-alternative-student="${student.id}" ${student.alternativeExam ? "checked" : ""} ${student.examSession === "SAYISAL OTURUM" ? "disabled" : ""} class="h-3.5 w-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">Alternatif sınav</label></td>
+          <td class="px-3 py-2.5 text-slate-600">${escapeHtml(student.date)}</td>
+          <td class="px-3 py-2.5"><span class="rounded-md ${student.examSession === "SAYISAL OTURUM" ? "bg-violet-50 text-violet-700" : "bg-indigo-50 text-indigo-700"} px-2 py-1 font-medium">${escapeHtml(student.examSession)}</span></td>
+          <td class="px-3 py-2.5"><span class="${student.room ? "rounded-md bg-emerald-50 px-2 py-1 text-emerald-700" : "text-slate-400"}">${escapeHtml(student.room || "—")}</span></td>
+          <td class="px-3 py-2.5 text-slate-500">${escapeHtml(rooms.find((room) => room.id === student.fixedRoomId)?.name || "—")}</td>
+          <td class="px-3 py-2.5"><button class="rounded-md px-2 py-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600" data-delete-student="${student.sourceStudentId || student.id}" aria-label="Öğrenciyi sil">Sil</button></td>
+        </tr>`).join("");
+        const primaryStudents = verbalStudents();
+        $("#headerSelect").checked = primaryStudents.length > 0 && primaryStudents.every((student) => student.selected);
+        updateControls();
+      }
+
+      function readFile(file) {
+        if (!file) return;
+        if (!window.XLSX) {
+          showUploadMessage("Excel/CSV kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edip sayfayı yenileyin.", true);
+          return;
+        }
+        const extension = file.name.split(".").pop().toLowerCase();
+        if (!["xlsx", "xls", "csv", "tsv"].includes(extension)) {
+          showUploadMessage("Bu dosya türü desteklenmiyor. XLSX, XLS, CSV veya TSV dosyası seçin.", true);
+          return;
+        }
+        setFileName(file.name);
+        $("#mappingPanel").classList.add("hidden");
+        showUploadMessage("Dosya okunuyor…");
+        const reader = new FileReader();
+        reader.onerror = () => showUploadMessage("Dosya okunamadı. Dosyanın bozuk olmadığını kontrol edin.", true);
+        const isTextFile = extension === "csv" || extension === "tsv";
+        reader.onload = (event) => {
+          try {
+            sourceWorkbook = XLSX.read(event.target.result, { type: isTextFile ? "string" : "array", cellDates: true });
+            if (!sourceWorkbook.SheetNames.length) throw new Error("Dosyada okunabilir bir çalışma sayfası bulunamadı.");
+            $("#sourceSheetSelect").innerHTML = sourceWorkbook.SheetNames.map((name) =>
+              `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+            ).join("");
+            loadSelectedSheet();
+            $("#mappingPanel").classList.remove("hidden");
+          } catch (error) {
+            showUploadMessage(error.message || "Dosya işlenirken beklenmeyen bir hata oluştu.", true);
+          }
+        };
+        if (isTextFile) reader.readAsText(file, "UTF-8");
+        else reader.readAsArrayBuffer(file);
+      }
+
+      function detectHeaderRow(rows) {
+        const knownHeaders = new Set([
+          "ogrencino", "okulno", "studentno", "studentnumber", "schoolno", "numara",
+          "tc", "tcno", "tckimlik", "tckimlikno", "kimlikno", "ad", "adi", "isim", "ogrenciadi",
+          "soyad", "soyadi", "surname", "adsoyad", "adisoyadi", "isimsoyisim", "ogrenciadisoyadi", "sinif", "sinifi", "sinifsube", "sube",
+          "kampus", "okul", "seans", "sinavturu", "sinavtur", "tarih", "oturum"
+        ]);
+        let bestIndex = -1;
+        let bestScore = 0;
+        rows.slice(0, 50).forEach((row, index) => {
+          const values = row.map((value) => normalize(value)).filter(Boolean);
+          const score = values.reduce((sum, value) => sum + Number(knownHeaders.has(value)), 0);
+          if (score > bestScore) {
+            bestScore = score;
+            bestIndex = index;
+          }
+        });
+        if (bestIndex >= 0) return bestIndex;
+        return rows.findIndex((row) => row.some((value) => String(value ?? "").trim() !== ""));
+      }
+
+      function loadSelectedSheet() {
+        if (!sourceWorkbook) return;
+        const sheet = sourceWorkbook.Sheets[$("#sourceSheetSelect").value];
+        if (!sheet) {
+          showUploadMessage("Seçilen çalışma sayfası okunamadı.", true);
+          return;
+        }
+        sourceRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+        if (!sourceRows.length || !sourceRows.some((row) => row.some((value) => String(value ?? "").trim() !== ""))) {
+          sourceHeaders = [];
+          $("#mappingPanel").classList.add("hidden");
+          showUploadMessage("Bu çalışma sayfasında okunabilir veri bulunamadı.", true);
+          return;
+        }
+        const detectedIndex = detectHeaderRow(sourceRows);
+        $("#headerRowEnabled").checked = detectedIndex >= 0;
+        $("#headerRowNumber").disabled = detectedIndex < 0;
+        $("#headerRowNumber").max = String(sourceRows.length);
+        $("#headerRowNumber").value = String(Math.max(1, detectedIndex + 1));
+        updateSourceMapping();
+        $("#mappingPanel").classList.remove("hidden");
+      }
+
+      function updateSourceMapping() {
+        const hasHeader = $("#headerRowEnabled").checked;
+        const headerIndex = hasHeader ? Number($("#headerRowNumber").value) - 1 : -1;
+        $("#headerRowNumber").disabled = !hasHeader;
+        if (hasHeader && (!Number.isInteger(headerIndex) || headerIndex < 0 || headerIndex >= sourceRows.length)) {
+          $("#importBtn").disabled = true;
+          showUploadMessage(`Başlık satırı 1 ile ${sourceRows.length} arasında olmalıdır.`, true);
+          return;
+        }
+        const referenceRow = hasHeader ? sourceRows[headerIndex] : sourceRows.find((row) => row.some((value) => String(value ?? "").trim() !== "")) || [];
+        sourceHeaders = referenceRow.map((value, index) =>
+          hasHeader ? String(value ?? "").trim() || `Sütun ${excelColumnName(index)}` : `Sütun ${excelColumnName(index)}`
+        );
+        if (!sourceHeaders.length) {
+          showUploadMessage("Seçilen başlık satırında sütun bulunamadı.", true);
+          return;
+        }
+        buildMapping();
+        renderSourcePreview(headerIndex);
+        const dataStart = hasHeader ? headerIndex + 1 : 0;
+        const dataCount = sourceRows.slice(dataStart).filter((row) => row.some((value) => String(value ?? "").trim() !== "")).length;
+        $("#importBtn").disabled = dataCount === 0;
+        if (dataCount === 0) {
+          showUploadMessage("Aktarılacak veri satırı bulunamadı. Başlık satırını kontrol edin.", true);
+          return;
+        }
+        showUploadMessage(`${sourceWorkbook.SheetNames.length} sayfa · ${dataCount} veri satırı · ${sourceHeaders.length} sütun bulundu. Örnek satırları aşağıdan kontrol edin.`);
+      }
+
+      function renderSourcePreview(headerIndex) {
+        const maxColumns = Math.min(sourceHeaders.length, 12);
+        const dataStart = headerIndex >= 0 ? headerIndex + 1 : 0;
+        const previewRows = sourceRows.slice(dataStart).filter((row) =>
+          row.some((value) => String(value ?? "").trim() !== "")
+        ).slice(0, 6);
+        $("#previewInfo").textContent = `${previewRows.length} örnek satır gösteriliyor${sourceHeaders.length > maxColumns ? ` · ilk ${maxColumns} sütun` : ""}`;
+        $("#sourcePreviewHead").innerHTML = `<tr>${sourceHeaders.slice(0, maxColumns).map((header, index) =>
+          `<th class="whitespace-nowrap border-b border-slate-200 px-2.5 py-2 font-semibold">${excelColumnName(index)} · ${escapeHtml(header)}</th>`
+        ).join("")}</tr>`;
+        $("#sourcePreviewBody").innerHTML = previewRows.length
+          ? previewRows.map((row) => `<tr>${sourceHeaders.slice(0, maxColumns).map((_, index) =>
+            `<td class="max-w-48 truncate px-2.5 py-2 text-slate-600" title="${escapeHtml(row[index])}">${escapeHtml(row[index] || "—")}</td>`
+          ).join("")}</tr>`).join("")
+          : `<tr><td colspan="${maxColumns}" class="px-3 py-4 text-center text-slate-400">Seçilen başlık satırından sonra veri satırı bulunamadı.</td></tr>`;
+      }
+
+      function buildMapping() {
+        $("#sourceColumnCount").textContent = `${sourceHeaders.length} kaynak sütun · başlık satırı ${$("#headerRowEnabled").checked ? $("#headerRowNumber").value : "yok"}`;
+        $("#mappingFields").innerHTML = mapTargets.map(([key, label]) => {
+          const target = normalize(label);
+          const headerMatch = sourceHeaders.findIndex((header) => {
+            const normalized = normalize(header);
+            return normalized === target || (key === "studentNo" && ["ogrencino", "okulno", "numara", "no", "studentno", "studentnumber", "schoolno"].includes(normalized))
+              || (key === "tcNo" && ["tc", "tckimlik", "tckimlikno", "kimlikno"].includes(normalized))
+              || (key === "firstName" && ["isim", "ad", "adi", "firstname", "givenname", "ogrenciadi"].includes(normalized))
+              || (key === "lastName" && ["soyad", "soyadi", "surname", "lastname"].includes(normalized))
+              || (key === "grade" && ["sinif", "sinifi", "sube", "sinifsube"].includes(normalized))
+              || (key === "campus" && ["kampus", "kampusu", "campus", "campusi"].includes(normalized));
+          });
+          const match = key === "campus" && sourceHeaders.length > 11 ? 11 : headerMatch;
+          return `<label class="text-xs font-medium text-slate-600">${label}<select class="field mt-1.5 py-2 text-sm" data-map-key="${key}"><option value="">Eşleştirme yok</option>${sourceHeaders.map((header, index) => `<option value="${index}" ${index === match ? "selected" : ""}>${excelColumnName(index)} · ${escapeHtml(header)}</option>`).join("")}</select></label>`;
+        }).join("");
+      }
+
+      function importMappedRows() {
+        const hasHeader = $("#headerRowEnabled").checked;
+        const firstDataRow = hasHeader ? Number($("#headerRowNumber").value) : 0;
+        if (!Number.isInteger(firstDataRow) || firstDataRow < 0 || firstDataRow > sourceRows.length) {
+          showUploadMessage("Başlık satırı numarası geçersiz.", true);
+          return;
+        }
+        const mapping = {};
+        document.querySelectorAll("[data-map-key]").forEach((select) => { mapping[select.dataset.mapKey] = select.value === "" ? -1 : Number(select.value); });
+        const get = (row, key) => mapping[key] >= 0 ? String(row[mapping[key]] ?? "").trim() : "";
+        const imported = sourceRows.slice(firstDataRow).filter((row) => row.some((value) => String(value ?? "").trim() !== "")).map((row) => {
+          const firstName = get(row, "firstName");
+          const lastName = get(row, "lastName");
+          return {
+            id: nextId++, selected: false, order: "", studentNo: get(row, "studentNo"), tcNo: get(row, "tcNo"),
+            firstName, lastName, grade: get(row, "grade"), campus: get(row, "campus"),
+            session: activeSessions().includes(get(row, "session")) ? get(row, "session") : "",
+            date: $("#examDate").value,
+            alternativeExam: false,
+            examSession: "SÖZEL OTURUM", room: "", seat: null,
+            roomId: null, fixedRoomId: null, avoidIds: []
+          };
+        });
+        if (!imported.length) {
+          showUploadMessage("Eşleştirme sonucunda aktarılacak öğrenci bulunamadı.", true);
+          return;
+        }
+        students = imported;
+        numericCreated = false;
+        renderTable();
+        renderStudentSelects();
+        showUploadMessage(`${imported.length} öğrenci listeye aktarıldı.`);
+        showToast(`${imported.length} öğrenci aktarıldı.`);
+      }
+
+      function cloneNumericSession() {
+        if (!students.length || numericCreated) return;
+        const originals = students.filter((student) => student.examSession !== "SAYISAL OTURUM");
+        if (!originals.length || originals.some((student) => !student.room || student.roomId === null)) {
+          showToast("Sayısal oturumdan önce sözel listedeki tüm öğrencileri yerleştirin.", true);
+          return;
+        }
+        if (!confirm(`${originals.length} öğrencinin sözel yerleşimi tamamlandı. Aynı derslik ve sıra düzeninde sayısal oturum oluşturulsun mu?`)) return;
+        const clones = originals.map((student) => ({
+          ...student,
+          id: nextId++,
+          sourceStudentId: student.id,
+          selected: false,
+          examSession: "SAYISAL OTURUM",
+          avoidIds: []
+        }));
+        const cloneIds = new Map(originals.map((student, index) => [student.id, clones[index].id]));
+        clones.forEach((clone, index) => {
+          clone.avoidIds = originals[index].avoidIds.map((id) => cloneIds.get(id)).filter((id) => id !== undefined);
+        });
+        students.push(...clones);
+        numericCreated = true;
+        renderTable();
+        renderStudentSelects();
+        showToast(`${originals.length} öğrenci sayısal oturum için çoğaltıldı.`);
+      }
+
+      function addRoom(event) {
+        event.preventDefault();
+        const campus = resolveCampusName($("#roomCampus").value);
+        const name = $("#roomName").value.trim();
+        const capacity = Number($("#roomCapacity").value);
+        const floorValue = $("#roomFloor").value.trim();
+        if (!campus || !name || !Number.isInteger(capacity) || capacity < 1) {
+          showToast("Kampüs adı, derslik adı ve 1 veya daha büyük tam sayı kapasite girin.", true);
+          return;
+        }
+        const hadAssignments = students.some((student) => student.room);
+        const copiesDiscarded = discardNumericCopies();
+        clearAssignments();
+        rooms.push({ id: nextId++, campus, name, capacity, floor: floorValue === "" ? null : Number(floorValue) });
+        $("#roomForm").reset();
+        renderRooms();
+        renderStudentSelects();
+        renderCampusSuggestions();
+        showToast(`Derslik eklendi.${copiesDiscarded || hadAssignments ? " Sözel dağıtımı ve sayısal onayını tekrarlayın." : ""}`);
+      }
+
+      function distributeStudents() {
+        if (!students.length) {
+          showToast("Önce öğrenci listesi yükleyin.", true);
+          return;
+        }
+        if (!rooms.length) {
+          showToast("Dağıtım için en az bir derslik ekleyin.", true);
+          return;
+        }
+        const copiesDiscarded = discardNumericCopies();
+        clearAssignments();
+        let placed = 0;
+        let order = 1;
+        const sessionStudents = verbalStudents();
+        const roomState = rooms.map((room) => ({ ...room, floor: inferredFloor(room), used: 0, assigned: [] }))
+          .sort((a, b) => (b.floor ?? -Infinity) - (a.floor ?? -Infinity) || b.capacity - a.capacity || a.name.localeCompare(b.name, "tr"));
+        const rank = new Map(sessionStudents.map((student, index) => [student.id, index]));
+        const ordered = [...sessionStudents].sort((a, b) =>
+          Number(b.fixedRoomId !== null) - Number(a.fixedRoomId !== null)
+          || gradeNumber(b) - gradeNumber(a)
+          || b.avoidIds.length - a.avoidIds.length
+          || rank.get(a.id) - rank.get(b.id)
+        );
+        const conflict = (student, room) => room.assigned.some((other) =>
+          student.avoidIds.includes(other.id) || other.avoidIds.includes(student.id)
+        );
+        ordered.forEach((student) => {
+          const room = student.fixedRoomId !== null
+            ? roomState.find((candidate) => candidate.id === student.fixedRoomId
+              && normalize(candidate.campus) === normalize(student.campus)
+              && candidate.used < candidate.capacity
+              && !conflict(student, candidate))
+            : roomState.find((candidate) => normalize(candidate.campus) === normalize(student.campus)
+              && candidate.used < candidate.capacity && !conflict(student, candidate));
+          if (!room) return;
+          room.used += 1;
+          room.assigned.push(student);
+          student.room = room.name;
+          student.roomId = room.id;
+          placed += 1;
+        });
+        roomState.forEach((room) => {
+          room.assigned.sort((a, b) =>
+            gradeNumber(b) - gradeNumber(a) || rank.get(a.id) - rank.get(b.id)
+          );
+          room.assigned.forEach((student, index) => {
+            student.seat = index + 1;
+            student.order = order++;
+          });
+        });
+        renderTable();
+        renderStudentSelects();
+        if (placed < sessionStudents.length) {
+          const studentsWithoutCampus = sessionStudents.filter((student) => !normalize(student.campus)).length;
+          const campusesWithoutRooms = [...new Set(sessionStudents
+            .filter((student) => normalize(student.campus) && !rooms.some((room) => normalize(room.campus) === normalize(student.campus)))
+            .map((student) => student.campus))];
+          const reason = studentsWithoutCampus
+            ? `${studentsWithoutCampus} öğrencinin kampüs bilgisi eksik.`
+            : campusesWithoutRooms.length
+              ? `Derslik eklenmemiş kampüsler: ${campusesWithoutRooms.join(", ")}.`
+              : "Kapasite veya öğrenci kısıtlarını kontrol edin.";
+          showToast(`${placed}/${sessionStudents.length} öğrenci yerleştirildi. ${reason}`, true);
+        } else {
+          showToast(copiesDiscarded
+            ? `${placed} sözel öğrenci yeniden yerleştirildi. Sayısal oturumu oluşturmak için tekrar onay verin.`
+            : `${placed} sözel öğrenci kapasite sınırları korunarak yerleştirildi.`);
+        }
+      }
+
+      const exportHeaders = ["SIRA NUMARASI", "SIRA NO", "Öğr. No", "TC NO", "Adı", "Soyadı", "Ad Soyad", "Sınıf", "Kampüs", "Seans", "Sınav Türü", "Tarih", "Oturum"];
+
+      function buildExportData() {
+        const verbalStudents = students.filter((student) => student.examSession !== "SAYISAL OTURUM");
+        const numericStudents = students.filter((student) => student.examSession === "SAYISAL OTURUM");
+        const rows = [];
+        const merges = [];
+        const appendMergedTitle = (title) => {
+          merges.push({ s: { r: rows.length, c: 0 }, e: { r: rows.length, c: exportHeaders.length - 1 } });
+          rows.push([title]);
+        };
+        [
+          ["SÖZEL OTURUM", verbalStudents],
+          ...(numericCreated ? [["SAYISAL OTURUM", numericStudents]] : [])
+        ].forEach(([sessionName, sessionStudents]) => {
+          if (!sessionStudents.length) return;
+          appendMergedTitle(sessionName);
+          const orderedRooms = [...rooms].sort((a, b) =>
+            (inferredFloor(b) ?? -Infinity) - (inferredFloor(a) ?? -Infinity)
+            || b.capacity - a.capacity || a.name.localeCompare(b.name, "tr")
+          );
+          orderedRooms.forEach((room) => {
+            const roster = sessionStudents.filter((student) => student.roomId === room.id || (!student.roomId && student.room === room.name));
+            if (!roster.length) return;
+            roster.sort((a, b) => gradeNumber(b) - gradeNumber(a) || (a.seat ?? Infinity) - (b.seat ?? Infinity));
+            appendMergedTitle(`${room.campus.toLocaleUpperCase("tr-TR")} · ${room.name.toLocaleUpperCase("tr-TR")} ${roster.length} KİŞİ`);
+            rows.push(exportHeaders);
+            roster.forEach((student, index) => {
+              const firstName = String(student.firstName || "");
+              const opticalFirstName = $("#opticalNamePrefix").checked && firstName ? `### ${firstName}` : firstName;
+              rows.push([
+                "SIRA NUMARASI", index + 1, student.studentNo, student.tcNo, opticalFirstName,
+                student.lastName, studentFullName(student), student.grade, student.campus, student.session,
+                studentExamName(student), student.date, sessionName
+              ]);
+            });
+          });
+          const unassigned = sessionStudents.filter((student) => !student.roomId && !student.room);
+          if (unassigned.length) {
+            appendMergedTitle(`DERSLİĞE YERLEŞMEYENLER ${unassigned.length} KİŞİ`);
+            rows.push(exportHeaders);
+            unassigned.sort((a, b) => gradeNumber(b) - gradeNumber(a));
+            unassigned.forEach((student, index) => {
+              const firstName = String(student.firstName || "");
+              const opticalFirstName = $("#opticalNamePrefix").checked && firstName ? `### ${firstName}` : firstName;
+              rows.push([
+                "SIRA NUMARASI", index + 1, student.studentNo, student.tcNo, opticalFirstName,
+                student.lastName, studentFullName(student), student.grade, student.campus, student.session,
+                studentExamName(student), student.date, sessionName
+              ]);
+            });
+          }
+        });
+        return { rows, merges };
+      }
+
+      function downloadCsv() {
+        if (!students.length) return;
+        const { rows } = buildExportData();
+        const worksheet = XLSX.utils.aoa_to_sheet(rows);
+        const csv = XLSX.utils.sheet_to_csv(worksheet, { FS: ";", forceQuotes: true });
+        const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+        downloadBlob(blob, "sinav-listesi.csv");
+      }
+      function downloadXlsx() {
+        if (!students.length) return;
+        if (!window.XLSX) {
+          showToast("Excel kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin.", true);
+          return;
+        }
+        const { rows, merges } = buildExportData();
+        const worksheet = XLSX.utils.aoa_to_sheet(rows);
+        worksheet["!merges"] = merges;
+        worksheet["!cols"] = exportHeaders.map((label) => ({ wch: Math.max(label.length + 2, 15) }));
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Sınav Listesi");
+        XLSX.writeFile(workbook, "sinav-listesi.xlsx");
+      }
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      $("#fileInput").addEventListener("change", (event) => readFile(event.target.files[0]));
+      $("#sourceSheetSelect").addEventListener("change", loadSelectedSheet);
+      $("#headerRowEnabled").addEventListener("change", updateSourceMapping);
+      $("#headerRowNumber").addEventListener("change", updateSourceMapping);
+      $("#importBtn").addEventListener("click", importMappedRows);
+      $("#cloneNumericBtn").addEventListener("click", cloneNumericSession);
+      $("#sessionToggles").addEventListener("change", (event) => {
+        const toggle = event.target.closest("[data-session-toggle]");
+        if (!toggle) return;
+        const session = sessionOptions.find((item) => item.name === toggle.dataset.sessionToggle);
+        if (!session) return;
+        const copiesDiscarded = discardNumericCopies();
+        session.enabled = toggle.checked;
+        if (!session.enabled) {
+          verbalStudents().forEach((student) => {
+            if (student.session === session.name) student.session = "";
+          });
+        }
+        renderSessionControls();
+        renderTable();
+        showToast(`${session.name} seansı ${session.enabled ? "etkinleştirildi" : "kapatıldı; öğrenci atamaları temizlendi"}.${copiesDiscarded ? " Sayısal oturumu yeniden onaylayın." : ""}`);
+      });
+      $("#roomForm").addEventListener("submit", addRoom);
+      $("#addRoomBtn").addEventListener("click", () => $("#roomName").focus());
+      $("#roomList").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove-room]");
+        if (!button) return;
+        const room = rooms.find((item) => item.id === Number(button.dataset.removeRoom));
+        if (room && !confirm(`“${room.name}” dersliği silinsin mi?`)) return;
+        const hadAssignments = students.some((student) => student.room);
+        const copiesDiscarded = discardNumericCopies();
+        rooms = rooms.filter((item) => item.id !== Number(button.dataset.removeRoom));
+        students.forEach((student) => {
+          if (student.fixedRoomId === room?.id) student.fixedRoomId = null;
+        });
+        clearAssignments();
+        renderRooms();
+        renderStudentSelects();
+        renderTable();
+        if (copiesDiscarded || hadAssignments) showToast("Derslik değiştiği için yerleşim temizlendi; sözel dağıtımı ve sayısal onayını tekrarlayın.", true);
+      });
+      $("#studentBody").addEventListener("change", (event) => {
+        const input = event.target;
+        if (input.matches("[data-select-student]")) {
+          const student = students.find((item) => item.id === Number(input.dataset.selectStudent));
+          if (student) student.selected = input.checked;
+          renderTable();
+          return;
+        }
+        if (input.matches("[data-alternative-student]")) {
+          const copiesDiscarded = discardNumericCopies();
+          const student = students.find((item) => item.id === Number(input.dataset.alternativeStudent));
+          if (!student) return;
+          student.alternativeExam = input.checked;
+          renderTable();
+          showToast(`${studentLabel(student)} için ${input.checked ? "alternatif sınav" : "ana sınav"} seçildi.${copiesDiscarded ? " Sayısal oturumu yeniden onaylayın." : ""}`);
+          return;
+        }
+        if (input.matches("[data-student-id][data-key]")) {
+          const copiesDiscarded = discardNumericCopies();
+          const student = students.find((item) => item.id === Number(input.dataset.studentId));
+          if (student) {
+            if (input.dataset.key === "campus") {
+              assignCampus(student, input.value);
+              clearAssignments();
+            } else {
+              student[input.dataset.key] = input.value;
+            }
+            if (input.dataset.key === "grade") clearAssignments();
+            if (copiesDiscarded || input.dataset.key === "firstName" || input.dataset.key === "lastName") renderTable();
+            if (input.dataset.key === "firstName" || input.dataset.key === "lastName" || input.dataset.key === "campus") {
+              renderTable();
+              renderStudentSelects();
+            }
+            if (copiesDiscarded) showToast("Liste değiştiği için sayısal kopya kaldırıldı; yeniden onaylayabilirsiniz.", true);
+          }
+        }
+      });
+      $("#studentBody").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-delete-student]");
+        if (!button) return;
+        const id = Number(button.dataset.deleteStudent);
+        const copiesDiscarded = discardNumericCopies();
+        students = students.filter((student) => student.id !== id);
+        students.forEach((student) => { student.avoidIds = student.avoidIds.filter((otherId) => otherId !== id); });
+        renderTable();
+        renderStudentSelects();
+        if (copiesDiscarded) showToast("Öğrenci listesi değiştiği için sayısal kopya kaldırıldı.", true);
+      });
+      $("#studentHead").addEventListener("change", (event) => {
+        if (!event.target.matches("#headerSelect")) return;
+        verbalStudents().forEach((student) => { student.selected = event.target.checked; });
+        renderTable();
+      });
+      $("#selectAllBtn").addEventListener("click", () => {
+        const primaryStudents = verbalStudents();
+        const select = !primaryStudents.every((student) => student.selected);
+        primaryStudents.forEach((student) => { student.selected = select; });
+        renderTable();
+      });
+      $("#clearBtn").addEventListener("click", () => {
+        if (!confirm("Listedeki tüm öğrenciler silinsin mi?")) return;
+        students = [];
+        numericCreated = false;
+        renderTable();
+        renderStudentSelects();
+      });
+      $("#applyCampusBtn").addEventListener("click", () => {
+        const campus = $("#selectedCampus").value.trim();
+        if (!campus) { showToast("Atanacak kampüs adını girin.", true); return; }
+        const copiesDiscarded = discardNumericCopies();
+        selectedStudents().forEach((student) => assignCampus(student, campus));
+        clearAssignments();
+        renderTable();
+        renderStudentSelects();
+        showToast(`${selectedStudents().length} öğrenciye kampüs atandı. Sözel dağıtımı yeniden yapın.${copiesDiscarded ? " Sayısal oturumu yeniden onaylayın." : ""}`);
+      });
+      $("#applyOtherCampusBtn").addEventListener("click", () => {
+        const campus = $("#otherCampus").value.trim();
+        if (!campus) { showToast("Diğer öğrencilere atanacak kampüs adını girin.", true); return; }
+        const copiesDiscarded = discardNumericCopies();
+        const affected = verbalStudents().filter((student) => !student.selected);
+        affected.forEach((student) => assignCampus(student, campus));
+        clearAssignments();
+        renderTable();
+        renderStudentSelects();
+        showToast(`Seçili olmayan ${affected.length} öğrenciye kampüs atandı. Sözel dağıtımı yeniden yapın.${copiesDiscarded ? " Sayısal oturumu yeniden onaylayın." : ""}`);
+      });
+      $("#applySessionBtn").addEventListener("click", () => {
+        const session = $("#bulkSession").value;
+        if (!session) { showToast("Önce bir seans seçin.", true); return; }
+        const copiesDiscarded = discardNumericCopies();
+        selectedStudents().forEach((student) => { student.session = session; });
+        renderTable();
+        showToast(`${selectedStudents().length} öğrenciye seans atandı.${copiesDiscarded ? " Sayısal oturumu yeniden onaylayın." : ""}`);
+      });
+      $("#applyDateBtn").addEventListener("click", () => {
+        const date = $("#examDate").value;
+        if (!date) {
+          showToast("Önce sınav tarihini seçin.", true);
+          return;
+        }
+        students.forEach((student) => { student.date = date; });
+        renderTable();
+        showToast(`Sınav tarihi ${students.length} öğrenciye uygulandı.`);
+      });
+      ["#examName", "#alternateExamName"].forEach((selector) => $(selector).addEventListener("input", () => {
+        renderTable();
+        updateControls();
+      }));
+      $("#setFixedRoomBtn").addEventListener("click", () => {
+        const student = verbalStudents().find((item) => String(item.id) === $("#fixedRoomStudent").value);
+        const room = rooms.find((item) => String(item.id) === $("#fixedRoomSelect").value);
+        if (!student || !room) return;
+        if (normalize(student.campus) !== normalize(room.campus)) {
+          showToast("Öğrenci yalnızca kendi kampüsündeki dersliğe sabitlenebilir.", true);
+          return;
+        }
+        const copiesDiscarded = discardNumericCopies();
+        student.fixedRoomId = room.id;
+        clearAssignments();
+        renderTable();
+        renderStudentSelects();
+        showToast(`${studentLabel(student)} öğrencisi ${room.name} dersliğine sabitlendi.${copiesDiscarded ? " Yeniden dağıtım ve onay gereklidir." : ""}`);
+      });
+      $("#clearFixedRoomBtn").addEventListener("click", () => {
+        const student = verbalStudents().find((item) => String(item.id) === $("#fixedRoomStudent").value);
+        if (!student) return;
+        const copiesDiscarded = discardNumericCopies();
+        student.fixedRoomId = null;
+        clearAssignments();
+        renderTable();
+        renderStudentSelects();
+        showToast(`${studentLabel(student)} öğrencisinin sabit derslik kuralı kaldırıldı.${copiesDiscarded ? " Yeniden dağıtım ve onay gereklidir." : ""}`);
+      });
+      $("#fixedRoomStudent").addEventListener("change", renderStudentSelects);
+      ["#fixedRoomSelect", "#apartStudentA", "#apartStudentB"].forEach((selector) => $(selector).addEventListener("change", updateControls));
+      $("#addApartBtn").addEventListener("click", () => {
+        const first = students.find((student) => String(student.id) === $("#apartStudentA").value);
+        const second = students.find((student) => String(student.id) === $("#apartStudentB").value);
+        if (!first || !second || first.id === second.id) {
+          showToast("Birbirinden farklı iki öğrenci seçin.", true);
+          return;
+        }
+        if (first.avoidIds.includes(second.id)) {
+          showToast("Bu öğrenciler için kural zaten eklenmiş.", true);
+          return;
+        }
+        const copiesDiscarded = discardNumericCopies();
+        first.avoidIds.push(second.id);
+        second.avoidIds.push(first.id);
+        clearAssignments();
+        renderTable();
+        renderStudentSelects();
+        showToast(`Ayrı derslik kuralı eklendi.${copiesDiscarded ? " Yeniden dağıtım ve onay gereklidir." : ""}`);
+      });
+      $("#exportCsvBtn").addEventListener("click", downloadCsv);
+      $("#exportXlsxBtn").addEventListener("click", downloadXlsx);
+      $("#examDate").addEventListener("change", updateControls);
+      const dropZone = $("#dropZone");
+      dropZone.addEventListener("dragover", (event) => { event.preventDefault(); dropZone.classList.add("dragover"); });
+      dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+      dropZone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        dropZone.classList.remove("dragover");
+        readFile(event.dataTransfer.files[0]);
+      });
+      $("#distributeBtn").addEventListener("click", distributeStudents);
+      renderRooms();
+      renderSessionControls();
+      renderStudentSelects();
+      renderTable();
+    })();
+  </script>
+</body>
+</html>
