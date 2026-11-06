@@ -15,19 +15,57 @@ Multi-tenant optik okuma uygulamasının başlangıç monoreposu.
 ## Başlangıç
 
 1. Node.js 20+ ve PostgreSQL 16+ kurun.
-2. `cp .env.example apps/api/.env` komutuyla API ortam dosyasını oluşturup bağlantı ve gizli anahtarı düzenleyin.
+2. `cp .env.example apps/api/.env` komutuyla API ortam dosyasını oluşturup bağlantı, güçlü JWT anahtarı ve `ADMIN_EMAIL` / `ADMIN_PASSWORD` değerlerini düzenleyin. Admin parolası en az 12 karakter ve en fazla 72 UTF-8 bayt olmalıdır.
 3. `npm install`
 4. `npm run db:generate`
 5. `npm run db:migrate`
-6. `npm run db:seed` (ilk süper yöneticiyi oluşturur; şifre ortam değişkeninden alınır.)
+6. `npm run db:seed` (ilk süper yöneticiyi oluşturur; admin bilgileri `.env` içindeki `ADMIN_EMAIL` ve `ADMIN_PASSWORD` değerlerinden alınır ve parola bcrypt ile hash'lenir.)
 7. Ayrı terminallerde `npm run dev:api` ve `npm run dev:web`.
 
-API varsayılan olarak `http://localhost:4000`, web uygulaması `http://localhost:3000` adresindedir.
+API varsayılan olarak `http://localhost:4000`, web uygulaması `http://localhost:3000` adresindedir. Web'in API adresini farklı bir ortamda `NEXT_PUBLIC_API_URL` ile belirtin. Giriş sayfasındaki **Üye ol** formuyla gönderilen üyelik talepleri varsayılan olarak `PENDING` durumundadır; yönetici onayı olmadan kullanıcı hesabı oluşturulmaz ve giriş yapılamaz. Süper yönetici panelindeki **Sistem Kullanıcıları → Üyeler** bölümünden talepler ve kayıtlı kullanıcılar listelenebilir, onaylanabilir, erişimleri kapatılabilir veya ilişkili kayıtlar izin verdiğinde silinebilir. Yönetici mevcut şifreleri göremez; yeni şifre belirleme isteği API'de bcrypt ile hash'lenerek kaydedilir. İncelenmiş başvuruların parola özetleri tutulmaz; bekleyen başvuruların parola özeti onay sırasında kullanıcı hesabına aktarılır. Admin e-posta ve ilk şifre yalnızca API `.env` dosyasındaki `ADMIN_EMAIL` ve `ADMIN_PASSWORD` değerlerinden seed edilir; gerçek değerleri kaynak koduna veya depoya eklemeyin. Yönetici tarafından kapatılan veya silinen hesapların mevcut JWT oturumları da sonraki API isteğinde geçersiz kılınır.
 İletişim formunun otomatik e-posta gönderebilmesi için API `.env` dosyasında SMTP sağlayıcınızın `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` ve sağlayıcınızda doğrulanmış `SMTP_FROM` değerlerini ayarlayın. `CONTACT_EMAIL` varsayılanı `destek@kurumsalsinav.com` adresidir. SMTP parolalarını kod deposuna eklemeyin. Web farklı bir port veya domaindeyse API'deki `WEB_ORIGIN` değerini o adrese ayarlayın.
+
+## cPanel production dağıtımı
+
+Web uygulamasındaki API istekleri `NEXT_PUBLIC_API_URL` üzerinden yapılır (giriş/kayıt, yönetici üyelik/kullanıcı işlemleri ve iletişim formu). Bu değişken Next.js build sırasında derlemeye gömüldüğünden canlı değeri build'den önce ayarlayın:
+
+```sh
+NEXT_PUBLIC_API_URL=https://api.kurumsalsinav.com npm run build
+```
+
+cPanel uygulama ortamında API için `WEB_ORIGIN=https://kurumsalsinav.com` ayarlayın. Değerde sondaki `/` olmamalıdır; API CORS yalnızca bu origin'e izin verir. API başlangıçta cPanel'in verdiği `PORT` değerini, yoksa `API_PORT` değerini (varsayılan `4000`) kullanır.
+
+API ortamında en azından `DATABASE_URL`, `JWT_SECRET` (rastgele, en az 32 karakter), `WEB_ORIGIN` ve cPanel `PORT` sağlanmıyorsa `API_PORT` ayarlayın. Neon PostgreSQL bağlantı URL'sini sır olarak saklayın ve SSL kullanın (`sslmode=require`). Migration çalıştırırken Neon'un doğrudan (pooled olmayan) bağlantı URL'si tercih edilir. Web uygulamasına build esnasında `NEXT_PUBLIC_API_URL` verin. İsteğe bağlı e-posta değişkenleri için yukarıdaki SMTP bölümüne bakın. `.env` dosyalarını repoya yüklemeyin.
+
+Monorepo kök dizininde (Node.js 20+, Linux/cPanel) temel dağıtım sırası:
+
+```sh
+npm ci
+npm run db:generate
+npm run db:migrate:deploy
+npm run db:seed
+NEXT_PUBLIC_API_URL=https://api.kurumsalsinav.com npm run build
+```
+
+`npm run db:seed` yalnızca ilk yönetici hesabı için bir kez çalıştırılmalıdır; API ortamında `ADMIN_EMAIL` ve `ADMIN_PASSWORD` tanımlı olmalıdır. Parola en az 12 karakter ve en fazla 72 UTF-8 bayt olmalıdır. Seed mevcut e-posta kaydının parolasını değiştirmez. cPanel API uygulamasının başlangıç komutu `npm run start -w @optik/api` (`apps/api/dist/src/server.js`), Next.js web uygulamasının başlangıç komutu `npm run start -w @optik/web` (`next start`) olabilir; uygulama kök dizini, startup yöntemi ve port yönlendirmesi cPanel sağlayıcısının Node.js uygulama modeline göre ayarlanmalıdır. İki uygulama aynı monorepo kökünü kullanamıyorsa yalnızca `apps/api` veya `apps/web` klasörlerini ayırıp kopyalamak yerine workspace bağımlılıklarını ve build çıktısını birlikte dağıtacak bir düzen kurun.
+
+Canlıya çıkış checklist'i:
+
+- [ ] cPanel Node.js sürümü 20 veya üstü ve web uygulaması için Next.js SSR desteği doğrulandı.
+- [ ] `api.kurumsalsinav.com` ve `kurumsalsinav.com` DNS/SSL sertifikaları etkin ve HTTPS üzerinden erişilebilir.
+- [ ] Neon üretim veritabanı oluşturuldu; `DATABASE_URL` API uygulama ortamına eklendi, bağlantıda SSL etkin.
+- [ ] API ortamında güçlü `JWT_SECRET`, `WEB_ORIGIN=https://kurumsalsinav.com` ve cPanel'in verdiği `PORT` ayarlandı.
+- [ ] Web build'inde `NEXT_PUBLIC_API_URL=https://api.kurumsalsinav.com` kullanıldı.
+- [ ] `npm ci`, `npm run db:generate`, `npm run db:migrate:deploy` ve `npm run build` başarıyla tamamlandı.
+- [ ] İlk `npm run db:seed` API ortamındaki `ADMIN_EMAIL` / `ADMIN_PASSWORD` ile bir kez çalıştırıldı; sırlar loglarda veya repoda paylaşılmadı.
+- [ ] API `https://api.kurumsalsinav.com/api/health` üzerinden `{"status":"ok"}` döndürüyor.
+- [ ] Giriş, üyelik başvurusu, yönetici onayı ve panelde kullanıcı listesi canlı ortamda kontrol edildi.
+- [ ] Tarayıcı geliştirici konsolunda CORS/HTTPS hatası yok; izin verilmeyen origin'lerden gelen istekler engelleniyor.
+- [ ] SMTP kullanılacaksa canlı e-posta gönderimi doğrulandı; yedekleme ve log inceleme yöntemi belirlendi.
 
 ## Tek dosyalık önizleme
 
-Ana dizindeki `index.html` dosyasını dosya yöneticisinden çift tıklayarak açabilirsiniz. Bu, giriş ve panel etkileşimleri olan bağımsız bir arayüz demosudur; Next.js uygulamasından ve backend/veritabanından bağımsızdır. Demo kullanıcı adı/şifresi `burak` / `burak` olarak ön yüzde bulunur; gerçek kullanıcılara açmayın.
+Ana dizindeki `index.html` dosyasını dosya yöneticisinden çift tıklayarak açabilirsiniz. Bu, giriş gerektirmeyen bağımsız bir arayüz önizlemesidir; kimlik doğrulama ve panel erişimi kapalıdır. Gerçek kayıt ve giriş için Next.js uygulamasını kullanın.
 
 Next.js iletişim formu API'deki `/api/contact` ucuyla SMTP üzerinden destek adresine e-posta gönderir; bunun çalışması için yukarıdaki SMTP ayarları gerekir. Tek dosyalık statik HTML demosu backend olmadan e-posta gönderemez; formu e-posta uygulamasında gönderime hazır bir taslak açar. Harita ve e-posta uygulaması için internet/açılış uygulaması gerekir.
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import ThemeToggle from "../theme-toggle";
+import { API_URL } from "../../lib/api";
 
 export default function ContactPage() {
   const [notice, setNotice] = useState("");
@@ -15,7 +16,7 @@ export default function ContactPage() {
     setSubmitting(true);
     setNotice("");
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/contact`, {
+      const response = await fetch(`${API_URL}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

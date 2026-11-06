@@ -5,71 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PDF ve Excel Araçları | kurumsalsinav.com</title>
   <meta name="description" content="PDF birleştirin, bölün, PNG'ye dönüştürün; görsellerden PDF oluşturun, Excel ve PDF dosyalarını tarayıcınızda dönüştürün.">
-  <meta name="theme-color" content="#0b1120">
-  <link rel="stylesheet" href="../static/css/site.2c7bd28cc7f4.css">
+  <meta name="theme-color" content="#111c30">
+  <script>if (window.parent !== window) document.documentElement.classList.add("embedded-tool");</script>
   <script>tailwind = { config: { corePlugins: { preflight: false }, darkMode: "class" } };</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    html[data-theme="light"] {
-      color-scheme: dark;
-      --primary: #ff8a65;
-      --accent: #ffbd80;
-      --ink: #f8fafc;
-      --text: #e2e8f0;
-      --muted: #9aa9bd;
-      --line: #273449;
-      --bg: #0b1120;
-      --bg-alt: #111b2d;
-      --card: #121c2d;
-      --primary-soft: rgba(255, 138, 101, .12);
-      --accent-soft: rgba(255, 189, 128, .12);
-      --primary-dark: #ffad8e;
-    }
-    body.pdf-tools { min-height: 100vh; color: #e2e8f0; background: #0b1120; }
-    .pdf-tools .site-header { background: rgba(11,17,32,.92); }
-    .pdf-tools .brand-mark { display: grid; place-items: center; border-radius: 10px 10px 10px 3px; color: #fff; background: #416eaf; font: 800 17px Manrope, sans-serif; text-decoration: none; }
+    * { box-sizing: border-box; }
+    html.embedded-tool, html.embedded-tool body { overflow: hidden; }
+    body.pdf-tools { min-height: 100vh; margin: 0; color: #e1e9f5; background: #111c30; font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif; }
     .pdf-tools main { min-height: 75vh; }
-    .pdf-hero { position: relative; overflow: hidden; padding: 62px 20px 34px; text-align: center; }
-    .pdf-hero::before { position: absolute; inset: -160px 15% auto; height: 340px; border-radius: 50%; background: rgba(255,122,89,.13); filter: blur(100px); content: ""; pointer-events: none; }
+    .pdf-hero { position: relative; overflow: hidden; padding: 40px 20px 30px; text-align: center; }
+    .pdf-hero::before { position: absolute; inset: -160px 15% auto; height: 340px; border-radius: 50%; background: rgba(80,125,190,.14); filter: blur(100px); content: ""; pointer-events: none; }
     .pdf-hero > * { position: relative; }
     .pdf-shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
     .pdf-tool-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
-    .pdf-tool-tab { min-height: 104px; padding: 14px 12px; border: 1px solid #273449; border-radius: 15px; color: #aab8ca; background: rgba(18,28,45,.8); text-align: left; transition: .18s ease; }
-    .pdf-tool-tab:hover, .pdf-tool-tab[aria-selected="true"] { border-color: rgba(255,138,101,.72); color: #fff; background: linear-gradient(145deg, rgba(255,122,89,.17), rgba(18,28,45,.94)); box-shadow: 0 10px 32px rgba(255,122,89,.09); }
-    .pdf-tool-tab .tab-icon { display: grid; width: 34px; height: 34px; margin-bottom: 10px; place-items: center; border-radius: 10px; color: #ffb49a; background: rgba(255,122,89,.13); font-size: 17px; }
+    .pdf-tool-tab { min-height: 104px; padding: 14px 12px; border: 1px solid #29364c; border-radius: 12px; color: #9caac0; background: #17243a; text-align: left; transition: .18s ease; }
+    .pdf-tool-tab:hover, .pdf-tool-tab[aria-selected="true"] { border-color: #587eb8; color: #e1e9f5; background: linear-gradient(145deg, #243653, #17243a); box-shadow: 0 10px 32px rgba(0,0,0,.16); }
+    .pdf-tool-tab .tab-icon { display: grid; width: 34px; height: 34px; margin-bottom: 10px; place-items: center; border-radius: 9px; color: #8bb2ff; background: #243653; font-size: 17px; }
     .pdf-tool-tab strong { display: block; font-size: 12px; line-height: 1.35; }
-    .pdf-tool-tab small { display: block; margin-top: 4px; color: #8190a6; font-size: 10px; }
-    .pdf-panel { margin: 18px auto 50px; padding: clamp(20px,4vw,36px); border: 1px solid #273449; border-radius: 20px; background: linear-gradient(145deg,rgba(18,28,45,.98),rgba(14,22,37,.98)); box-shadow: 0 24px 80px rgba(0,0,0,.24); }
-    .pdf-dropzone { display: grid; min-height: 210px; padding: 24px; place-content: center; justify-items: center; border: 1.5px dashed #46546b; border-radius: 16px; background: rgba(8,14,26,.42); text-align: center; cursor: pointer; transition: .2s ease; }
-    .pdf-dropzone:hover, .pdf-dropzone.is-dragging { border-color: #ff9a79; background: rgba(255,122,89,.08); }
-    .pdf-dropzone .drop-icon { display: grid; width: 52px; height: 52px; margin-bottom: 12px; place-items: center; border: 1px solid rgba(255,154,121,.25); border-radius: 15px; color: #ffb49a; background: rgba(255,122,89,.1); font-size: 23px; }
-    .pdf-dropzone strong { color: #f8fafc; font-size: 15px; }
-    .pdf-dropzone span { margin-top: 5px; color: #9aa9bd; font-size: 12px; }
+    .pdf-tool-tab small { display: block; margin-top: 4px; color: #9caac0; font-size: 10px; }
+    .pdf-panel { margin: 18px auto 36px; padding: clamp(20px,4vw,32px); border: 1px solid #29364c; border-radius: 12px; background: #17243a; box-shadow: 0 22px 65px #0005; }
+    .pdf-dropzone { display: grid; min-height: 210px; padding: 24px; place-content: center; justify-items: center; border: 1.5px dashed #465875; border-radius: 10px; background: #111c30; text-align: center; cursor: pointer; transition: .2s ease; }
+    .pdf-dropzone:hover, .pdf-dropzone.is-dragging { border-color: #8bb2ff; background: #1d2b44; }
+    .pdf-dropzone .drop-icon { display: grid; width: 52px; height: 52px; margin-bottom: 12px; place-items: center; border: 1px solid #8bb2ff40; border-radius: 12px; color: #8bb2ff; background: #243653; font-size: 23px; }
+    .pdf-dropzone strong { color: #e1e9f5; font-size: 15px; }
+    .pdf-dropzone span { margin-top: 5px; color: #9caac0; font-size: 12px; }
     .pdf-dropzone input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
     .pdf-file-list { display: grid; gap: 8px; margin-top: 14px; }
-    .pdf-file-row { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 10px 12px; border: 1px solid #273449; border-radius: 11px; background: rgba(8,14,26,.5); }
-    .pdf-file-row .file-kind { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: #ffb49a; background: rgba(255,122,89,.11); font-size: 10px; font-weight: 800; }
-    .pdf-file-row .file-name { overflow: hidden; color: #e2e8f0; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-    .pdf-file-row .file-meta { margin-left: auto; flex: 0 0 auto; color: #8190a6; font-size: 10px; }
+    .pdf-file-row { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 10px 12px; border: 1px solid #29364c; border-radius: 9px; background: #111c30; }
+    .pdf-file-row .file-kind { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 8px; color: #8bb2ff; background: #243653; font-size: 10px; font-weight: 800; }
+    .pdf-file-row .file-name { overflow: hidden; color: #e1e9f5; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .pdf-file-row .file-meta { margin-left: auto; flex: 0 0 auto; color: #9caac0; font-size: 10px; }
     .pdf-field { display: grid; gap: 7px; color: #cbd5e1; font-size: 12px; font-weight: 650; }
-    .pdf-field input, .pdf-field select { min-height: 42px; width: 100%; padding: 9px 12px; border: 1px solid #334155; border-radius: 10px; outline: 0; color: #f1f5f9; background: #0d1626; font: inherit; }
-    .pdf-field input:focus, .pdf-field select:focus { border-color: #ff9a79; box-shadow: 0 0 0 3px rgba(255,122,89,.12); }
-    .pdf-action { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 11px; color: white; background: linear-gradient(100deg,#ff7a59,#f97316); font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; transition: .18s ease; }
-    .pdf-action:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(255,122,89,.2); }
+    .pdf-field input, .pdf-field select { min-height: 42px; width: 100%; padding: 9px 12px; border: 1px solid #394963; border-radius: 8px; outline: 0; color: #e1e9f5; background: #111c30; font: inherit; }
+    .pdf-field input:focus, .pdf-field select:focus { border-color: #8bb2ff; box-shadow: 0 0 0 3px #8bb2ff20; }
+    .pdf-action { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 7px; color: white; background: #315b91; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: .18s ease; }
+    .pdf-action:hover:not(:disabled) { transform: translateY(-1px); background: #416eaf; box-shadow: 0 8px 20px #0003; }
     .pdf-action:disabled { opacity: .42; cursor: not-allowed; }
-    .pdf-status { min-height: 22px; color: #94a3b8; font-size: 12px; }
+    .pdf-status { min-height: 22px; color: #9caac0; font-size: 12px; }
     .pdf-status[data-kind="error"] { color: #fda4af; }
     .pdf-status[data-kind="success"] { color: #6ee7b7; }
-    .pdf-note { border: 1px solid rgba(96,165,250,.2); border-radius: 11px; color: #a9bad0; background: rgba(59,130,246,.06); font-size: 11px; line-height: 1.6; }
-    .pdf-text-preview { overflow: auto; max-height: 72vh; padding: 18px; border: 1px solid #273449; border-radius: 14px; background: #080e1a; }
+    .pdf-note { border: 1px solid #416eaf45; border-radius: 9px; color: #b6c8e3; background: #24365380; font-size: 11px; line-height: 1.6; }
+    .pdf-text-preview { overflow: auto; max-height: 72vh; padding: 18px; border: 1px solid #29364c; border-radius: 10px; background: #111c30; }
     .pdf-text-page { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 8px 32px rgba(0,0,0,.35); }
     .pdf-text-page canvas { display: block; }
     .pdf-text-layer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-align: initial; transform-origin: 0 0; }
     .pdf-text-layer span, .pdf-text-layer br { position: absolute; color: transparent; white-space: pre; cursor: text; transform-origin: 0 0; }
-    .pdf-text-layer ::selection { color: transparent; background: rgba(255,122,89,.38); }
+    .pdf-text-layer ::selection { color: transparent; background: #416eaf66; }
     .selection-controls button:disabled { opacity: .42; cursor: not-allowed; }
     .pdf-tools [hidden] { display: none !important; }
-    .pdf-footer { border-top: 1px solid #273449; color: #8190a6; font-size: 11px; }
+    .pdf-footer { border-top: 1px solid #29364c; color: #9caac0; font-size: 11px; }
     @media (max-width: 900px) { .pdf-tool-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }
     @media (max-width: 600px) {
       .pdf-hero { padding: 42px 12px 26px; }
@@ -83,22 +68,11 @@
   </style>
 </head>
 <body class="pdf-tools">
-  <a class="skip-link" href="#pdf-main">İçeriğe geç</a>
-  <header class="site-header" id="top">
-    <div class="container header-inner">
-      <a href="/panel" class="brand">
-        <span class="brand-mark" aria-hidden="true">K</span>
-        <span class="brand-text"><b>kurumsal</b><small>sinav.com</small></span>
-      </a>
-      <span class="text-xs text-slate-400">Dosyalarınız bu cihazda işlenir</span>
-    </div>
-  </header>
-
   <main id="pdf-main">
     <section class="pdf-hero">
       <div class="mx-auto max-w-3xl">
-        <span class="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-orange-200">✦ ÜCRETSİZ PDF ARAÇ KUTUSU</span>
-        <h1 class="mb-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Dosyaların, <span class="bg-gradient-to-r from-orange-300 to-amber-200 bg-clip-text text-transparent">kontrolün altında.</span></h1>
+        <span class="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-blue-200">✦ ÜCRETSİZ PDF ARAÇ KUTUSU</span>
+        <h1 class="mb-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Dosyaların, <span class="bg-gradient-to-r from-blue-300 to-blue-100 bg-clip-text text-transparent">kontrolün altında.</span></h1>
         <p class="mx-auto max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">PDF ve Excel dosyalarını dönüştür, birleştir veya böl. Dosyaların cihazından çıkmadan, doğrudan tarayıcında çalış.</p>
         <div class="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-slate-400"><span>✓ Kayıt yok</span><span>✓ Ücretsiz</span><span>✓ Dosyalar sunucuya yüklenmez</span></div>
       </div>
@@ -117,7 +91,7 @@
 
       <section class="pdf-panel" id="tool-panel" role="tabpanel" aria-labelledby="tab-merge">
         <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div><p class="mb-1 text-xs font-bold uppercase tracking-[.16em] text-orange-300" id="tool-kicker">PDF ARAÇLARI</p><h2 class="text-2xl font-bold text-white" id="tool-title">PDF dosyalarını birleştir</h2><p class="mt-2 max-w-2xl text-sm leading-6 text-slate-400" id="tool-description">Birleştirmek istediğin PDF dosyalarını seç. Dosya sıralaması, seçtiğin sırayla korunur.</p></div>
+          <div><p class="mb-1 text-xs font-bold uppercase tracking-[.16em] text-blue-300" id="tool-kicker">PDF ARAÇLARI</p><h2 class="text-2xl font-bold text-white" id="tool-title">PDF dosyalarını birleştir</h2><p class="mt-2 max-w-2xl text-sm leading-6 text-slate-400" id="tool-description">Birleştirmek istediğin PDF dosyalarını seç. Dosya sıralaması, seçtiğin sırayla korunur.</p></div>
           <span class="rounded-full border border-emerald-400/20 bg-emerald-400/5 px-3 py-1.5 text-[11px] font-medium text-emerald-200">🔒 %100 cihazında</span>
         </div>
         <div class="pdf-note mb-5 px-4 py-3" id="tool-note" hidden></div>
@@ -768,6 +742,23 @@
 
       selectTool("merge");
     }());
+  </script>
+  <script>
+    (() => {
+      const reportHeight = () => {
+        const height = Math.ceil(Math.max(document.documentElement.scrollHeight, document.body.scrollHeight));
+        window.parent.postMessage({ type: "kurumsal-tool-height", height }, "*");
+      };
+      const observer = new ResizeObserver(reportHeight);
+      observer.observe(document.documentElement);
+      observer.observe(document.body);
+      new MutationObserver(reportHeight).observe(document.body, { childList: true, subtree: true, attributes: true });
+      window.addEventListener("load", reportHeight);
+      window.addEventListener("resize", reportHeight);
+      requestAnimationFrame(reportHeight);
+      window.setTimeout(reportHeight, 300);
+      window.setTimeout(reportHeight, 1000);
+    })();
   </script>
 </body>
 </html>

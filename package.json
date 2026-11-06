@@ -8,9 +8,10 @@
   "scripts": {
     "dev:api": "npm run dev -w @optik/api",
     "dev:web": "npm run dev -w @optik/web",
-    "build": "npm run build -w @optik/api && npm run build -w @optik/web",
+    "build": "npm run db:generate && npm run build -w @optik/api && npm run build -w @optik/web",
     "db:generate": "npm run db:generate -w @optik/api",
     "db:migrate": "npm run db:migrate -w @optik/api",
+    "db:migrate:deploy": "npm run db:migrate:deploy -w @optik/api",
     "db:seed": "npm run db:seed -w @optik/api"
   },
   "engines": {

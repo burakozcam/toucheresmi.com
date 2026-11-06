@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { Role } from "@prisma/client";
 import { env } from "./config";
+import { prisma } from "./db";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -12,11 +13,11 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-export function requireAuth(
+export async function requireAuth(
   request: AuthenticatedRequest,
   response: Response,
   next: NextFunction,
-): void {
+): Promise<void> {
   const authorization = request.header("authorization");
   const token = authorization?.startsWith("Bearer ")
     ? authorization.slice("Bearer ".length)
@@ -27,26 +28,41 @@ export function requireAuth(
     return;
   }
 
+  let claims: string | jwt.JwtPayload;
   try {
-    const claims = jwt.verify(token, env.JWT_SECRET);
-    if (
-      typeof claims === "string" ||
-      typeof claims.sub !== "string" ||
-      !Object.values(Role).includes(claims.role as Role)
-    ) {
-      response.status(401).json({ error: "Geçersiz oturum." });
+    claims = jwt.verify(token, env.JWT_SECRET);
+  } catch {
+    response.status(401).json({ error: "Oturum geçersiz veya süresi dolmuş." });
+    return;
+  }
+  if (
+    typeof claims === "string" ||
+    typeof claims.sub !== "string" ||
+    !Object.values(Role).includes(claims.role as Role)
+  ) {
+    response.status(401).json({ error: "Geçersiz oturum." });
+    return;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: claims.sub },
+      select: { role: true, dealerId: true, schoolId: true, active: true },
+    });
+    if (!user || !user.active || user.role !== claims.role) {
+      response.status(401).json({ error: "Kullanıcı oturumu artık geçerli değil." });
       return;
     }
 
     request.user = {
       id: claims.sub,
-      role: claims.role as Role,
-      dealerId: typeof claims.dealerId === "string" ? claims.dealerId : null,
-      schoolId: typeof claims.schoolId === "string" ? claims.schoolId : null,
+      role: user.role,
+      dealerId: user.dealerId,
+      schoolId: user.schoolId,
     };
     next();
-  } catch {
-    response.status(401).json({ error: "Oturum geçersiz veya süresi dolmuş." });
+  } catch (error) {
+    next(error);
   }
 }
 

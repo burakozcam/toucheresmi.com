@@ -3,29 +3,63 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f7fb">
+  <meta name="theme-color" content="#f7f9fc">
   <title>Sınav Listesi Düzenleyici</title>
+  <script>if (window.parent !== window) document.documentElement.classList.add("embedded-tool");</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
-    :root { color-scheme: light; }
-    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .glass { background: rgba(255,255,255,.82); backdrop-filter: blur(14px); }
+    :root { color-scheme: light; --brand-navy: #172b4d; --brand-blue: #416eaf; --brand-soft: #edf3fc; --brand-line: #e5ebf2; }
+    body { font-family: "DM Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .glass { border-color: var(--brand-line); background: rgba(255,255,255,.88); backdrop-filter: blur(14px); }
     .table-scroll { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
     input, select, button { font: inherit; }
     .field { width: 100%; border: 1px solid #dbe2ea; border-radius: .65rem; background: #fff; padding: .6rem .75rem; color: #172033; outline: none; }
-    .field:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.13); }
+    .field:focus { border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(65,110,175,.15); }
     .cell-input { width: 100%; min-width: 90px; border: 1px solid transparent; border-radius: .45rem; background: transparent; padding: .4rem .5rem; }
     .cell-input:hover, .cell-input:focus { border-color: #dbe2ea; background: #fff; outline: none; }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .7rem; padding: .65rem 1rem; font-size: .875rem; font-weight: 650; transition: .15s ease; }
     .btn:disabled { opacity: .48; cursor: not-allowed; }
-    .btn-primary { background: #4f46e5; color: white; }
-    .btn-primary:hover:not(:disabled) { background: #4338ca; }
+    .btn-primary { background: #203b65; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #2b4d7e; }
     .btn-secondary { background: #fff; color: #334155; border: 1px solid #dbe2ea; }
     .btn-secondary:hover:not(:disabled) { background: #f8fafc; }
-    .btn-soft { background: #eef2ff; color: #4338ca; }
+    .btn-soft { background: var(--brand-soft); color: #315b91; }
     .btn-danger { background: #fff1f2; color: #be123c; }
-    .drop-zone.dragover { border-color: #6366f1; background: #eef2ff; }
+    .drop-zone.dragover { border-color: var(--brand-blue); background: var(--brand-soft); }
+    [class~="bg-indigo-50"], [class~="bg-indigo-50/60"] { background-color: var(--brand-soft); }
+    [class~="bg-indigo-50/40"], [class~="hover:bg-indigo-50/40"]:hover { background-color: #edf3fcaa; }
+    [class~="bg-indigo-200/30"] { background-color: #416eaf20; }
+    [class~="bg-indigo-500"] { background-color: var(--brand-blue); }
+    [class~="bg-indigo-600"] { background-color: #203b65; }
+    [class~="text-indigo-900"] { color: #172b4d; }
+    [class~="text-indigo-700"], [class~="text-indigo-600"], [class~="text-indigo-500"] { color: #416eaf; }
+    [class~="border-indigo-100"], [class~="border-indigo-200"], [class~="hover:border-indigo-300"]:hover { border-color: #d7e2f1; }
+    [class~="shadow-indigo-200"] { --tw-shadow-color: #203b6520; }
+    [class~="text-violet-700"] { color: #416eaf; }
+    [class~="bg-violet-50"] { background-color: var(--brand-soft); }
+    html.embedded-tool, html.embedded-tool body { overflow: hidden; }
+    html, body { color-scheme: dark; }
+    body.min-h-screen { color: #e1e9f5 !important; background: #111c30 !important; }
+    body > header { border-color: #29364c !important; background: #17243a !important; }
+    body > header .text-slate-900, main h1, main h2, main h3 { color: #dfe9ff !important; }
+    body > header .text-slate-500, main .text-slate-500, main .text-slate-600, main .text-slate-700 { color: #9caac0 !important; }
+    body .glass { border-color: #29364c !important; background: rgba(23,36,58,.94) !important; box-shadow: 0 16px 42px #0002; }
+    body [class~="bg-white"], body [class~="bg-white/70"], body [class~="bg-white/70"] *,
+    body [class~="bg-slate-50"], body [class~="bg-slate-50/70"] { background-color: #111c30 !important; }
+    body [class~="border-slate-100"], body [class~="border-slate-200"] { border-color: #29364c !important; }
+    body .field, body select, body input:not([type="checkbox"]):not([type="radio"]) { border-color: #394963; color: #e1e9f5; background-color: #111c30; }
+    body .field::placeholder, body input::placeholder { color: #77869b; }
+    body .cell-input:hover, body .cell-input:focus { border-color: #587eb8; background: #17243a; }
+    body table { color: #cbd6e7; }
+    body thead { background-color: #17243a !important; color: #9caac0 !important; }
+    body tbody { background-color: #17243a !important; }
+    body tbody tr { border-color: #29364c !important; }
+    body [class~="text-indigo-900"] { color: #dfe9ff; }
+    body [class~="bg-rose-50"], body [class~="bg-emerald-50"] { background-color: #243653; }
+    body [class~="text-rose-700"] { color: #ffb7b7; }
+    body [class~="text-emerald-700"] { color: #a1e4bd; }
+    h1, h2, h3 { font-family: "Manrope", "DM Sans", sans-serif; }
   </style>
 </head>
 <body class="min-h-screen bg-[#f5f7fb] text-slate-800">
@@ -1151,6 +1185,23 @@
       renderSessionControls();
       renderStudentSelects();
       renderTable();
+    })();
+  </script>
+  <script>
+    (() => {
+      const reportHeight = () => {
+        const height = Math.ceil(Math.max(document.documentElement.scrollHeight, document.body.scrollHeight));
+        window.parent.postMessage({ type: "kurumsal-tool-height", height }, "*");
+      };
+      const observer = new ResizeObserver(reportHeight);
+      observer.observe(document.documentElement);
+      observer.observe(document.body);
+      new MutationObserver(reportHeight).observe(document.body, { childList: true, subtree: true, attributes: true });
+      window.addEventListener("load", reportHeight);
+      window.addEventListener("resize", reportHeight);
+      requestAnimationFrame(reportHeight);
+      window.setTimeout(reportHeight, 300);
+      window.setTimeout(reportHeight, 1000);
     })();
   </script>
 </body>

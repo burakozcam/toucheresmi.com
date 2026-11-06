@@ -26,6 +26,12 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum UploadStatus {
   RECEIVED
   PROCESSING
@@ -39,6 +45,7 @@ model User {
   passwordHash String
   firstName    String
   lastName     String
+  phone        String?
   role         Role
   dealerId     String?
   schoolId     String?
@@ -53,6 +60,21 @@ model User {
   @@index([dealerId])
   @@index([schoolId])
   @@index([role, active])
+}
+
+model RegistrationRequest {
+  id           String             @id @default(cuid())
+  email        String
+  passwordHash String?
+  firstName    String
+  lastName     String
+  phone        String
+  status       RegistrationStatus @default(PENDING)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@unique([email, status])
+  @@index([status, createdAt])
 }
 
 model Dealer {

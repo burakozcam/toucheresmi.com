@@ -131,7 +131,6 @@
     .message { display: none; margin-top: 13px; padding: 10px; border: 1px solid #f1c6c6; border-radius: 7px; color: #b13b3b; background: #fff5f5; font-size: 11px; }
     .message.show { display: block; }
     .message.ok { border-color: #bfdfce; color: #28774e; background: #f0fbf5; }
-    .demo-note { margin: 14px 0 0 !important; font-size: 10px !important; }
     .panel { min-height: 100vh; }
     .dashboard { display: flex; min-height: 100vh; }
     .sidebar { position: sticky; top: 0; display: flex; flex: 0 0 245px; flex-direction: column; height: 100vh; padding: 0 15px; border-right: 1px solid var(--line); background: var(--surface); }
@@ -200,8 +199,8 @@
     .calendar-panel, .break-panel, .tool-panel { display: none; padding: 23px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
     .calendar-panel.visible, .break-panel.visible, .tool-panel.visible { display: block; animation: status-in .25s ease both; }
     .tool-panel { padding: 0; overflow: hidden; }
-    .tool-frame { display: block; width: 100%; height: max(760px, calc(100vh - 220px)); border: 0; background: #f5f7fb; }
-    .pdf-tool-frame { height: max(960px, calc(100vh - 220px)); background: #0b1120; }
+    .tool-frame { display: block; width: 100%; height: 680px; border: 0; background: #111c30; }
+    .pdf-tool-frame { background: #111c30; }
     .calendar-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 15px; }
     .calendar-heading h2, .break-heading h2 { margin: 0; color: var(--ink); font-size: 18px; }
     .calendar-controls { display: flex; gap: 6px; }
@@ -334,17 +333,10 @@
       <header class="header"><a class="brand" href="#" onclick="showScreen('home');return false"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><div class="actions"><button class="theme" onclick="toggleTheme()"><span id="themeIconLogin">☀</span> <span class="theme-label" id="themeLabelLogin">Aydınlık</span></button><button class="link" style="border:0;background:none;cursor:pointer" onclick="showScreen('home')">← Ana sayfa</button></div></header>
       <section class="login-layout">
         <div class="login-aside"><p class="eyebrow">KURUMSAL SINAV PLATFORMU</p><h1>Tek yerden yönetin,<br><em style="color:#4d77b8;font-style:normal">güvenle değerlendirin.</em></h1><p>Optik sınav süreçlerinize devam etmek için hesabınızla giriş yapın.</p></div>
-        <form id="loginForm" class="login-card" onsubmit="login(event)">
-          <p class="eyebrow">HOŞ GELDİNİZ</p><h2>Hesabınıza giriş yapın</h2><p>Devam etmek için giriş türünüzü seçin.</p>
-          <div class="role-list">
-            <button type="button" class="role selected" data-role="dealer" onclick="selectRole(this)"><span class="role-icon">⌂</span><span class="role-copy"><strong>Bayi Girişi</strong><small>Bayi hesabınızla giriş yapın</small></span><span class="role-status">●</span></button>
-            <button type="button" class="role" data-role="institution" onclick="selectRole(this)"><span class="role-icon">▦</span><span class="role-copy"><strong>Kurum Girişi</strong><small>Okul veya kurum hesabınızla giriş yapın</small></span><span class="role-status">○</span></button>
-            <button type="button" class="role" data-role="student" onclick="selectRole(this)"><span class="role-icon">♙</span><span class="role-copy"><strong>Öğrenci Girişi</strong><small>Sınav sonuçlarınıza ulaşın</small></span><span class="role-status">○</span></button>
-          </div>
-          <div id="loginFields"><label class="field">Kullanıcı adı<input name="username" autocomplete="username" placeholder="Kullanıcı adınızı girin" required></label><label class="field">Şifre<input name="password" type="password" autocomplete="current-password" placeholder="Şifrenizi girin" required></label><button class="btn login-submit" type="submit">Giriş Yap <span>→</span></button></div>
-          <div id="loginMessage" class="message" role="status"></div>
-          <p class="demo-note">Demo giriş bilgileri: <b>burak</b> / <b>burak</b></p>
-        </form>
+        <section class="login-card">
+          <p class="eyebrow">GÜVENLİ GİRİŞ</p><h2>Üyelik ve giriş</h2>
+          <p>Bu tek dosyalık önizlemede kimlik doğrulama kapalıdır. Gerçek üyelik başvurusu, yönetici onayı ve güvenli giriş için canlı uygulamanın <code>/login</code> sayfasını kullanın.</p>
+        </section>
       </section>
     </div>
   </main>
@@ -353,7 +345,7 @@
     <div class="dashboard">
       <aside class="sidebar">
         <a class="brand" href="#" onclick="showScreen('panel');return false"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a>
-        <button class="profile-button" onclick="setSection(document.querySelector('[data-section=account]'),'Hesap Ayarları')"><span class="avatar" id="sideAvatar">B</span><span><strong id="sideName">Burak</strong><small>Bayi hesabı</small></span></button>
+        <button class="profile-button" onclick="setSection(document.querySelector('[data-section=account]'),'Hesap Ayarları')"><span class="avatar" id="sideAvatar">K</span><span><strong id="sideName">Kullanıcı</strong><small>Bayi hesabı</small></span></button>
         <nav>
           <div class="nav-group"><p>SINAV İŞLEMLERİ</p><button class="nav-item current" onclick="setSection(this,'Sınav Yükle')"><span>⇧</span>Sınav Yükle</button></div>
           <div class="nav-group"><p>FMT YÖNETİMİ</p><button class="nav-item" onclick="setSection(this,'FMT Yükle')"><span>＋</span>FMT Yükle</button><button class="nav-item" onclick="setSection(this,'FMT Düzenle')"><span>✎</span>FMT Düzenle</button><button class="nav-item" onclick="setSection(this,'FMT Sil')"><span>⌫</span>FMT Sil</button></div>
@@ -365,7 +357,7 @@
         <div class="side-bottom"><button class="logout" onclick="showScreen('login')">↪ &nbsp; Güvenli çıkış yap</button></div>
       </aside>
       <section class="main"><header class="dash-header"><span class="crumb">Yönetim Paneli &nbsp;/&nbsp; <b id="crumbTitle">Sınav Yükle</b></span><div class="dash-actions"><button class="theme" onclick="toggleTheme()"><span id="themeIconPanel">☀</span> Tema</button><button class="user-avatar" id="headerAvatar" aria-label="Hesap ayarları" onclick="setSection(document.querySelector('[data-section=account]'),'Hesap Ayarları')">B</button><button class="header-logout" onclick="logout()">Çıkış Yap ↪</button></div></header>
-        <div class="dash-content"><div class="welcome"><b>✦ &nbsp;Hoş geldiniz, Burak</b><small>Sınav süreçlerinizi buradan yönetebilirsiniz.</small></div>
+        <div class="dash-content"><div class="welcome"><b>✦ &nbsp;Hoş geldiniz</b><small>Sınav süreçlerinizi buradan yönetebilirsiniz.</small></div>
           <div class="dash-title"><div><p class="eyebrow">SINAV YÖNETİMİ</p><h1 id="sectionTitle">Sınav Yükle</h1><p id="sectionDescription">Sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.</p></div><button class="btn" onclick="demoAction()">＋ &nbsp;<span id="actionTitle">Sınav dosyası seç</span></button></div>
           <section id="dashboardEmpty" class="empty"><div class="empty-art">▤</div><h2 id="emptyTitle">İlk sınavınızı yükleyin</h2><p id="emptyDescription">Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın.</p><button class="btn" onclick="demoAction()">＋ &nbsp;Başlayın</button></section>
           <section id="calendarPanel" class="calendar-panel">
@@ -384,7 +376,7 @@
           <section id="profilePanel" class="profile-panel">
             <h2>Hesap bilgileri</h2><p>Ad, soyad ve iletişim bilgilerinizi düzenleyin.</p>
             <form id="profileForm" class="profile-fields" onsubmit="saveProfile(event)">
-              <label>Ad<input name="firstName" id="profileFirstName" value="Burak" required maxlength="80"></label>
+              <label>Ad<input name="firstName" id="profileFirstName" required maxlength="80"></label>
               <label>Soyad<input name="lastName" id="profileLastName" maxlength="80"></label>
               <label>E-posta<input name="email" id="profileEmail" type="email" maxlength="254"></label>
               <label>Telefon<input name="phone" id="profilePhone" type="tel" maxlength="30"></label>
@@ -425,12 +417,17 @@
   <div id="toast" class="toast" role="status"></div>
 
   <script>
-    let selectedRole = "dealer";
     let previousScreen = "home";
     let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     let gameRunning = false;
     let gameFrame = 0;
     let gameState = { y: 0, velocity: 0, obstacles: [], frame: 0, score: 0 };
+    window.addEventListener("message", (event) => {
+      if (!event.data || typeof event.data !== "object" || event.data.type !== "kurumsal-tool-height" || !Number.isFinite(event.data.height)) return;
+      document.querySelectorAll(".tool-frame").forEach((frame) => {
+        if (frame.contentWindow === event.source) frame.style.height = `${Math.max(560, Math.min(event.data.height, 20000))}px`;
+      });
+    });
     const sectionDescriptions = {
       "Sınav Yükle": "Sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.",
       "FMT Yükle": "Optik verilerinizin okunacağı FMT format şablonunu ekleyin.",
@@ -473,44 +470,6 @@
       });
       const panelThemeButton = document.getElementById("themeIconPanel");
       if (panelThemeButton) panelThemeButton.parentElement.lastChild.textContent = dark ? " Tema" : " Tema";
-    }
-    function selectRole(button) {
-      selectedRole = button.dataset.role;
-      document.querySelectorAll(".role").forEach((role) => {
-        role.classList.toggle("selected", role === button);
-        role.querySelector(".role-status").textContent = role === button ? "●" : "○";
-      });
-      const fields = document.getElementById("loginFields");
-      const message = document.getElementById("loginMessage");
-      message.className = "message";
-      message.textContent = "";
-      fields.style.display = selectedRole === "dealer" ? "block" : "none";
-      if (selectedRole !== "dealer") {
-        message.textContent = "Bu giriş yöntemi henüz aktif değil. Lütfen sistem yöneticisine başvurun.";
-        message.className = "message show";
-      }
-    }
-    function login(event) {
-      event.preventDefault();
-      const message = document.getElementById("loginMessage");
-      if (selectedRole !== "dealer") {
-        message.textContent = "Bu giriş yöntemi henüz aktif değil. Lütfen sistem yöneticisine başvurun.";
-        message.className = "message show";
-        return;
-      }
-      const form = new FormData(event.currentTarget);
-      if (form.get("username") === "burak" && form.get("password") === "burak") {
-        try { sessionStorage.setItem("kurumsal-demo-session", "dealer"); } catch (_) {}
-        message.textContent = "Giriş başarılı. Yönetim paneli açılıyor...";
-        message.className = "message show ok";
-        window.setTimeout(() => {
-          showScreen("panel");
-          setSection(document.querySelector(".nav-item.current"), "Sınav Yükle");
-        }, 450);
-      } else {
-        message.textContent = "Kullanıcı adı veya şifre yanlış.";
-        message.className = "message show";
-      }
     }
     function setSection(button, title) {
       document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("current"));
@@ -569,7 +528,6 @@
     }
     function logout() {
       const toast = document.getElementById("toast");
-      try { sessionStorage.removeItem("kurumsal-demo-session"); } catch (_) {}
       toast.textContent = "Güvenli çıkış yaptınız. Ana sayfaya yönlendiriliyorsunuz.";
       toast.classList.add("show");
       window.setTimeout(() => {
@@ -785,8 +743,6 @@
     } catch (_) {}
     const requestedScreen = window.location.hash.slice(1);
     if (requestedScreen === "panel") {
-      try { sessionStorage.removeItem("kurumsal-demo-session"); } catch (_) {}
-      document.getElementById("loginForm").reset();
       showScreen("login");
     } else if (["login", "contact"].includes(requestedScreen)) {
       showScreen(requestedScreen);

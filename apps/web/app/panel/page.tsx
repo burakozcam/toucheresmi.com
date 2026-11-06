@@ -7,8 +7,10 @@ import type { FormEvent } from "react";
 import ThemeToggle from "../theme-toggle";
 import BreakGame from "./break-game";
 import Calendar from "./calendar";
+import RegistrationRequests from "./registration-requests";
 
-type Section = "exam" | "fmt-upload" | "fmt-edit" | "fmt-delete" | "school-add" | "school-edit" | "school-delete" | "students" | "calendar" | "break" | "rebuilder" | "pdf-tools" | "account";
+type Section = "exam" | "fmt-upload" | "fmt-edit" | "fmt-delete" | "school-add" | "school-edit" | "school-delete" | "students" | "calendar" | "break" | "rebuilder" | "pdf-tools" | "system-users" | "account";
+type AuthUser = { id: string; email: string; firstName: string; lastName: string; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" };
 
 const pages: Record<Section, { title: string; eyebrow: string; description: string; action: string }> = {
   exam: { title: "Sınav Yükle", eyebrow: "SINAV YÖNETİMİ", description: "Yeni sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.", action: "Sınav dosyası seç" },
@@ -23,6 +25,7 @@ const pages: Record<Section, { title: string; eyebrow: string; description: stri
   break: { title: "Mola", eyebrow: "KISA BİR MOLA", description: "Kısa bir mola verip mini koşu oyununu oynayabilirsiniz.", action: "Oyuna başla" },
   rebuilder: { title: "Sınav Listesi Düzenleyici", eyebrow: "SINAV ARAÇLARI", description: "Öğrenci listenizi düzenleyin, derslik dağılımını planlayın ve çıktınızı indirin.", action: "Aracı aç" },
   "pdf-tools": { title: "PDF ve Excel Araçları", eyebrow: "DOSYA ARAÇLARI", description: "PDF ve Excel dosyalarını tarayıcınızda birleştirin, bölün veya dönüştürün.", action: "Aracı aç" },
+  "system-users": { title: "Üyeler", eyebrow: "SİSTEM YÖNETİMİ", description: "Üyelik taleplerini ve kullanıcı hesaplarını yönetin.", action: "Üye kayıtları" },
   account: { title: "Hesap Ayarları", eyebrow: "HESABIM", description: "Kişisel bilgilerinizi görüntüleyip güncelleyin.", action: "Bilgileri kaydet" },
 };
 
@@ -32,6 +35,7 @@ const groups: { title: string; items: { id: Section; label: string; icon: string
   { title: "KURUM YÖNETİMİ", items: [{ id: "school-add", label: "Kurum Ekle", icon: "＋" }, { id: "school-edit", label: "Kurum Düzenle", icon: "✎" }, { id: "school-delete", label: "Kurum Sil", icon: "⌫" }] },
   { title: "ÖĞRENCİLER", items: [{ id: "students", label: "Öğrenciler", icon: "♙" }] },
   { title: "ARAÇLAR", items: [{ id: "calendar", label: "Takvim", icon: "▦" }, { id: "break", label: "Mola", icon: "☕" }, { id: "rebuilder", label: "Sınav Listesi", icon: "▤" }, { id: "pdf-tools", label: "PDF / Excel", icon: "▧" }] },
+  { title: "SİSTEM KULLANICILARI", items: [{ id: "system-users", label: "Üye Kayıtları", icon: "♙" }] },
   { title: "HESAP", items: [{ id: "account", label: "Hesap Ayarları", icon: "⚙" }] },
 ];
 
@@ -41,37 +45,75 @@ export default function PanelPage() {
   const [section, setSection] = useState<Section>("exam");
   const [authorized, setAuthorized] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [profile, setProfile] = useState({ firstName: "Burak", lastName: "", email: "", phone: "" });
+  const [profile, setProfile] = useState({ firstName: "", lastName: "", email: "", phone: "" });
+  const [authToken, setAuthToken] = useState("");
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [profileNotice, setProfileNotice] = useState("");
   const [logoutNotice, setLogoutNotice] = useState("");
+  const rebuilderFrame = useRef<HTMLIFrameElement>(null);
+  const pdfToolsFrame = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (authCheckStarted.current) return;
     authCheckStarted.current = true;
+    const token = window.sessionStorage.getItem("kurumsal-auth-token");
+    const storedUser = window.sessionStorage.getItem("kurumsal-auth-user");
+    if (!token || !storedUser) {
+      router.replace("/login");
+      return;
+    }
+
+    let user: AuthUser;
+    try {
+      user = JSON.parse(storedUser) as AuthUser;
+    } catch {
+      window.sessionStorage.removeItem("kurumsal-auth-token");
+      window.sessionStorage.removeItem("kurumsal-auth-user");
+      router.replace("/login");
+      return;
+    }
+    if (!user.id || !user.email || !user.firstName || !["SUPER_ADMIN", "DEALER", "SCHOOL_ADMIN", "STUDENT"].includes(user.role)) {
+      window.sessionStorage.removeItem("kurumsal-auth-token");
+      window.sessionStorage.removeItem("kurumsal-auth-user");
+      router.replace("/login");
+      return;
+    }
+
+    setAuthToken(token);
+    setAuthUser(user);
+    setProfile((current) => ({ ...current, firstName: user.firstName, lastName: user.lastName, email: user.email }));
+    if (user.role === "SUPER_ADMIN") setSection("system-users");
+
     const savedProfile = window.localStorage.getItem("kurumsal-profile");
     if (savedProfile) {
       try {
-        setProfile({ firstName: "Burak", lastName: "", email: "", phone: "", ...JSON.parse(savedProfile) });
+        setProfile((current) => ({ ...current, ...JSON.parse(savedProfile), firstName: user.firstName, lastName: user.lastName, email: user.email }));
       } catch {
         window.localStorage.removeItem("kurumsal-profile");
       }
     }
-    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
-    if (navigation?.type === "reload") {
-      window.sessionStorage.removeItem("kurumsal-demo-session");
-      router.replace("/login");
-      return;
-    }
-    if (window.sessionStorage.getItem("kurumsal-demo-session") !== "dealer") {
-      window.sessionStorage.removeItem("kurumsal-demo-session");
-      router.replace("/login");
-      return;
-    }
     setAuthorized(true);
   }, [router]);
 
+  useEffect(() => {
+    function resizeToolFrame(event: MessageEvent<unknown>) {
+      if (!event.data || typeof event.data !== "object") return;
+      const message = event.data as { type?: string; height?: number };
+      if (message.type !== "kurumsal-tool-height" || typeof message.height !== "number" || !Number.isFinite(message.height)) return;
+      const frame = event.source === rebuilderFrame.current?.contentWindow
+        ? rebuilderFrame.current
+        : event.source === pdfToolsFrame.current?.contentWindow
+          ? pdfToolsFrame.current
+          : null;
+      if (frame) frame.style.height = `${Math.max(560, Math.min(message.height, 20000))}px`;
+    }
+    window.addEventListener("message", resizeToolFrame);
+    return () => window.removeEventListener("message", resizeToolFrame);
+  }, []);
+
   function logout() {
-    window.sessionStorage.removeItem("kurumsal-demo-session");
+    window.sessionStorage.removeItem("kurumsal-auth-token");
+    window.sessionStorage.removeItem("kurumsal-auth-user");
     setLogoutNotice("Güvenli çıkış yaptınız. Ana sayfaya yönlendiriliyorsunuz.");
     window.setTimeout(() => router.replace("/"), 1100);
   }
@@ -89,9 +131,9 @@ export default function PanelPage() {
     <main className="dashboard">
       <aside className={`sidebar ${menuOpen ? "sidebar-open" : ""}`}>
         <Link className="brand sidebar-brand" href="/panel"><span className="brand-mark">K</span><span>kurumsal<span className="brand-light">sinav.com</span></span></Link>
-        <button className="sidebar-profile profile-link" onClick={() => setSection("account")}><span className="profile-avatar">{profile.firstName.slice(0, 1).toUpperCase() || "B"}</span><span><strong>{profile.firstName} {profile.lastName}</strong><small>Bayi hesabı</small></span><span className="online-dot" /></button>
+        <button className="sidebar-profile profile-link" onClick={() => setSection("account")}><span className="profile-avatar">{profile.firstName.slice(0, 1).toUpperCase() || "B"}</span><span><strong>{profile.firstName} {profile.lastName}</strong><small>{authUser?.role === "SUPER_ADMIN" ? "Sistem yöneticisi" : "Bayi hesabı"}</small></span><span className="online-dot" /></button>
         <nav className="side-nav" aria-label="Yönetim menüsü">
-          {groups.map((group) => <div className="nav-group" key={group.title}>
+          {groups.filter((group) => group.title !== "SİSTEM KULLANICILARI" || authUser?.role === "SUPER_ADMIN").map((group) => <div className="nav-group" key={group.title}>
             <p>{group.title}</p>
             {group.items.map((item) => <button className={`nav-item ${section === item.id ? "nav-active" : ""}`} key={item.id} onClick={() => { setSection(item.id); setMenuOpen(false); }}><span>{item.icon}</span>{item.label}</button>)}
           </div>)}
@@ -101,8 +143,8 @@ export default function PanelPage() {
       <section className="dashboard-main">
         <header className="dashboard-header"><button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç">☰</button><div className="breadcrumbs">Yönetim Paneli <span>/</span> <strong>{activePage.title}</strong></div><div className="dashboard-actions"><ThemeToggle /><button className="notification-button" aria-label="Bildirimler">♧<i /></button><button className="header-avatar profile-avatar-button" aria-label="Hesap ayarlarını aç" onClick={() => setSection("account")}>{profile.firstName.slice(0, 1).toUpperCase() || "B"}</button><button className="header-logout" onClick={logout}>Çıkış Yap <span>↪</span></button></div></header>
         <div className="dashboard-content">
-          <div className="welcome-strip"><div><span className="welcome-emoji">✦</span><span><strong>Hoş geldiniz, Burak</strong><small>Sınav süreçlerinizi buradan yönetebilirsiniz.</small></span></div><span className="today-date">Cuma, 23 Ekim 2026</span></div>
-          <div className="page-title"><div><p className="hero-tag">{activePage.eyebrow}</p><h1>{activePage.title}</h1><p>{activePage.description}</p></div>{!["account", "calendar", "break", "rebuilder", "pdf-tools"].includes(section) && <button className="button button-navy" onClick={() => document.getElementById("main-action")?.click()}><span>＋</span> {activePage.action}</button>}</div>
+          <div className="welcome-strip"><div><span className="welcome-emoji">✦</span><span><strong>Hoş geldiniz, {profile.firstName}</strong><small>Sınav süreçlerinizi buradan yönetebilirsiniz.</small></span></div><span className="today-date">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "long" }).format(new Date())}</span></div>
+          <div className="page-title"><div><p className="hero-tag">{activePage.eyebrow}</p><h1>{activePage.title}</h1><p>{activePage.description}</p></div>{!["account", "calendar", "break", "rebuilder", "pdf-tools", "system-users"].includes(section) && <button className="button button-navy" onClick={() => document.getElementById("main-action")?.click()}><span>＋</span> {activePage.action}</button>}</div>
           {logoutNotice && <div className="logout-toast" role="status">{logoutNotice}</div>}
           {section === "account" ? <section className="account-card">
             <form className="account-form" onSubmit={saveProfile}>
@@ -116,7 +158,7 @@ export default function PanelPage() {
                 {profileNotice && <p className="profile-notice" role="status">{profileNotice}</p>}
               </div>
             </form>
-          </section> : section === "calendar" ? <Calendar /> : section === "break" ? <BreakGame /> : section === "rebuilder" ? <iframe className="tool-frame rebuilder-frame" src="/rebuilder.html" title="Sınav Listesi Düzenleyici" sandbox="allow-scripts allow-downloads" referrerPolicy="no-referrer" /> : section === "pdf-tools" ? <iframe className="tool-frame pdf-tools-frame" src="/araclar/pdf-tools.html" title="PDF ve Excel Araçları" sandbox="allow-scripts allow-downloads" referrerPolicy="no-referrer" /> : <section className="dashboard-empty">
+          </section> : section === "calendar" ? <Calendar /> : section === "break" ? <BreakGame /> : section === "rebuilder" ? <iframe ref={rebuilderFrame} className="tool-frame rebuilder-frame" src="/rebuilder.html" title="Sınav Listesi Düzenleyici" sandbox="allow-scripts allow-downloads" referrerPolicy="no-referrer" /> : section === "pdf-tools" ? <iframe ref={pdfToolsFrame} className="tool-frame pdf-tools-frame" src="/araclar/pdf-tools.html" title="PDF ve Excel Araçları" sandbox="allow-scripts allow-downloads" referrerPolicy="no-referrer" /> : section === "system-users" && authUser?.role === "SUPER_ADMIN" ? <RegistrationRequests token={authToken} /> : <section className="dashboard-empty">
             <div className="empty-art"><div className="empty-paper"><span className="empty-paper-mark">K</span><i /><i /><i /><div className="empty-bubbles"><b /><b /><b /><b /></div></div><span className="empty-spark">✳</span><span className="empty-orbit" /></div>
             <h2>{section === "exam" ? "İlk sınavınızı yükleyin" : `${activePage.title} işlemlerine başlayın`}</h2>
             <p>{section === "exam" ? "Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın." : activePage.description}</p>
