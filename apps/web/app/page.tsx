@@ -1,9 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import ThemeToggle from "./theme-toggle";
-import { API_URL } from "../lib/api";
 
 const answerRows = [
   ["01", "A", "B", "C", "D", "A"],
@@ -13,33 +9,7 @@ const answerRows = [
   ["05", "A", "B", "D", "C", "A"],
 ];
 
-type PreviewAnswerKey = {
-  id: string;
-  examName: string;
-  grade: number;
-  publisher: { id: string; name: string };
-  createdAt: string;
-  files: Array<{ id: string; category: "ANSWER_KEY" | "LEARNING_OUTCOMES" }>; 
-};
-
 export default function Home() {
-  const [previewItems, setPreviewItems] = useState<PreviewAnswerKey[]>([]);
-
-  useEffect(() => {
-    async function loadPreview() {
-      try {
-        const response = await fetch(`${API_URL}/api/answer-keys?limit=3`);
-        const result = await response.json() as { items?: PreviewAnswerKey[]; error?: string };
-        if (response.ok && Array.isArray(result.items)) {
-          setPreviewItems(result.items);
-        }
-      } catch {
-        setPreviewItems([]);
-      }
-    }
-    void loadPreview();
-  }, []);
-
   return (
     <main className="landing">
       <header className="landing-header">
@@ -49,7 +19,6 @@ export default function Home() {
         </Link>
         <nav className="header-actions" aria-label="Ana menü">
           <a className="header-link" href="#cozumler">Çözümler</a>
-          <Link className="header-link" href="/cevap-anahtarlari">Cevap Anahtarları</Link>
           <ThemeToggle />
           <Link className="button button-navy" href="/login">Giriş Yap <span aria-hidden="true">↗</span></Link>
         </nav>
@@ -62,7 +31,7 @@ export default function Home() {
           <p className="hero-description">Optik formlardan anlamlı sonuçlara. Sınav değerlendirme, öğrenci analizi ve raporlama süreçleriniz tek bir platformda.</p>
           <div className="hero-buttons">
             <Link className="button button-navy button-big" href="/login">Hemen Giriş Yap <span aria-hidden="true">→</span></Link>
-            <Link className="button button-quiet button-big" href="/cevap-anahtarlari">Cevap Anahtarları <span aria-hidden="true">→</span></Link>
+            <a className="button button-quiet button-big" href="#cozumler">Platformu Keşfet <span aria-hidden="true">↓</span></a>
           </div>
           <div className="hero-proof"><span className="proof-check">✓</span> Kurumlar için güvenilir sınav yönetimi</div>
         </div>
@@ -102,41 +71,6 @@ export default function Home() {
           <article><span className="solution-icon">▥</span><h3>Detaylı raporlama</h3><p>Öğrenci ve sınıf bazlı analizlerle performansı kolayca değerlendirin.</p></article>
         </div>
       </section>
-
-      <section className="answer-key-preview">
-        <div className="section-heading preview-heading">
-          <p className="hero-tag">CEVAP ANAHTARLARI</p>
-          <h2>Son eklenen denemeler</h2>
-        </div>
-        <div className="preview-grid">
-          {previewItems.length === 0 ? (
-            <p className="empty-state">Henüz yayımlanmış cevap anahtarı bulunmuyor.</p>
-          ) : (
-            previewItems.map((item) => (
-              <article className="answer-key-card" key={item.id}>
-                <div className="answer-key-header">
-                  <span className="badge">{item.grade}. Sınıf</span>
-                  <span className="status-dot">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.createdAt))}</span>
-                </div>
-                <h3>{item.publisher.name}</h3>
-                <p className="exam-name">{item.examName}</p>
-                <div className="download-actions">
-                  {item.files.some((file) => file.category === "ANSWER_KEY") && (
-                    <Link className="button button-navy" href="/cevap-anahtarlari">İndir</Link>
-                  )}
-                  {item.files.some((file) => file.category === "LEARNING_OUTCOMES") && (
-                    <Link className="button button-quiet" href="/cevap-anahtarlari">Kazanım</Link>
-                  )}
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-        <div className="preview-footer">
-          <Link className="button button-navy" href="/cevap-anahtarlari">Tüm cevap anahtarlarını gör</Link>
-        </div>
-      </section>
-
       <footer className="landing-footer"><Link className="brand" href="/"><span className="brand-mark">K</span><span>kurumsal<span className="brand-light">sinav.com</span></span></Link><span><Link href="/contact">İletişim</Link> · Ölçün. Değerlendirin. Geliştirin.</span></footer>
     </main>
   );

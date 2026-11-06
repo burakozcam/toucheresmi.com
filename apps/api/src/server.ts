@@ -546,7 +546,7 @@ app.get("/api/answer-keys", async (request, response, next) => {
     const page = Number(request.query.page ?? 1);
     const limit = Math.min(Number(request.query.limit ?? 12), 50);
 
-    const where: Prisma.AnswerKeyWhereInput = {
+    const where: Prisma.PublishedAnswerKeyWhereInput = {
       published: true,
       ...(publisherId ? { publisherId } : {}),
       ...(Number.isFinite(grade) ? { grade: Number(grade) } : {}),
@@ -560,7 +560,7 @@ app.get("/api/answer-keys", async (request, response, next) => {
     };
 
     const [items, total] = await Promise.all([
-      prisma.answerKey.findMany({
+      prisma.publishedAnswerKey.findMany({
         where,
         include: {
           publisher: { select: { id: true, name: true } },
@@ -570,7 +570,7 @@ app.get("/api/answer-keys", async (request, response, next) => {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.answerKey.count({ where }),
+      prisma.publishedAnswerKey.count({ where }),
     ]);
 
     response.json({ items, total, page, totalPages: Math.ceil(total / limit) || 1 });
@@ -585,7 +585,7 @@ app.get(
   requireRole(Role.SUPER_ADMIN),
   async (_request: AuthenticatedRequest, response, next) => {
     try {
-      const items = await prisma.answerKey.findMany({
+      const items = await prisma.publishedAnswerKey.findMany({
         include: {
           publisher: true,
           files: true,
@@ -649,7 +649,7 @@ app.post(
         return;
       }
 
-      const answerKey = await prisma.answerKey.create({
+      const answerKey = await prisma.publishedAnswerKey.create({
         data: {
           publisherId: publisher.id,
           grade: parsed.data.grade,
@@ -721,7 +721,7 @@ app.delete(
   async (request: AuthenticatedRequest, response, next) => {
     try {
       const answerKeyId = getRouteParamId(request.params.id);
-      const answerKey = await prisma.answerKey.findUnique({
+      const answerKey = await prisma.publishedAnswerKey.findUnique({
         where: { id: answerKeyId },
         include: { files: true },
       });
@@ -736,7 +736,7 @@ app.delete(
         }
       }
 
-      await prisma.answerKey.delete({ where: { id: answerKey.id } });
+      await prisma.publishedAnswerKey.delete({ where: { id: answerKey.id } });
       response.status(204).end();
     } catch (error) {
       next(error);

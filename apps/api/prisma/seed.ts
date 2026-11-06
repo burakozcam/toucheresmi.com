@@ -25,7 +25,7 @@ const startingPublishers = [
   "SES", "SEVİYE", "SİNAN KUZUCU", "SINAV", "SINAV 1258", "SİSTEMATİK", "SİVAS İL M.E.M.", "SON VİRAJ",
   "SONUÇ", "SPOİLER", "STARTFEN", "STEP", "STRATEJİ", "TAMMAT", "TANDEM", "TANIM", "TEOREM", "TEORİ PRATİK",
   "TESLA", "TG (TEST GRUP)", "TÖDER", "TÖZOK", "TREND KARMA", "TUDEM", "TÜRKİYE DENEME PLATFORMU", "TÜYO HOCA",
-  "ÜÇİZ 42", "ULTİ", "ÜNLÜLER KARMASI", "VAN İL M.E.M.", "VİP", "WORKWIN", "X YAYIN", "YAMANTÜRK",
+  "ÜÇİZ 42", "ULTİ", "ÜNLÜLER KARMASI", "VANİL M.E.M.", "VİP", "WORKWIN", "X YAYIN", "YAMANTÜRK",
   "YANIT", "YARGI", "YENİ TARZ", "YOK YOK", "ZEKA KÜPÜ",
 ] as const;
 

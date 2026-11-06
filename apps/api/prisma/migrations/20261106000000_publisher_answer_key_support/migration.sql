@@ -34,7 +34,7 @@ CREATE TABLE "PublisherRequest" (
 );
 
 -- CreateTable
-CREATE TABLE "AnswerKey" (
+CREATE TABLE "PublishedAnswerKey" (
     "id" TEXT NOT NULL,
     "publisherId" TEXT NOT NULL,
     "grade" INTEGER NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE "AnswerKey" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "AnswerKey_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "PublishedAnswerKey_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -81,10 +81,10 @@ CREATE INDEX "PublisherRequest_requestedByUserId_createdAt_idx" ON "PublisherReq
 CREATE INDEX "PublisherRequest_publisherId_idx" ON "PublisherRequest"("publisherId");
 
 -- CreateIndex
-CREATE INDEX "AnswerKey_published_createdAt_idx" ON "AnswerKey"("published", "createdAt");
+CREATE INDEX "PublishedAnswerKey_published_createdAt_idx" ON "PublishedAnswerKey"("published", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "AnswerKey_publisherId_grade_idx" ON "AnswerKey"("publisherId", "grade");
+CREATE INDEX "PublishedAnswerKey_publisherId_grade_idx" ON "PublishedAnswerKey"("publisherId", "grade");
 
 -- CreateIndex
 CREATE INDEX "AnswerKeyFile_answerKeyId_category_idx" ON "AnswerKeyFile"("answerKeyId", "category");
@@ -102,13 +102,13 @@ ALTER TABLE "PublisherRequest" ADD CONSTRAINT "PublisherRequest_reviewedByUserId
     FOREIGN KEY ("reviewedByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AnswerKey" ADD CONSTRAINT "AnswerKey_publisherId_fkey"
+ALTER TABLE "PublishedAnswerKey" ADD CONSTRAINT "PublishedAnswerKey_publisherId_fkey"
     FOREIGN KEY ("publisherId") REFERENCES "Publisher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AnswerKey" ADD CONSTRAINT "AnswerKey_createdByUserId_fkey"
+ALTER TABLE "PublishedAnswerKey" ADD CONSTRAINT "PublishedAnswerKey_createdByUserId_fkey"
     FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AnswerKeyFile" ADD CONSTRAINT "AnswerKeyFile_answerKeyId_fkey"
-    FOREIGN KEY ("answerKeyId") REFERENCES "AnswerKey"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    FOREIGN KEY ("answerKeyId") REFERENCES "PublishedAnswerKey"("id") ON DELETE CASCADE ON UPDATE CASCADE;
