@@ -1,0 +1,96 @@
+Kurumsal Sınav platformuna eklenen yayıncı ve cevap anahtarı modülü özeti
+
+İşin ana neticesi:
+- Yayıncı yönetimi ve cevap anahtarı modülü eklendi.
+- Build başarılı; mevcut uygulama yapısı korunarak entegre edildi.
+- Canlı cPanel / Neon üretim ortamı bu sandbox içinde çalışmadığı için üretim ortamında dağıtım ve migration adımları burada yapılmadı.
+
+Eklenen / değiştirilen dosyalar:
+- apps/api/prisma/schema.prisma
+  - Publisher, PublisherRequest, AnswerKey, AnswerKeyFile modelleri eklendi.
+  - Role ve request status yapısı mevcut sistemle uyumlu şekilde korundu.
+
+- apps/api/src/server.ts
+  - Yayınevi listeleme, talep oluşturma, durum görüntüleme
+  - Süper admin onay/reddet akışı
+  - Herkese açık cevap anahtarı listeleme
+  - Yönetici-only dosya yükleme/silme
+  - Dosya doğrulama, MIME kontrolü, güvenli depolama ve indirme akışı
+
+- apps/api/src/config.ts
+  - Kalıcı storage yolu ve upload boyutu ayarları eklendi
+
+- apps/api/prisma/seed.ts
+  - Başlangıç yayınevleri idempotent şekilde upsert ediliyor
+
+- apps/api/prisma/migrations/20261104010000_publisher_answer_key_support/migration.sql
+  - Yeni tablolar ve enum'lar için migration dosyası üretildi
+
+- apps/web/app/page.tsx
+  - Ana sayfa “Cevap Anahtarları” bağlantısı / önizleme eklendi
+
+- apps/web/app/cevap-anahtarlari/page.tsx
+  - Herkese açık cevap anahtarı sayfası eklendi
+
+- apps/web/app/panel/page.tsx
+  - Sol menüde yeni modüller görünüyor
+
+- apps/web/app/panel/publisher-management.tsx
+  - Kullanıcı talebi ve süper admin onay/red işlemleri
+
+- apps/web/app/panel/answer-key-management.tsx
+  - Yönetici cevap anahtarı / kazanım yükleme arayüzü
+
+- apps/web/app/styles.css
+  - Yeni modüller için tasarım stilleri eklendi
+
+Prisma migration dosyası:
+- apps/api/prisma/migrations/20261104010000_publisher_answer_key_support/migration.sql
+
+Başlangıç yayınevlerini nasıl ekleyeceğiz:
+- .env içindeki admin bilgileri ayarla:
+  - ADMIN_EMAIL
+  - ADMIN_PASSWORD
+- Sonra çalıştır:
+  cd "/home/burak/Masaüstü/kurumsal sinav"
+  npm run db:migrate
+  npm run db:seed
+
+- Bu seed, aynı yayınevini tekrar eklememek için normalize + upsert kullanıyor. İstersen tekrar çalıştırılabilir, mevcut verileri silmez.
+
+Test komutları:
+- Aşağıdaki komut çalıştırıldı ve başarılı sonuç verdi:
+
+  cd "/home/burak/Masaüstü/kurumsal sinav"
+  DATABASE_URL='postgresql://postgres:postgres@localhost:5432/kurumsal_sinav' \
+  JWT_SECRET='12345678901234567890123456789012' \
+  NEXT_PUBLIC_API_URL='https://localhost:4000' \
+  npm run build
+
+- Bu komut, backend TypeScript build, Prisma generate ve web production build’i birlikte çalıştırıyor.
+
+Hata / eksik özellik:
+- Bu ortamda canlı cPanel üretim dağıtımı ve Neon üretim DB migration’i çalıştırmadım; bu adım production environment’da yapılmalı.
+- Kod ve build tarafı temiz görünüyor; uygulamanın yerel derleme ve tip kontrolü başarılı.
+- Mobil / görsel olarak eklenen yeni arayüzlerin canlı ortamda son kontrolü, gerçek üretim sunucusunda yapılmalı.
+
+GitHub ve cPanel’e güvenli gönderme:
+1. Branch oluştur:
+   git checkout -b feature/publisher-answer-key-modules
+2. Değişiklikleri ekle ve commit et:
+   git add .
+   git commit -m "feat: add publisher and answer key modules"
+3. GitHub’a push et:
+   git push origin feature/publisher-answer-key-modules
+4. PR aç ve review sonrası main’e merge et.
+5. cPanel tarafında:
+   - repo’yu sunucuya çek
+   - dependency install
+   - migration uygula:
+     npm install
+     npm run db:migrate:deploy
+     npm run db:seed
+   - web/api servislerini yeniden başlat
+   - sadece production TLS ve güvenli env değişkenleri ile yayınla
+
+Not: canlı sunucuya otomatik kopyalama veya “silip yeniden başlatma” işlemi sandbox içinde yapılmadı; üretim sunucusunda, yetkili erişimle ve kontrollü deploy yapmanız doğru olur.

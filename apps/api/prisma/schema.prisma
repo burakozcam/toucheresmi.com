@@ -39,6 +39,17 @@ enum UploadStatus {
   FAILED
 }
 
+enum PublisherRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AnswerKeyFileCategory {
+  ANSWER_KEY
+  LEARNING_OUTCOMES
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -53,9 +64,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  dealer       Dealer?  @relation(fields: [dealerId], references: [id], onDelete: SetNull)
-  school       School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-  createdFmts  FmtTemplate[] @relation("FmtCreator")
+  dealer                    Dealer?            @relation(fields: [dealerId], references: [id], onDelete: SetNull)
+  school                    School?            @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  createdFmts               FmtTemplate[]      @relation("FmtCreator")
+  publisherRequests         PublisherRequest[] @relation("PublisherRequestByUser")
+  reviewedPublisherRequests PublisherRequest[] @relation("PublisherRequestReviewedBy")
+  answerKeysCreated         AnswerKey[]        @relation("AnswerKeyCreator")
 
   @@index([dealerId])
   @@index([schoolId])
@@ -101,10 +115,10 @@ model School {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  dealer        Dealer?       @relation(fields: [dealerId], references: [id], onDelete: SetNull)
-  users         User[]
-  exams         Exam[]
-  uploads       UploadBatch[]
+  dealer  Dealer?       @relation(fields: [dealerId], references: [id], onDelete: SetNull)
+  users   User[]
+  exams   Exam[]
+  uploads UploadBatch[]
 
   @@index([dealerId])
   @@index([name])
@@ -114,7 +128,7 @@ model Application {
   id           String            @id @default(cuid())
   type         ApplicationType
   organization String
-  contactName String
+  contactName  String
   email        String
   phone        String
   message      String?
@@ -161,16 +175,16 @@ model FmtField {
 }
 
 model UploadBatch {
-  id             String       @id @default(cuid())
-  schoolId       String
-  fmtTemplateId  String
-  originalName   String
-  storageKey     String
-  checksum       String?
-  status         UploadStatus @default(RECEIVED)
-  errorMessage   String?
-  uploadedAt     DateTime     @default(now())
-  processedAt    DateTime?
+  id            String       @id @default(cuid())
+  schoolId      String
+  fmtTemplateId String
+  originalName  String
+  storageKey    String
+  checksum      String?
+  status        UploadStatus @default(RECEIVED)
+  errorMessage  String?
+  uploadedAt    DateTime     @default(now())
+  processedAt   DateTime?
 
   school      School      @relation(fields: [schoolId], references: [id], onDelete: Restrict)
   fmtTemplate FmtTemplate @relation(fields: [fmtTemplateId], references: [id], onDelete: Restrict)
@@ -181,14 +195,14 @@ model UploadBatch {
 }
 
 model Exam {
-  id          String   @id @default(cuid())
-  schoolId    String
-  name        String
-  examDate    DateTime
-  academicYear String?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  schoolId      String
+  name          String
+  examDate      DateTime
+  academicYear  String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   school   School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   subjects ExamSubject[]
@@ -203,21 +217,80 @@ model ExamSubject {
   questionCount   Int
   wrongPerCorrect Int     @default(0)
 
-  exam       Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
-  answerKey  AnswerKey?
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
 
   @@unique([examId, name])
 }
 
-model AnswerKey {
-  id            String   @id @default(cuid())
-  examSubjectId String   @unique
-  answers       Json
-  version       Int      @default(1)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+model Publisher {
+  id             String   @id @default(cuid())
+  name           String
+  normalizedName String   @unique
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  examSubject ExamSubject @relation(fields: [examSubjectId], references: [id], onDelete: Cascade)
+  answerKeys       AnswerKey[]
+  publisherRequests PublisherRequest[]
+
+  @@index([active, name])
+}
+
+model PublisherRequest {
+  id               String                   @id @default(cuid())
+  publisherName    String
+  normalizedName   String
+  description      String?
+  publisherId      String?
+  requestedByUserId String
+  status           PublisherRequestStatus @default(PENDING)
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  publisher  Publisher? @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  requestedBy User      @relation("PublisherRequestByUser", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  reviewedBy User?     @relation("PublisherRequestReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([normalizedName, status])
+  @@index([status, createdAt])
+  @@index([requestedByUserId, createdAt])
+  @@index([publisherId])
+}
+
+model AnswerKey {
+  id              String   @id @default(cuid())
+  publisherId     String
+  grade           Int
+  examName        String
+  published       Boolean  @default(true)
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  publisher Publisher @relation(fields: [publisherId], references: [id], onDelete: Restrict)
+  createdBy User      @relation("AnswerKeyCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  files     AnswerKeyFile[]
+
+  @@index([published, createdAt])
+  @@index([publisherId, grade])
+}
+
+model AnswerKeyFile {
+  id               String                  @id @default(cuid())
+  answerKeyId      String
+  category         AnswerKeyFileCategory
+  originalFileName String
+  storedFileName   String
+  mimeType         String
+  size             Int
+  storagePath      String
+  createdAt        DateTime                @default(now())
+
+  answerKey AnswerKey @relation(fields: [answerKeyId], references: [id], onDelete: Cascade)
+
+  @@index([answerKeyId, category])
 }
 
 model ScanRecord {

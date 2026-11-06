@@ -32,8 +32,9 @@
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { margin: 0; background: var(--canvas); color: var(--ink); font-family: Arial, Helvetica, sans-serif; transition: background .2s, color .2s; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); font-family: Arial, Helvetica, sans-serif; transition: background .2s, color .2s; overflow-x: hidden; }
     button, input { font: inherit; }
+    img, canvas, svg { max-width: 100%; }
     button, a { -webkit-tap-highlight-color: transparent; }
     a { color: inherit; }
     .wrap { max-width: 1240px; min-height: 100vh; margin: auto; padding: 0 48px; }
@@ -107,6 +108,7 @@
     .card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
     .footer { display: flex; justify-content: space-between; align-items: center; min-height: 70px; border-top: 1px solid var(--line); }
     .footer > span { color: var(--muted); font-size: 11px; }
+    .version-tag { display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; margin-left: 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--blue); font-size: 10px; font-weight: 700; letter-spacing: .8px; }
 
     .screen { display: none; min-height: 100vh; }
     .screen.active { display: block; }
@@ -236,23 +238,30 @@
     .break-footer { display: flex; justify-content: space-between; margin-top: 10px; color: var(--muted); font-size: 10px; }
     .profile-message { color: #28774e; font-size: 11px; }
     @media (max-width: 760px) {
-      .wrap { padding: 0 20px; }
-      .header { height: 70px; }
-      .actions { gap: 9px; }
+      .wrap { padding: 0 16px; }
+      .header { height: auto; min-height: 70px; padding: 12px 0; gap: 12px; }
+      .brand { font-size: 12px; }
+      .actions { gap: 8px; }
       .actions > .link { display: none; }
       .theme-label { display: none; }
       .theme { width: 35px; height: 35px; padding: 0; }
-      .hero { grid-template-columns: 1fr; padding-top: 52px; }
-      h1 { font-size: 48px; }
+      .hero { grid-template-columns: 1fr; padding-top: 30px; }
+      h1 { font-size: clamp(2.4rem, 10vw, 3.4rem); line-height: 1.05; letter-spacing: -1.6px; }
       .description { font-size: 13px; }
-      .visual { height: 360px; margin: 0 -12px; }
-      .paper { scale: .9; }
-      .float-top { right: -5px; }
-      .float-bottom { left: -5px; }
-      .metrics { gap: 14px; min-height: 75px; }
+      .visual { position: relative; width: min(100%, 340px); height: 310px; margin: 0 auto; }
+      .visual:before { width: 260px; height: 260px; }
+      .orbit { width: 290px; height: 210px; }
+      .paper { width: 210px; height: 272px; padding: 16px; }
+      .paper-main { transform: rotate(-3deg); }
+      .paper-back { transform: translate(18px, 2px) rotate(7deg); }
+      .float { position: static; width: fit-content; margin: 10px auto 0; }
+      .float-top, .float-bottom { top: auto; right: auto; left: auto; bottom: auto; }
+      .float-bottom { margin-top: 8px; }
+      .metrics { gap: 12px; min-height: auto; padding: 12px 0; flex-wrap: wrap; }
       .metrics div { flex-direction: column; gap: 3px; text-align: center; }
       .metrics b { font-size: 11px; }
       .metrics span { font-size: 8px; }
+      .metrics i { display: none; }
       .cards { grid-template-columns: 1fr; gap: 10px; }
       .solutions { padding: 50px 0; }
       .solutions h2 { font-size: 24px; }
@@ -268,6 +277,16 @@
       .contact-wrap { padding: 15px 0; }
       .contact-grid, .profile-fields { grid-template-columns: 1fr; }
       .profile-fields .btn, .profile-message { grid-column: auto; }
+    }
+    @media (max-width: 420px) {
+      .header { flex-wrap: wrap; }
+      .actions { width: 100%; justify-content: flex-end; }
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .hero-actions .btn { width: 100%; }
+      .brand { max-width: 70%; }
+      .visual { height: 280px; }
+      .paper { width: 190px; height: 252px; }
+      .solutions h2 { font-size: 22px; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -324,7 +343,7 @@
           <article class="card"><span class="card-icon">▥</span><h3>Detaylı raporlama</h3><p>Öğrenci ve sınıf bazlı analizlerle performansı kolayca değerlendirin.</p></article>
         </div>
       </section>
-      <footer class="footer"><a class="brand" href="#"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><span><a class="link" href="#" onclick="showScreen('contact');return false">İletişim</a> &nbsp;·&nbsp; Ölçün. Değerlendirin. Geliştirin.</span></footer>
+      <footer class="footer"><a class="brand" href="#"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><span><a class="link" href="#" onclick="showScreen('contact');return false">İletişim</a> &nbsp;·&nbsp; Ölçün. Değerlendirin. Geliştirin.<span class="version-tag">Versiyon: 54FAYE8624FGT6</span></span></footer>
     </div>
   </main>
 

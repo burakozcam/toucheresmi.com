@@ -1,4 +1,5 @@
 import "dotenv/config";
+import path from "node:path";
 import { z } from "zod";
 
 const environmentSchema = z.object({
@@ -7,6 +8,8 @@ const environmentSchema = z.object({
   PORT: z.coerce.number().int().positive().optional(),
   API_PORT: z.coerce.number().int().positive().default(4000),
   WEB_ORIGIN: z.string().url().default("http://localhost:3000"),
+  STORAGE_DIR: z.string().default(path.resolve(__dirname, "../storage")),
+  MAX_UPLOAD_SIZE: z.coerce.number().int().positive().default(10 * 1024 * 1024),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_USER: z.string().optional(),
