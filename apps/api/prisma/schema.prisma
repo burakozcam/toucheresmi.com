@@ -64,12 +64,15 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  dealer                    Dealer?            @relation(fields: [dealerId], references: [id], onDelete: SetNull)
-  school                    School?            @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-  createdFmts               FmtTemplate[]      @relation("FmtCreator")
-  publisherRequests         PublisherRequest[] @relation("PublisherRequestByUser")
-  reviewedPublisherRequests PublisherRequest[] @relation("PublisherRequestReviewedBy")
-  publishedAnswerKeysCreated PublishedAnswerKey[] @relation("PublishedAnswerKeyCreator")
+  dealer                          Dealer?                  @relation(fields: [dealerId], references: [id], onDelete: SetNull)
+  school                          School?                  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  createdFmts                     FmtTemplate[]            @relation("FmtCreator")
+  publisherRequests               PublisherRequest[]       @relation("PublisherRequestByUser")
+  reviewedPublisherRequests       PublisherRequest[]       @relation("PublisherRequestReviewedBy")
+  publishedAnswerKeysCreated      PublishedAnswerKey[]     @relation("PublishedAnswerKeyCreator")
+  schoolsCreated                  School[]                 @relation("SchoolCreator")
+  schoolDuplicateAttemptsCreated  SchoolDuplicateAttempt[] @relation("SchoolDuplicateAttemptSubmitter")
+  schoolDuplicateAttemptsReviewed SchoolDuplicateAttempt[] @relation("SchoolDuplicateAttemptReviewer")
 
   @@index([dealerId])
   @@index([schoolId])
@@ -100,28 +103,55 @@ model Dealer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users  User[]
+  users   User[]
   schools School[]
 }
 
 model School {
-  id        String   @id @default(cuid())
-  dealerId  String?
-  name      String
-  code      String?  @unique
-  city      String?
-  district  String?
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  dealerId        String?
+  createdByUserId String?
+  name            String
+  code            String?  @unique
+  city            String?
+  district        String?
+  duplicateKey    String   @unique
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  dealer  Dealer?       @relation(fields: [dealerId], references: [id], onDelete: SetNull)
-  users   User[]
-  exams   Exam[]
-  uploads UploadBatch[]
+  dealer            Dealer?                  @relation(fields: [dealerId], references: [id], onDelete: SetNull)
+  createdBy         User?                    @relation("SchoolCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  users             User[]
+  exams             Exam[]
+  uploads           UploadBatch[]
+  duplicateAttempts SchoolDuplicateAttempt[]
 
+  @@index([dealerId, active])
   @@index([dealerId])
+  @@index([createdByUserId, active])
   @@index([name])
+}
+
+model SchoolDuplicateAttempt {
+  id                String    @id @default(cuid())
+  submittedByUserId String?
+  matchedSchoolId   String
+  submittedName     String
+  submittedCity     String?
+  submittedDistrict String?
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  reviewNote        String?
+  createdAt         DateTime  @default(now())
+
+  submittedBy   User?  @relation("SchoolDuplicateAttemptSubmitter", fields: [submittedByUserId], references: [id], onDelete: SetNull)
+  matchedSchool School @relation(fields: [matchedSchoolId], references: [id], onDelete: Restrict)
+  reviewedBy    User?  @relation("SchoolDuplicateAttemptReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([reviewedAt, createdAt])
+  @@index([submittedByUserId, createdAt])
+  @@index([matchedSchoolId])
 }
 
 model Application {
@@ -158,15 +188,15 @@ model FmtTemplate {
 }
 
 model FmtField {
-  id           String   @id @default(cuid())
+  id            String   @id @default(cuid())
   fmtTemplateId String
-  key          String
-  label        String
-  startIndex   Int
-  endIndex     Int
-  dataType     String   @default("TEXT")
-  required     Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  key           String
+  label         String
+  startIndex    Int
+  endIndex      Int
+  dataType      String   @default("TEXT")
+  required      Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
   fmtTemplate FmtTemplate @relation(fields: [fmtTemplateId], references: [id], onDelete: Cascade)
 
@@ -186,8 +216,8 @@ model UploadBatch {
   uploadedAt    DateTime     @default(now())
   processedAt   DateTime?
 
-  school      School      @relation(fields: [schoolId], references: [id], onDelete: Restrict)
-  fmtTemplate FmtTemplate @relation(fields: [fmtTemplateId], references: [id], onDelete: Restrict)
+  school      School       @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  fmtTemplate FmtTemplate  @relation(fields: [fmtTemplateId], references: [id], onDelete: Restrict)
   records     ScanRecord[]
 
   @@index([schoolId, uploadedAt])
@@ -195,29 +225,32 @@ model UploadBatch {
 }
 
 model Exam {
-  id            String   @id @default(cuid())
-  schoolId      String
-  name          String
-  examDate      DateTime
-  academicYear  String?
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  schoolId     String
+  publisherId  String?
+  name         String
+  examDate     DateTime
+  academicYear String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  school   School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  subjects ExamSubject[]
+  school    School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  publisher Publisher?    @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  subjects  ExamSubject[]
 
   @@index([schoolId, examDate])
+  @@index([publisherId])
 }
 
 model ExamSubject {
-  id              String  @id @default(cuid())
+  id              String @id @default(cuid())
   examId          String
   name            String
   questionCount   Int
-  wrongPerCorrect Int     @default(0)
+  wrongPerCorrect Int    @default(0)
 
-  exam      Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  exam      Exam       @relation(fields: [examId], references: [id], onDelete: Cascade)
   answerKey AnswerKey?
 
   @@unique([examId, name])
@@ -242,28 +275,29 @@ model Publisher {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  answerKeys       PublishedAnswerKey[]
+  answerKeys        PublishedAnswerKey[]
   publisherRequests PublisherRequest[]
+  exams             Exam[]
 
   @@index([active, name])
 }
 
 model PublisherRequest {
-  id               String                   @id @default(cuid())
-  publisherName    String
-  normalizedName   String
-  description      String?
-  publisherId      String?
+  id                String                 @id @default(cuid())
+  publisherName     String
+  normalizedName    String
+  description       String?
+  publisherId       String?
   requestedByUserId String
-  status           PublisherRequestStatus @default(PENDING)
-  reviewedByUserId String?
-  reviewedAt       DateTime?
-  createdAt        DateTime                @default(now())
-  updatedAt        DateTime                @updatedAt
+  status            PublisherRequestStatus @default(PENDING)
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
 
-  publisher  Publisher? @relation(fields: [publisherId], references: [id], onDelete: SetNull)
-  requestedBy User      @relation("PublisherRequestByUser", fields: [requestedByUserId], references: [id], onDelete: Restrict)
-  reviewedBy User?     @relation("PublisherRequestReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  publisher   Publisher? @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  requestedBy User       @relation("PublisherRequestByUser", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  reviewedBy  User?      @relation("PublisherRequestReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
 
   @@unique([normalizedName, status])
   @@index([status, createdAt])
@@ -277,20 +311,22 @@ model PublishedAnswerKey {
   grade           Int
   examName        String
   published       Boolean  @default(true)
+  publishedAt     DateTime @default(now())
   createdByUserId String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  publisher Publisher @relation(fields: [publisherId], references: [id], onDelete: Restrict)
-  createdBy User      @relation("PublishedAnswerKeyCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  publisher Publisher       @relation(fields: [publisherId], references: [id], onDelete: Restrict)
+  createdBy User            @relation("PublishedAnswerKeyCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   files     AnswerKeyFile[]
 
   @@index([published, createdAt])
+  @@index([published, publishedAt])
   @@index([publisherId, grade])
 }
 
 model AnswerKeyFile {
-  id               String                  @id @default(cuid())
+  id               String                @id @default(cuid())
   answerKeyId      String
   category         AnswerKeyFileCategory
   originalFileName String
@@ -298,7 +334,7 @@ model AnswerKeyFile {
   mimeType         String
   size             Int
   storagePath      String
-  createdAt        DateTime                @default(now())
+  createdAt        DateTime              @default(now())
 
   publishedAnswerKey PublishedAnswerKey @relation(fields: [answerKeyId], references: [id], onDelete: Cascade)
 

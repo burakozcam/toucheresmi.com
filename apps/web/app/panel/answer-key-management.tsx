@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { API_URL } from "../../lib/api";
+import PublisherSelect from "./publisher-select";
 
-type Publisher = { id: string; name: string };
-type AnswerKeyFile = { id: string; category: "ANSWER_KEY" | "LEARNING_OUTCOMES"; originalFileName: string; mimeType: string; size: number; createdAt: string; storagePath: string };
+type Publisher = { id: string; name: string; active: boolean };
+type AnswerKeyFile = { id: string; category: "ANSWER_KEY" | "LEARNING_OUTCOMES"; originalFileName: string; mimeType: string; size: number; createdAt: string; storagePath?: string };
 type AnswerKeyRecord = {
   id: string;
   publisherId: string;
@@ -13,6 +14,7 @@ type AnswerKeyRecord = {
   examName: string;
   published: boolean;
   createdAt: string;
+  publishedAt: string;
   publisher: Publisher;
   files: AnswerKeyFile[];
 };
@@ -23,9 +25,10 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<AnswerKeyRecord | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ publisherId: "", grade: "8", examName: "", published: true });
+  const [form, setForm] = useState({ publisherId: "", grade: "8", examName: "", published: true, publishedAt: new Date().toISOString().slice(0, 10) });
 
   const filteredRecords = useMemo(() => {
     const value = query.trim().toLocaleLowerCase("tr-TR");
@@ -37,7 +40,9 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [publisherResponse, answerResponse] = await Promise.all([
-        fetch(`${API_URL}/api/publishers`, { headers }),
+        readOnly
+          ? fetch(`${API_URL}/api/publishers`, { headers })
+          : fetch(`${API_URL}/api/admin/publishers`, { headers }),
         readOnly
           ? fetch(`${API_URL}/api/answer-keys?limit=30`)
           : fetch(`${API_URL}/api/admin/answer-keys`, { headers }),
@@ -64,8 +69,9 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
 
       setPublishers(publisherData);
       setRecords(responseItems);
-      if (!readOnly && !form.publisherId && publisherData[0]) {
-        setForm((current) => ({ ...current, publisherId: publisherData[0].id }));
+      const firstActivePublisher = publisherData.find((publisher) => publisher.active);
+      if (!readOnly && !form.publisherId && firstActivePublisher) {
+        setForm((current) => ({ ...current, publisherId: firstActivePublisher.id }));
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Cevap anahtarı verisi yüklenemedi.");
@@ -82,11 +88,15 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
     event.preventDefault();
     setNotice("");
     setError("");
+    if (!publishers.some((publisher) => publisher.id === form.publisherId && publisher.active)) {
+      setError("Etkin bir yayınevi seçmelisiniz.");
+      return;
+    }
     const formData = new FormData(event.currentTarget);
     const inputFiles = formData.getAll("answerKeyFile") as File[];
     const outcomeFiles = formData.getAll("learningOutcomesFile") as File[];
 
-    if (inputFiles.filter(Boolean).length === 0 && outcomeFiles.filter(Boolean).length === 0) {
+    if (!inputFiles.some((file) => file.size > 0) && !outcomeFiles.some((file) => file.size > 0)) {
       setError("En az bir dosya yüklemelisiniz.");
       return;
     }
@@ -107,7 +117,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
 
       setNotice(result.message ?? "Cevap anahtarı kaydedildi.");
       event.currentTarget.reset();
-      setForm({ publisherId: publishers[0]?.id ?? "", grade: "8", examName: "", published: true });
+      setForm({ publisherId: publishers.find((publisher) => publisher.active)?.id ?? "", grade: "8", examName: "", published: true, publishedAt: new Date().toISOString().slice(0, 10) });
       await loadData();
     } catch {
       setError("Dosya yükleme sırasında hata oluştu.");
@@ -152,15 +162,11 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       {!readOnly && (
         <form className="answer-key-form" onSubmit={handleSubmit}>
           <div className="two-column-fields">
-            <label>
+            <label className="publisher-select-field">
               Yayınevi
-              <select name="publisherId" value={form.publisherId} onChange={(event) => setForm((current) => ({ ...current, publisherId: event.target.value }))} required>
-                <option value="">Seçiniz</option>
-                {publishers.map((publisher) => (
-                  <option key={publisher.id} value={publisher.id}>{publisher.name}</option>
-                ))}
-              </select>
-            </label>
+                <input type="hidden" name="publisherId" value={form.publisherId} />
+                <PublisherSelect publishers={publishers.filter((publisher) => publisher.active)} value={form.publisherId} onChange={(publisherId) => setForm((current) => ({ ...current, publisherId }))} />
+              </label>
             <label>
               Sınıf
               <select name="grade" value={form.grade} onChange={(event) => setForm((current) => ({ ...current, grade: event.target.value }))} required>
@@ -173,6 +179,8 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
             Sınav / deneme adı
             <input name="examName" value={form.examName} onChange={(event) => setForm((current) => ({ ...current, examName: event.target.value }))} placeholder="Türkiye Geneli Deneme 1" required />
           </label>
+
+          <label>Yayın tarihi<input type="date" name="publishedAt" value={form.publishedAt} onChange={(event) => setForm((current) => ({ ...current, publishedAt: event.target.value }))} required /></label>
 
           <label className="checkbox-row">
             <input type="checkbox" name="published" checked={form.published} onChange={(event) => setForm((current) => ({ ...current, published: event.target.checked }))} />
@@ -196,7 +204,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
 
       <div className="public-list-panel">
         <div className="list-header-row">
-          <h3>Yayımlanan cevap anahtarları</h3>
+          <h3>{readOnly ? "Yayımlanan cevap anahtarları" : "Cevap anahtarı kayıtları"}</h3>
           <label className="search-field compact-search">
             <span>Arama</span>
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Sınav ara..." />
@@ -218,11 +226,43 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                   </div>
                   <h4>{item.examName}</h4>
                   <p>{item.publisher.name}</p>
-                  <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.createdAt))}</small>
+                  <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
+                  {!readOnly && editing?.id === item.id && (
+                    <form className="answer-key-edit-form" onSubmit={(event) => {
+                      event.preventDefault();
+                      const formData = new FormData(event.currentTarget);
+                      void saveRecord(item.id, formData);
+                    }}>
+                      <input type="hidden" name="publisherId" value={editing.publisherId} />
+                      <label>Yayınevi<PublisherSelect publishers={publishers.filter((publisher) => publisher.active || publisher.id === editing.publisherId)} value={editing.publisherId} onChange={(publisherId) => setEditing((current) => current ? { ...current, publisherId } : current)} /></label>
+                      <div className="two-column-fields">
+                        <label>Sınıf<select name="grade" value={String(editing.grade)} onChange={(event) => setEditing({ ...editing, grade: Number(event.target.value) })}>{[1,2,3,4,5,6,7,8,9,10,11,12].map((grade) => <option key={grade} value={String(grade)}>{grade}. Sınıf</option>)}</select></label>
+                        <label>Yayın tarihi<input type="date" name="publishedAt" value={editing.publishedAt.slice(0, 10)} onChange={(event) => setEditing({ ...editing, publishedAt: event.target.value })} required /></label>
+                      </div>
+                      <label>Sınav / deneme adı<input name="examName" value={editing.examName} onChange={(event) => setEditing({ ...editing, examName: event.target.value })} required maxLength={180} /></label>
+                      <label className="checkbox-row"><input type="checkbox" name="published" checked={editing.published} onChange={(event) => setEditing({ ...editing, published: event.target.checked })} />Yayımlansın</label>
+                      <div className="file-upload-grid">
+                        <label>Yeni cevap anahtarı dosyası<input type="file" name="answerKeyFile" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.webp" /></label>
+                        <label>Yeni kazanım dosyası<input type="file" name="learningOutcomesFile" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.webp" /></label>
+                      </div>
+                      <div className="download-actions">
+                        <button className="button button-navy" type="submit">Değişiklikleri kaydet</button>
+                        <button className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</button>
+                      </div>
+                    </form>
+                  )}
                   <div className="download-actions">
-                    {answerFile && <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>}
-                    {outcomesFile && <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${outcomesFile.id}`} target="_blank" rel="noreferrer">Kazanımı İndir</a>}
-                    {!readOnly && <button type="button" className="button button-navy danger-button" onClick={() => void deleteRecord(item.id)}>Sil</button>}
+                    {answerFile && (readOnly
+                      ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>
+                      : <button type="button" className="button button-quiet" onClick={() => void downloadFile(answerFile)}>Cevap Anahtarını İncele</button>)}
+                    {outcomesFile && (readOnly
+                      ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${outcomesFile.id}`} target="_blank" rel="noreferrer">Kazanımı İndir</a>
+                      : <button type="button" className="button button-quiet" onClick={() => void downloadFile(outcomesFile)}>Kazanımı İncele</button>)}
+                    {!readOnly && <>
+                      <button type="button" className="button button-quiet" onClick={() => setEditing(item)}>Düzenle</button>
+                      <button type="button" className="button button-quiet" onClick={() => void setPublished(item, !item.published)}>{item.published ? "Yayından kaldır" : "Yeniden yayımla"}</button>
+                      <button type="button" className="button button-navy danger-button" onClick={() => void deleteRecord(item.id)}>Sil</button>
+                    </>}
                   </div>
                 </article>
               );
@@ -232,4 +272,57 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       </div>
     </section>
   );
+
+  async function saveRecord(id: string, formData: FormData) {
+    setError("");
+    setNotice("");
+    try {
+    const response = await fetch(`${API_URL}/api/admin/answer-keys/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { Authorization: "Bearer " + token },
+      body: formData,
+    });
+    const result = await response.json() as { error?: string; message?: string };
+    if (!response.ok) {
+      setError(result.error ?? "Cevap anahtarı güncellenemedi.");
+      return;
+    }
+    setNotice(result.message ?? "Cevap anahtarı güncellendi.");
+    setEditing(null);
+    await loadData();
+    } catch {
+      setError("Cevap anahtarı güncellenirken sunucuya ulaşılamadı.");
+    }
+  }
+
+  async function setPublished(item: AnswerKeyRecord, published: boolean) {
+    const formData = new FormData();
+    formData.set("publisherId", item.publisherId);
+    formData.set("grade", String(item.grade));
+    formData.set("examName", item.examName);
+    formData.set("published", String(published));
+    formData.set("publishedAt", item.publishedAt.slice(0, 10));
+    await saveRecord(item.id, formData);
+  }
+
+  async function downloadFile(file: AnswerKeyFile) {
+    setError("");
+    try {
+      const response = await fetch(`${API_URL}/api/admin/answer-key-files/${encodeURIComponent(file.id)}`, {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (!response.ok) {
+        const result = await response.json() as { error?: string };
+        throw new Error(result.error ?? "Dosya indirilemedi.");
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.originalFileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "Dosya indirilemedi.");
+    }
+  }
 }

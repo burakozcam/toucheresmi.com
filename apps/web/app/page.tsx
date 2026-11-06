@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./theme-toggle";
+import SiteFooter from "./site-footer";
+import { answerKeyPath } from "../lib/answer-key";
 import { API_URL } from "../lib/api";
 
 const answerRows = [
@@ -18,12 +20,13 @@ type PreviewAnswerKey = {
   examName: string;
   grade: number;
   publisher: { id: string; name: string };
-  createdAt: string;
+  publishedAt: string;
   files: Array<{ id: string; category: "ANSWER_KEY" | "LEARNING_OUTCOMES" }>;
 };
 
 export default function Home() {
   const [previewItems, setPreviewItems] = useState<PreviewAnswerKey[]>([]);
+  const [previewError, setPreviewError] = useState("");
 
   useEffect(() => {
     async function loadPreview() {
@@ -32,9 +35,13 @@ export default function Home() {
         const result = await response.json() as { items?: PreviewAnswerKey[]; error?: string };
         if (response.ok && Array.isArray(result.items)) {
           setPreviewItems(result.items);
+        } else {
+          setPreviewError(result.error ?? "Cevap anahtarı önizlemesi yüklenemedi.");
         }
-      } catch {
-        setPreviewItems([]);
+      } catch (error) {
+        setPreviewError(error instanceof TypeError
+          ? "Cevap anahtarı servisine ulaşılamadı. Lütfen daha sonra tekrar deneyin."
+          : error instanceof Error ? error.message : "Cevap anahtarı önizlemesi yüklenemedi.");
       }
     }
     void loadPreview();
@@ -109,23 +116,25 @@ export default function Home() {
           <h2 id="answer-key-preview-title">Son eklenen denemeler</h2>
         </div>
         <div className="preview-grid">
-          {previewItems.length === 0 ? (
+          {previewError ? (
+            <p className="notice error" role="alert">{previewError}</p>
+          ) : previewItems.length === 0 ? (
             <p className="empty-state">Henüz yayımlanmış cevap anahtarı bulunmuyor.</p>
           ) : (
             previewItems.map((item) => (
               <article className="answer-key-card" key={item.id}>
                 <div className="answer-key-header">
                   <span className="badge">{item.grade}. Sınıf</span>
-                  <span className="status-dot">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.createdAt))}</span>
+                  <span className="status-dot">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</span>
                 </div>
-                <h3>{item.publisher.name}</h3>
+                <h3><Link href={answerKeyPath(item)}>{item.publisher.name}</Link></h3>
                 <p className="exam-name">{item.examName}</p>
                 <div className="download-actions">
                   {item.files.some((file) => file.category === "ANSWER_KEY") && (
-                    <Link className="button button-navy" href="/cevap-anahtarlari">İndir</Link>
+                    <Link className="button button-navy" href={answerKeyPath(item)}>İndir</Link>
                   )}
                   {item.files.some((file) => file.category === "LEARNING_OUTCOMES") && (
-                    <Link className="button button-quiet" href="/cevap-anahtarlari">Kazanım</Link>
+                    <Link className="button button-quiet" href={answerKeyPath(item)}>Kazanım</Link>
                   )}
                 </div>
               </article>
@@ -137,7 +146,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="landing-footer"><Link className="brand" href="/"><span className="brand-mark">K</span><span>kurumsal<span className="brand-light">sinav.com</span></span></Link><span><Link href="/contact">İletişim</Link> · Ölçün. Değerlendirin. Geliştirin.</span></footer>
+      <SiteFooter />
     </main>
   );
 }

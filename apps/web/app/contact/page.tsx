@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import ThemeToggle from "../theme-toggle";
 import { API_URL } from "../../lib/api";
+import SiteFooter from "../site-footer";
 
 export default function ContactPage() {
   const [notice, setNotice] = useState("");
@@ -72,7 +73,7 @@ export default function ContactPage() {
           <a className="support-email" href="mailto:destek@kurumsalsinav.com">destek@kurumsalsinav.com</a>
         </aside>
       </section>
-      <footer className="contact-footer">© 2026 kurumsalsinav.com <span><Link href="/">Ana sayfa</Link></span></footer>
+      <SiteFooter />
     </main>
   );
 }

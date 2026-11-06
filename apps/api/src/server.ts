@@ -30,6 +30,31 @@ const normalizePublisherName = (value: string) => value
   .trim()
   .toUpperCase();
 
+const normalizeSchoolIdentityPart = (value: string | null | undefined) =>
+  normalizePublisherName(value ?? "");
+
+const schoolIdentityKey = (name: string, city?: string | null, district?: string | null) =>
+  [name, city, district].map(normalizeSchoolIdentityPart).join("|");
+
+const schoolSchema = z.object({
+  name: z.string().trim().min(2).max(180),
+  city: z.string().trim().max(100).nullable().optional(),
+  district: z.string().trim().max(100).nullable().optional(),
+  code: z.string().trim().max(80).nullable().optional(),
+  dealerId: z.string().min(1).nullable().optional(),
+});
+
+const schoolUpdateSchema = schoolSchema.partial().extend({
+  active: z.boolean().optional(),
+});
+
+const examSchema = z.object({
+  schoolId: z.string().min(1),
+  publisherId: z.string().min(1).nullable().optional(),
+  name: z.string().trim().min(2).max(180),
+  examDate: z.coerce.date(),
+});
+
 const allowedExtensions = new Set(["pdf", "xlsx", "xls", "png", "jpg", "jpeg", "webp"]);
 const allowedMimeTypes = new Set([
   "application/pdf",
@@ -92,7 +117,15 @@ const answerKeyUploadBodySchema = z.object({
   publisherId: z.string().min(1),
   grade: z.coerce.number().int().min(1).max(12),
   examName: z.string().trim().min(2).max(180),
-  published: z.preprocess((value) => value === "false" ? false : Boolean(value), z.boolean()).default(true),
+  published: z.preprocess((value) => {
+    if (value === undefined || value === true || value === "true" || value === "on") return true;
+    if (value === false || value === "false") return false;
+    return value;
+  }, z.boolean()),
+  publishedAt: z.preprocess(
+    (value) => typeof value === "string" && value.trim() ? value : undefined,
+    z.coerce.date().optional(),
+  ),
 });
 
 function toPublicPublisher(publisher: { id: string; name: string; normalizedName: string; active: boolean; createdAt: Date; updatedAt: Date }) {
@@ -277,6 +310,242 @@ app.post("/api/contact", async (request, response, next) => {
     next(error);
   }
 });
+
+app.get(
+  "/api/admin/applications",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (_request: AuthenticatedRequest, response, next) => {
+    try {
+      const applications = await prisma.application.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+      response.json(applications);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.get(
+  "/api/admin/registration-requests",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (_request: AuthenticatedRequest, response, next) => {
+    try {
+      const registrations = await prisma.registrationRequest.findMany({
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      response.json(registrations);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.get(
+  "/api/admin/users",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (_request: AuthenticatedRequest, response, next) => {
+    try {
+      const users = await prisma.user.findMany({
+        where: { role: { not: Role.SUPER_ADMIN } },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          active: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      response.json(users);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+const userStatusSchema = z.object({ active: z.boolean() });
+
+app.patch(
+  "/api/admin/users/:id/status",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    const parsed = userStatusSchema.safeParse(request.body);
+    const userId = getRouteParamId(request.params.id);
+    if (!parsed.success || !userId) {
+      response.status(400).json({ error: "Kullanıcı durumu geçersiz." });
+      return;
+    }
+
+    try {
+      const result = await prisma.user.updateMany({
+        where: { id: userId, role: { not: Role.SUPER_ADMIN } },
+        data: { active: parsed.data.active },
+      });
+      if (result.count === 0) {
+        response.status(404).json({ error: "Kullanıcı bulunamadı." });
+        return;
+      }
+      response.json({ id: userId, active: parsed.data.active });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.delete(
+  "/api/admin/users/:id",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    const userId = getRouteParamId(request.params.id);
+    if (!userId) {
+      response.status(400).json({ error: "Kullanıcı kimliği geçersiz." });
+      return;
+    }
+    try {
+      const user = await prisma.user.findFirst({
+        where: { id: userId, role: { not: Role.SUPER_ADMIN } },
+        select: { id: true, email: true },
+      });
+      if (!user) {
+        response.status(404).json({ error: "Kullanıcı bulunamadı." });
+        return;
+      }
+      await prisma.$transaction(async (transaction) => {
+        await transaction.registrationRequest.deleteMany({
+          where: { email: user.email, status: RegistrationStatus.APPROVED },
+        });
+        await transaction.user.delete({ where: { id: user.id } });
+      });
+      response.status(204).end();
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        response.status(409).json({ error: "Kullanıcı ilişkili kayıtlara sahip olduğu için silinemiyor. Erişimini kapatarak hesabı pasifleştirebilirsiniz." });
+        return;
+      }
+      next(error);
+    }
+  },
+);
+
+const passwordResetSchema = z.object({
+  password: z.string().min(12).max(128)
+    .refine((password) => Buffer.byteLength(password, "utf8") <= 72),
+});
+
+app.patch(
+  "/api/admin/users/:id/password",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    const parsed = passwordResetSchema.safeParse(request.body);
+    const userId = getRouteParamId(request.params.id);
+    if (!parsed.success || !userId) {
+      response.status(400).json({ error: "Yeni şifre en az 12 karakter ve en fazla 72 bayt olmalıdır." });
+      return;
+    }
+    try {
+      const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+      const result = await prisma.user.updateMany({
+        where: { id: userId, role: { not: Role.SUPER_ADMIN } },
+        data: { passwordHash },
+      });
+      if (result.count === 0) {
+        response.status(404).json({ error: "Kullanıcı bulunamadı." });
+        return;
+      }
+      response.json({ id: userId, message: "Kullanıcı şifresi güncellendi." });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+const registrationDecisionSchema = z.object({
+  status: z.enum([RegistrationStatus.APPROVED, RegistrationStatus.REJECTED]),
+});
+
+app.patch(
+  "/api/admin/registration-requests/:id",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request: AuthenticatedRequest, response, next) => {
+    const parsed = registrationDecisionSchema.safeParse(request.body);
+    const registrationId = getRouteParamId(request.params.id);
+    if (!parsed.success || !registrationId) {
+      response.status(400).json({ error: "Onay veya ret kararı seçin." });
+      return;
+    }
+    try {
+      const result = await prisma.$transaction(async (transaction) => {
+        const registration = await transaction.registrationRequest.findUnique({
+          where: { id: registrationId },
+        });
+        if (!registration) return { kind: "not-found" as const };
+        if (registration.status !== RegistrationStatus.PENDING) {
+          return { kind: "already-reviewed" as const, status: registration.status };
+        }
+        if (parsed.data.status === RegistrationStatus.APPROVED) {
+          if (!registration.passwordHash) return { kind: "missing-password" as const };
+          await transaction.user.create({
+            data: {
+              email: registration.email,
+              passwordHash: registration.passwordHash,
+              firstName: registration.firstName,
+              lastName: registration.lastName,
+              phone: registration.phone,
+              role: Role.DEALER,
+              active: true,
+            },
+            select: { id: true },
+          });
+        }
+        const updated = await transaction.registrationRequest.update({
+          where: { id: registration.id },
+          data: { status: parsed.data.status, passwordHash: null },
+          select: { id: true, status: true, updatedAt: true },
+        });
+        return { kind: "updated" as const, registration: updated };
+      });
+      if (result.kind === "not-found") {
+        response.status(404).json({ error: "Üyelik talebi bulunamadı." });
+        return;
+      }
+      if (result.kind === "already-reviewed") {
+        response.status(409).json({ error: `Bu talep daha önce ${result.status === RegistrationStatus.APPROVED ? "onaylanmış" : "reddedilmiş"}.` });
+        return;
+      }
+      if (result.kind === "missing-password") {
+        response.status(409).json({ error: "Üyelik talebinde kullanılabilir bir şifre özeti bulunamadı." });
+        return;
+      }
+      response.json(result.registration);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        response.status(409).json({ error: "Bu e-posta adresi başka bir kullanıcı tarafından kullanılıyor." });
+        return;
+      }
+      next(error);
+    }
+  },
+);
 
 app.get("/api/publishers", async (_request, response, next) => {
   try {
@@ -537,6 +806,431 @@ app.get(
   },
 );
 
+app.patch(
+  "/api/admin/publishers/:id",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    const publisherId = getRouteParamId(request.params.id);
+    const parsed = z.object({
+      name: z.string().trim().min(2).max(180).optional(),
+      active: z.boolean().optional(),
+    }).refine((value) => value.name !== undefined || value.active !== undefined).safeParse(request.body);
+    if (!publisherId || !parsed.success) {
+      response.status(400).json({ error: "Yayınevi bilgileri geçersiz." });
+      return;
+    }
+
+    try {
+      const currentPublisher = await prisma.publisher.findUnique({ where: { id: publisherId } });
+      if (!currentPublisher) {
+        response.status(404).json({ error: "Yayınevi bulunamadı." });
+        return;
+      }
+
+      const normalizedName = parsed.data.name
+        ? normalizePublisherName(parsed.data.name)
+        : currentPublisher.normalizedName;
+      if (normalizedName !== currentPublisher.normalizedName) {
+        const duplicate = await prisma.publisher.findUnique({ where: { normalizedName } });
+        if (duplicate) {
+          response.status(409).json({ error: "Bu isimde başka bir yayınevi zaten kayıtlı." });
+          return;
+        }
+      }
+
+      const updated = await prisma.publisher.update({
+        where: { id: publisherId },
+        data: {
+          ...(parsed.data.name ? { name: parsed.data.name.trim(), normalizedName } : {}),
+          ...(parsed.data.active !== undefined ? { active: parsed.data.active } : {}),
+        },
+        select: { id: true, name: true, normalizedName: true, active: true, createdAt: true, updatedAt: true },
+      });
+      response.json(updated);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        response.status(409).json({ error: "Bu yayınevi adı başka bir kayıt tarafından kullanılıyor." });
+        return;
+      }
+      next(error);
+    }
+  },
+);
+
+app.get(
+  "/api/admin/dealers",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (_request: AuthenticatedRequest, response, next) => {
+    try {
+      const dealers = await prisma.dealer.findMany({
+        where: { active: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      });
+      response.json(dealers);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.get(
+  "/api/schools",
+  requireAuth,
+  async (request: AuthenticatedRequest, response, next) => {
+    if (request.user!.role !== Role.SUPER_ADMIN && request.user!.role !== Role.DEALER) {
+      response.status(403).json({ error: "Kurum listesini görüntüleme yetkiniz yok." });
+      return;
+    }
+    try {
+      const activeFilter = request.query.active === "true"
+        ? { active: true }
+        : request.query.active === "false"
+          ? { active: false }
+          : {};
+      const ownership = request.user!.role === Role.SUPER_ADMIN
+        ? {}
+        : {
+          OR: [
+            { createdByUserId: request.user!.id },
+            ...(request.user!.dealerId ? [{ dealerId: request.user!.dealerId }] : []),
+          ],
+        };
+      const schools = await prisma.school.findMany({
+        where: { ...activeFilter, ...ownership },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          city: true,
+          district: true,
+          active: true,
+          createdAt: true,
+          updatedAt: true,
+          dealer: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
+        orderBy: [{ name: "asc" }, { city: "asc" }, { district: "asc" }],
+      });
+      response.json(schools);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.post(
+  "/api/schools",
+  requireAuth,
+  async (request: AuthenticatedRequest, response, next) => {
+    if (request.user!.role !== Role.SUPER_ADMIN && request.user!.role !== Role.DEALER) {
+      response.status(403).json({ error: "Kurum ekleme yetkiniz yok." });
+      return;
+    }
+    const parsed = schoolSchema.safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: "Kurum adı geçerli olmalı; il ve ilçe bilgilerini kontrol edin." });
+      return;
+    }
+
+    const identity = schoolIdentityKey(parsed.data.name, parsed.data.city, parsed.data.district);
+    try {
+      const schools = await prisma.school.findMany({
+        select: { id: true, name: true, city: true, district: true },
+      });
+      const duplicate = schools.find((school) =>
+        schoolIdentityKey(school.name, school.city, school.district) === identity
+      );
+      if (duplicate) {
+        await prisma.schoolDuplicateAttempt.create({
+          data: {
+            submittedByUserId: request.user!.id,
+            matchedSchoolId: duplicate.id,
+            submittedName: parsed.data.name,
+            submittedCity: parsed.data.city?.trim() || null,
+            submittedDistrict: parsed.data.district?.trim() || null,
+          },
+        });
+        response.status(409).json({
+          error: "Bu kurum aynı il ve ilçede zaten kayıtlı. Farklı bir il veya ilçedeki aynı adlı kurum eklenebilir.",
+        });
+        return;
+      }
+
+      const dealerId = request.user!.role === Role.SUPER_ADMIN
+        ? parsed.data.dealerId ?? null
+        : request.user!.dealerId;
+      if (dealerId) {
+        const dealer = await prisma.dealer.findUnique({ where: { id: dealerId }, select: { id: true } });
+        if (!dealer) {
+          response.status(400).json({ error: "Seçilen bayi bulunamadı." });
+          return;
+        }
+      }
+      const school = await prisma.school.create({
+        data: {
+          name: parsed.data.name,
+          city: parsed.data.city?.trim() || null,
+          district: parsed.data.district?.trim() || null,
+          code: parsed.data.code?.trim() || null,
+          dealerId,
+          createdByUserId: request.user!.id,
+          duplicateKey: identity,
+        },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          city: true,
+          district: true,
+          active: true,
+          createdAt: true,
+          updatedAt: true,
+          dealer: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
+      });
+      response.status(201).json(school);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        response.status(409).json({ error: "Bu kurum bilgileri veya kurum kodu başka bir kayıt tarafından kullanılıyor." });
+        return;
+      }
+      next(error);
+    }
+  },
+);
+
+app.get(
+  "/api/admin/school-duplicate-attempts",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    try {
+      const reviewed = request.query.reviewed === "true"
+        ? { reviewedAt: { not: null } }
+        : request.query.reviewed === "false"
+          ? { reviewedAt: null }
+          : {};
+      const attempts = await prisma.schoolDuplicateAttempt.findMany({
+        where: reviewed,
+        include: {
+          submittedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+          matchedSchool: { select: { id: true, name: true, city: true, district: true } },
+          reviewedBy: { select: { id: true, firstName: true, lastName: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 200,
+      });
+      response.json(attempts);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.patch(
+  "/api/admin/school-duplicate-attempts/:id",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request: AuthenticatedRequest, response, next) => {
+    const attemptId = getRouteParamId(request.params.id);
+    const parsed = z.object({ reviewNote: z.string().trim().max(500).optional() }).safeParse(request.body);
+    if (!attemptId || !parsed.success) {
+      response.status(400).json({ error: "İnceleme bilgileri geçersiz." });
+      return;
+    }
+    try {
+      const updated = await prisma.schoolDuplicateAttempt.update({
+        where: { id: attemptId },
+        data: {
+          reviewedAt: new Date(),
+          reviewedByUserId: request.user!.id,
+          ...(parsed.data.reviewNote !== undefined ? { reviewNote: parsed.data.reviewNote || null } : {}),
+        },
+        select: { id: true, reviewedAt: true, reviewNote: true },
+      });
+      response.json(updated);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        response.status(404).json({ error: "Mükerrer kurum inceleme kaydı bulunamadı." });
+        return;
+      }
+      next(error);
+    }
+  },
+);
+
+app.patch(
+  "/api/admin/schools/:id",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    const schoolId = getRouteParamId(request.params.id);
+    const parsed = schoolUpdateSchema.safeParse(request.body);
+    if (!schoolId || !parsed.success) {
+      response.status(400).json({ error: "Kurum bilgileri geçersiz." });
+      return;
+    }
+    try {
+      const current = await prisma.school.findUnique({ where: { id: schoolId } });
+      if (!current) {
+        response.status(404).json({ error: "Kurum bulunamadı." });
+        return;
+      }
+      const name = parsed.data.name ?? current.name;
+      const city = parsed.data.city === undefined ? current.city : parsed.data.city;
+      const district = parsed.data.district === undefined ? current.district : parsed.data.district;
+      const identity = schoolIdentityKey(name, city, district);
+      const identityChanged = identity !== schoolIdentityKey(current.name, current.city, current.district);
+      if (identityChanged) {
+        const schools = await prisma.school.findMany({
+          where: { id: { not: schoolId } },
+          select: { name: true, city: true, district: true },
+        });
+        if (schools.some((school) => schoolIdentityKey(school.name, school.city, school.district) === identity)) {
+          response.status(409).json({ error: "Aynı il ve ilçede bu isimde başka bir kurum var." });
+          return;
+        }
+      }
+
+      const updated = await prisma.school.update({
+        where: { id: schoolId },
+        data: {
+          ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
+          ...(parsed.data.city !== undefined ? { city: parsed.data.city?.trim() || null } : {}),
+          ...(parsed.data.district !== undefined ? { district: parsed.data.district?.trim() || null } : {}),
+          ...(parsed.data.code !== undefined ? { code: parsed.data.code?.trim() || null } : {}),
+          ...(parsed.data.dealerId !== undefined ? { dealerId: parsed.data.dealerId } : {}),
+          ...(parsed.data.active !== undefined ? { active: parsed.data.active } : {}),
+          ...(identityChanged ? { duplicateKey: identity } : {}),
+        },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          city: true,
+          district: true,
+          active: true,
+          createdAt: true,
+          updatedAt: true,
+          dealer: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
+      });
+      response.json(updated);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        response.status(409).json({ error: "Kurum kodu veya kurum bilgileri başka bir kayıt tarafından kullanılıyor." });
+        return;
+      }
+      next(error);
+    }
+  },
+);
+
+app.get(
+  "/api/exams",
+  requireAuth,
+  async (request: AuthenticatedRequest, response, next) => {
+    if (![Role.SUPER_ADMIN, Role.DEALER, Role.SCHOOL_ADMIN].some((role) => role === request.user!.role)) {
+      response.status(403).json({ error: "Sınav listesini görüntüleme yetkiniz yok." });
+      return;
+    }
+    try {
+      const where: Prisma.ExamWhereInput = request.user!.role === Role.SUPER_ADMIN
+        ? {}
+        : request.user!.role === Role.SCHOOL_ADMIN
+          ? { schoolId: request.user!.schoolId ?? "" }
+          : {
+            school: {
+              OR: [
+                { createdByUserId: request.user!.id },
+                ...(request.user!.dealerId ? [{ dealerId: request.user!.dealerId }] : []),
+              ],
+            },
+          };
+      const exams = await prisma.exam.findMany({
+        where,
+        include: {
+          school: { select: { id: true, name: true, city: true, district: true } },
+          publisher: { select: { id: true, name: true } },
+        },
+        orderBy: { examDate: "desc" },
+        take: 100,
+      });
+      response.json(exams);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.post(
+  "/api/exams",
+  requireAuth,
+  async (request: AuthenticatedRequest, response, next) => {
+    if (![Role.SUPER_ADMIN, Role.DEALER, Role.SCHOOL_ADMIN].some((role) => role === request.user!.role)) {
+      response.status(403).json({ error: "Sınav oluşturma yetkiniz yok." });
+      return;
+    }
+    const parsed = examSchema.safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: "Kurum, sınav adı ve sınav tarihi geçerli olmalıdır." });
+      return;
+    }
+    try {
+      const schoolScope: Prisma.SchoolWhereInput = request.user!.role === Role.SCHOOL_ADMIN
+        ? { id: request.user!.schoolId ?? "" }
+        : request.user!.role === Role.DEALER
+          ? {
+            OR: [
+              { createdByUserId: request.user!.id },
+              ...(request.user!.dealerId ? [{ dealerId: request.user!.dealerId }] : []),
+            ],
+          }
+          : {};
+      const schoolWhere: Prisma.SchoolWhereInput = {
+        id: parsed.data.schoolId,
+        active: true,
+        ...schoolScope,
+      };
+      const school = await prisma.school.findFirst({ where: schoolWhere, select: { id: true } });
+      if (!school) {
+        response.status(404).json({ error: "Aktif ve erişim yetkiniz olan kurum bulunamadı." });
+        return;
+      }
+      if (parsed.data.publisherId) {
+        const publisher = await prisma.publisher.findFirst({
+          where: { id: parsed.data.publisherId, active: true },
+          select: { id: true },
+        });
+        if (!publisher) {
+          response.status(400).json({ error: "Seçilen yayınevi etkin değil veya bulunamadı." });
+          return;
+        }
+      }
+      const exam = await prisma.exam.create({
+        data: {
+          schoolId: school.id,
+          publisherId: parsed.data.publisherId ?? null,
+          name: parsed.data.name,
+          examDate: parsed.data.examDate,
+        },
+        include: {
+          school: { select: { id: true, name: true } },
+          publisher: { select: { id: true, name: true } },
+        },
+      });
+      response.status(201).json(exam);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 app.get("/api/answer-keys", async (request, response, next) => {
   try {
     const publisherId = typeof request.query.publisherId === "string" ? request.query.publisherId : undefined;
@@ -544,12 +1238,24 @@ app.get("/api/answer-keys", async (request, response, next) => {
     const search = typeof request.query.search === "string" ? request.query.search.trim() : "";
     const fileType = typeof request.query.fileType === "string" ? request.query.fileType : undefined;
     const page = Number(request.query.page ?? 1);
-    const limit = Math.min(Number(request.query.limit ?? 12), 50);
+    const limit = Number(request.query.limit ?? 12);
+    if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
+      response.status(400).json({ error: "Sayfa numarası veya sayfa boyutu geçersiz." });
+      return;
+    }
+    if (grade !== undefined && (!Number.isInteger(grade) || grade < 1 || grade > 12)) {
+      response.status(400).json({ error: "Sınıf filtresi 1 ile 12 arasında olmalıdır." });
+      return;
+    }
+    if (fileType && !Object.values(AnswerKeyFileCategory).includes(fileType as AnswerKeyFileCategory)) {
+      response.status(400).json({ error: "Dosya türü filtresi geçersiz." });
+      return;
+    }
 
     const where: Prisma.PublishedAnswerKeyWhereInput = {
       published: true,
       ...(publisherId ? { publisherId } : {}),
-      ...(Number.isFinite(grade) ? { grade: Number(grade) } : {}),
+      ...(grade !== undefined ? { grade } : {}),
       ...(search ? {
         OR: [
           { examName: { contains: search, mode: "insensitive" } },
@@ -564,9 +1270,12 @@ app.get("/api/answer-keys", async (request, response, next) => {
         where,
         include: {
           publisher: { select: { id: true, name: true } },
-          files: { orderBy: { createdAt: "asc" } },
+          files: {
+            orderBy: { createdAt: "asc" },
+            select: { id: true, category: true, originalFileName: true, mimeType: true, size: true, createdAt: true },
+          },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { publishedAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -574,6 +1283,29 @@ app.get("/api/answer-keys", async (request, response, next) => {
     ]);
 
     response.json({ items, total, page, totalPages: Math.ceil(total / limit) || 1 });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/answer-keys/:id", async (request, response, next) => {
+  try {
+    const answerKeyId = getRouteParamId(request.params.id);
+    const item = await prisma.publishedAnswerKey.findFirst({
+      where: { id: answerKeyId, published: true },
+      include: {
+        publisher: { select: { id: true, name: true } },
+        files: {
+          orderBy: { createdAt: "asc" },
+          select: { id: true, category: true, originalFileName: true, mimeType: true, size: true, createdAt: true },
+        },
+      },
+    });
+    if (!item) {
+      response.status(404).json({ error: "Yayımlanmış cevap anahtarı bulunamadı." });
+      return;
+    }
+    response.json(item);
   } catch (error) {
     next(error);
   }
@@ -600,10 +1332,37 @@ app.get(
   },
 );
 
+app.get(
+  "/api/admin/answer-key-files/:id",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    try {
+      const fileId = getRouteParamId(request.params.id);
+      const fileRecord = await prisma.answerKeyFile.findUnique({ where: { id: fileId } });
+      if (!fileRecord) {
+        response.status(404).json({ error: "Dosya bulunamadı." });
+        return;
+      }
+      if (!fs.existsSync(fileRecord.storagePath)) {
+        response.status(404).json({ error: "Dosya sunucuda bulunamadı." });
+        return;
+      }
+      response.download(fileRecord.storagePath, fileRecord.originalFileName, {
+        headers: { "Content-Type": fileRecord.mimeType },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 app.get("/api/answer-key-files/:id", async (request, response, next) => {
   try {
     const fileId = getRouteParamId(request.params.id);
-    const fileRecord = await prisma.answerKeyFile.findUnique({ where: { id: fileId } });
+    const fileRecord = await prisma.answerKeyFile.findFirst({
+      where: { id: fileId, publishedAnswerKey: { published: true } },
+    });
     if (!fileRecord) {
       response.status(404).json({ error: "Dosya bulunamadı." });
       return;
@@ -643,9 +1402,11 @@ app.post(
     }
 
     try {
-      const publisher = await prisma.publisher.findUnique({ where: { id: parsed.data.publisherId } });
+      const publisher = await prisma.publisher.findFirst({
+        where: { id: parsed.data.publisherId, active: true },
+      });
       if (!publisher) {
-        response.status(404).json({ error: "Seçilen yayınevi bulunamadı." });
+        response.status(404).json({ error: "Seçilen yayınevi etkin değil veya bulunamadı." });
         return;
       }
 
@@ -655,6 +1416,7 @@ app.post(
           grade: parsed.data.grade,
           examName: parsed.data.examName.trim(),
           published: parsed.data.published,
+          ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
           createdByUserId: request.user!.id,
         },
       });
@@ -708,6 +1470,127 @@ app.post(
         answerKeyId: answerKey.id,
         files: createdFiles.length,
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.patch(
+  "/api/admin/answer-keys/:id",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  upload.fields([{ name: "answerKeyFile", maxCount: 1 }, { name: "learningOutcomesFile", maxCount: 1 }]),
+  async (
+    request: AuthenticatedRequest & { files?: { answerKeyFile?: Express.Multer.File[]; learningOutcomesFile?: Express.Multer.File[] } },
+    response,
+    next,
+  ) => {
+    const answerKeyId = getRouteParamId(request.params.id);
+    const parsed = answerKeyUploadBodySchema.safeParse(request.body);
+    const uploadedFiles = [
+      ...(request.files?.answerKeyFile ?? []),
+      ...(request.files?.learningOutcomesFile ?? []),
+    ];
+    const removeTemporaryUploads = () => {
+      for (const file of uploadedFiles) {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      }
+    };
+    if (!answerKeyId || !parsed.success) {
+      removeTemporaryUploads();
+      response.status(400).json({ error: "Cevap anahtarı bilgileri geçersiz." });
+      return;
+    }
+
+    try {
+      const current = await prisma.publishedAnswerKey.findUnique({
+        where: { id: answerKeyId },
+        include: { files: true },
+      });
+      if (!current) {
+        removeTemporaryUploads();
+        response.status(404).json({ error: "Cevap anahtarı bulunamadı." });
+        return;
+      }
+      if (parsed.data.publisherId !== current.publisherId) {
+        const activePublisher = await prisma.publisher.findFirst({
+          where: { id: parsed.data.publisherId, active: true },
+          select: { id: true },
+        });
+        if (!activePublisher) {
+          removeTemporaryUploads();
+          response.status(400).json({ error: "Yeni yayınevi seçimi etkin değil veya bulunamadı." });
+          return;
+        }
+      }
+
+      for (const file of uploadedFiles) {
+        const extension = path.extname(file.originalname).toLowerCase().replace(".", "");
+        if (!allowedExtensions.has(extension) || !validateFileSignature(file.path, extension)) {
+          removeTemporaryUploads();
+          response.status(400).json({ error: `Dosya türü veya içeriği doğrulanamadı: ${file.originalname}` });
+          return;
+        }
+      }
+
+      const movedUploads: string[] = [];
+      const replacementFiles = uploadedFiles.map((file) => {
+        const extension = path.extname(file.originalname).toLowerCase().replace(".", "");
+        const targetDirectory = path.join(storageRoot, "answer-keys", answerKeyId);
+        fs.mkdirSync(targetDirectory, { recursive: true });
+        const destinationFilePath = path.join(
+          targetDirectory,
+          `${Date.now()}-${crypto.randomUUID()}-${file.originalname.replace(/[^a-zA-Z0-9_.-]/g, "_")}`,
+        );
+        fs.renameSync(file.path, destinationFilePath);
+        movedUploads.push(destinationFilePath);
+        const category = file.fieldname === "answerKeyFile"
+          ? AnswerKeyFileCategory.ANSWER_KEY
+          : AnswerKeyFileCategory.LEARNING_OUTCOMES;
+        return {
+          answerKeyId,
+          category,
+          originalFileName: file.originalname,
+          storedFileName: path.basename(destinationFilePath),
+          mimeType: file.mimetype,
+          size: file.size,
+          storagePath: destinationFilePath,
+        };
+      });
+
+      const replacedCategories = [...new Set(replacementFiles.map((file) => file.category))];
+      const previousFiles = current.files.filter((file) => replacedCategories.includes(file.category));
+      try {
+        const updated = await prisma.$transaction(async (transaction) => {
+          const record = await transaction.publishedAnswerKey.update({
+            where: { id: answerKeyId },
+            data: {
+              publisherId: parsed.data.publisherId,
+              grade: parsed.data.grade,
+              examName: parsed.data.examName.trim(),
+              published: parsed.data.published,
+              ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
+            },
+          });
+          if (replacedCategories.length > 0) {
+            await transaction.answerKeyFile.deleteMany({
+              where: { answerKeyId, category: { in: replacedCategories } },
+            });
+            await transaction.answerKeyFile.createMany({ data: replacementFiles });
+          }
+          return record;
+        });
+        for (const file of previousFiles) {
+          if (fs.existsSync(file.storagePath)) fs.unlinkSync(file.storagePath);
+        }
+        response.json({ message: "Cevap anahtarı güncellendi.", answerKey: updated });
+      } catch (error) {
+        for (const filePath of movedUploads) {
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+        throw error;
+      }
     } catch (error) {
       next(error);
     }

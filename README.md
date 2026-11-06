@@ -25,6 +25,14 @@ Multi-tenant optik okuma uygulamasının başlangıç monoreposu.
 API varsayılan olarak `http://localhost:4000`, web uygulaması `http://localhost:3000` adresindedir. Web'in API adresini farklı bir ortamda `NEXT_PUBLIC_API_URL` ile belirtin. Giriş sayfasındaki **Üye ol** formuyla gönderilen üyelik talepleri varsayılan olarak `PENDING` durumundadır; yönetici onayı olmadan kullanıcı hesabı oluşturulmaz ve giriş yapılamaz. Süper yönetici panelindeki **Sistem Kullanıcıları → Üyeler** bölümünden talepler ve kayıtlı kullanıcılar listelenebilir, onaylanabilir, erişimleri kapatılabilir veya ilişkili kayıtlar izin verdiğinde silinebilir. Yönetici mevcut şifreleri göremez; yeni şifre belirleme isteği API'de bcrypt ile hash'lenerek kaydedilir. İncelenmiş başvuruların parola özetleri tutulmaz; bekleyen başvuruların parola özeti onay sırasında kullanıcı hesabına aktarılır. Admin e-posta ve ilk şifre yalnızca API `.env` dosyasındaki `ADMIN_EMAIL` ve `ADMIN_PASSWORD` değerlerinden seed edilir; gerçek değerleri kaynak koduna veya depoya eklemeyin. Yönetici tarafından kapatılan veya silinen hesapların mevcut JWT oturumları da sonraki API isteğinde geçersiz kılınır.
 İletişim formunun otomatik e-posta gönderebilmesi için API `.env` dosyasında SMTP sağlayıcınızın `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` ve sağlayıcınızda doğrulanmış `SMTP_FROM` değerlerini ayarlayın. `CONTACT_EMAIL` varsayılanı `destek@kurumsalsinav.com` adresidir. SMTP parolalarını kod deposuna eklemeyin. Web farklı bir port veya domaindeyse API'deki `WEB_ORIGIN` değerini o adrese ayarlayın.
 
+## v1.0.2 geliştirmeleri
+
+v1.0.2; süper yönetici için yayınevi ve cevap anahtarı yönetimini, bayi kapsamlı kurum ekleme/listelemeyi ve sınav kayıt ekranını içerir. Kurum tekrarları normalize edilmiş kurum adı, il ve ilçe birlikte değerlendirilerek engellenir; aynı isim farklı il veya ilçelerde kullanılabilir. Benzer kayıt girişimleri otomatik hesap askıya alma yerine yönetici inceleme listesine alınır. Cevap anahtarlarının görünen yayın tarihi `publishedAt` alanında tutulur; kayıt oluşturulma zamanı korunur. Herkese açık cevap anahtarı detayları yalnızca yayımlanmış kayıtlardan üretilir.
+
+`apps/api/prisma/migrations/20261106220000_v1_0_2_management` migration'ı mevcut kayıtları silmez veya sıfırlamaz. Eski kurumlara mevcut satırları korumak için benzersiz geçiş anahtarı verilir; cevap anahtarı yayın tarihi başlangıçta `createdAt` değerinden doldurulur. Üretim ortamında migration uygulanmadan önce yedek alınmalı, migration çıktısı incelenmeli ve ayrıca açık onay alınmalıdır. `migrate reset`, `db push` veya seed bu özellikleri yayımlamak için kullanılmamalıdır.
+
+Web tarafında sürüm `apps/web/config/site.ts` üzerinden yönetilir. Yayımlanmış cevap anahtarı detay sayfaları, canonical/meta verileri, `robots.txt` ve `sitemap.xml` desteklenir. Yönetim ve giriş sayfaları indekslemeye kapalıdır. Doğrulanamayan kişi atıflı motivasyon alıntıları kullanılmamıştır; panel mesajları ayrı bir JSON dosyasında proje adına yazılmış özgün metinlerdir. Mevcut gizlilik politikası sayfası bulunmadığından footer'a böyle bir bağlantı eklenmemiştir.
+
 ## cPanel production dağıtımı
 
 Web uygulamasındaki API istekleri `NEXT_PUBLIC_API_URL` üzerinden yapılır (giriş/kayıt, yönetici üyelik/kullanıcı işlemleri ve iletişim formu). Bu değişken Next.js build sırasında derlemeye gömüldüğünden canlı değeri build'den önce ayarlayın:
@@ -39,10 +47,14 @@ API ortamında en azından `DATABASE_URL`, `JWT_SECRET` (rastgele, en az 32 kara
 
 Monorepo kök dizininde (Node.js 20+, Linux/cPanel) temel dağıtım sırası:
 
+**Üretim için bu örneği mevcut Neon ortamında doğrudan çalıştırmayın.** `20261106000000_publisher_answer_key_support` migration'ının geçmişte başarısız olduğu bildirildi. Önce `_prisma_migrations` ile tablo/enum durumunu salt okunur inceleyin; migration resolve veya deploy kararı için veritabanı sahibinin açık onayı gerekir. Canlıya yazan hiçbir komut bu çalışma kapsamında çalıştırılmamıştır.
+
 ```sh
 npm ci
 npm run db:generate
+# Yalnızca yedekleme, migration durumu incelemesi ve açık onaydan sonra:
 npm run db:migrate:deploy
+# Seed yalnızca ilk yönetici hesabının ilk kurulumu için, ayrı onayla:
 npm run db:seed
 NEXT_PUBLIC_API_URL=https://api.kurumsalsinav.com npm run build
 ```

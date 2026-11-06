@@ -31,6 +31,8 @@ export default function PublisherManagement({ token, role }: { token: string; ro
   const [query, setQuery] = useState("");
   const [publisherName, setPublisherName] = useState("");
   const [description, setDescription] = useState("");
+  const [editingPublisherId, setEditingPublisherId] = useState("");
+  const [editingPublisherName, setEditingPublisherName] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -47,7 +49,9 @@ export default function PublisherManagement({ token, role }: { token: string; ro
 
     try {
       const [publisherResponse, requestResponse] = await Promise.all([
-        fetch(`${API_URL}/api/publishers`, { headers }),
+        role === "SUPER_ADMIN"
+          ? fetch(`${API_URL}/api/admin/publishers`, { headers })
+          : fetch(`${API_URL}/api/publishers`, { headers }),
         role === "SUPER_ADMIN"
           ? fetch(`${API_URL}/api/admin/publisher-requests`, { headers })
           : fetch(`${API_URL}/api/publisher-requests`, { headers }),
@@ -135,6 +139,31 @@ export default function PublisherManagement({ token, role }: { token: string; ro
     }
   }
 
+  async function updatePublisher(publisher: Publisher, changes: { name?: string; active?: boolean }) {
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch(`${API_URL}/api/admin/publishers/${encodeURIComponent(publisher.id)}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(changes),
+      });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) {
+        setError(result.error ?? "Yayınevi güncellenemedi.");
+        return;
+      }
+      setEditingPublisherId("");
+      setNotice("Yayınevi bilgileri güncellendi.");
+      await loadData();
+    } catch {
+      setError("Yayınevi güncellenirken sunucuya ulaşılamadı.");
+    }
+  }
+
   const pendingRequests = requests.filter((request) => request.status === "PENDING");
 
   return (
@@ -170,8 +199,25 @@ export default function PublisherManagement({ token, role }: { token: string; ro
             <div className="publisher-list">
               {filteredPublishers.map((publisher) => (
                 <div className="publisher-item" key={publisher.id}>
-                  <strong>{publisher.name}</strong>
+                  {role === "SUPER_ADMIN" && editingPublisherId === publisher.id ? (
+                    <form className="publisher-inline-edit" onSubmit={(event) => {
+                      event.preventDefault();
+                      void updatePublisher(publisher, { name: editingPublisherName });
+                    }}>
+                      <input aria-label="Yayınevi adı" value={editingPublisherName} onChange={(event) => setEditingPublisherName(event.target.value)} maxLength={180} required />
+                      <button className="button button-navy" type="submit">Kaydet</button>
+                      <button className="button button-quiet" type="button" onClick={() => setEditingPublisherId("")}>Vazgeç</button>
+                    </form>
+                  ) : <strong>{publisher.name}</strong>}
                   <small>{publisher.active ? "Aktif" : "Pasif"}</small>
+                  {role === "SUPER_ADMIN" && editingPublisherId !== publisher.id && (
+                    <div className="publisher-admin-actions">
+                      <button type="button" className="button button-quiet" onClick={() => { setEditingPublisherId(publisher.id); setEditingPublisherName(publisher.name); }}>Düzenle</button>
+                      <button type="button" className="button button-quiet" onClick={() => void updatePublisher(publisher, { active: !publisher.active })}>
+                        {publisher.active ? "Pasife al" : "Yeniden aktifleştir"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
