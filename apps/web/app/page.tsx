@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./theme-toggle";
 import SiteFooter from "./site-footer";
+import ContactForm from "./contact-form";
+import LgsCountdown from "./lgs-countdown";
 import { answerKeyPath } from "../lib/answer-key";
 import { API_URL } from "../lib/api";
 
@@ -144,6 +146,16 @@ export default function Home() {
         <div className="preview-footer">
           <Link className="button button-navy" href="/cevap-anahtarlari">Tüm cevap anahtarlarını gör</Link>
         </div>
+      </section>
+
+      <LgsCountdown />
+
+      <section id="contact-section" className="home-contact" aria-labelledby="home-contact-title">
+        <div className="section-heading">
+          <p className="hero-tag">İLETİŞİM</p>
+          <h2 id="home-contact-title">Size nasıl yardımcı<br /><span>olabiliriz?</span></h2>
+        </div>
+        <ContactForm showBrand />
       </section>
 
       <SiteFooter />

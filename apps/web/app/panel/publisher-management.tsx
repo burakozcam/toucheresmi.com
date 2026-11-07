@@ -33,6 +33,7 @@ export default function PublisherManagement({ token, role }: { token: string; ro
   const [description, setDescription] = useState("");
   const [editingPublisherId, setEditingPublisherId] = useState("");
   const [editingPublisherName, setEditingPublisherName] = useState("");
+  const [deletingPublisherId, setDeletingPublisherId] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -164,6 +165,30 @@ export default function PublisherManagement({ token, role }: { token: string; ro
     }
   }
 
+  async function deletePublisher(publisher: Publisher) {
+    if (!window.confirm(`“${publisher.name}” yayınevi silinsin mi? İlişkili kayıtlar varsa silme engellenecektir.`)) return;
+    setError("");
+    setNotice("");
+    setDeletingPublisherId(publisher.id);
+    try {
+      const response = await fetch(`${API_URL}/api/admin/publishers/${encodeURIComponent(publisher.id)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const result = await response.json() as { error?: string };
+        setError(result.error ?? "Yayınevi silinemedi.");
+        return;
+      }
+      setNotice("Yayınevi silindi.");
+      await loadData();
+    } catch {
+      setError("Yayınevi silinirken sunucuya ulaşılamadı.");
+    } finally {
+      setDeletingPublisherId("");
+    }
+  }
+
   const pendingRequests = requests.filter((request) => request.status === "PENDING");
 
   return (
@@ -215,6 +240,9 @@ export default function PublisherManagement({ token, role }: { token: string; ro
                       <button type="button" className="button button-quiet" onClick={() => { setEditingPublisherId(publisher.id); setEditingPublisherName(publisher.name); }}>Düzenle</button>
                       <button type="button" className="button button-quiet" onClick={() => void updatePublisher(publisher, { active: !publisher.active })}>
                         {publisher.active ? "Pasife al" : "Yeniden aktifleştir"}
+                      </button>
+                      <button type="button" className="button button-quiet" onClick={() => void deletePublisher(publisher)} disabled={deletingPublisherId === publisher.id}>
+                        {deletingPublisherId === publisher.id ? "Siliniyor..." : "Sil"}
                       </button>
                     </div>
                   )}

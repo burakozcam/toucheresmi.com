@@ -1,43 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import type { FormEvent } from "react";
 import ThemeToggle from "../theme-toggle";
-import { API_URL } from "../../lib/api";
+import ContactForm from "../contact-form";
 import SiteFooter from "../site-footer";
 
 export default function ContactPage() {
-  const [notice, setNotice] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  async function submitContact(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setSubmitting(true);
-    setNotice("");
-    try {
-      const response = await fetch(`${API_URL}/api/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.get("name"),
-          email: form.get("email"),
-          phone: form.get("phone"),
-          message: form.get("message"),
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Mesaj gönderilemedi.");
-      setNotice("Mesajınız destek ekibine gönderildi.");
-      event.currentTarget.reset();
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Mesaj gönderilemedi. Lütfen e-posta bağlantısını kullanın.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
     <main className="contact-page">
       <header className="contact-header">
@@ -50,16 +18,7 @@ export default function ContactPage() {
         <p>Sorularınız, önerileriniz veya destek talepleriniz için bize mesaj gönderin.</p>
       </section>
       <section className="contact-grid">
-        <form className="contact-form" onSubmit={submitContact}>
-          <h2>Mesaj gönderin</h2>
-          <label>Ad Soyad<input name="name" required minLength={2} maxLength={120} /></label>
-          <label>E-posta<input name="email" type="email" required maxLength={254} /></label>
-          <label>Telefon <span>(isteğe bağlı)</span><input name="phone" type="tel" maxLength={30} /></label>
-          <label>Mesajınız<textarea name="message" rows={5} required minLength={5} maxLength={3000} /></label>
-          <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Mesajı gönder"} <span>→</span></button>
-          <small>Otomatik gönderim için sunucuda e-posta ayarlarının yapılandırılmış olması gerekir. Alternatif olarak <a href="mailto:destek@kurumsalsinav.com">e-posta uygulamanızdan destek@kurumsalsinav.com adresine yazabilirsiniz.</a></small>
-          {notice && <p className="contact-notice" role="status">{notice}</p>}
-        </form>
+        <ContactForm />
         <aside className="contact-location">
           <div className="location-heading"><span className="solution-icon">⌖</span><div><h2>İstanbul, Maltepe</h2><p>Kurumsal Sınav · İstanbul</p></div></div>
           <iframe

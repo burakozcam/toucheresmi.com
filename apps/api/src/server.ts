@@ -17,6 +17,70 @@ const app = express();
 app.use(cors({ origin: env.WEB_ORIGIN }));
 app.use(express.json({ limit: "1mb" }));
 
+const recentContactSubmissions = new Map<string, number>();
+
+async function recordAudit(
+  actorUserId: string | null,
+  action: string,
+  targetType: string | null = null,
+  targetId: string | null = null,
+  summary: string | null = null,
+) {
+  try {
+    const actor = actorUserId
+      ? await prisma.user.findUnique({ where: { id: actorUserId }, select: { firstName: true, lastName: true } })
+      : null;
+    await prisma.auditLog.create({
+      data: {
+        actorUserId,
+        actorName: actor ? `${actor.firstName} ${actor.lastName}`.trim() : actorUserId ? "Silinmiş kullanıcı" : "Kimliği doğrulanmamış kullanıcı",
+        action,
+        targetType,
+        targetId,
+        summary,
+      },
+    });
+  } catch (error) {
+    console.error("Audit log kaydı oluşturulamadı", error);
+  }
+}
+
+app.use((request: AuthenticatedRequest, response, next) => {
+  const method = request.method.toUpperCase();
+  const isAuditedResource = request.path.startsWith("/api/admin/")
+    || ["/api/exams", "/api/schools", "/api/publisher-requests"].some((prefix) =>
+      request.path === prefix || request.path.startsWith(`${prefix}/`)
+    );
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(method) || !isAuditedResource) {
+    next();
+    return;
+  }
+  response.on("finish", () => {
+    if (response.statusCode < 200 || response.statusCode >= 300 || request.user?.role !== Role.SUPER_ADMIN) return;
+    const route = request.route?.path;
+    const routePath = typeof route === "string" ? route : request.path;
+    const segments = routePath.split("/").filter(Boolean);
+    const targetType = segments[1] === "admin" ? segments[2] ?? "system" : segments[1] ?? "system";
+    const targetId = Object.values(request.params).find((value) => typeof value === "string") ?? null;
+    void recordAudit(
+      request.user.id,
+      `${method} ${routePath}`,
+      targetType,
+      targetId,
+      `İşlem tamamlandı (HTTP ${response.statusCode}).`,
+    );
+  });
+  next();
+});
+
+function optionalAuth(request: AuthenticatedRequest, response: express.Response, next: express.NextFunction) {
+  if (!request.header("authorization")) {
+    next();
+    return;
+  }
+  void requireAuth(request, response, next);
+}
+
 const getRouteParamId = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] ?? "" : value ?? "";
 
 const storageRoot = path.resolve(env.STORAGE_DIR);
@@ -146,6 +210,7 @@ app.get("/api/health", (_request, response) => {
 app.post("/api/auth/login", async (request, response, next) => {
   const parsed = loginSchema.safeParse(request.body);
   if (!parsed.success) {
+    await recordAudit(null, "AUTH_LOGIN_FAILED", "AUTH", null, "Giriş formu geçersiz.");
     response.status(400).json({ error: "Giriş bilgileri geçersiz." });
     return;
   }
@@ -159,9 +224,11 @@ app.post("/api/auth/login", async (request, response, next) => {
       : false;
 
     if (!user || !user.active || user.role !== parsed.data.role || !passwordMatches) {
+      await recordAudit(null, "AUTH_LOGIN_FAILED", "AUTH", null, "Kimlik doğrulama başarısız.");
       response.status(401).json({ error: "E-posta, şifre veya kullanıcı türü hatalı." });
       return;
     }
+    await recordAudit(user.id, "AUTH_LOGIN_SUCCESS", "AUTH", user.id, "Kullanıcı oturumu açıldı.");
 
     const token = jwt.sign(
       {
@@ -265,51 +332,205 @@ app.post("/api/applications", async (request, response, next) => {
 });
 
 const contactSchema = z.object({
-  name: z.string().trim().min(2).max(120),
+  name: z.string().trim().min(2).max(120).optional(),
+  firstName: z.string().trim().min(1).max(80).optional(),
+  lastName: z.string().trim().min(1).max(80).optional(),
   email: z.string().trim().email().max(254),
-  phone: z.string().trim().max(30).optional(),
-  message: z.string().trim().min(5).max(3000),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  message: z.string().trim().min(5).max(2000),
+}).superRefine((value, context) => {
+  if (!(value.name || (value.firstName && value.lastName))) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["firstName"], message: "Ad ve soyad bilgilerini girin." });
+  }
+  if (value.phone) {
+    const digitCount = value.phone.replace(/\D/g, "").length;
+    if (!/^[+\d\s().-]+$/.test(value.phone) || digitCount < 7 || digitCount > 15) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["phone"], message: "Telefon numarasını kontrol edin." });
+    }
+  }
 });
 
-app.post("/api/contact", async (request, response, next) => {
+app.post("/api/contact", optionalAuth, async (request: AuthenticatedRequest, response, next) => {
   const parsed = contactSchema.safeParse(request.body);
   if (!parsed.success) {
     response.status(400).json({ error: "İletişim formundaki bilgileri kontrol edin." });
     return;
   }
 
-  if (!env.SMTP_HOST) {
-    response.status(503).json({ error: "E-posta gönderimi henüz yapılandırılmadı." });
+  const now = Date.now();
+  for (const [key, expiresAt] of recentContactSubmissions) {
+    if (expiresAt <= now) recentContactSubmissions.delete(key);
+  }
+  const submissionKey = crypto.createHash("sha256")
+    .update(`${request.ip || request.socket.remoteAddress || "unknown"}:${parsed.data.email.toLowerCase()}`)
+    .digest("hex");
+  if ((recentContactSubmissions.get(submissionKey) ?? 0) > now) {
+    response.status(429).json({ error: "Mesajınız az önce alındı. Yeni mesaj göndermeden önce lütfen bir dakika bekleyin." });
     return;
   }
+  recentContactSubmissions.set(submissionKey, now + 60_000);
+
+  const nameParts = (parsed.data.name ?? "").trim().split(/\s+/).filter(Boolean);
+  const firstName = parsed.data.firstName?.trim() || nameParts.slice(0, -1).join(" ") || nameParts[0] || "";
+  const lastName = parsed.data.lastName?.trim() || (nameParts.length > 1 ? nameParts.slice(-1)[0] : "");
 
   try {
-    const transport = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
-      ...(env.SMTP_USER && env.SMTP_PASSWORD ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } } : {}),
+    const message = await prisma.contactMessage.create({
+      data: {
+        firstName,
+        lastName,
+        email: parsed.data.email.toLowerCase(),
+        phone: parsed.data.phone?.trim() || null,
+        message: parsed.data.message,
+        userId: request.user?.id ?? null,
+      },
+      select: { id: true },
     });
-
-    await transport.sendMail({
-      from: env.SMTP_FROM ?? env.SMTP_USER ?? env.CONTACT_EMAIL,
-      to: env.CONTACT_EMAIL,
-      replyTo: parsed.data.email,
-      subject: "Kurumsal Sınav web sitesi iletişim formu",
-      text: [
-        `Ad Soyad: ${parsed.data.name}`,
-        `E-posta: ${parsed.data.email}`,
-        `Telefon: ${parsed.data.phone || "-"}`,
-        "",
-        "Mesaj:",
-        parsed.data.message,
-      ].join("\n"),
-    });
-    response.status(202).json({ message: "Mesajınız destek ekibine gönderildi." });
+    let warning: string | undefined;
+    if (env.SMTP_HOST) {
+      try {
+        const transport = nodemailer.createTransport({
+          host: env.SMTP_HOST,
+          port: env.SMTP_PORT,
+          secure: env.SMTP_PORT === 465,
+          ...(env.SMTP_USER && env.SMTP_PASSWORD ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } } : {}),
+        });
+        await transport.sendMail({
+          from: env.SMTP_FROM ?? env.SMTP_USER ?? env.CONTACT_EMAIL,
+          to: env.CONTACT_EMAIL,
+          replyTo: parsed.data.email,
+          subject: "Kurumsal Sınav web sitesi iletişim formu",
+          text: [
+            `Ad Soyad: ${firstName} ${lastName}`.trim(),
+            `E-posta: ${parsed.data.email}`,
+            `Telefon: ${parsed.data.phone || "-"}`,
+            "",
+            "Mesaj:",
+            parsed.data.message,
+          ].join("\n"),
+        });
+      } catch (error) {
+        console.error("İletişim mesajı e-posta bildirimi gönderilemedi", error);
+        warning = "Mesajınız kaydedildi; e-posta bildirimi gönderilemedi.";
+      }
+    } else {
+      warning = "Mesajınız yönetici gelen kutusuna kaydedildi; e-posta bildirimi yapılandırılmamış.";
+    }
+    response.status(201).json({ id: message.id, message: "Mesajınız yönetici destek gelen kutusuna kaydedildi.", ...(warning ? { warning } : {}) });
   } catch (error) {
+    recentContactSubmissions.delete(submissionKey);
     next(error);
   }
 });
+
+app.get(
+  "/api/admin/contact-messages",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    const page = Math.max(1, Number(request.query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(request.query.pageSize) || 25));
+    const unreadOnly = request.query.unreadOnly === "true";
+    try {
+      const where = unreadOnly ? { readAt: null } : {};
+      const [items, total, unreadCount] = await Promise.all([
+        prisma.contactMessage.findMany({
+          where,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          include: { user: { select: { id: true, firstName: true, lastName: true, email: true, role: true } } },
+        }),
+        prisma.contactMessage.count({ where }),
+        prisma.contactMessage.count({ where: { readAt: null } }),
+      ]);
+      response.json({ items, total, unreadCount, page, pageSize });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.patch(
+  "/api/admin/contact-messages/:id",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    const messageId = getRouteParamId(request.params.id);
+    const parsed = z.object({ read: z.boolean() }).safeParse(request.body);
+    if (!messageId || !parsed.success) {
+      response.status(400).json({ error: "Mesaj durumu geçersiz." });
+      return;
+    }
+    try {
+      const updated = await prisma.contactMessage.update({
+        where: { id: messageId },
+        data: { readAt: parsed.data.read ? new Date() : null },
+        select: { id: true, readAt: true },
+      });
+      response.json(updated);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        response.status(404).json({ error: "Mesaj bulunamadı." });
+        return;
+      }
+      next(error);
+    }
+  },
+);
+
+app.get(
+  "/api/admin/audit-log-users",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (_request: AuthenticatedRequest, response, next) => {
+    try {
+      const users = await prisma.user.findMany({
+        orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+        select: { id: true, firstName: true, lastName: true, email: true },
+      });
+      response.json(users);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+app.get(
+  "/api/admin/audit-logs",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request, response, next) => {
+    const page = Math.max(1, Number(request.query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(request.query.pageSize) || 25));
+    const userId = typeof request.query.userId === "string" ? request.query.userId : undefined;
+    const from = typeof request.query.from === "string" ? new Date(`${request.query.from}T00:00:00.000Z`) : undefined;
+    const to = typeof request.query.to === "string" ? new Date(`${request.query.to}T23:59:59.999Z`) : undefined;
+    if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime()))) {
+      response.status(400).json({ error: "Tarih aralığını kontrol edin." });
+      return;
+    }
+    const where: Prisma.AuditLogWhereInput = {
+      ...(userId ? { actorUserId: userId } : {}),
+      ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
+    };
+    try {
+      const [items, total] = await Promise.all([
+        prisma.auditLog.findMany({
+          where,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: { id: true, actorUserId: true, actorName: true, action: true, targetType: true, targetId: true, summary: true, createdAt: true },
+        }),
+        prisma.auditLog.count({ where }),
+      ]);
+      response.json({ items, total, page, pageSize });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 app.get(
   "/api/admin/applications",
@@ -851,6 +1072,48 @@ app.patch(
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         response.status(409).json({ error: "Bu yayınevi adı başka bir kayıt tarafından kullanılıyor." });
+        return;
+      }
+      next(error);
+    }
+  },
+);
+
+app.delete(
+  "/api/admin/publishers/:id",
+  requireAuth,
+  requireRole(Role.SUPER_ADMIN),
+  async (request: AuthenticatedRequest, response, next) => {
+    const publisherId = getRouteParamId(request.params.id);
+    if (!publisherId) {
+      response.status(400).json({ error: "Yayınevi kimliği geçersiz." });
+      return;
+    }
+    try {
+      const publisher = await prisma.publisher.findUnique({
+        where: { id: publisherId },
+        include: { _count: { select: { exams: true, answerKeys: true, publisherRequests: true } } },
+      });
+      if (!publisher) {
+        response.status(404).json({ error: "Yayınevi bulunamadı." });
+        return;
+      }
+      const linkedRecords = [
+        publisher._count.exams ? `${publisher._count.exams} sınav` : "",
+        publisher._count.answerKeys ? `${publisher._count.answerKeys} yayımlanmış cevap anahtarı` : "",
+        publisher._count.publisherRequests ? `${publisher._count.publisherRequests} yayınevi talebi` : "",
+      ].filter(Boolean);
+      if (linkedRecords.length) {
+        response.status(409).json({
+          error: `Yayınevi silinemiyor; ilişkili kayıtlar bulundu: ${linkedRecords.join(", ")}. Verileri korumak için yayınevini pasife alabilirsiniz.`,
+        });
+        return;
+      }
+      await prisma.publisher.delete({ where: { id: publisherId } });
+      response.status(204).end();
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        response.status(409).json({ error: "İlişkili kayıtlar nedeniyle yayınevi silinemedi. Önce ilişkili kayıtları inceleyin veya yayınevini pasife alın." });
         return;
       }
       next(error);

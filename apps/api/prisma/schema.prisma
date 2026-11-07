@@ -73,6 +73,8 @@ model User {
   schoolsCreated                  School[]                 @relation("SchoolCreator")
   schoolDuplicateAttemptsCreated  SchoolDuplicateAttempt[] @relation("SchoolDuplicateAttemptSubmitter")
   schoolDuplicateAttemptsReviewed SchoolDuplicateAttempt[] @relation("SchoolDuplicateAttemptReviewer")
+  contactMessages                 ContactMessage[]
+  auditLogs                       AuditLog[]
 
   @@index([dealerId])
   @@index([schoolId])
@@ -356,4 +358,38 @@ model ScanRecord {
   @@unique([uploadBatchId, studentNumber])
   @@index([studentNumber])
   @@index([classroom])
+}
+
+model ContactMessage {
+  id        String    @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  message   String    @db.Text
+  userId    String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([readAt, createdAt])
+  @@index([userId, createdAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actorName   String
+  action      String
+  targetType  String?
+  targetId    String?
+  summary     String?
+  createdAt   DateTime @default(now())
+
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
 }

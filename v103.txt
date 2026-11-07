@@ -1,0 +1,141 @@
+KURUMSAL SINAV v1.0.3 — GELİŞTİRME RAPORU
+==================================================
+
+1. Kurumsal Sınav v1.0.3 — Genel Özet
+--------------------------------------
+Mevcut Next.js, Express ve Prisma mimarisi korunarak sınav listesi, iletişim
+formu/yönetici gelen kutusu, yönetici denetim kayıtları, yayıncı silme
+kontrolü, sürüm gösterimi, favicon ve LGS geri sayımı geliştirildi.
+Veritabanı değişikliği mevcut kayıtları silmeyen, eklemeli bir Prisma
+migration'ıdır. Canlı veritabanına veya üretim ortamına bağlanılmadı.
+
+2. Tamamlanan Geliştirmeler
+---------------------------
+- Sınav listesi aracında kampüs adı olmadan derslik tanımlanabilir; derslik
+  adı, pozitif kapasite ve isteğe bağlı kat doğrulanır. Derslikler
+  düzenlenebilir, silinebilir ve sıralanabilir.
+- XLSX/XLS/CSV sütunları otomatik eşleştirilir veya kullanıcı tarafından
+  elle eşleştirilebilir. Kampüs sütunu zorunlu değildir; boş satırlar
+  atlanır, tekrarlar ve numarası eksik öğrenciler bildirilir.
+- Dağıtım kampüs ve zaman seansı bazında yapılır. Sınıf önceliği, sırayla
+  doldurma (varsayılan) ve dengeli dağıtım, sabit derslik, aynı derslik ve
+  ayrı derslik kuralları uygulanır. Yerleşemeyen öğrenciler ve dağıtım özeti
+  gösterilir.
+- Dağıtım sonrası öğrenci taşıma, kapasiteyi ve sabitleme/aynı/ayrı derslik
+  kurallarını kontrol eder. Sözel yerleşimin onayıyla sayısal oturum aynı
+  derslik ve sıra numaralarıyla çoğaltılır.
+- Excel/CSV çıktısı ve tarayıcı yazdırma ekranından PDF olarak kaydedilebilen
+  yoklama çizelgesi eklendi. Yoklama çıktısında öğrenci numarası, sınıf,
+  devam kutuları ve gözetmen yönergesi bulunur. Boş derslikler basılmaz.
+- Ana sayfaya, iletişim sayfasına ve destek bağlantılarına ortak iletişim
+  formu bağlandı. Mesaj uzunluğu sunucuda da sınırlandırılır; mesajlar
+  yönetici gelen kutusunda listelenir ve okunma durumu izlenir.
+- SUPER_ADMIN için gelen kutusu, okunmamış mesaj sayacı ve denetim kayıtları
+  arayüzü eklendi. Başarılı yönetim değişiklikleri ile giriş sonuçları için
+  denetim kaydı oluşturulur; parola/token gibi gizli değerler loglanmaz.
+- İlişkili sınav, cevap anahtarı veya talep varsa yayınevi silme işlemi
+  engellenir; arayüzde onay istenir.
+- Sürüm v1.0.3 merkezi yapılandırmaya alındı, favicon yalnızca marka
+  renginde K harfine dönüştürüldü. LGS hedef tarihi 13 Haziran 2027 olarak
+  tanımlandı; doğrulanmış başlangıç saati olmadığından saat uydurulmadı.
+
+3. Değiştirilen ve Eklenen Başlıca Dosyalar
+-------------------------------------------
+- rebuilder.html
+- apps/web/public/rebuilder.html
+- apps/api/src/server.ts
+- apps/api/prisma/schema.prisma
+- apps/api/prisma/migrations/20261107190000_v1_0_3_contact_audit/migration.sql
+- apps/web/app/contact-form.tsx
+- apps/web/app/contact/page.tsx
+- apps/web/app/lgs-countdown.tsx
+- apps/web/app/page.tsx
+- apps/web/app/panel/contact-inbox.tsx
+- apps/web/app/panel/audit-log-management.tsx
+- apps/web/app/panel/page.tsx
+- apps/web/app/panel/publisher-management.tsx
+- apps/web/app/login/page.tsx
+- apps/web/app/layout.tsx
+- apps/web/app/styles.css
+- apps/web/config/site.ts
+- apps/web/public/favicon.svg
+- index.html
+- README.md
+
+Kök dizindeki rebuilder.html ile apps/web/public/rebuilder.html aynı içeriğe
+sahiptir.
+
+4. Veritabanı ve API
+--------------------
+Yeni tablolar ContactMessage ve AuditLog'dur. İndeksler sorgu ve zaman
+filtrelerini destekler; kullanıcı ilişkileri ON DELETE SET NULL kullanır.
+Migration mevcut tablo veya satırları silmez.
+
+Eklenen/ilgili uçlar:
+- POST /api/contact
+- GET /api/admin/contact-messages
+- PATCH /api/admin/contact-messages/:id
+- GET /api/admin/audit-logs
+- GET /api/admin/audit-log-users
+- DELETE /api/admin/publishers/:id (ilişkili kayıtlar varsa 409 ile engellenir)
+
+Yönetici uçları SUPER_ADMIN yetkisiyle sınırlandırılmıştır. Bu uçlar için
+canlı veritabanına karşı entegrasyon testi yapılmamıştır.
+
+5. Test ve Doğrulama Sonuçları
+------------------------------
+Başarılı:
+- DATABASE_URL=postgresql://test:test@localhost:5432/test npx prisma validate
+  --schema apps/api/prisma/schema.prisma
+- NEXT_PUBLIC_API_URL=https://api.example.test npm run build
+  (Prisma Client üretimi, API TypeScript derlemesi ve Next.js production
+  derlemesi, lint ve tür denetimi başarılı.)
+- İki rebuilder HTML dosyasındaki üçer satır içi JavaScript bloğu ayrıştırıldı.
+- Tarayıcıda kampüssüz 101 dersliği oluşturuldu.
+- Farklı sütun sıralı, kampüssüz CSV yüklendi; sınıf, ad-soyad, numara ve
+  seans sütunları otomatik eşleşti; baştaki sıfırlı numaralar korundu.
+- Dağıtım özeti, derslik taşıma kapasite reddi ve aynı/ayrı derslik kural
+  çelişkisi tarayıcıda kontrol edildi.
+- Sayısal oturum oluşturuldu; öğrenci sayısı, numaralar, derslik ve sıra
+  eşleşmeleri sözel oturumla karşılaştırıldı.
+- Yazdırılabilir yoklama HTML'sinde başlık, öğrenci numarası, Türkçe ad,
+  gözetmen yönergesi, kurum öğrenci numarası uyarısı, Erken Çıktı alanı ve
+  imza alanı doğrulandı.
+- git diff --check başarılı; rebuilder kopyaları eşleşiyor.
+
+İlk build denemesinde http://localhost:4000 kullanılması nedeniyle
+production ortamında zorunlu HTTPS API URL kontrolü hata verdi. Üretim
+servisine bağlanmayan https://api.example.test değeriyle tekrarlanan build
+başarılı oldu.
+
+Projede otomatik test komutu tanımlı değildir. Gerçek veritabanı, üretim
+migration'ı, SMTP teslimi ve fiziksel PDF yazdırma çıktısı test edilmedi.
+Yoklama içeriği tarayıcıda yazdırma/PDF çıktısı üreten şablon üzerinden
+doğrulandı; PDF dosyası kaydedilmedi.
+
+6. Tamamlanmayanlar ve Sınırlar
+-------------------------------
+- Optik TXT dönüştürücüsü uygulanmadı. Depoda doğrulanabilir kaynak FMT/TXT
+  örneği bulunmadığından alan konumları ve kayıt biçimi tahmin edilmedi.
+  Güvenilir format desteği için Sekonic/Palme/diğer hedeflenen şablonlardan
+  gerçek FMT ve karşılık gelen TXT örnekleri gerekir.
+- Motivasyon sözleri, güvenilir kaynaklarla doğrulanmış kısa alıntılar
+  sağlanamadığından değiştirilmedi; yeni kişi atfı uydurulmadı.
+- Çok sayfalı fiziksel yazdırma/PDF, gerçek XLSX dosyaları, çok kampüs ve
+  çok seans senaryoları ile veritabanı/API entegrasyonu ayrıca doğrulanmalı.
+
+7. Canlıya Alma Öncesi Güvenli Adımlar
+--------------------------------------
+1. Üretim veritabanının yedeğini alın; yeni migration SQL'ini ve gerçek
+   migration durumunu inceleyin.
+2. Üretim DATABASE_URL değerini güvenli ortamda ayarlayıp migration'ı yalnızca
+   onaylı dağıtım sırasında `npm run db:migrate:deploy` ile uygulayın.
+   `prisma migrate reset` kullanmayın.
+3. API ve web uygulamasını dağıtın. Web build'inde gerçek HTTPS
+   NEXT_PUBLIC_API_URL değerini kullanın; example.test değerini kullanmayın.
+4. SUPER_ADMIN ile mesaj gelen kutusu, okunmamış sayaç, audit log ve güvenli
+   yayınevi silme engelini doğrulayın; iletişim formu ve e-posta
+   bildirimlerini ortam ayarlarıyla kontrol edin.
+5. Gerçek optik FMT/TXT örnekleri ve güvenilir alıntı kaynakları sağlanana
+   kadar bu iki gereksinimi tamamlandı olarak değerlendirmeyin.
+6. Canlı migration ve deployment bu geliştirme kapsamında yapılmamıştır.

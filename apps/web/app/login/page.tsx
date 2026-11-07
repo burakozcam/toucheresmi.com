@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import ThemeToggle from "../theme-toggle";
 import { API_URL } from "../../lib/api";
+import { SITE_VERSION } from "../../config/site";
 
 const loginTypes = [
   { id: "dealer", title: "Bayi Girişi", description: "Bayi hesabınızla giriş yapın", available: true, icon: "⌂" },
@@ -148,10 +149,10 @@ export default function LoginPage() {
           </form> : <div className="inactive-panel"><span>i</span><p>Bu giriş türü şu anda kullanıma kapalı. Erişim için sistem yöneticisine başvurun.</p></div>}
           {message && <p className={`login-message ${success ? "message-success" : "message-error"}`} role="status">{success ? "✓" : "!"} {message}</p>}
           <p className="login-help">{registering ? "Zaten hesabınız var?" : "Üye olmak mı istiyorsunuz?"} <button type="button" className="auth-switch" onClick={() => { setRegistering(!registering); setMessage(""); setSuccess(false); }}>{registering ? "Giriş yapın" : "Üye ol"}</button></p>
-          {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <a href="mailto:destek@kurumsalsinav.com">Bize ulaşın</a></p>}
+          {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <Link href="/contact#contact-form">Bize ulaşın</Link></p>}
         </section>
       </section>
-      <footer className="auth-footer">© 2026 kurumsalsinav.com <span>Ölçün. Değerlendirin. Geliştirin.</span></footer>
+      <footer className="auth-footer">© 2026 kurumsalsinav.com · {SITE_VERSION} <span>Ölçün. Değerlendirin. Geliştirin.</span></footer>
     </main>
   );
 }

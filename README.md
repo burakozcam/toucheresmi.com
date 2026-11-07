@@ -33,6 +33,14 @@ v1.0.2; süper yönetici için yayınevi ve cevap anahtarı yönetimini, bayi ka
 
 Web tarafında sürüm `apps/web/config/site.ts` üzerinden yönetilir. Yayımlanmış cevap anahtarı detay sayfaları, canonical/meta verileri, `robots.txt` ve `sitemap.xml` desteklenir. Yönetim ve giriş sayfaları indekslemeye kapalıdır. Doğrulanamayan kişi atıflı motivasyon alıntıları kullanılmamıştır; panel mesajları ayrı bir JSON dosyasında proje adına yazılmış özgün metinlerdir. Mevcut gizlilik politikası sayfası bulunmadığından footer'a böyle bir bağlantı eklenmemiştir.
 
+## v1.0.3 geliştirmeleri
+
+v1.0.3; sınav listesinde kampüs alanı olmadan derslik tanımlamayı, esnek Excel sütun eşleştirmeyi, kampüs/seans bazında kapasiteyi, sırayla veya dengeli dağıtımı, sabit/aynı/farklı derslik kurallarını ve yazdırılabilir yoklama çizelgelerini ekler. Yoklama çıktısı tarayıcının yazdırma ekranından **PDF olarak kaydedilir**; sunucu tarafında PDF dosyası saklanmaz. Excel ve öğrenci listeleri tarayıcıda işlenir.
+
+İletişim mesajları artık SMTP yapılandırması olmasa da veritabanındaki yönetici gelen kutusuna kaydedilir. `SUPER_ADMIN` için `/api/admin/contact-messages`, `/api/admin/contact-messages/:id`, `/api/admin/audit-logs` ve `/api/admin/audit-log-users` API'leri eklendi. Başarılı yönetim değişiklikleri ve giriş denemeleri hassas istek gövdeleri kaydedilmeden denetim kayıtlarına alınır. Yayınevi silme ilişkili sınav, cevap anahtarı veya talep bulunursa engellenir.
+
+Yeni veritabanı tabloları için `apps/api/prisma/migrations/20261107190000_v1_0_3_contact_audit` migration'ı eklendi. Migration mevcut tabloları veya kayıtları silmez. Üretime geçmeden önce yedek alın, migration SQL'ini ve gerçek veritabanı migration durumunu inceleyin; bu geliştirme kapsamında canlı migration veya deployment çalıştırılmamıştır. Optik TXT dönüşümü için örnek FMT/TXT kayıt dosyaları depoda bulunmadığından herhangi bir optik kayıt konumu/formatı tahmin edilmemiş ve dönüşüm desteği tamamlandı olarak sunulmamıştır.
+
 ## cPanel production dağıtımı
 
 Web uygulamasındaki API istekleri `NEXT_PUBLIC_API_URL` üzerinden yapılır (giriş/kayıt, yönetici üyelik/kullanıcı işlemleri ve iletişim formu). Bu değişken Next.js build sırasında derlemeye gömüldüğünden canlı değeri build'den önce ayarlayın:

@@ -108,6 +108,7 @@
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Excel indir
           </button>
+          <button id="attendanceBtn" class="btn btn-secondary" disabled>Yoklama listelerini PDF yazdır</button>
         </div>
         <p id="exportStatus" class="text-right text-[11px] text-slate-400"></p>
       </div>
@@ -250,10 +251,8 @@
           </div>
         </div>
         <form id="roomForm" class="mb-4 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
-          <select id="roomCampus" class="field min-w-0" required>
-            <option value="">Önce öğrenci listesini yükleyin</option>
-          </select>
-          <input id="roomName" class="field min-w-0" placeholder="Derslik adı (Örn. 3. kat 304)" required>
+          <input id="roomCampus" list="campusSuggestions" class="field min-w-0" placeholder="Kampüs (tek okul kullanımında boş bırakın)">
+          <input id="roomName" class="field min-w-0" placeholder="Derslik adı (Örn. 101, 1A)" required>
           <datalist id="campusSuggestions"></datalist>
           <div class="flex min-w-0 gap-2 sm:col-span-2">
             <input id="roomCapacity" class="field min-w-0" type="number" min="1" step="1" placeholder="Kapasite" required>
@@ -262,7 +261,7 @@
           </div>
         </form>
         <div id="roomList" class="space-y-2"></div>
-        <p class="mt-3 text-xs leading-5 text-slate-400">Kampüs seçenekleri Excel’in L sütunundan gelir. Önce kampüsü seçip o kampüse ait derslikleri ekleyin; dağıtımda öğrenciler yalnızca kendi kampüslerinin dersliklerine yerleştirilir. Kat bilgisi boşsa derslik adından tahmin edilir.</p>
+        <p class="mt-3 text-xs leading-5 text-slate-400">Kampüs bilgisi Excel'den otomatik tanınır; gerekirse elle yazabilirsiniz. Tek okul kullanımında kampüs adı boş bırakılabilir. Öğrenciler yalnızca kendi kampüslerinin dersliklerine yerleştirilir. Kat bilgisi isteğe bağlıdır.</p>
       </article>
 
       <article class="glass rounded-2xl border border-white p-5 shadow-sm sm:p-6">
@@ -285,12 +284,32 @@
             <label class="mb-2 block text-xs font-semibold text-slate-600">Aynı derslikte olmasın</label>
             <div class="grid gap-2">
               <select id="apartStudentA" class="field"><option value="">İlk öğrenci</option></select>
-              <div class="flex gap-2"><select id="apartStudentB" class="field min-w-0"><option value="">İkinci öğrenci</option></select><button id="addApartBtn" class="btn btn-soft whitespace-nowrap" disabled>Ekle</button></div>
+              <div class="flex gap-2"><select id="apartStudentB" class="field min-w-0"><option value="">İkinci öğrenci</option></select><button id="addApartBtn" class="btn btn-soft whitespace-nowrap" disabled>Ekle</button><button id="removeApartBtn" class="btn btn-secondary whitespace-nowrap" disabled>Kaldır</button></div>
+            </div>
+          </div>
+          <div class="rounded-xl border border-slate-100 bg-white/70 p-4 sm:col-span-2">
+            <label class="mb-2 block text-xs font-semibold text-slate-600">Aynı derslikte olsun</label>
+            <div class="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto]">
+              <select id="togetherStudentA" class="field"><option value="">İlk öğrenci</option></select>
+              <select id="togetherStudentB" class="field"><option value="">İkinci öğrenci</option></select>
+              <button id="addTogetherBtn" class="btn btn-soft whitespace-nowrap" disabled>Ekle</button>
+              <button id="removeTogetherBtn" class="btn btn-secondary whitespace-nowrap" disabled>Kaldır</button>
             </div>
           </div>
         </div>
         <div id="constraintSummary" class="mt-3 text-xs text-slate-400">Henüz özel kısıt eklenmedi.</div>
       </article>
+    </section>
+
+    <section class="glass mb-6 rounded-2xl border border-white p-5 shadow-sm sm:p-6">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div><p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Dağıtım tercihi</p><h2 class="mt-1 text-base font-bold text-slate-900">Öğrenciler dersliklere nasıl yerleştirilsin?</h2></div>
+        <select id="distributionMethod" class="field max-w-xl">
+          <option value="sequential">Derslikleri sırayla doldur (varsayılan) — önce 8. sınıflar, sonra alt sınıflar; gözetmen ihtiyacını azaltır.</option>
+          <option value="balanced">Öğrencileri dersliklere dengeli yay — aynı sınıf seviyesini mümkün olduğunca eşit dağıtır.</option>
+        </select>
+      </div>
+      <div id="distributionSummary" class="mt-4 hidden rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-6 text-slate-600" role="status"></div>
     </section>
 
     <section class="glass overflow-hidden rounded-2xl border border-white shadow-sm">
@@ -336,7 +355,7 @@
       const mapTargets = [
         ["studentNo", "Öğrenci No"], ["tcNo", "TC No"], ["firstName", "Ad"],
         ["lastName", "Soyad"], ["grade", "Sınıf"],
-        ["campus", "Kampüs (Excel L sütunu)"], ["session", "Seans"]
+        ["fullName", "Ad Soyad"], ["campus", "Kampüs"], ["session", "Seans"]
       ];
       const sessionOptions = [
         { name: "Sabah", enabled: true },
@@ -410,21 +429,41 @@
         ? $("#alternateExamName").value.trim() || "ALTERNATİF SINAV"
         : $("#examName").value.trim();
       const assignCampus = (student, campus) => {
-        student.campus = resolveCampusName(campus);
+        const nextCampus = resolveCampusName(campus);
         const fixedRoom = rooms.find((room) => room.id === student.fixedRoomId);
-        if (fixedRoom && normalize(fixedRoom.campus) !== normalize(student.campus)) student.fixedRoomId = null;
+        if (fixedRoom && normalize(fixedRoom.campus) !== normalize(nextCampus)) {
+          showToast("Bu öğrenci bir dersliğe sabitlenmiş. Kampüsünü değiştirmeden önce sabitlemeyi kaldırın.", true);
+          return false;
+        }
+        student.campus = nextCampus;
+        return true;
       };
-      const clearAssignments = () => students.forEach((student) => {
-        student.room = "";
-        student.roomId = null;
-        student.seat = null;
-        student.order = "";
-      });
+      const clearAssignments = () => {
+        students.forEach((student) => {
+          student.room = "";
+          student.roomId = null;
+          student.seat = null;
+          student.order = "";
+        });
+        $("#distributionSummary").classList.add("hidden");
+      };
       const discardNumericCopies = () => {
         if (!numericCreated) return false;
         students = students.filter((student) => student.examSession !== "SAYISAL OTURUM");
         numericCreated = false;
         return true;
+      };
+      const findDuplicateStudents = (items) => {
+        const seen = new Set();
+        const duplicates = [];
+        items.forEach((student) => {
+          const identities = [student.studentNo, student.tcNo]
+            .map((value) => normalize(value))
+            .filter(Boolean);
+          if (identities.some((identity) => seen.has(identity))) duplicates.push(student);
+          identities.forEach((identity) => seen.add(identity));
+        });
+        return duplicates;
       };
 
       function updateControls() {
@@ -445,6 +484,7 @@
         const exportReady = count > 0 && Boolean($("#examName").value.trim()) && dateAppliedToAll;
         $("#exportCsvBtn").disabled = !exportReady;
         $("#exportXlsxBtn").disabled = !exportReady;
+        $("#attendanceBtn").disabled = verbalRoster.length === 0 || !verbalRoster.every((student) => student.roomId !== null);
         $("#exportStatus").textContent = count === 0
           ? "İndirme için önce öğrenci listesi yükleyin."
           : !$("#examName").value.trim()
@@ -466,6 +506,13 @@
         $("#setFixedRoomBtn").disabled = !fixedRoomStudent || !$("#fixedRoomSelect").value;
         $("#clearFixedRoomBtn").disabled = !fixedRoomStudent || fixedRoomStudent.fixedRoomId === null;
         $("#addApartBtn").disabled = !$("#apartStudentA").value || !$("#apartStudentB").value;
+        const apartA = verbalStudents().find((student) => String(student.id) === $("#apartStudentA").value);
+        const apartB = verbalStudents().find((student) => String(student.id) === $("#apartStudentB").value);
+        $("#removeApartBtn").disabled = !apartA || !apartB || !apartA.avoidIds.includes(apartB.id);
+        $("#addTogetherBtn").disabled = !$("#togetherStudentA").value || !$("#togetherStudentB").value;
+        const togetherA = verbalStudents().find((student) => String(student.id) === $("#togetherStudentA").value);
+        const togetherB = verbalStudents().find((student) => String(student.id) === $("#togetherStudentB").value);
+        $("#removeTogetherBtn").disabled = !togetherA || !togetherB || !togetherA.sameIds.includes(togetherB.id);
         $("#numericApprovalStatus").textContent = numericCreated
           ? "Sözel yerleşim onaylandı. Sayısal oturum, yerleşen öğrencilerin aynı derslik ve sıra düzenindeki kopyasıdır."
           : verbalPlacementComplete
@@ -491,41 +538,37 @@
       }
 
       function renderCampusSuggestions() {
-        const campusSelect = $("#roomCampus");
-        const previous = campusSelect.value;
         const campuses = campusNames();
         $("#campusSuggestions").innerHTML = campuses.map((campus) =>
           `<option value="${escapeHtml(campus)}"></option>`
         ).join("");
-        campusSelect.innerHTML = campuses.length
-          ? `<option value="">Kampüs seçin</option>${campuses.map((campus) =>
-            `<option value="${escapeHtml(campus)}">${escapeHtml(campus)}</option>`
-          ).join("")}`
-          : '<option value="">Önce öğrenci listesini yükleyin</option>';
-        if (campuses.some((campus) => normalize(campus) === normalize(previous))) {
-          campusSelect.value = campuses.find((campus) => normalize(campus) === normalize(previous));
-        }
       }
 
       function renderRooms() {
         const list = $("#roomList");
-        const campuses = campusNames();
-        if (!campuses.length) {
-          list.innerHTML = '<div class="rounded-xl border border-dashed border-slate-200 px-4 py-5 text-center text-sm text-slate-400">Derslik eklemek için önce kampüs bilgisi içeren öğrenci listesi yükleyin.</div>';
+        const campuses = [...campusNames(), ...(rooms.some((room) => !normalize(room.campus)) ? [""] : [])];
+        if (!rooms.length) {
+          list.innerHTML = '<div class="rounded-xl border border-dashed border-slate-200 px-4 py-5 text-center text-sm text-slate-400">Henüz derslik eklenmedi. Tek okulda kampüs alanını boş bırakabilirsiniz.</div>';
         } else {
           list.innerHTML = campuses.map((campus) => {
             const campusRooms = rooms.filter((room) => normalize(room.campus) === normalize(campus));
             const roomItems = campusRooms.length ? campusRooms.map((room) => {
               const floor = inferredFloor(room);
+              const campusIndex = campusRooms.findIndex((item) => item.id === room.id);
               return `<div class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-white/70 px-4 py-3">
-              <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-700">${escapeHtml(room.name)}</p><p class="mt-0.5 truncate text-xs text-slate-400">${escapeHtml(room.campus)} · ${floor === null ? "Kat belirtilmedi" : `${floor}. kat`} · ${room.capacity} kişilik</p></div>
-              <button class="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" data-remove-room="${room.id}" aria-label="${escapeHtml(room.name)} dersliğini sil">✕</button>
+              <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-700">${escapeHtml(room.name)}</p><p class="mt-0.5 truncate text-xs text-slate-400">${escapeHtml(room.campus || "Tek okul")} · ${floor === null ? "Kat belirtilmedi" : `${floor}. kat`} · ${room.capacity} kişilik</p></div>
+              <div class="flex shrink-0 items-center gap-1">
+                <button class="rounded-lg px-2 py-1 text-xs text-slate-500 hover:bg-slate-100" data-move-room="${room.id}" data-direction="-1" ${campusIndex === 0 ? "disabled" : ""} aria-label="${escapeHtml(room.name)} dersliğini yukarı taşı">↑</button>
+                <button class="rounded-lg px-2 py-1 text-xs text-slate-500 hover:bg-slate-100" data-move-room="${room.id}" data-direction="1" ${campusIndex === campusRooms.length - 1 ? "disabled" : ""} aria-label="${escapeHtml(room.name)} dersliğini aşağı taşı">↓</button>
+                <button class="rounded-lg px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50" data-edit-room="${room.id}" aria-label="${escapeHtml(room.name)} dersliğini düzenle">Düzenle</button>
+                <button class="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" data-remove-room="${room.id}" aria-label="${escapeHtml(room.name)} dersliğini sil">✕</button>
+              </div>
             </div>`;
             }).join("") : '<p class="rounded-lg border border-dashed border-slate-200 px-3 py-3 text-xs text-slate-400">Bu kampüse henüz derslik eklenmedi.</p>';
             const totalCapacity = campusRooms.reduce((sum, room) => sum + room.capacity, 0);
             return `<section class="space-y-2 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="text-sm font-bold text-indigo-900">${escapeHtml(campus)}</h3>
+                <h3 class="text-sm font-bold text-indigo-900">${escapeHtml(campus || "Tek okul")}</h3>
                 <span class="text-xs font-medium text-indigo-700">${campusRooms.length} derslik · ${totalCapacity} kişilik kapasite</span>
               </div>
               <div class="space-y-2">${roomItems}</div>
@@ -538,10 +581,10 @@
       function renderStudentSelects() {
         const primaryStudents = verbalStudents();
         renderCampusSuggestions();
-        const selectors = ["#fixedRoomStudent", "#apartStudentA", "#apartStudentB"];
+        const selectors = ["#fixedRoomStudent", "#apartStudentA", "#apartStudentB", "#togetherStudentA", "#togetherStudentB"];
         selectors.forEach((selector) => {
           const element = $(selector);
-          const placeholder = selector === "#fixedRoomStudent" ? "Öğrenci seçin" : selector === "#apartStudentA" ? "İlk öğrenci" : "İkinci öğrenci";
+          const placeholder = selector === "#fixedRoomStudent" ? "Öğrenci seçin" : selector.endsWith("StudentA") ? "İlk öğrenci" : "İkinci öğrenci";
           const previous = element.value;
           element.innerHTML = `<option value="">${placeholder}</option>` + primaryStudents.map((student) =>
             `<option value="${student.id}">${escapeHtml(studentLabel(student))}</option>`
@@ -562,9 +605,114 @@
         const fixed = primaryStudents.filter((student) => student.fixedRoomId !== null);
         if (fixed.length) rules.push(`${fixed.length} öğrenci sabit dersliğe atandı`);
         const pairCount = primaryStudents.reduce((sum, student) => sum + student.avoidIds.filter((id) => student.id < id).length, 0);
+        const togetherCount = primaryStudents.reduce((sum, student) => sum + student.sameIds.filter((id) => student.id < id).length, 0);
         if (pairCount) rules.push(`${pairCount} ayrı derslik kuralı`);
+        if (togetherCount) rules.push(`${togetherCount} aynı derslik kuralı`);
         $("#constraintSummary").textContent = rules.length ? rules.join(" · ") : "Henüz özel kısıt eklenmedi.";
         updateControls();
+      }
+
+      function renderDistributionSummary() {
+        const roster = verbalStudents();
+        const placed = roster.filter((student) => student.roomId !== null);
+        const unassigned = roster.filter((student) => student.roomId === null);
+        const batches = new Map();
+        roster.forEach((student) => {
+          const key = `${normalize(student.campus)}\u0000${student.session}`;
+          if (!batches.has(key)) batches.set(key, { campus: student.campus, session: student.session });
+        });
+        const availableCapacity = [...batches.values()].reduce((sum, batch) =>
+          sum + rooms.filter((room) => normalize(room.campus) === normalize(batch.campus))
+            .reduce((roomSum, room) => roomSum + room.capacity, 0), 0);
+        const campusSummary = [...new Set(roster.map((student) => student.campus || "Tek okul"))]
+          .map((campus) => `${escapeHtml(campus)}: ${roster.filter((student) => (student.campus || "Tek okul") === campus).length}`)
+          .join(" · ");
+        const sessionSummary = [...new Set(roster.map((student) => student.session))]
+          .map((session) => `${escapeHtml(session)}: ${roster.filter((student) => student.session === session).length}`)
+          .join(" · ");
+        const usedRooms = new Set(placed.map((student) => student.roomId)).size;
+        const summary = $("#distributionSummary");
+        summary.classList.remove("hidden");
+        summary.innerHTML = `<strong>Dağıtım özeti</strong><div class="mt-1">Toplam ${roster.length} öğrenci · Yerleştirilen ${placed.length} · Yerleşemeyen ${unassigned.length} · Kullanılan derslik ${usedRooms} · Boş kapasite ${Math.max(0, availableCapacity - placed.length)}</div><div class="mt-1">Kampüs: ${campusSummary || "Tek okul"}<br>Seans: ${sessionSummary || "Belirtilmedi"}</div>${unassigned.length ? `<div class="mt-2 rounded-lg bg-rose-50 p-3 text-rose-700"><strong>${unassigned.length} öğrenci yerleştirilemedi. Lütfen yeni derslik ekleyin veya mevcut kapasiteleri düzenleyin.</strong><ul class="mt-1 list-disc pl-5">${unassigned.map((student) => `<li>${escapeHtml(studentLabel(student))} · ${escapeHtml(student.campus || "Tek okul")} · ${escapeHtml(student.session)}</li>`).join("")}</ul></div>` : ""}${roster.some((student) => !gradeNumber(student)) ? `<p class="mt-2 text-amber-700">${roster.filter((student) => !gradeNumber(student)).length} öğrencinin sınıf seviyesi eksik veya geçersiz; sınıf sırasını kontrol edin.</p>` : ""}${roster.some((student) => !student.studentNo) ? `<p class="mt-1 text-amber-700">${roster.filter((student) => !student.studentNo).length} öğrencinin numarası boş; Excel çıktısı öncesinde kontrol edin.</p>` : ""}`;
+      }
+
+      function moveStudent(studentId, targetRoomId) {
+        const student = verbalStudents().find((item) => item.id === studentId);
+        const targetRoom = rooms.find((room) => room.id === targetRoomId);
+        if (!student || !targetRoom) return;
+        const cluster = [];
+        const visited = new Set([student.id]);
+        const queue = [student];
+        while (queue.length) {
+          const current = queue.pop();
+          cluster.push(current);
+          current.sameIds.forEach((id) => {
+            const linked = verbalStudents().find((candidate) => candidate.id === id);
+            if (linked && !visited.has(linked.id)) {
+              visited.add(linked.id);
+              queue.push(linked);
+            }
+          });
+        }
+        if (cluster.some((item) => item.fixedRoomId !== null && item.fixedRoomId !== targetRoom.id)) {
+          showToast("Bu öğrenci veya birlikte yerleştirilmesi gereken öğrenci sabit bir dersliğe atanmış.", true);
+          renderTable();
+          return;
+        }
+        if (cluster.some((item) => normalize(item.campus) !== normalize(targetRoom.campus))) {
+          showToast("Öğrenciler yalnızca kendi kampüslerindeki dersliklere taşınabilir.", true);
+          renderTable();
+          return;
+        }
+        const targetOccupants = students.filter((item) =>
+          item.roomId === targetRoom.id
+          && item.session === student.session
+          && item.examSession === student.examSession
+          && !cluster.some((member) => member.id === item.id)
+        );
+        if (targetOccupants.length + cluster.length > targetRoom.capacity) {
+          showToast("Bu derslikte yeterli boş kapasite yok.", true);
+          renderTable();
+          return;
+        }
+        if (cluster.some((member) => member.avoidIds.some((id) => targetOccupants.some((other) => other.id === id)))) {
+          showToast("Bu taşıma, ayrı derslik kuralını ihlal eder.", true);
+          renderTable();
+          return;
+        }
+        const fromRooms = new Set(cluster.map((item) => item.roomId).filter((id) => id !== null));
+        cluster.forEach((item) => {
+          item.roomId = targetRoom.id;
+          item.room = targetRoom.name;
+        });
+        cluster.forEach((item) => {
+          const numericCopy = students.find((candidate) =>
+            candidate.examSession === "SAYISAL OTURUM" && candidate.sourceStudentId === item.id
+          );
+          if (numericCopy) {
+            numericCopy.roomId = targetRoom.id;
+            numericCopy.room = targetRoom.name;
+          }
+        });
+        const impactedRoomIds = new Set([...fromRooms, targetRoom.id]);
+        [...impactedRoomIds].forEach((roomId) => {
+          [student.session].forEach((session) => {
+            ["SÖZEL OTURUM", "SAYISAL OTURUM"].forEach((examSession) => {
+              const roomRoster = students.filter((item) =>
+                item.roomId === roomId
+                && item.session === session
+                && item.examSession === examSession
+              ).sort((a, b) => gradeNumber(b) - gradeNumber(a) || (a.seat ?? Infinity) - (b.seat ?? Infinity));
+              roomRoster.forEach((item, index) => {
+                item.seat = index + 1;
+                item.order = String(index + 1);
+              });
+            });
+          });
+        });
+        renderTable();
+        renderDistributionSummary();
+        showToast(`${cluster.length > 1 ? `${cluster.length} öğrenci` : studentLabel(student)} yeni dersliğe taşındı.`);
       }
 
       function renderTable() {
@@ -582,7 +730,7 @@
           <td class="px-3 py-2.5"><label class="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium text-amber-700"><input type="checkbox" data-alternative-student="${student.id}" ${student.alternativeExam ? "checked" : ""} ${student.examSession === "SAYISAL OTURUM" ? "disabled" : ""} class="h-3.5 w-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">Alternatif sınav</label></td>
           <td class="px-3 py-2.5 text-slate-600">${escapeHtml(student.date)}</td>
           <td class="px-3 py-2.5"><span class="rounded-md ${student.examSession === "SAYISAL OTURUM" ? "bg-violet-50 text-violet-700" : "bg-indigo-50 text-indigo-700"} px-2 py-1 font-medium">${escapeHtml(student.examSession)}</span></td>
-          <td class="px-3 py-2.5"><span class="${student.room ? "rounded-md bg-emerald-50 px-2 py-1 text-emerald-700" : "text-slate-400"}">${escapeHtml(student.room || "—")}</span></td>
+          <td class="px-2 py-1.5"><select class="cell-input" data-student-room="${student.id}" aria-label="${escapeHtml(studentLabel(student))} için derslik" ${student.examSession === "SAYISAL OTURUM" ? "disabled" : ""}>${student.roomId === null ? '<option value="" selected>—</option>' : ""}${rooms.filter((room) => normalize(room.campus) === normalize(student.campus)).map((room) => `<option value="${room.id}" ${student.roomId === room.id ? "selected" : ""}>${escapeHtml(room.name)}</option>`).join("") || '<option value="">Derslik yok</option>'}</select></td>
           <td class="px-3 py-2.5 text-slate-500">${escapeHtml(rooms.find((room) => room.id === student.fixedRoomId)?.name || "—")}</td>
           <td class="px-3 py-2.5"><button class="rounded-md px-2 py-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600" data-delete-student="${student.sourceStudentId || student.id}" aria-label="Öğrenciyi sil">Sil</button></td>
         </tr>`).join("");
@@ -628,9 +776,9 @@
       function detectHeaderRow(rows) {
         const knownHeaders = new Set([
           "ogrencino", "okulno", "studentno", "studentnumber", "schoolno", "numara",
-          "tc", "tcno", "tckimlik", "tckimlikno", "kimlikno", "ad", "adi", "isim", "ogrenciadi",
-          "soyad", "soyadi", "surname", "adsoyad", "adisoyadi", "isimsoyisim", "ogrenciadisoyadi", "sinif", "sinifi", "sinifsube", "sube",
-          "kampus", "okul", "seans", "sinavturu", "sinavtur", "tarih", "oturum"
+          "tc", "tcno", "tckimlik", "tckimlikno", "kimlik", "kimlikno", "ad", "adi", "isim", "ogrenciadi",
+          "soyad", "soyadi", "surname", "adsoyad", "adisoyadi", "isimsoyisim", "ogrenciadisoyadi", "sinif", "sinifi", "sinifseviyesi", "sinifsube", "sube",
+          "kampus", "kampusadi", "okul", "okuladi", "seans", "sinavseansi", "sinavturu", "sinavtur", "tarih", "oturum", "grade", "level", "studentno", "studentnumber", "identitynumber"
         ]);
         let bestIndex = -1;
         let bestScore = 0;
@@ -721,14 +869,16 @@
           const target = normalize(label);
           const headerMatch = sourceHeaders.findIndex((header) => {
             const normalized = normalize(header);
-            return normalized === target || (key === "studentNo" && ["ogrencino", "okulno", "numara", "no", "studentno", "studentnumber", "schoolno"].includes(normalized))
-              || (key === "tcNo" && ["tc", "tckimlik", "tckimlikno", "kimlikno"].includes(normalized))
+            return normalized === target                         || (key === "studentNo" && ["ogrencino", "ogrencinumarasi", "okulno", "numara", "no", "studentno", "studentnumber", "schoolno"].includes(normalized))
+            || (key === "tcNo" && ["tc", "tcno", "tckimlik", "tckimlikno", "kimlik", "kimlikno", "identitynumber"].includes(normalized))
               || (key === "firstName" && ["isim", "ad", "adi", "firstname", "givenname", "ogrenciadi"].includes(normalized))
               || (key === "lastName" && ["soyad", "soyadi", "surname", "lastname"].includes(normalized))
-              || (key === "grade" && ["sinif", "sinifi", "sube", "sinifsube"].includes(normalized))
-              || (key === "campus" && ["kampus", "kampusu", "campus", "campusi"].includes(normalized));
+            || (key === "fullName" && ["adsoyad", "adisoyadi", "isimsoyisim", "ogrenciadisoyadi", "fullname", "studentname"].includes(normalized))
+            || (key === "grade" && ["sinif", "sinifi", "sinifseviyesi", "seviyesi", "grade", "level"].includes(normalized))
+            || (key === "campus" && ["kampus", "kampusu", "kampusadi", "campus", "campusi", "school", "schoolname"].includes(normalized))
+            || (key === "session" && ["seans", "sinavseansi", "session", "timeslot"].includes(normalized));
           });
-          const match = key === "campus" && sourceHeaders.length > 11 ? 11 : headerMatch;
+          const match = headerMatch;
           return `<label class="text-xs font-medium text-slate-600">${label}<select class="field mt-1.5 py-2 text-sm" data-map-key="${key}"><option value="">Eşleştirme yok</option>${sourceHeaders.map((header, index) => `<option value="${index}" ${index === match ? "selected" : ""}>${excelColumnName(index)} · ${escapeHtml(header)}</option>`).join("")}</select></label>`;
         }).join("");
       }
@@ -742,18 +892,44 @@
         }
         const mapping = {};
         document.querySelectorAll("[data-map-key]").forEach((select) => { mapping[select.dataset.mapKey] = select.value === "" ? -1 : Number(select.value); });
-        const get = (row, key) => mapping[key] >= 0 ? String(row[mapping[key]] ?? "").trim() : "";
-        const imported = sourceRows.slice(firstDataRow).filter((row) => row.some((value) => String(value ?? "").trim() !== "")).map((row) => {
-          const firstName = get(row, "firstName");
-          const lastName = get(row, "lastName");
+        const get = (row, key, rowIndex) => {
+          const column = mapping[key];
+          if (column < 0) return "";
+          const sheet = sourceWorkbook.Sheets[$("#sourceSheetSelect").value];
+          const sheetRange = XLSX.utils.decode_range(sheet["!ref"]);
+          const cell = sheet[XLSX.utils.encode_cell({ r: sheetRange.s.r + rowIndex, c: sheetRange.s.c + column })];
+          let value = cell && ["studentNo", "tcNo"].includes(key)
+            ? XLSX.utils.format_cell(cell)
+            : String(row[column] ?? "");
+          value = String(value ?? "").trim();
+          if (cell && typeof cell.v === "number" && Number.isSafeInteger(cell.v)) {
+            value = XLSX.utils.format_cell(cell).trim() || String(cell.v);
+            if (key === "tcNo" && /^\d{1,11}$/.test(value)) value = value.padStart(11, "0");
+          }
+          if (["studentNo", "tcNo"].includes(key) && /^\d+(?:\.\d+)?e[+-]?\d+$/i.test(value)) {
+            const expanded = Number(value);
+            if (Number.isSafeInteger(expanded)) value = String(expanded);
+            if (key === "tcNo" && /^\d{1,11}$/.test(value)) value = value.padStart(11, "0");
+          }
+          return value;
+        };
+        const dataRows = sourceRows.map((row, index) => ({ row, index })).slice(firstDataRow)
+          .filter(({ row }) => row.some((value) => String(value ?? "").trim() !== ""));
+        const imported = dataRows.map(({ row, index: rowIndex }) => {
+          const firstName = get(row, "firstName", rowIndex);
+          const lastName = get(row, "lastName", rowIndex);
+          const fullName = get(row, "fullName", rowIndex);
+          const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
           return {
-            id: nextId++, selected: false, order: "", studentNo: get(row, "studentNo"), tcNo: get(row, "tcNo"),
-            firstName, lastName, grade: get(row, "grade"), campus: get(row, "campus"),
-            session: activeSessions().includes(get(row, "session")) ? get(row, "session") : "",
+            id: nextId++, selected: false, order: "", studentNo: get(row, "studentNo", rowIndex), tcNo: get(row, "tcNo", rowIndex),
+            firstName: firstName || nameParts.slice(0, -1).join(" "),
+            lastName: lastName || nameParts.slice(-1)[0] || "",
+            grade: get(row, "grade", rowIndex), campus: get(row, "campus", rowIndex),
+            session: activeSessions().includes(get(row, "session", rowIndex)) ? get(row, "session", rowIndex) : activeSessions()[0] || "",
             date: $("#examDate").value,
             alternativeExam: false,
             examSession: "SÖZEL OTURUM", room: "", seat: null,
-            roomId: null, fixedRoomId: null, avoidIds: []
+            roomId: null, fixedRoomId: null, avoidIds: [], sameIds: []
           };
         });
         if (!imported.length) {
@@ -764,8 +940,14 @@
         numericCreated = false;
         renderTable();
         renderStudentSelects();
-        showUploadMessage(`${imported.length} öğrenci listeye aktarıldı.`);
-        showToast(`${imported.length} öğrenci aktarıldı.`);
+        const duplicateRows = findDuplicateStudents(imported);
+        const missingStudentNumbers = imported.filter((student) => !student.studentNo).length;
+        const details = [
+          duplicateRows.length ? `${duplicateRows.length} yinelenen öğrenci kaydı tespit edildi; dağıtımdan önce düzeltin.` : "",
+          missingStudentNumbers ? `${missingStudentNumbers} öğrencinin numarası boş; aktarım tablosunda kontrol edin.` : ""
+        ].filter(Boolean);
+        showUploadMessage(`${imported.length} öğrenci listeye aktarıldı.${details.length ? ` ${details.join(" ")}` : ""}`, duplicateRows.length > 0);
+        showToast(`${imported.length} öğrenci aktarıldı.${duplicateRows.length ? ` ${duplicateRows.length} yinelenen kayıt var.` : ""}`, duplicateRows.length > 0);
       }
 
       function cloneNumericSession() {
@@ -782,11 +964,13 @@
           sourceStudentId: student.id,
           selected: false,
           examSession: "SAYISAL OTURUM",
-          avoidIds: []
+          avoidIds: [],
+          sameIds: []
         }));
         const cloneIds = new Map(originals.map((student, index) => [student.id, clones[index].id]));
         clones.forEach((clone, index) => {
           clone.avoidIds = originals[index].avoidIds.map((id) => cloneIds.get(id)).filter((id) => id !== undefined);
+          clone.sameIds = originals[index].sameIds.map((id) => cloneIds.get(id)).filter((id) => id !== undefined);
         });
         students.push(...clones);
         numericCreated = true;
@@ -797,12 +981,19 @@
 
       function addRoom(event) {
         event.preventDefault();
-        const campus = resolveCampusName($("#roomCampus").value);
+        const campuses = campusNames();
+        const enteredCampus = $("#roomCampus").value.trim();
+        const campus = resolveCampusName(enteredCampus || (campuses.length === 1 ? campuses[0] : ""));
         const name = $("#roomName").value.trim();
         const capacity = Number($("#roomCapacity").value);
         const floorValue = $("#roomFloor").value.trim();
-        if (!campus || !name || !Number.isInteger(capacity) || capacity < 1) {
-          showToast("Kampüs adı, derslik adı ve 1 veya daha büyük tam sayı kapasite girin.", true);
+        if ((campuses.length > 1 && !campus) || !name || !Number.isInteger(capacity) || capacity < 1
+          || (floorValue !== "" && !Number.isInteger(Number(floorValue)))) {
+          showToast("Derslik adı ve pozitif tam sayı kapasite girin; birden fazla kampüs varsa kampüsü seçin.", true);
+          return;
+        }
+        if (rooms.some((room) => normalize(room.name) === normalize(name) && normalize(room.campus) === normalize(campus))) {
+          showToast("Bu kampüste aynı adla bir derslik zaten var.", true);
           return;
         }
         const hadAssignments = students.some((student) => student.room);
@@ -825,60 +1016,157 @@
           showToast("Dağıtım için en az bir derslik ekleyin.", true);
           return;
         }
+        const sessionStudents = verbalStudents();
+        const duplicateRows = findDuplicateStudents(sessionStudents);
+        const missingSession = sessionStudents.filter((student) => !activeSessions().includes(student.session));
+        const knownCampuses = new Set([
+          ...sessionStudents.map((student) => normalize(student.campus)),
+          ...rooms.map((room) => normalize(room.campus))
+        ].filter(Boolean));
+        if (knownCampuses.size === 1) {
+          const onlyCampus = sessionStudents.find((student) => normalize(student.campus))?.campus
+            || rooms.find((room) => normalize(room.campus))?.campus
+            || "";
+          sessionStudents.forEach((student) => { if (!normalize(student.campus)) student.campus = onlyCampus; });
+          rooms.forEach((room) => { if (!normalize(room.campus)) room.campus = onlyCampus; });
+          renderRooms();
+        }
+        const roomCampuses = new Set(rooms.map((room) => normalize(room.campus)).filter(Boolean));
+        const multipleCampuses = new Set([
+          ...sessionStudents.map((student) => normalize(student.campus)),
+          ...roomCampuses
+        ].filter(Boolean)).size > 1;
+        const missingCampus = multipleCampuses ? sessionStudents.filter((student) => !normalize(student.campus)) : [];
+        const invalidFixed = sessionStudents.filter((student) => {
+          if (student.fixedRoomId === null) return false;
+          const room = rooms.find((item) => item.id === student.fixedRoomId);
+          return !room || normalize(room.campus) !== normalize(student.campus);
+        });
+        const sameRuleConflicts = sessionStudents.filter((student) =>
+          student.sameIds.some((id) => student.avoidIds.includes(id))
+        );
+        const incompatibleTogetherRules = sessionStudents.flatMap((student) =>
+          student.sameIds.map((id) => sessionStudents.find((other) => other.id === id))
+            .filter((other) => other && (normalize(student.campus) !== normalize(other.campus) || student.session !== other.session))
+        );
+        const conflictingTogetherPins = sessionStudents.filter((student) =>
+          student.fixedRoomId !== null && student.sameIds.some((id) =>
+            sessionStudents.some((other) => other.id === id && other.fixedRoomId !== null && other.fixedRoomId !== student.fixedRoomId)
+          )
+        );
+        const blockingIssues = [
+          duplicateRows.length ? `${duplicateRows.length} yinelenen öğrenci kaydı var.` : "",
+          missingSession.length ? `${missingSession.length} öğrencinin seansı tanımsız.` : "",
+          missingCampus.length ? `${missingCampus.length} öğrencinin kampüsü tanımsız.` : "",
+          invalidFixed.length ? `${invalidFixed.length} sabitleme geçersiz veya başka kampüse ait.` : "",
+          sameRuleConflicts.length ? "Aynı öğrenciler için hem birlikte hem ayrı derslik kuralı tanımlanmış." : "",
+          incompatibleTogetherRules.length ? "Aynı derslik kuralındaki öğrenciler aynı kampüs ve seansta olmalıdır." : "",
+          conflictingTogetherPins.length ? "Aynı derslik kuralındaki öğrenciler farklı dersliklere sabitlenmiş; sabitlemeleri düzeltin." : ""
+        ].filter(Boolean);
+        if (blockingIssues.length) {
+          showToast(blockingIssues.join(" "), true);
+          const summary = $("#distributionSummary");
+          summary.classList.remove("hidden");
+          summary.innerHTML = `<strong>Dağıtım öncesi düzeltme gerekiyor:</strong><ul class="mt-2 list-disc pl-5">${blockingIssues.map((issue) => `<li>${escapeHtml(issue)}</li>`).join("")}</ul>`;
+          return;
+        }
+
         const copiesDiscarded = discardNumericCopies();
         clearAssignments();
+        const method = $("#distributionMethod").value;
+        const originalRank = new Map(sessionStudents.map((student, index) => [student.id, index]));
+        const batches = new Map();
+        sessionStudents.forEach((student) => {
+          const key = `${normalize(student.campus)}\u0000${student.session}`;
+          if (!batches.has(key)) batches.set(key, { campus: student.campus, session: student.session, students: [] });
+          batches.get(key).students.push(student);
+        });
         let placed = 0;
-        let order = 1;
-        const sessionStudents = verbalStudents();
-        const roomState = rooms.map((room) => ({ ...room, floor: inferredFloor(room), used: 0, assigned: [] }))
-          .sort((a, b) => (b.floor ?? -Infinity) - (a.floor ?? -Infinity) || b.capacity - a.capacity || a.name.localeCompare(b.name, "tr"));
-        const rank = new Map(sessionStudents.map((student, index) => [student.id, index]));
-        const ordered = [...sessionStudents].sort((a, b) =>
-          Number(b.fixedRoomId !== null) - Number(a.fixedRoomId !== null)
-          || gradeNumber(b) - gradeNumber(a)
-          || b.avoidIds.length - a.avoidIds.length
-          || rank.get(a.id) - rank.get(b.id)
-        );
-        const conflict = (student, room) => room.assigned.some((other) =>
+        const allRooms = [];
+        const roomConflict = (student, room) => room.assigned.some((other) =>
           student.avoidIds.includes(other.id) || other.avoidIds.includes(student.id)
         );
-        ordered.forEach((student) => {
-          const room = student.fixedRoomId !== null
-            ? roomState.find((candidate) => candidate.id === student.fixedRoomId
-              && normalize(candidate.campus) === normalize(student.campus)
-              && candidate.used < candidate.capacity
-              && !conflict(student, candidate))
-            : roomState.find((candidate) => normalize(candidate.campus) === normalize(student.campus)
-              && candidate.used < candidate.capacity && !conflict(student, candidate));
-          if (!room) return;
-          room.used += 1;
-          room.assigned.push(student);
-          student.room = room.name;
-          student.roomId = room.id;
-          placed += 1;
-        });
-        roomState.forEach((room) => {
-          room.assigned.sort((a, b) =>
-            gradeNumber(b) - gradeNumber(a) || rank.get(a.id) - rank.get(b.id)
+        const canPlace = (cluster, room) => {
+          if (room.used + cluster.length > room.capacity) return false;
+          if (cluster.some((student) => student.fixedRoomId !== null && student.fixedRoomId !== room.id)) return false;
+          if (cluster.some((student) => roomConflict(student, room))) return false;
+          for (let index = 0; index < cluster.length; index += 1) {
+            if (cluster[index].avoidIds.some((id) => cluster.some((other) => other.id === id))) return false;
+          }
+          return true;
+        };
+        const place = (cluster, room) => {
+          cluster.forEach((student) => {
+            room.assigned.push(student);
+            student.room = room.name;
+            student.roomId = room.id;
+            room.used += 1;
+            placed += 1;
+          });
+        };
+        batches.forEach((batch) => {
+          const roomState = rooms.filter((room) => normalize(room.campus) === normalize(batch.campus))
+            .map((room) => ({ ...room, used: 0, assigned: [] }));
+          allRooms.push(...roomState);
+          if (!roomState.length) return;
+
+          const visited = new Set();
+          const specialClusters = [];
+          batch.students.forEach((student) => {
+            if (visited.has(student.id)) return;
+            const cluster = [];
+            const queue = [student];
+            visited.add(student.id);
+            while (queue.length) {
+              const current = queue.pop();
+              cluster.push(current);
+              current.sameIds.forEach((id) => {
+                const linked = batch.students.find((candidate) => candidate.id === id);
+                if (linked && !visited.has(linked.id)) {
+                  visited.add(linked.id);
+                  queue.push(linked);
+                }
+              });
+            }
+            if (cluster.length > 1 || cluster.some((member) => member.fixedRoomId !== null)) specialClusters.push(cluster);
+          });
+          specialClusters.sort((a, b) =>
+            Number(b.some((student) => student.fixedRoomId !== null)) - Number(a.some((student) => student.fixedRoomId !== null))
+            || b.length - a.length
           );
+          const specialStudentIds = new Set(specialClusters.flatMap((cluster) => cluster.map((student) => student.id)));
+          specialClusters.forEach((cluster) => {
+            const pinnedIds = new Set(cluster.map((student) => student.fixedRoomId).filter((id) => id !== null));
+            const candidates = roomState.filter((room) => !pinnedIds.size || pinnedIds.has(room.id));
+            const orderedCandidates = method === "balanced"
+              ? [...candidates].sort((a, b) => a.used - b.used || roomState.indexOf(a) - roomState.indexOf(b))
+              : candidates;
+            const room = orderedCandidates.find((candidate) => canPlace(cluster, candidate));
+            if (room) place(cluster, room);
+          });
+
+          const remaining = batch.students.filter((student) => student.roomId === null && !specialStudentIds.has(student.id))
+            .sort((a, b) => gradeNumber(b) - gradeNumber(a) || originalRank.get(a.id) - originalRank.get(b.id));
+          remaining.forEach((student) => {
+            const candidates = method === "balanced"
+              ? [...roomState].sort((a, b) => a.used - b.used || roomState.indexOf(a) - roomState.indexOf(b))
+              : roomState;
+            const room = candidates.find((candidate) => canPlace([student], candidate));
+            if (room) place([student], room);
+          });
+        });
+        allRooms.forEach((room) => {
+          room.assigned.sort((a, b) => gradeNumber(b) - gradeNumber(a) || originalRank.get(a.id) - originalRank.get(b.id));
           room.assigned.forEach((student, index) => {
             student.seat = index + 1;
-            student.order = order++;
+            student.order = String(index + 1);
           });
         });
         renderTable();
         renderStudentSelects();
+        renderDistributionSummary();
         if (placed < sessionStudents.length) {
-          const studentsWithoutCampus = sessionStudents.filter((student) => !normalize(student.campus)).length;
-          const campusesWithoutRooms = [...new Set(sessionStudents
-            .filter((student) => normalize(student.campus) && !rooms.some((room) => normalize(room.campus) === normalize(student.campus)))
-            .map((student) => student.campus))];
-          const reason = studentsWithoutCampus
-            ? `${studentsWithoutCampus} öğrencinin kampüs bilgisi eksik.`
-            : campusesWithoutRooms.length
-              ? `Derslik eklenmemiş kampüsler: ${campusesWithoutRooms.join(", ")}.`
-              : "Kapasite veya öğrenci kısıtlarını kontrol edin.";
-          showToast(`${placed}/${sessionStudents.length} öğrenci yerleştirildi. ${reason}`, true);
+          showToast(`${sessionStudents.length - placed} öğrenci yerleştirilemedi. Derslik kapasitesini ve özel kuralları kontrol edin.`, true);
         } else {
           showToast(copiesDiscarded
             ? `${placed} sözel öğrenci yeniden yerleştirildi. Sayısal oturumu oluşturmak için tekrar onay verin.`
@@ -903,41 +1191,42 @@
         ].forEach(([sessionName, sessionStudents]) => {
           if (!sessionStudents.length) return;
           appendMergedTitle(sessionName);
-          const orderedRooms = [...rooms].sort((a, b) =>
-            (inferredFloor(b) ?? -Infinity) - (inferredFloor(a) ?? -Infinity)
-            || b.capacity - a.capacity || a.name.localeCompare(b.name, "tr")
-          );
+          const orderedRooms = [...rooms];
           orderedRooms.forEach((room) => {
-            const roster = sessionStudents.filter((student) => student.roomId === room.id || (!student.roomId && student.room === room.name));
-            if (!roster.length) return;
-            roster.sort((a, b) => gradeNumber(b) - gradeNumber(a) || (a.seat ?? Infinity) - (b.seat ?? Infinity));
-            appendMergedTitle(`${room.campus.toLocaleUpperCase("tr-TR")} · ${room.name.toLocaleUpperCase("tr-TR")} ${roster.length} KİŞİ`);
-            rows.push(exportHeaders);
-            roster.forEach((student, index) => {
-              const firstName = String(student.firstName || "");
-              const opticalFirstName = $("#opticalNamePrefix").checked && firstName ? `### ${firstName}` : firstName;
-              rows.push([
-                "SIRA NUMARASI", index + 1, student.studentNo, student.tcNo, opticalFirstName,
-                student.lastName, studentFullName(student), student.grade, student.campus, student.session,
-                studentExamName(student), student.date, sessionName
-              ]);
+            activeSessions().forEach((timeSession) => {
+              const roster = sessionStudents.filter((student) => student.roomId === room.id && student.session === timeSession);
+              if (!roster.length) return;
+              roster.sort((a, b) => gradeNumber(b) - gradeNumber(a) || (a.seat ?? Infinity) - (b.seat ?? Infinity));
+              appendMergedTitle(`${(room.campus || "TEK OKUL").toLocaleUpperCase("tr-TR")} · ${timeSession.toLocaleUpperCase("tr-TR")} · ${room.name.toLocaleUpperCase("tr-TR")} ${roster.length} KİŞİ`);
+              rows.push(exportHeaders);
+              roster.forEach((student, index) => {
+                const firstName = String(student.firstName || "");
+                const opticalFirstName = $("#opticalNamePrefix").checked && firstName ? `### ${firstName}` : firstName;
+                rows.push([
+                  "SIRA NUMARASI", index + 1, student.studentNo, student.tcNo, opticalFirstName,
+                  student.lastName, studentFullName(student), student.grade, student.campus || "Tek okul", student.session,
+                  studentExamName(student), student.date, sessionName
+                ]);
+              });
             });
           });
-          const unassigned = sessionStudents.filter((student) => !student.roomId && !student.room);
-          if (unassigned.length) {
-            appendMergedTitle(`DERSLİĞE YERLEŞMEYENLER ${unassigned.length} KİŞİ`);
-            rows.push(exportHeaders);
-            unassigned.sort((a, b) => gradeNumber(b) - gradeNumber(a));
-            unassigned.forEach((student, index) => {
-              const firstName = String(student.firstName || "");
-              const opticalFirstName = $("#opticalNamePrefix").checked && firstName ? `### ${firstName}` : firstName;
-              rows.push([
-                "SIRA NUMARASI", index + 1, student.studentNo, student.tcNo, opticalFirstName,
-                student.lastName, studentFullName(student), student.grade, student.campus, student.session,
-                studentExamName(student), student.date, sessionName
-              ]);
-            });
-          }
+          activeSessions().forEach((timeSession) => {
+            const unassigned = sessionStudents.filter((student) => !student.roomId && student.session === timeSession);
+            if (unassigned.length) {
+              appendMergedTitle(`${timeSession.toLocaleUpperCase("tr-TR")} · DERSLİĞE YERLEŞMEYENLER ${unassigned.length} KİŞİ`);
+              rows.push(exportHeaders);
+              unassigned.sort((a, b) => gradeNumber(b) - gradeNumber(a));
+              unassigned.forEach((student, index) => {
+                const firstName = String(student.firstName || "");
+                const opticalFirstName = $("#opticalNamePrefix").checked && firstName ? `### ${firstName}` : firstName;
+                rows.push([
+                  "SIRA NUMARASI", index + 1, student.studentNo, student.tcNo, opticalFirstName,
+                  student.lastName, studentFullName(student), student.grade, student.campus || "Tek okul", student.session,
+                  studentExamName(student), student.date, sessionName
+                ]);
+              });
+            }
+          });
         });
         return { rows, merges };
       }
@@ -963,6 +1252,77 @@
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Sınav Listesi");
         XLSX.writeFile(workbook, "sinav-listesi.xlsx");
+      }
+      function printAttendanceSheets() {
+        const placedStudents = students.filter((student) => student.roomId !== null && student.room);
+        const groups = new Map();
+        placedStudents.forEach((student) => {
+          const room = rooms.find((item) => item.id === student.roomId);
+          if (!room) return;
+          const key = [normalize(room.campus), student.session, student.examSession, room.id].join("\u0000");
+          if (!groups.has(key)) groups.set(key, { room, session: student.session, examSession: student.examSession, students: [] });
+          groups.get(key).students.push(student);
+        });
+        const sheets = [...groups.values()];
+        if (!sheets.length) {
+          showToast("Yoklama listesi oluşturmak için önce öğrencileri yerleştirin.", true);
+          return;
+        }
+        const printWindow = window.open("", "_blank");
+        if (!printWindow) {
+          showToast("Yazdırma penceresi açılamadı. Tarayıcıda açılır pencere iznini etkinleştirin.", true);
+          return;
+        }
+        const formatDate = (value) => {
+          const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).toLocaleDateString("tr-TR") : "Belirtilmedi";
+        };
+        const roomPages = sheets.map((group) => {
+          const roster = group.students.sort((a, b) => gradeNumber(b) - gradeNumber(a) || (a.seat ?? Infinity) - (b.seat ?? Infinity));
+          const examDate = roster.find((student) => student.date)?.date || $("#examDate").value;
+          return `<section class="room-sheet">
+            <header><div class="brand">KURUMSAL SINAV</div><h1>SINAV YOKLAMA ÇİZELGESİ</h1>
+              <h2>${escapeHtml(group.room.name)} DERSLİĞİ — ${escapeHtml(group.session.toLocaleUpperCase("tr-TR"))} SEANSI</h2>
+              <p><strong>Kampüs:</strong> ${escapeHtml(group.room.campus || "Tek okul")} &nbsp; <strong>Oturum:</strong> ${escapeHtml(group.examSession)}</p>
+              <p><strong>Sınav Adı:</strong> ${escapeHtml($("#examName").value.trim() || "Belirtilmedi")} &nbsp; <strong>Sınav Tarihi:</strong> ${escapeHtml(formatDate(examDate))}</p>
+            </header>
+            <table><thead><tr><th>Sıra</th><th>Öğrenci No</th><th>Ad Soyad</th><th>Sınıf Seviyesi</th><th>Geldi</th><th>Gelmedi</th><th>Erken Çıktı</th></tr></thead>
+              <tbody>${roster.map((student, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(student.studentNo || "—")}</td><td>${escapeHtml(studentFullName(student) || "—")}</td><td>${escapeHtml(String(student.grade || "—"))}</td><td><span class="box"></span></td><td><span class="box"></span></td><td><span class="box"></span></td></tr>`).join("")}</tbody>
+            </table>
+            <footer class="instructions"><h3>GÖZETMEN SINAV YÖNERGESİ</h3>
+              <ol>
+                <li>Sınav başlamadan önce öğrencilerin yoklama listesindeki bilgilerini kontrol ediniz.</li>
+                <li>Öğrencilerin doğru derslikte ve doğru seansta bulunduğunu doğrulayınız.</li>
+                <li>Öğrencilere optik cevap formlarındaki ad ve soyad bilgilerini kontrol etmelerini söyleyiniz.</li>
+                <li>Öğrencilerin optik formda <strong>SINAVI YAPAN KURUMDAKİ ÖĞRENCİ NUMARALARINI</strong> doğru yazıp kodladıklarını kontrol ediniz; okul numarasıyla karıştırılmaması gerektiğini hatırlatınız.</li>
+                <li>Optik cevap formundaki işaretleme yuvarlaklarının tam, belirgin ve kurallara uygun biçimde doldurulması gerektiğini hatırlatınız.</li>
+                <li>Optik cevap formunda eksik veya hatalı kimlik/öğrenci bilgisi bulunmamasına dikkat ediniz.</li>
+                <li>Sınava katılan ve katılmayan öğrencileri yoklama çizelgesinde işaretleyiniz.</li>
+                <li>Sınavdan erken ayrılan öğrencileri "Erken Çıktı" bölümünde belirtiniz.</li>
+                <li>Sınav sonunda optik cevap formlarını ve sınav evraklarını eksiksiz toplayarak teslim alınız.</li>
+              </ol>
+              <div class="signature"><span>Gözetmen Adı Soyadı: ______________________________</span><span>Gözetmen İmzası: ____________________</span></div>
+            </footer>
+          </section>`;
+        }).join("");
+        printWindow.document.open();
+        printWindow.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Sınav Yoklama Çizelgeleri</title>
+          <style>
+            @page{size:A4 portrait;margin:12mm}*{box-sizing:border-box}body{font:10pt Arial,Helvetica,sans-serif;color:#172b4d;margin:0}
+            .room-sheet{page-break-before:always}.room-sheet:first-child{page-break-before:auto}header{border-bottom:2px solid #172b4d;padding-bottom:8px;margin-bottom:12px}
+            .brand{font-size:10pt;font-weight:bold;letter-spacing:1px;color:#416eaf}h1{font-size:16pt;margin:6px 0}h2{font-size:12pt;margin:4px 0}
+            header p{font-size:9pt;margin:5px 0}table{width:100%;border-collapse:collapse;table-layout:fixed}thead{display:table-header-group}
+            th,td{border:1px solid #7d899a;padding:6px 4px;text-align:left;overflow-wrap:anywhere}th{background:#edf3fc;font-size:8pt}
+            th:nth-child(1){width:8%}th:nth-child(2){width:15%}th:nth-child(3){width:29%}th:nth-child(4){width:13%}th:nth-child(n+5){width:11.66%}
+            td:nth-child(1),td:nth-child(n+5){text-align:center}.box{display:inline-block;width:12px;height:12px;border:1px solid #172b4d}
+            tr{break-inside:avoid;page-break-inside:avoid}.instructions{break-inside:avoid;page-break-inside:avoid;margin-top:12px;border-top:1px solid #7d899a;padding-top:8px}
+            h3{font-size:10pt;margin:0 0 6px}ol{margin:0;padding-left:18px}li{margin:3px 0;font-size:8pt;line-height:1.25}
+            .signature{display:flex;justify-content:space-between;gap:14px;margin-top:12px;font-size:9pt}
+            @media screen{body{max-width:210mm;margin:16px auto;padding:12mm;box-shadow:0 0 8px #0003}.room-sheet{margin-bottom:20px}}
+          </style></head><body>${roomPages}</body></html>`);
+        printWindow.document.close();
+        printWindow.focus();
+        window.setTimeout(() => printWindow.print(), 400);
       }
       function downloadBlob(blob, filename) {
         const url = URL.createObjectURL(blob);
@@ -991,6 +1351,7 @@
             if (student.session === session.name) student.session = "";
           });
         }
+        clearAssignments();
         renderSessionControls();
         renderTable();
         showToast(`${session.name} seansı ${session.enabled ? "etkinleştirildi" : "kapatıldı; öğrenci atamaları temizlendi"}.${copiesDiscarded ? " Sayısal oturumu yeniden onaylayın." : ""}`);
@@ -998,16 +1359,76 @@
       $("#roomForm").addEventListener("submit", addRoom);
       $("#addRoomBtn").addEventListener("click", () => $("#roomName").focus());
       $("#roomList").addEventListener("click", (event) => {
-        const button = event.target.closest("[data-remove-room]");
+        const button = event.target.closest("[data-remove-room], [data-edit-room], [data-move-room]");
         if (!button) return;
-        const room = rooms.find((item) => item.id === Number(button.dataset.removeRoom));
-        if (room && !confirm(`“${room.name}” dersliği silinsin mi?`)) return;
+        const roomId = Number(button.dataset.removeRoom || button.dataset.editRoom || button.dataset.moveRoom);
+        const room = rooms.find((item) => item.id === roomId);
+        if (!room) return;
+        if (button.matches("[data-move-room]")) {
+          const sameCampus = rooms.map((item, index) => ({ item, index }))
+            .filter(({ item }) => normalize(item.campus) === normalize(room.campus));
+          const currentIndex = sameCampus.findIndex(({ item }) => item.id === room.id);
+          const target = sameCampus[currentIndex + Number(button.dataset.direction)];
+          if (!target) return;
+          const roomIndex = rooms.findIndex((item) => item.id === room.id);
+          const copiesDiscarded = discardNumericCopies();
+          [rooms[roomIndex], rooms[target.index]] = [rooms[target.index], rooms[roomIndex]];
+          clearAssignments();
+          renderRooms();
+          renderTable();
+          if (copiesDiscarded) showToast("Derslik sırası değişti. Sözel dağıtımı yenileyip sayısal oturumu tekrar onaylayın.", true);
+          return;
+        }
+        if (button.matches("[data-edit-room]")) {
+          const name = prompt("Derslik adı", room.name);
+          if (name === null) return;
+          const capacityValue = prompt("Maksimum kapasite (pozitif tam sayı)", String(room.capacity));
+          if (capacityValue === null) return;
+          const floorValue = prompt("Kat (isteğe bağlı, boş bırakılabilir)", room.floor === null ? "" : String(room.floor));
+          if (floorValue === null) return;
+          const campusValue = prompt("Kampüs (tek okul kullanımında boş bırakılabilir)", room.campus);
+          if (campusValue === null) return;
+          const nextName = name.trim();
+          const nextCapacity = Number(capacityValue);
+          const nextFloor = floorValue.trim() === "" ? null : Number(floorValue);
+          const nextCampus = resolveCampusName(campusValue);
+          if (!nextName || !Number.isInteger(nextCapacity) || nextCapacity < 1 || (nextFloor !== null && !Number.isInteger(nextFloor))) {
+            showToast("Derslik adı, pozitif tam sayı kapasite ve geçerli kat bilgisi girin.", true);
+            return;
+          }
+          if (campusNames().length > 1 && !nextCampus) {
+            showToast("Birden fazla kampüs olduğunda dersliğe kampüs atanmalıdır.", true);
+            return;
+          }
+          if (students.some((student) => student.fixedRoomId === room.id && normalize(student.campus) !== normalize(nextCampus))) {
+            showToast("Bu dersliğe sabitlenmiş öğrencilerin kampüsüyle uyuşmuyor. Önce sabitlemeleri düzeltin.", true);
+            return;
+          }
+          if (rooms.some((item) => item.id !== room.id && normalize(item.name) === normalize(nextName) && normalize(item.campus) === normalize(nextCampus))) {
+            showToast("Bu kampüste aynı adla bir derslik zaten var.", true);
+            return;
+          }
+          const copiesDiscarded = discardNumericCopies();
+          room.name = nextName;
+          room.capacity = nextCapacity;
+          room.floor = nextFloor;
+          room.campus = nextCampus;
+          clearAssignments();
+          renderRooms();
+          renderStudentSelects();
+          renderTable();
+          if (copiesDiscarded) showToast("Derslik güncellendi. Sayısal oturumu yeniden onaylayın.", true);
+          return;
+        }
+        const fixedStudents = students.filter((student) => student.fixedRoomId === room.id);
+        if (fixedStudents.length) {
+          showToast(`${fixedStudents.length} öğrenci bu dersliğe sabitlenmiş. Önce sabitlemeleri kaldırın veya başka dersliğe taşıyın.`, true);
+          return;
+        }
+        if (!confirm(`“${room.name}” dersliği silinsin mi?`)) return;
         const hadAssignments = students.some((student) => student.room);
         const copiesDiscarded = discardNumericCopies();
-        rooms = rooms.filter((item) => item.id !== Number(button.dataset.removeRoom));
-        students.forEach((student) => {
-          if (student.fixedRoomId === room?.id) student.fixedRoomId = null;
-        });
+        rooms = rooms.filter((item) => item.id !== room.id);
         clearAssignments();
         renderRooms();
         renderStudentSelects();
@@ -1016,6 +1437,14 @@
       });
       $("#studentBody").addEventListener("change", (event) => {
         const input = event.target;
+        if (input.matches("[data-student-room]")) {
+          if (!input.value) {
+            renderTable();
+            return;
+          }
+          moveStudent(Number(input.dataset.studentRoom), Number(input.value));
+          return;
+        }
         if (input.matches("[data-select-student]")) {
           const student = students.find((item) => item.id === Number(input.dataset.selectStudent));
           if (student) student.selected = input.checked;
@@ -1036,12 +1465,11 @@
           const student = students.find((item) => item.id === Number(input.dataset.studentId));
           if (student) {
             if (input.dataset.key === "campus") {
-              assignCampus(student, input.value);
-              clearAssignments();
+              if (assignCampus(student, input.value)) clearAssignments();
             } else {
               student[input.dataset.key] = input.value;
             }
-            if (input.dataset.key === "grade") clearAssignments();
+            if (["grade", "session"].includes(input.dataset.key)) clearAssignments();
             if (copiesDiscarded || input.dataset.key === "firstName" || input.dataset.key === "lastName") renderTable();
             if (input.dataset.key === "firstName" || input.dataset.key === "lastName" || input.dataset.key === "campus") {
               renderTable();
@@ -1057,7 +1485,11 @@
         const id = Number(button.dataset.deleteStudent);
         const copiesDiscarded = discardNumericCopies();
         students = students.filter((student) => student.id !== id);
-        students.forEach((student) => { student.avoidIds = student.avoidIds.filter((otherId) => otherId !== id); });
+        students.forEach((student) => {
+          student.avoidIds = student.avoidIds.filter((otherId) => otherId !== id);
+          student.sameIds = student.sameIds.filter((otherId) => otherId !== id);
+        });
+        clearAssignments();
         renderTable();
         renderStudentSelects();
         if (copiesDiscarded) showToast("Öğrenci listesi değiştiği için sayısal kopya kaldırıldı.", true);
@@ -1083,8 +1515,16 @@
       $("#applyCampusBtn").addEventListener("click", () => {
         const campus = $("#selectedCampus").value.trim();
         if (!campus) { showToast("Atanacak kampüs adını girin.", true); return; }
+        const affected = selectedStudents();
+        if (affected.some((student) => {
+          const room = rooms.find((item) => item.id === student.fixedRoomId);
+          return room && normalize(room.campus) !== normalize(campus);
+        })) {
+          showToast("Seçilen öğrencilerden biri sabit derslik kuralına sahip. Önce sabitlemeyi kaldırın.", true);
+          return;
+        }
         const copiesDiscarded = discardNumericCopies();
-        selectedStudents().forEach((student) => assignCampus(student, campus));
+        affected.forEach((student) => assignCampus(student, campus));
         clearAssignments();
         renderTable();
         renderStudentSelects();
@@ -1093,8 +1533,15 @@
       $("#applyOtherCampusBtn").addEventListener("click", () => {
         const campus = $("#otherCampus").value.trim();
         if (!campus) { showToast("Diğer öğrencilere atanacak kampüs adını girin.", true); return; }
-        const copiesDiscarded = discardNumericCopies();
         const affected = verbalStudents().filter((student) => !student.selected);
+        if (affected.some((student) => {
+          const room = rooms.find((item) => item.id === student.fixedRoomId);
+          return room && normalize(room.campus) !== normalize(campus);
+        })) {
+          showToast("Diğer öğrencilerden biri sabit derslik kuralına sahip. Önce sabitlemeyi kaldırın.", true);
+          return;
+        }
+        const copiesDiscarded = discardNumericCopies();
         affected.forEach((student) => assignCampus(student, campus));
         clearAssignments();
         renderTable();
@@ -1106,6 +1553,7 @@
         if (!session) { showToast("Önce bir seans seçin.", true); return; }
         const copiesDiscarded = discardNumericCopies();
         selectedStudents().forEach((student) => { student.session = session; });
+        clearAssignments();
         renderTable();
         showToast(`${selectedStudents().length} öğrenciye seans atandı.${copiesDiscarded ? " Sayısal oturumu yeniden onaylayın." : ""}`);
       });
@@ -1149,12 +1597,16 @@
         showToast(`${studentLabel(student)} öğrencisinin sabit derslik kuralı kaldırıldı.${copiesDiscarded ? " Yeniden dağıtım ve onay gereklidir." : ""}`);
       });
       $("#fixedRoomStudent").addEventListener("change", renderStudentSelects);
-      ["#fixedRoomSelect", "#apartStudentA", "#apartStudentB"].forEach((selector) => $(selector).addEventListener("change", updateControls));
+      ["#fixedRoomSelect", "#apartStudentA", "#apartStudentB", "#togetherStudentA", "#togetherStudentB"].forEach((selector) => $(selector).addEventListener("change", updateControls));
       $("#addApartBtn").addEventListener("click", () => {
         const first = students.find((student) => String(student.id) === $("#apartStudentA").value);
         const second = students.find((student) => String(student.id) === $("#apartStudentB").value);
         if (!first || !second || first.id === second.id) {
           showToast("Birbirinden farklı iki öğrenci seçin.", true);
+          return;
+        }
+        if (first.sameIds.includes(second.id) || second.sameIds.includes(first.id)) {
+          showToast("Bu öğrenciler için aynı derslik kuralı bulunduğundan ayrı derslik kuralı eklenemez.", true);
           return;
         }
         if (first.avoidIds.includes(second.id)) {
@@ -1169,8 +1621,60 @@
         renderStudentSelects();
         showToast(`Ayrı derslik kuralı eklendi.${copiesDiscarded ? " Yeniden dağıtım ve onay gereklidir." : ""}`);
       });
+      $("#removeApartBtn").addEventListener("click", () => {
+        const first = verbalStudents().find((student) => String(student.id) === $("#apartStudentA").value);
+        const second = verbalStudents().find((student) => String(student.id) === $("#apartStudentB").value);
+        if (!first || !second || !first.avoidIds.includes(second.id)) return;
+        const copiesDiscarded = discardNumericCopies();
+        first.avoidIds = first.avoidIds.filter((id) => id !== second.id);
+        second.avoidIds = second.avoidIds.filter((id) => id !== first.id);
+        clearAssignments();
+        renderTable();
+        renderStudentSelects();
+        showToast(`Ayrı derslik kuralı kaldırıldı.${copiesDiscarded ? " Yeniden dağıtım ve onay gereklidir." : ""}`);
+      });
+      $("#addTogetherBtn").addEventListener("click", () => {
+        const first = verbalStudents().find((student) => String(student.id) === $("#togetherStudentA").value);
+        const second = verbalStudents().find((student) => String(student.id) === $("#togetherStudentB").value);
+        if (!first || !second || first.id === second.id) {
+          showToast("Birbirinden farklı iki öğrenci seçin.", true);
+          return;
+        }
+        if (first.session !== second.session || normalize(first.campus) !== normalize(second.campus)) {
+          showToast("Aynı derslik kuralı için öğrenciler aynı kampüs ve seansta olmalıdır.", true);
+          return;
+        }
+        if (first.avoidIds.includes(second.id) || second.avoidIds.includes(first.id)) {
+          showToast("Bu öğrenciler için farklı derslik kuralı bulunduğundan aynı derslikte olamazlar.", true);
+          return;
+        }
+        if (first.sameIds.includes(second.id)) {
+          showToast("Bu öğrenciler için aynı derslik kuralı zaten eklenmiş.", true);
+          return;
+        }
+        const copiesDiscarded = discardNumericCopies();
+        first.sameIds.push(second.id);
+        second.sameIds.push(first.id);
+        clearAssignments();
+        renderTable();
+        renderStudentSelects();
+        showToast(`Aynı derslik kuralı eklendi.${copiesDiscarded ? " Yeniden dağıtım ve onay gereklidir." : ""}`);
+      });
+      $("#removeTogetherBtn").addEventListener("click", () => {
+        const first = verbalStudents().find((student) => String(student.id) === $("#togetherStudentA").value);
+        const second = verbalStudents().find((student) => String(student.id) === $("#togetherStudentB").value);
+        if (!first || !second || !first.sameIds.includes(second.id)) return;
+        const copiesDiscarded = discardNumericCopies();
+        first.sameIds = first.sameIds.filter((id) => id !== second.id);
+        second.sameIds = second.sameIds.filter((id) => id !== first.id);
+        clearAssignments();
+        renderTable();
+        renderStudentSelects();
+        showToast(`Aynı derslik kuralı kaldırıldı.${copiesDiscarded ? " Yeniden dağıtım ve onay gereklidir." : ""}`);
+      });
       $("#exportCsvBtn").addEventListener("click", downloadCsv);
       $("#exportXlsxBtn").addEventListener("click", downloadXlsx);
+      $("#attendanceBtn").addEventListener("click", printAttendanceSheets);
       $("#examDate").addEventListener("change", updateControls);
       const dropZone = $("#dropZone");
       dropZone.addEventListener("dragover", (event) => { event.preventDefault(); dropZone.classList.add("dragover"); });
