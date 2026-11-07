@@ -58,7 +58,8 @@ export default function Home() {
         </Link>
         <nav className="header-actions" aria-label="Ana menü">
           <a className="header-link" href="#cozumler">Çözümler</a>
-          <Link className="header-link" href="/cevap-anahtarlari">Cevap Anahtarları</Link>
+          <Link className="header-link gradient-link" href="/cevap-anahtarlari">Cevap Anahtarları</Link>
+          <Link className="header-link" href="/sinav-degerlendir">Sınav Değerlendir</Link>
           <ThemeToggle />
           <Link className="button button-navy" href="/login">Giriş Yap <span aria-hidden="true">↗</span></Link>
         </nav>
@@ -71,7 +72,7 @@ export default function Home() {
           <p className="hero-description">Optik formlardan anlamlı sonuçlara. Sınav değerlendirme, öğrenci analizi ve raporlama süreçleriniz tek bir platformda.</p>
           <div className="hero-buttons">
             <Link className="button button-navy button-big" href="/login">Hemen Giriş Yap <span aria-hidden="true">→</span></Link>
-            <Link className="button button-quiet button-big" href="/cevap-anahtarlari">Cevap Anahtarları <span aria-hidden="true">→</span></Link>
+            <Link className="button button-quiet button-big flowing-gradient" href="/cevap-anahtarlari">Cevap Anahtarları <span aria-hidden="true">→</span></Link>
           </div>
           <div className="hero-proof"><span className="proof-check">✓</span> Kurumlar için güvenilir sınav yönetimi</div>
         </div>
@@ -148,6 +149,11 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="evaluation-promo" aria-labelledby="evaluate-title">
+        <div><p className="hero-tag">EXCEL'DEN ÖĞRENCİ KARNESİNE</p><h2 id="evaluate-title">Cevaplar elinde.<br /><span>Sonuçlar bir adım ötede.</span></h2><p>Derslerini seç, şablonu doldur, öğrenci ve şube karnelerini hazırla. Üyelik gerektirmeden, dosyaların cihazında kalarak.</p></div>
+        <Link className="button button-navy" href="/sinav-degerlendir">Sınav Değerlendir <span>→</span></Link>
+      </section>
+      <section className="answer-request-section" aria-labelledby="answer-request-title"><div className="section-heading"><p className="hero-tag">BİRLİKTE TAMAMLAYALIM</p><h2 id="answer-request-title">Aradığın cevap<br /><span>anahtarı burada yok mu?</span></h2><p>Yayınevi ve deneme bilgilerini gönder; ekleme talebini inceleyelim.</p></div><ContactForm purpose="answer-key" /></section>
       <LgsCountdown />
 
       <section id="contact-section" className="home-contact" aria-labelledby="home-contact-title">

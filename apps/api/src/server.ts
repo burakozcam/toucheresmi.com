@@ -10,7 +10,8 @@ import multer from "multer";
 import { AnswerKeyFileCategory, ApplicationType, Prisma, PublisherRequestStatus, RegistrationStatus, Role } from "@prisma/client";
 import { z } from "zod";
 import { env } from "./config";
-import { AuthenticatedRequest, requireAuth, requireRole } from "./auth";
+import { AuthenticatedRequest, credentialVersion, requireAuth, requireRole } from "./auth";
+import { RequestLimiter } from "./rate-limit";
 import { prisma } from "./db";
 
 const app = express();
@@ -18,6 +19,10 @@ app.use(cors({ origin: env.WEB_ORIGIN }));
 app.use(express.json({ limit: "1mb" }));
 
 const recentContactSubmissions = new Map<string, number>();
+app.use("/api/auth/login", new RequestLimiter(20, 10 * 60_000).middleware());
+app.use("/api/auth/register", new RequestLimiter(8, 30 * 60_000).middleware());
+app.use("/api/applications", new RequestLimiter(8, 30 * 60_000).middleware());
+app.use("/api/contact", new RequestLimiter(10, 10 * 60_000).middleware());
 
 async function recordAudit(
   actorUserId: string | null,
@@ -235,6 +240,7 @@ app.post("/api/auth/login", async (request, response, next) => {
         role: user.role,
         dealerId: user.dealerId,
         schoolId: user.schoolId,
+        credentialVersion: credentialVersion(user.passwordHash),
       },
       env.JWT_SECRET,
       { subject: user.id, expiresIn: "8h" },
@@ -247,10 +253,36 @@ app.post("/api/auth/login", async (request, response, next) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        phone: user.phone,
         role: user.role,
       },
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+const profileSelect = { id: true, email: true, firstName: true, lastName: true, phone: true, role: true } as const;
+app.get("/api/account", requireAuth, async (request: AuthenticatedRequest, response, next) => {
+  try {
+    response.json(await prisma.user.findUniqueOrThrow({ where: { id: request.user!.id }, select: profileSelect }));
+  } catch (error) { next(error); }
+});
+const profileSchema = z.object({
+  firstName: z.string().trim().min(2).max(80),
+  lastName: z.string().trim().min(2).max(80),
+  email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
+  phone: z.string().trim().max(30).refine((value) => !value || (/^[+\d\s().-]+$/.test(value) && value.replace(/\D/g, "").length >= 7)),
+});
+app.patch("/api/account", requireAuth, async (request: AuthenticatedRequest, response, next) => {
+  const parsed = profileSchema.safeParse(request.body);
+  if (!parsed.success) { response.status(400).json({ error: "Ad, soyad, e-posta ve telefon bilgilerini kontrol edin." }); return; }
+  try {
+    const user = await prisma.user.update({ where: { id: request.user!.id }, data: { ...parsed.data, phone: parsed.data.phone || null }, select: profileSelect });
+    await recordAudit(user.id, "ACCOUNT_UPDATED", "user", user.id, "Hesap bilgileri güncellendi.");
+    response.json(user);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") { response.status(409).json({ error: "Bu e-posta adresi başka bir hesapta kullanılıyor." }); return; }
     next(error);
   }
 });
@@ -1648,93 +1680,49 @@ app.post(
   requireRole(Role.SUPER_ADMIN),
   upload.fields([{ name: "answerKeyFile", maxCount: 1 }, { name: "learningOutcomesFile", maxCount: 1 }]),
   async (request: AuthenticatedRequest & { files?: { answerKeyFile?: Express.Multer.File[]; learningOutcomesFile?: Express.Multer.File[] } }, response, next) => {
-    const body = request.body as Record<string, unknown>;
-    const parsed = answerKeyUploadBodySchema.safeParse(body);
-    if (!parsed.success) {
-      response.status(400).json({ error: "Yayınevi, sınıf, sınav adı ve yayın durumu geçerli olmalıdır." });
-      return;
-    }
-
     const uploadedFiles = [
       ...(request.files?.answerKeyFile ?? []),
       ...(request.files?.learningOutcomesFile ?? []),
     ];
-    if (uploadedFiles.length === 0) {
-      response.status(400).json({ error: "En az bir dosya yüklemelisiniz." });
-      return;
-    }
-
+    const movedPaths: string[] = [];
+    let committed = false;
     try {
-      const publisher = await prisma.publisher.findFirst({
-        where: { id: parsed.data.publisherId, active: true },
-      });
-      if (!publisher) {
-        response.status(404).json({ error: "Seçilen yayınevi etkin değil veya bulunamadı." });
-        return;
-      }
-
-      const answerKey = await prisma.publishedAnswerKey.create({
-        data: {
-          publisherId: publisher.id,
-          grade: parsed.data.grade,
-          examName: parsed.data.examName.trim(),
-          published: parsed.data.published,
-          ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
-          createdByUserId: request.user!.id,
-        },
-      });
-
-      const createdFiles: { originalFileName: string; storedFileName: string; mimeType: string; size: number; storagePath: string; category: AnswerKeyFileCategory }[] = [];
-
-      for (const uploadedFile of uploadedFiles) {
-        const extension = path.extname(uploadedFile.originalname).toLowerCase().replace(".", "");
-        if (!allowedExtensions.has(extension)) {
-          response.status(400).json({ error: `Desteklenmeyen dosya türü: ${uploadedFile.originalname}` });
-          return;
+      const parsed = answerKeyUploadBodySchema.safeParse(request.body);
+      if (!parsed.success) { response.status(400).json({ error: "Cevap anahtarı bilgilerini kontrol edin." }); return; }
+      if (!uploadedFiles.length) { response.status(400).json({ error: "En az bir dosya yüklemelisiniz." }); return; }
+      for (const file of uploadedFiles) {
+        const extension = path.extname(file.originalname).toLowerCase().slice(1);
+        if (!allowedExtensions.has(extension) || !validateFileSignature(file.path, extension)) {
+          response.status(400).json({ error: `Dosya içeriği doğrulanamadı: ${file.originalname}` }); return;
         }
-
-        const isValidSignature = validateFileSignature(uploadedFile.path, extension);
-        if (!isValidSignature) {
-          fs.unlinkSync(uploadedFile.path);
-          response.status(400).json({ error: `Dosya içeriği doğrulanamadı: ${uploadedFile.originalname}` });
-          return;
-        }
-
-        const targetDirectory = path.join(storageRoot, "answer-keys", answerKey.id);
-        fs.mkdirSync(targetDirectory, { recursive: true });
-        const destinationFilePath = path.join(targetDirectory, `${Date.now()}-${crypto.randomUUID()}-${uploadedFile.originalname.replace(/[^a-zA-Z0-9_.-]/g, "_")}`);
-        fs.renameSync(uploadedFile.path, destinationFilePath);
-
-        const fileCategory = uploadedFile.fieldname === "answerKeyFile" ? AnswerKeyFileCategory.ANSWER_KEY : AnswerKeyFileCategory.LEARNING_OUTCOMES;
-        createdFiles.push({
-          originalFileName: uploadedFile.originalname,
-          storedFileName: path.basename(destinationFilePath),
-          mimeType: uploadedFile.mimetype,
-          size: uploadedFile.size,
-          storagePath: destinationFilePath,
-          category: fileCategory,
-        });
       }
-
-      await prisma.answerKeyFile.createMany({
-        data: createdFiles.map((file) => ({
-          answerKeyId: answerKey.id,
-          category: file.category,
-          originalFileName: file.originalFileName,
-          storedFileName: file.storedFileName,
-          mimeType: file.mimeType,
-          size: file.size,
-          storagePath: file.storagePath,
-        })),
+      const publisher = await prisma.publisher.findFirst({ where: { id: parsed.data.publisherId, active: true }, select: { id: true } });
+      if (!publisher) { response.status(404).json({ error: "Etkin yayınevi bulunamadı." }); return; }
+      const answerKeyId = crypto.randomUUID().replace(/-/g, "");
+      const files = uploadedFiles.map((file) => {
+        const storedFileName = `${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`;
+        const storagePath = path.join(storageRoot, storedFileName);
+        fs.renameSync(file.path, storagePath);
+        movedPaths.push(storagePath);
+        return {
+          originalFileName: file.originalname, storedFileName, storagePath,
+          mimeType: file.mimetype, size: file.size,
+          category: file.fieldname === "answerKeyFile" ? AnswerKeyFileCategory.ANSWER_KEY : AnswerKeyFileCategory.LEARNING_OUTCOMES,
+        };
       });
-
-      response.status(201).json({
-        message: "Cevap anahtarı kaydedildi.",
-        answerKeyId: answerKey.id,
-        files: createdFiles.length,
-      });
-    } catch (error) {
-      next(error);
+      await prisma.publishedAnswerKey.create({ data: {
+        id: answerKeyId, publisherId: publisher.id, grade: parsed.data.grade,
+        examName: parsed.data.examName.trim(), published: parsed.data.published,
+        ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
+        createdByUserId: request.user!.id, files: { create: files },
+      } });
+      committed = true;
+      response.status(201).json({ message: "Cevap anahtarı kaydedildi.", answerKeyId, files: files.length });
+    } catch (error) { next(error); }
+    finally {
+      for (const filePath of [...uploadedFiles.map((file) => file.path), ...(!committed ? movedPaths : [])]) {
+        try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (error) { console.error("Geçici yükleme temizlenemedi", error); }
+      }
     }
   },
 );
@@ -1755,6 +1743,8 @@ app.patch(
       ...(request.files?.answerKeyFile ?? []),
       ...(request.files?.learningOutcomesFile ?? []),
     ];
+    const movedUploads: string[] = [];
+    let replacementCommitted = false;
     const removeTemporaryUploads = () => {
       for (const file of uploadedFiles) {
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
@@ -1797,7 +1787,6 @@ app.patch(
         }
       }
 
-      const movedUploads: string[] = [];
       const replacementFiles = uploadedFiles.map((file) => {
         const extension = path.extname(file.originalname).toLowerCase().replace(".", "");
         const targetDirectory = path.join(storageRoot, "answer-keys", answerKeyId);
@@ -1844,18 +1833,22 @@ app.patch(
           }
           return record;
         });
+        replacementCommitted = true;
         for (const file of previousFiles) {
-          if (fs.existsSync(file.storagePath)) fs.unlinkSync(file.storagePath);
+          try { if (fs.existsSync(file.storagePath)) fs.unlinkSync(file.storagePath); }
+          catch (error) { console.error("Eski dosya temizlenemedi", error); }
         }
         response.json({ message: "Cevap anahtarı güncellendi.", answerKey: updated });
       } catch (error) {
-        for (const filePath of movedUploads) {
-          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        }
         throw error;
       }
     } catch (error) {
       next(error);
+    } finally {
+      for (const filePath of [...uploadedFiles.map((file) => file.path), ...(!replacementCommitted ? movedUploads : [])]) {
+        try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); }
+        catch (error) { console.error("Yükleme dosyası temizlenemedi", error); }
+      }
     }
   },
 );
@@ -1876,13 +1869,11 @@ app.delete(
         return;
       }
 
-      for (const file of answerKey.files) {
-        if (fs.existsSync(file.storagePath)) {
-          fs.unlinkSync(file.storagePath);
-        }
-      }
-
       await prisma.publishedAnswerKey.delete({ where: { id: answerKey.id } });
+      for (const file of answerKey.files) {
+        try { if (fs.existsSync(file.storagePath)) fs.unlinkSync(file.storagePath); }
+        catch (error) { console.error("Silinen kaydın dosyası temizlenemedi", error); }
+      }
       response.status(204).end();
     } catch (error) {
       next(error);
@@ -1892,6 +1883,10 @@ app.delete(
 
 app.use(
   (error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+    if (error instanceof multer.MulterError) {
+      response.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({ error: error.code === "LIMIT_FILE_SIZE" ? "Dosya boyutu izin verilen sınırı aşıyor." : "Yüklenen dosya sayısını ve dosya alanlarını kontrol edin." });
+      return;
+    }
     console.error("API request failed", error);
     response.status(500).json({ error: "Beklenmeyen bir sunucu hatası oluştu." });
   },

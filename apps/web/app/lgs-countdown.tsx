@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LGS_EXAM_DATE } from "../config/site";
+import { EXAM_DATE_SOURCES, LGS_EXAM_DATE, YKS_EXAM_DATE } from "../config/site";
 
-const target = new Date(`${LGS_EXAM_DATE}T00:00:00+03:00`).getTime();
-
-function getRemaining() {
+function getRemaining(date: string) {
+  const target = new Date(`${date}T00:00:00+03:00`).getTime();
   const difference = Math.max(0, target - Date.now());
   return {
     days: Math.floor(difference / 86_400_000),
@@ -16,14 +15,14 @@ function getRemaining() {
   };
 }
 
-export default function LgsCountdown() {
+function Countdown({ date, name, source }: { date: string; name: string; source: string }) {
   const [remaining, setRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, finished: false });
 
   useEffect(() => {
-    setRemaining(getRemaining());
-    const timer = window.setInterval(() => setRemaining(getRemaining()), 1000);
+    setRemaining(getRemaining(date));
+    const timer = window.setInterval(() => setRemaining(getRemaining(date)), 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [date]);
 
   const units = [
     ["Gün", remaining.days],
@@ -33,11 +32,11 @@ export default function LgsCountdown() {
   ] as const;
 
   return (
-    <section className="lgs-countdown" aria-labelledby="lgs-countdown-title">
+    <section className="lgs-countdown" aria-label={`${name} geri sayımı`}>
       <div>
-        <p className="hero-tag">13 HAZİRAN 2027</p>
-        <h2 id="lgs-countdown-title">LGS'ye kalan süre</h2>
-        <p>Geri sayım sınav tarihinin Türkiye saatiyle başlangıcını esas alır; sınav başlangıç saati ayrıca belirtilmemiştir.</p>
+        <p className="hero-tag">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "long", timeZone: "Europe/Istanbul" }).format(new Date(`${date}T12:00:00+03:00`)).toLocaleUpperCase("tr-TR")}</p>
+        <h2>{name}'ye kalan süre</h2>
+        <p>{name === "YKS" ? "TYT günü esas alınır. AYT / YDT: 20 Haziran 2027. " : ""}Türkiye saatiyle sınav gününün başlangıcına geri sayım. <a href={source} target="_blank" rel="noreferrer">Resmî takvim ↗</a></p>
       </div>
       {remaining.finished ? <strong className="lgs-finished">Sınav tarihi geldi.</strong> : (
         <div className="lgs-units">{units.map(([label, value]) => (
@@ -46,4 +45,8 @@ export default function LgsCountdown() {
       )}
     </section>
   );
+}
+
+export default function LgsCountdown() {
+  return <div className="exam-countdowns"><Countdown date={LGS_EXAM_DATE} name="LGS" source={EXAM_DATE_SOURCES.lgs} /><Countdown date={YKS_EXAM_DATE} name="YKS" source={EXAM_DATE_SOURCES.yks} /></div>;
 }

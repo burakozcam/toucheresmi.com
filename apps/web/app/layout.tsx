@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     url: SITE_URL,
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Kurumsal Sınav | Optik Okuma ve Sınav Yönetimi",
     description: "Optik okuma, sınav değerlendirme ve raporlama süreçleri için kurumsal platform.",
   },

@@ -35,6 +35,19 @@ Web tarafında sürüm `apps/web/config/site.ts` üzerinden yönetilir. Yayımla
 
 ## v1.0.3 geliştirmeleri
 
+### Arayüz ve herkese açık değerlendirme
+
+- `/sinav-degerlendir`: Düzenlenebilir ders/soru/katsayılarla Excel şablonu indirme; doldurulmuş XLSX dosyasını doğrulama; öğrenci, toplu karne ve okul/şube listeleri. En fazla 500 öğrenci, 300 soru ve 10 MB desteklenir. Dosyalar tarayıcıda işlenir; öğrenci verisi API'ye gönderilmez. PDF çıktısı yazdırma penceresindeki **PDF olarak kaydet** seçeneğiyle alınır. İptal sorular hesap dışıdır. Katsayılı net resmî LGS/YKS puanı değildir.
+- Cevap anahtarları dizini sunucuda oluşturulur; yayınlar ilk HTML'de, sayfalama bağlantıları ve CollectionPage/ItemList verisiyle sunulur. Filtreli sayfalar yinelenen indeksleri önlemek için noindex/follow kullanır. Yeni değerlendirme sayfası site haritasına eklenmiştir.
+- Ana sayfada cevap anahtarı talep formu, değerlendirme bağlantısı, hareketli kurumsal gradient ve LGS/YKS sayaçları; footer'da v1.0.3. Tarihlerin resmî kaynakları sayaçlarda bağlantılıdır. Talep mesajları mevcut yönetici gelen kutusuna etiketli metin olarak gider; otomatik yayımlama yapılmaz.
+- Mola alanında K logosuyla rastgele kuleli uçuş ve yılan oyunları; klavye/dokunmatik kontroller, duraklatma ve cihazda en iyi skor. Sözlerin gerçek kişi atıfları ve kaynak bağlantıları bulunur.
+- Liste düzenleyicide sayısal oturum doğrudan eklenir; düğme Excel indirme alanında da bulunur. Derslik düzenleme/silme diyalogları iframe içinde çalışabilen sayfa içi diyaloglardır. Okul Adı ve Sınıf/Şube sütunları tanınır; öğrenci numarası okul bazında, TC ayrı kimlik türü olarak kontrol edilir.
+- SheetJS CE 0.20.3, lisansıyla birlikte `apps/web/public/vendor` içinde tutulur. Excel işlevleri çalışma anında dış CDN istemez. PDF araçlarının diğer kütüphaneleri ve mevcut Tailwind/font kaynakları dış bağlantı kullanmayı sürdürür.
+
+Hesap ayarları `/api/account` üzerinden veritabanına kaydedilir. Şifre değişince önceki JWT geçersiz olur; bu sürüme geçişte eski token biçimini kullananların yeniden giriş yapması gerekir. Cevap anahtarı yüklemeleri dosya doğrulamasından sonra ilişkili kayıtları tek işlemle oluşturur; başarısız yüklemeler temizlenir. Girişte 10 dakikada 20, kayıtta 30 dakikada 8 istek/IP sınırı vardır. Sınırlar tek API sürecinin belleğinde tutulur; birden çok API süreci arasında paylaşılmaz. Ters proxy arkasında gerçek istemci IP'si için barındırma yapılandırması ayrıca doğrulanmalıdır; uygulama doğrulanmamış forwarded başlıklarına güvenmez.
+
+Bu değişiklikler yeni migration gerektirmez. FMT/öğrenci modüllerinin eksik özellikleri ve okul yöneticisinin sınav ekranı kapsamı değiştirilmemiştir. `npm test` hesaplama, XLSX geri okuma, oturum iptali, hız sınırı ve liste dağıtım senaryolarını çalıştırır. Tarayıcı içi yazdırma ve mobil etkileşimler için canlı öncesi tarayıcı kontrolü gerekir.
+
 v1.0.3; sınav listesinde kampüs alanı olmadan derslik tanımlamayı, esnek Excel sütun eşleştirmeyi, kampüs/seans bazında kapasiteyi, sırayla veya dengeli dağıtımı, sabit/aynı/farklı derslik kurallarını ve yazdırılabilir yoklama çizelgelerini ekler. Yoklama çıktısı tarayıcının yazdırma ekranından **PDF olarak kaydedilir**; sunucu tarafında PDF dosyası saklanmaz. Excel ve öğrenci listeleri tarayıcıda işlenir.
 
 İletişim mesajları artık SMTP yapılandırması olmasa da veritabanındaki yönetici gelen kutusuna kaydedilir. `SUPER_ADMIN` için `/api/admin/contact-messages`, `/api/admin/contact-messages/:id`, `/api/admin/audit-logs` ve `/api/admin/audit-log-users` API'leri eklendi. Başarılı yönetim değişiklikleri ve giriş denemeleri hassas istek gövdeleri kaydedilmeden denetim kayıtlarına alınır. Yayınevi silme ilişkili sınav, cevap anahtarı veya talep bulunursa engellenir.

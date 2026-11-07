@@ -8,10 +8,12 @@ export default function SiteFooter() {
         <span className="brand-mark">K</span>
         <span>kurumsal<span className="brand-light">sinav.com</span></span>
       </Link>
-      <p>© 2026 Kurumsal Sınav · {SITE_VERSION}</p>
+      <p>© 2026 Kurumsal Sınav · <span className="version-badge">Versiyon {SITE_VERSION}</span></p>
       <nav aria-label="Alt menü">
+        <Link href="/cevap-anahtarlari">Cevap Anahtarları</Link>
+        <Link href="/sinav-degerlendir">Sınav Değerlendir</Link>
         <Link href="/contact">İletişim</Link>
-        <a href="mailto:destek@kurumsalsinav.com">destek@kurumsalsinav.com</a>
+        <a href="/contact#contact-form">destek@kurumsalsinav.com</a>
       </nav>
     </footer>
   );

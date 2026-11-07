@@ -18,7 +18,7 @@ import AuditLogManagement from "./audit-log-management";
 import { API_URL } from "../../lib/api";
 
 type Section = "exam" | "fmt-upload" | "fmt-edit" | "fmt-delete" | "school-add" | "school-edit" | "school-delete" | "students" | "calendar" | "break" | "rebuilder" | "pdf-tools" | "publishers" | "publisher-requests" | "answer-keys" | "system-users" | "contact-inbox" | "audit-logs" | "account";
-type AuthUser = { id: string; email: string; firstName: string; lastName: string; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" };
+type AuthUser = { id: string; email: string; firstName: string; lastName: string; phone?: string | null; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" };
 
 const pages: Record<Section, { title: string; eyebrow: string; description: string; action: string }> = {
   exam: { title: "Sınav Yükle", eyebrow: "SINAV YÖNETİMİ", description: "Yeni sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.", action: "Sınav dosyası seç" },
@@ -62,6 +62,7 @@ export default function PanelPage() {
   const [authorized, setAuthorized] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState({ firstName: "", lastName: "", email: "", phone: "" });
+  const [profileSaving, setProfileSaving] = useState(false);
   const [authToken, setAuthToken] = useState("");
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [profileNotice, setProfileNotice] = useState("");
@@ -102,14 +103,20 @@ export default function PanelPage() {
     setProfile((current) => ({ ...current, firstName: user.firstName, lastName: user.lastName, email: user.email }));
     if (user.role === "SUPER_ADMIN") setSection("system-users");
 
-    const savedProfile = window.localStorage.getItem("kurumsal-profile");
-    if (savedProfile) {
-      try {
-        setProfile((current) => ({ ...current, ...JSON.parse(savedProfile), firstName: user.firstName, lastName: user.lastName, email: user.email }));
-      } catch {
-        window.localStorage.removeItem("kurumsal-profile");
+    window.localStorage.removeItem("kurumsal-profile");
+    void fetch(`${API_URL}/api/account`, { headers: { Authorization: `Bearer ${token}` } }).then(async (response) => {
+      if (response.status === 401) {
+        window.sessionStorage.removeItem("kurumsal-auth-token");
+        window.sessionStorage.removeItem("kurumsal-auth-user");
+        router.replace("/login");
+        return;
       }
-    }
+      if (!response.ok) throw new Error("Hesap bilgileri alınamadı.");
+      const account = await response.json() as AuthUser;
+      setAuthUser(account);
+      setProfile({ firstName: account.firstName, lastName: account.lastName, email: account.email, phone: account.phone ?? "" });
+      window.sessionStorage.setItem("kurumsal-auth-user", JSON.stringify(account));
+    }).catch(() => setProfileNotice("Güncel hesap bilgilerine ulaşılamadı. Lütfen tekrar deneyin."));
     setAuthorized(true);
   }, [router]);
 
@@ -159,10 +166,19 @@ export default function PanelPage() {
     window.setTimeout(() => router.replace("/"), 1100);
   }
 
-  function saveProfile(event: FormEvent<HTMLFormElement>) {
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    window.localStorage.setItem("kurumsal-profile", JSON.stringify(profile));
-    setProfileNotice("Hesap bilgileriniz bu tarayıcıda kaydedildi.");
+    setProfileSaving(true);
+    setProfileNotice("");
+    try {
+      const response = await fetch(`${API_URL}/api/account`, { method: "PATCH", headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" }, body: JSON.stringify(profile) });
+      const result = await response.json() as AuthUser & { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Bilgiler kaydedilemedi.");
+      setAuthUser(result);
+      window.sessionStorage.setItem("kurumsal-auth-user", JSON.stringify(result));
+      setProfileNotice("Hesap bilgileriniz güncellendi.");
+    } catch (error) { setProfileNotice(error instanceof Error ? error.message : "Sunucuya ulaşılamadı."); }
+    finally { setProfileSaving(false); }
   }
 
   if (!authorized) return <main className="panel-loading">Oturum kontrol ediliyor...</main>;
@@ -203,11 +219,11 @@ export default function PanelPage() {
                 <label>Soyad<input value={profile.lastName} onChange={(event) => setProfile({ ...profile, lastName: event.target.value })} maxLength={80} /></label>
                 <label>E-posta<input type="email" value={profile.email} onChange={(event) => setProfile({ ...profile, email: event.target.value })} maxLength={254} /></label>
                 <label>Telefon<input type="tel" value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} maxLength={30} /></label>
-                <button className="button button-navy" type="submit">Bilgileri kaydet</button>
+                <button className="button button-navy" type="submit" disabled={profileSaving}>{profileSaving ? "Kaydediliyor..." : "Bilgileri kaydet"}</button>
                 {profileNotice && <p className="profile-notice" role="status">{profileNotice}</p>}
               </div>
             </form>
-          </section> : section === "calendar" ? <Calendar /> : section === "break" ? <BreakGame /> : section === "rebuilder" ? <iframe ref={rebuilderFrame} className="tool-frame rebuilder-frame" src="/rebuilder.html" title="Sınav Listesi Düzenleyici" sandbox="allow-scripts allow-downloads allow-popups" referrerPolicy="no-referrer" /> : section === "pdf-tools" ? <iframe ref={pdfToolsFrame} className="tool-frame pdf-tools-frame" src="/araclar/pdf-tools.html" title="PDF ve Excel Araçları" sandbox="allow-scripts allow-downloads" referrerPolicy="no-referrer" /> : section === "system-users" && authUser?.role === "SUPER_ADMIN" ? <RegistrationRequests token={authToken} /> : section === "publishers" || section === "publisher-requests" ? <PublisherManagement token={authToken} role={authUser?.role ?? "DEALER"} /> : section === "answer-keys" ? <AnswerKeyManagement token={authToken} readOnly={authUser?.role !== "SUPER_ADMIN"} /> : ["school-add", "school-edit", "school-delete"].includes(section) && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <SchoolManagement token={authToken} role={authUser.role} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ExamManagement token={authToken} /> : <section className="dashboard-empty">
+          </section> : section === "calendar" ? <Calendar /> : section === "break" ? <BreakGame /> : section === "rebuilder" ? <iframe ref={rebuilderFrame} className="tool-frame rebuilder-frame" src="/rebuilder.html" title="Sınav Listesi Düzenleyici" sandbox="allow-scripts allow-downloads allow-popups allow-modals" referrerPolicy="no-referrer" /> : section === "pdf-tools" ? <iframe ref={pdfToolsFrame} className="tool-frame pdf-tools-frame" src="/araclar/pdf-tools.html" title="PDF ve Excel Araçları" sandbox="allow-scripts allow-downloads" referrerPolicy="no-referrer" /> : section === "system-users" && authUser?.role === "SUPER_ADMIN" ? <RegistrationRequests token={authToken} /> : section === "publishers" || section === "publisher-requests" ? <PublisherManagement token={authToken} role={authUser?.role ?? "DEALER"} /> : section === "answer-keys" ? <AnswerKeyManagement token={authToken} readOnly={authUser?.role !== "SUPER_ADMIN"} /> : ["school-add", "school-edit", "school-delete"].includes(section) && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <SchoolManagement token={authToken} role={authUser.role} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ExamManagement token={authToken} /> : <section className="dashboard-empty">
             <div className="empty-art"><div className="empty-paper"><span className="empty-paper-mark">K</span><i /><i /><i /><div className="empty-bubbles"><b /><b /><b /><b /></div></div><span className="empty-spark">✳</span><span className="empty-orbit" /></div>
             <h2>{section === "exam" ? "İlk sınavınızı yükleyin" : `${activePage.title} işlemlerine başlayın`}</h2>
             <p>{section === "exam" ? "Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın." : activePage.description}</p>

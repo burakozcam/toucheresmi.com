@@ -5,6 +5,7 @@ import { API_URL } from "../../../lib/api";
 import { answerKeyPath } from "../../../lib/answer-key";
 import { SITE_NAME } from "../../../config/site";
 import SiteFooter from "../../site-footer";
+import { cache } from "react";
 
 type AnswerKeyDetails = {
   id: string;
@@ -15,12 +16,12 @@ type AnswerKeyDetails = {
   files: Array<{ id: string; category: "ANSWER_KEY" | "LEARNING_OUTCOMES"; originalFileName: string }>;
 };
 
-async function getAnswerKey(id: string): Promise<AnswerKeyDetails | null> {
-  const response = await fetch(`${API_URL}/api/answer-keys/${encodeURIComponent(id)}`, { cache: "no-store" });
+const getAnswerKey = cache(async (id: string): Promise<AnswerKeyDetails | null> => {
+  const response = await fetch(`${API_URL}/api/answer-keys/${encodeURIComponent(id)}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Cevap anahtarı yüklenemedi (${response.status}).`);
   return response.json() as Promise<AnswerKeyDetails>;
-}
+});
 
 function descriptionFor(item: AnswerKeyDetails) {
   return `${item.publisher.name} ${item.grade}. sınıf ${item.examName} cevap anahtarı ve mevcut kazanım dosyalarını görüntüleyip indirin.`;
@@ -78,6 +79,9 @@ export default async function AnswerKeyDetailPage({
     inLanguage: "tr",
     datePublished: item.publishedAt,
     learningResourceType: "Answer key",
+    url: `https://kurumsalsinav.com${canonicalPath}`,
+    isAccessibleForFree: true,
+    educationalLevel: `${item.grade}. Sınıf`,
     provider: { "@type": "Organization", name: item.publisher.name },
   };
 
@@ -104,6 +108,7 @@ export default async function AnswerKeyDetailPage({
         </div>
       </article>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
+      <section className="evaluation-promo"><div><h2>Cevaplarından bir karne oluştur.</h2><p>Excel şablonunu doldur, doğru ve yanlışlarını kontrol et; öğrenci ve şube sonuçlarını al.</p></div><Link className="button button-navy" href="/sinav-degerlendir">Sınav Değerlendir →</Link></section>
       <SiteFooter />
     </main>
   );

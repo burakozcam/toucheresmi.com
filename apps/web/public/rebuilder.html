@@ -7,7 +7,7 @@
   <title>Sınav Listesi Düzenleyici</title>
   <script>if (window.parent !== window) document.documentElement.classList.add("embedded-tool");</script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="/vendor/xlsx.full.min.js"></script>
   <style>
     :root { color-scheme: light; --brand-navy: #172b4d; --brand-blue: #416eaf; --brand-soft: #edf3fc; --brand-line: #e5ebf2; }
     body { font-family: "DM Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -100,6 +100,7 @@
           Ad sütununa ### öneki ekle
         </label>
         <div class="flex flex-wrap gap-2">
+          <button id="cloneNumericExportBtn" class="btn btn-secondary" disabled>SAYISAL OTURUMLARI EKLE</button>
           <button id="exportCsvBtn" class="btn btn-secondary" disabled>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             CSV indir
@@ -220,7 +221,7 @@
             <div class="flex min-w-0 flex-wrap gap-2"><select id="bulkSession" class="field min-w-0 flex-1"><option value="">Seans seçin</option></select><button id="applySessionBtn" class="btn btn-soft whitespace-nowrap" disabled>Uygula</button></div>
             <button id="cloneNumericBtn" class="btn btn-secondary mt-3 w-full" disabled>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 8V5.75C8 4.78 8.78 4 9.75 4h8.5c.97 0 1.75.78 1.75 1.75v8.5c0 .97-.78 1.75-1.75 1.75H16M6 8h8.25C15.22 8 16 8.78 16 9.75v8.5c0 .97-.78 1.75-1.75 1.75h-8.5C4.78 20 4 19.22 4 18.25v-8.5C4 8.78 4.78 8 5.75 8H6Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              Sözel yerleşimi onayla · Sayısalı oluştur
+              SAYISAL OTURUMLARI EKLE
             </button>
           </div>
           <div class="min-w-0 rounded-xl border border-slate-100 bg-white/70 p-4 sm:col-span-2">
@@ -457,9 +458,7 @@
         const seen = new Set();
         const duplicates = [];
         items.forEach((student) => {
-          const identities = [student.studentNo, student.tcNo]
-            .map((value) => normalize(value))
-            .filter(Boolean);
+          const identities = [student.studentNo ? `no:${normalize(student.campus)}:${normalize(student.studentNo)}` : "", student.tcNo ? `tc:${normalize(student.tcNo)}` : ""].filter(Boolean);
           if (identities.some((identity) => seen.has(identity))) duplicates.push(student);
           identities.forEach((identity) => seen.add(identity));
         });
@@ -481,7 +480,8 @@
         $("#tableCount").textContent = count.toLocaleString("tr-TR");
         const selectedDate = $("#examDate").value;
         const dateAppliedToAll = Boolean(selectedDate) && students.every((student) => student.date === selectedDate);
-        const exportReady = count > 0 && Boolean($("#examName").value.trim()) && dateAppliedToAll;
+        const sessionsValid = verbalRoster.every((student) => activeSessions().includes(student.session));
+        const exportReady = count > 0 && Boolean($("#examName").value.trim()) && dateAppliedToAll && sessionsValid;
         $("#exportCsvBtn").disabled = !exportReady;
         $("#exportXlsxBtn").disabled = !exportReady;
         $("#attendanceBtn").disabled = verbalRoster.length === 0 || !verbalRoster.every((student) => student.roomId !== null);
@@ -491,8 +491,10 @@
             ? "İndirme için yayınevi / sınav adını girin."
             : !dateAppliedToAll
               ? "İndirme için tarihi seçip tüm listeye uygulayın."
-              : numericCreated ? "Sözel ve sayısal çıktılar hazır." : "Sözel çıktı hazır.";
+              : !sessionsValid ? "Tüm öğrencilere etkin bir seans atayın." : numericCreated ? "Sözel ve sayısal çıktılar hazır." : "Sözel çıktı hazır. Sayısal oturum da gerekiyorsa aşağıdaki SAYISAL OTURUMLARI EKLE düğmesini kullanın.";
         $("#cloneNumericBtn").disabled = !verbalPlacementComplete || numericCreated;
+        $("#cloneNumericExportBtn").disabled = !verbalPlacementComplete || numericCreated;
+        $("#cloneNumericExportBtn").textContent = numericCreated ? "SAYISAL OTURUMLAR EKLENDİ ✓" : "SAYISAL OTURUMLARI EKLE";
         $("#applyDateBtn").disabled = count === 0 || !$("#examDate").value;
         $("#applyCampusBtn").disabled = selectedCount === 0;
         $("#applySessionBtn").disabled = selectedCount === 0;
@@ -874,8 +876,8 @@
               || (key === "firstName" && ["isim", "ad", "adi", "firstname", "givenname", "ogrenciadi"].includes(normalized))
               || (key === "lastName" && ["soyad", "soyadi", "surname", "lastname"].includes(normalized))
             || (key === "fullName" && ["adsoyad", "adisoyadi", "isimsoyisim", "ogrenciadisoyadi", "fullname", "studentname"].includes(normalized))
-            || (key === "grade" && ["sinif", "sinifi", "sinifseviyesi", "seviyesi", "grade", "level"].includes(normalized))
-            || (key === "campus" && ["kampus", "kampusu", "kampusadi", "campus", "campusi", "school", "schoolname"].includes(normalized))
+            || (key === "grade" && ["sinif", "sinifi", "sinifseviyesi", "seviyesi", "grade", "level", "sinifsube", "sube"].includes(normalized))
+            || (key === "campus" && ["kampus", "kampusu", "kampusadi", "campus", "campusi", "school", "schoolname", "okul", "okuladi", "kurum", "kurumadi"].includes(normalized))
             || (key === "session" && ["seans", "sinavseansi", "session", "timeslot"].includes(normalized));
           });
           const match = headerMatch;
@@ -957,7 +959,7 @@
           showToast("Sayısal oturumdan önce sözel listedeki tüm öğrencileri yerleştirin.", true);
           return;
         }
-        if (!confirm(`${originals.length} öğrencinin sözel yerleşimi tamamlandı. Aynı derslik ve sıra düzeninde sayısal oturum oluşturulsun mu?`)) return;
+
         const clones = originals.map((student) => ({
           ...student,
           id: nextId++,
@@ -1324,6 +1326,31 @@
         printWindow.focus();
         window.setTimeout(() => printWindow.print(), 400);
       }
+      function askUser(message, initialValue) {
+        return new Promise((resolve) => {
+          const dialog = document.createElement("dialog");
+          dialog.style.cssText = "border:1px solid #4169a9;border-radius:16px;padding:24px;background:#17243a;color:#e1e9f5;max-width:min(90vw,440px);font:14px Arial;box-shadow:0 20px 80px #0006";
+          const form = document.createElement("form"); form.method = "dialog";
+          const title = document.createElement("p"); title.textContent = message; title.style.lineHeight = "1.6";
+          form.append(title);
+          let input;
+          if (initialValue !== undefined) {
+            input = document.createElement("input"); input.value = initialValue;
+            input.style.cssText = "width:100%;padding:12px;border:1px solid #4169a9;border-radius:8px;background:#111c30;color:#fff;margin-bottom:18px";
+            input.setAttribute("aria-label", message); form.append(input);
+          }
+          const cancel = document.createElement("button"); cancel.type = "button"; cancel.textContent = "Vazgeç";
+          cancel.style.cssText = "padding:10px 18px;border:0;border-radius:8px;margin-right:12px;cursor:pointer";
+          cancel.onclick = () => dialog.close("cancel");
+          const accept = document.createElement("button"); accept.type = "submit"; accept.textContent = "Tamam";
+          accept.style.cssText = "padding:10px 18px;border:0;border-radius:8px;background:#4169a9;color:white;cursor:pointer";
+          form.append(cancel, accept); dialog.append(form); document.body.append(dialog);
+          form.onsubmit = (event) => { event.preventDefault(); dialog.close("accept"); };
+          dialog.addEventListener("close", () => { const answer = dialog.returnValue === "accept" ? input ? input.value : true : null; dialog.remove(); resolve(answer); }, { once: true });
+          dialog.showModal(); if (input) { input.focus(); input.select(); } else cancel.focus();
+        });
+      }
+
       function downloadBlob(blob, filename) {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -1339,6 +1366,7 @@
       $("#headerRowNumber").addEventListener("change", updateSourceMapping);
       $("#importBtn").addEventListener("click", importMappedRows);
       $("#cloneNumericBtn").addEventListener("click", cloneNumericSession);
+      $("#cloneNumericExportBtn").addEventListener("click", cloneNumericSession);
       $("#sessionToggles").addEventListener("change", (event) => {
         const toggle = event.target.closest("[data-session-toggle]");
         if (!toggle) return;
@@ -1358,7 +1386,7 @@
       });
       $("#roomForm").addEventListener("submit", addRoom);
       $("#addRoomBtn").addEventListener("click", () => $("#roomName").focus());
-      $("#roomList").addEventListener("click", (event) => {
+      $("#roomList").addEventListener("click", async (event) => {
         const button = event.target.closest("[data-remove-room], [data-edit-room], [data-move-room]");
         if (!button) return;
         const roomId = Number(button.dataset.removeRoom || button.dataset.editRoom || button.dataset.moveRoom);
@@ -1380,13 +1408,13 @@
           return;
         }
         if (button.matches("[data-edit-room]")) {
-          const name = prompt("Derslik adı", room.name);
+          const name = await askUser("Derslik adı", room.name);
           if (name === null) return;
-          const capacityValue = prompt("Maksimum kapasite (pozitif tam sayı)", String(room.capacity));
+          const capacityValue = await askUser("Maksimum kapasite (pozitif tam sayı)", String(room.capacity));
           if (capacityValue === null) return;
-          const floorValue = prompt("Kat (isteğe bağlı, boş bırakılabilir)", room.floor === null ? "" : String(room.floor));
+          const floorValue = await askUser("Kat (isteğe bağlı, boş bırakılabilir)", room.floor === null ? "" : String(room.floor));
           if (floorValue === null) return;
-          const campusValue = prompt("Kampüs (tek okul kullanımında boş bırakılabilir)", room.campus);
+          const campusValue = await askUser("Kampüs (tek okul kullanımında boş bırakılabilir)", room.campus);
           if (campusValue === null) return;
           const nextName = name.trim();
           const nextCapacity = Number(capacityValue);
@@ -1425,7 +1453,7 @@
           showToast(`${fixedStudents.length} öğrenci bu dersliğe sabitlenmiş. Önce sabitlemeleri kaldırın veya başka dersliğe taşıyın.`, true);
           return;
         }
-        if (!confirm(`“${room.name}” dersliği silinsin mi?`)) return;
+        if (!await askUser(`“${room.name}” dersliği silinsin mi?`)) return;
         const hadAssignments = students.some((student) => student.room);
         const copiesDiscarded = discardNumericCopies();
         rooms = rooms.filter((item) => item.id !== room.id);
@@ -1505,8 +1533,8 @@
         primaryStudents.forEach((student) => { student.selected = select; });
         renderTable();
       });
-      $("#clearBtn").addEventListener("click", () => {
-        if (!confirm("Listedeki tüm öğrenciler silinsin mi?")) return;
+      $("#clearBtn").addEventListener("click", async () => {
+        if (!await askUser("Listedeki tüm öğrenciler silinsin mi?")) return;
         students = [];
         numericCreated = false;
         renderTable();

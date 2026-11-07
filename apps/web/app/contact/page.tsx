@@ -29,7 +29,7 @@ export default function ContactPage() {
             allowFullScreen
           />
           <a className="map-link" href="https://www.google.com/maps/search/?api=1&query=Maltepe%2C+Istanbul%2C+Turkey" target="_blank" rel="noreferrer">Google Haritalar'da aç ↗</a>
-          <a className="support-email" href="mailto:destek@kurumsalsinav.com">destek@kurumsalsinav.com</a>
+          <a className="support-email" href="/contact#contact-form">destek@kurumsalsinav.com</a>
         </aside>
       </section>
       <SiteFooter />

@@ -3,6 +3,9 @@ import jwt from "jsonwebtoken";
 import { Role } from "@prisma/client";
 import { env } from "./config";
 import { prisma } from "./db";
+import crypto from "node:crypto";
+
+export const credentialVersion = (passwordHash: string) => crypto.createHmac("sha256", env.JWT_SECRET).update(passwordHash).digest("hex");
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -47,9 +50,9 @@ export async function requireAuth(
   try {
     const user = await prisma.user.findUnique({
       where: { id: claims.sub },
-      select: { role: true, dealerId: true, schoolId: true, active: true },
+      select: { role: true, dealerId: true, schoolId: true, active: true, passwordHash: true },
     });
-    if (!user || !user.active || user.role !== claims.role) {
+    if (!user || !user.active || user.role !== claims.role || claims.credentialVersion !== credentialVersion(user.passwordHash)) {
       response.status(401).json({ error: "Kullanıcı oturumu artık geçerli değil." });
       return;
     }

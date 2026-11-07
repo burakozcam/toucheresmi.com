@@ -427,7 +427,7 @@
           <div class="contact-card"><h2>İstanbul, Maltepe</h2><p>Kurumsal Sınav · İstanbul</p>
             <iframe title="İstanbul Maltepe haritası" src="https://maps.google.com/maps?q=Maltepe%2C%20Istanbul%2C%20Turkey&t=&z=13&ie=UTF8&iwloc=&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
             <a href="https://www.google.com/maps/search/?api=1&query=Maltepe%2C+Istanbul%2C+Turkey" target="_blank" rel="noreferrer">Google Haritalar'da aç ↗</a>
-            <a href="mailto:destek@kurumsalsinav.com">destek@kurumsalsinav.com</a>
+            <a href="https://kurumsalsinav.com/contact#contact-form">destek@kurumsalsinav.com</a>
           </div>
         </div>
       </section>
@@ -535,12 +535,9 @@
     function sendContact(event) {
       event.preventDefault();
       const form = new FormData(event.currentTarget);
-      const subject = encodeURIComponent(`Web sitesi iletişim formu: ${form.get("name")}`);
-      const body = encodeURIComponent(
-        `Ad Soyad: ${form.get("name")}\nE-posta: ${form.get("email")}\nTelefon: ${form.get("phone") || "-"}\n\nMesaj:\n${form.get("message")}`
-      );
-      document.getElementById("contactNotice").textContent = "E-posta uygulamanız açılıyor. Mesajı göndermek için gönderimi uygulamanızda onaylayın.";
-      window.location.href = `mailto:destek@kurumsalsinav.com?subject=${subject}&body=${body}`;
+      document.getElementById("contactNotice").textContent = "Bu önizleme mesaj göndermez. İletişim formu açılıyor.";
+      const target = new URL("https://kurumsalsinav.com/contact#contact-form");
+      window.location.href = target.href;
     }
     function goBackFromContact() {
       showScreen(previousScreen);

@@ -6,6 +6,7 @@
     "apps/web"
   ],
   "scripts": {
+    "test": "node --import tsx tests/run.ts",
     "dev:api": "npm run dev -w @optik/api",
     "dev:web": "npm run dev -w @optik/web",
     "build": "npm run db:generate && npm run build -w @optik/api && npm run build -w @optik/web",

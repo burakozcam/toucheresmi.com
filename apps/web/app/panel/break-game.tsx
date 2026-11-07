@@ -1,201 +1,98 @@
 "use client";
-
-import { useCallback, useEffect, useRef, useState } from "react";
-
-type Obstacle = { x: number; width: number; height: number };
-
+import { useEffect, useRef, useState } from "react";
+type Point = { x: number; y: number };
+type Tower = { x: number; center: number; gap: number; passed: boolean };
+const W = 720, H = 360, CELL = 24, COLS = 30, ROWS = 15;
+function logo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
+  ctx.fillStyle = "#4169a9"; ctx.beginPath(); ctx.roundRect(x, y, size, size, [size * .28, size * .28, size * .28, size * .06]); ctx.fill();
+  ctx.save(); ctx.translate(x, y); ctx.scale(size / 64, size / 64); ctx.fillStyle = "#fff";
+  ctx.fill(new Path2D("M17 13h9v17l16-17h12L35 31l19 20H42L29 37l-3 3v11h-9z")); ctx.restore();
+}
+function foodFor(snake: Point[]): Point | null {
+  const cells: Point[] = [];
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (!snake.some((p) => p.x === x && p.y === y)) cells.push({ x, y });
+  return cells.length ? cells[Math.floor(Math.random() * cells.length)] : null;
+}
+const initial = () => ({ y: H / 2, v: 0, distance: 0, next: 280, towers: [] as Tower[], snake: [{ x: 7, y: 7 }, { x: 6, y: 7 }, { x: 5, y: 7 }], dir: { x: 1, y: 0 }, queued: { x: 1, y: 0 }, food: { x: 18, y: 7 } as Point | null, score: 0 });
 export default function BreakGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gameRef = useRef({ playerY: 0, velocity: 0, obstacles: [] as Obstacle[], frame: 0, score: 0, jumped: false });
-  const [running, setRunning] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
+  const [mode, setMode] = useState<"bird" | "snake">("bird");
+  const [status, setStatus] = useState<"ready" | "running" | "paused" | "over" | "won">("ready");
   const [score, setScore] = useState(0);
-
-  const jump = useCallback(() => {
-    if (!running) return;
-    const game = gameRef.current;
-    if (game.playerY === 0) {
-      game.velocity = -12;
-      game.jumped = true;
-    }
-  }, [running]);
-
+  const [best, setBest] = useState({ bird: 0, snake: 0 });
+  const game = useRef(initial());
+  useEffect(() => { try { const saved = JSON.parse(localStorage.getItem("kurumsal-game-best") ?? "{}"); setBest({ bird: Number(saved.bird) || 0, snake: Number(saved.snake) || 0 }); } catch { /* Optional local records. */ } }, []);
+  useEffect(() => { setBest((current) => { const next = { ...current, [mode]: Math.max(current[mode], score) }; try { localStorage.setItem("kurumsal-game-best", JSON.stringify(next)); } catch { /* Gameplay stays available. */ } return next; }); }, [mode, score]);
+  function start() { game.current = initial(); setScore(0); setStatus("running"); }
+  function direction(x: number, y: number) { const g = game.current; if (g.dir.x !== -x || g.dir.y !== -y) g.queued = { x, y }; }
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.code === "Space" || event.code === "ArrowUp") {
-        event.preventDefault();
-        jump();
-      }
+    const key = (event: KeyboardEvent) => {
+      if (status !== "running" || (event.target instanceof HTMLElement && /INPUT|SELECT|TEXTAREA/.test(event.target.tagName))) return;
+      const directions: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, w: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, s: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, a: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 }, d: { x: 1, y: 0 } };
+      if (event.code === "Space" || directions[event.key] || event.key.toLowerCase() === "p") event.preventDefault();
+      if (event.key.toLowerCase() === "p") setStatus("paused");
+      else if (mode === "bird" && (event.code === "Space" || event.code === "ArrowUp")) game.current.v = -4.8;
+      else if (mode === "snake" && directions[event.key]) direction(directions[event.key].x, directions[event.key].y);
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [jump]);
-
+    const hide = () => { if (document.hidden && status === "running") setStatus("paused"); };
+    window.addEventListener("keydown", key); document.addEventListener("visibilitychange", hide);
+    return () => { window.removeEventListener("keydown", key); document.removeEventListener("visibilitychange", hide); };
+  }, [status, mode]);
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
-    const width = canvas.width;
-    const ground = canvas.height - 34;
-    let frameId = 0;
-    let lastScore = 0;
-
-    const drawBird = (x: number, y: number, frame: number) => {
-      context.save();
-      context.translate(x, y);
-      context.fillStyle = "#f5a640";
-      context.beginPath();
-      context.moveTo(-15, 0);
-      context.lineTo(-29, -7);
-      context.lineTo(-24, 5);
-      context.closePath();
-      context.fill();
-      context.fillStyle = "#fff8e9";
-      context.beginPath();
-      context.ellipse(0, 0, 19, 14, -.12, 0, Math.PI * 2);
-      context.fill();
-      context.fillStyle = "#f1c96a";
-      context.save();
-      context.translate(-3, 3);
-      context.rotate(Math.sin(frame / 5) * .5);
-      context.beginPath();
-      context.ellipse(-3, 1, 10, 5, -.2, 0, Math.PI * 2);
-      context.fill();
-      context.restore();
-      context.fillStyle = "#f5a640";
-      context.beginPath();
-      context.moveTo(15, -3);
-      context.lineTo(27, 1);
-      context.lineTo(15, 5);
-      context.closePath();
-      context.fill();
-      context.fillStyle = "#20334c";
-      context.beginPath();
-      context.arc(9, -6, 2, 0, Math.PI * 2);
-      context.fill();
-      context.strokeStyle = "#c87939";
-      context.lineWidth = 2;
-      context.beginPath();
-      context.moveTo(-5, 12);
-      context.lineTo(-5, 16);
-      context.moveTo(5, 12);
-      context.lineTo(5, 16);
-      context.stroke();
-      context.restore();
-    };
-
-    const drawScene = (frame: number, playerY = 0) => {
-      const sky = context.createLinearGradient(0, 0, 0, canvas.height);
-      sky.addColorStop(0, "#8bd5f1");
-      sky.addColorStop(.7, "#d4f1fb");
-      sky.addColorStop(.701, "#d9efbf");
-      sky.addColorStop(1, "#9acb78");
-      context.fillStyle = sky;
-      context.fillRect(0, 0, width, canvas.height);
-      context.fillStyle = "#fff2bd";
-      context.beginPath();
-      context.arc(610, 48, 23, 0, Math.PI * 2);
-      context.fill();
-
-      for (let index = 0; index < 4; index += 1) {
-        const cloudX = (index * 205 + 65 - frame * (.18 + index * .025) % (width + 90) + width + 90) % (width + 90) - 45;
-        const cloudY = 39 + (index % 2) * 29;
-        context.fillStyle = "#ffffffb8";
-        context.beginPath();
-        context.ellipse(cloudX, cloudY, 27, 8, 0, 0, Math.PI * 2);
-        context.ellipse(cloudX - 13, cloudY + 1, 12, 7, 0, 0, Math.PI * 2);
-        context.ellipse(cloudX + 11, cloudY - 5, 13, 10, 0, 0, Math.PI * 2);
-        context.fill();
+    const canvas = canvasRef.current, ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    let frame = 0, last = 0, accumulator = 0;
+    function draw() {
+      if (!ctx) return;
+      const g = game.current;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, "#11223f"); bg.addColorStop(1, "#233f68"); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = "#8bb2ff12"; ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += CELL) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = 0; y < H; y += CELL) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+      if (mode === "bird") {
+        g.towers.forEach((tower) => {
+          const top = tower.center - tower.gap / 2, bottom = tower.center + tower.gap / 2;
+          ctx.fillStyle = "#4169a9"; ctx.fillRect(tower.x, 0, 44, top); ctx.fillRect(tower.x, bottom, 44, H - bottom);
+          ctx.fillStyle = "#8bb2ff"; ctx.fillRect(tower.x - 4, top - 10, 52, 10); ctx.fillRect(tower.x - 4, bottom, 52, 10);
+        }); logo(ctx, 100, g.y - 16, 32);
+      } else {
+        g.snake.forEach((p, i) => { if (i === 0) logo(ctx, p.x * CELL + 1, p.y * CELL + 1, CELL - 2); else { ctx.fillStyle = i % 2 ? "#8bb2ff" : "#5c84c1"; ctx.beginPath(); ctx.roundRect(p.x * CELL + 2, p.y * CELL + 2, CELL - 4, CELL - 4, 6); ctx.fill(); } });
+        if (g.food) { ctx.fillStyle = "#e4efff"; ctx.beginPath(); ctx.arc(g.food.x * CELL + CELL / 2, g.food.y * CELL + CELL / 2, 6, 0, Math.PI * 2); ctx.fill(); }
       }
-
-      context.fillStyle = "#a9d8bd";
-      context.beginPath();
-      context.moveTo(0, ground - 27);
-      context.quadraticCurveTo(150, ground - 72, 300, ground - 26);
-      context.quadraticCurveTo(510, ground - 83, width, ground - 28);
-      context.lineTo(width, ground);
-      context.lineTo(0, ground);
-      context.fill();
-      context.fillStyle = "#80bd75";
-      context.fillRect(0, ground, width, canvas.height - ground);
-      context.fillStyle = "#e9f5d2";
-      context.fillRect(0, ground, width, 3);
-      context.fillStyle = "#719f5f";
-      for (let index = 0; index < 23; index += 1) {
-        const grassX = (index * 43 - frame * 2.4 % (width + 20) + width + 20) % (width + 20);
-        context.fillRect(grassX, ground + 11 + (index % 3) * 4, 12, 2);
+      if (status !== "running") {
+        ctx.fillStyle = "#11223fbb"; ctx.fillRect(0, 0, W, H); logo(ctx, W / 2 - 24, 100, 48);
+        ctx.fillStyle = "#fff"; ctx.font = "700 23px Manrope, sans-serif"; ctx.textAlign = "center"; ctx.fillText(status === "over" ? "Bir tur daha?" : status === "won" ? "Harika! Alanı tamamladın." : status === "paused" ? "Kısa bir ara" : mode === "bird" ? "K ile uçuşa geç" : "K ile izini takip et", W / 2, 186);
+        ctx.font = "14px sans-serif"; ctx.fillStyle = "#b4c9ea"; ctx.fillText(status === "over" || status === "won" ? `Skorun: ${g.score}` : "Aşağıdaki düğmeyle başla veya devam et", W / 2, 220);
       }
-      drawBird(72, ground - 20 + playerY, frame);
-    };
-
-    if (!running) {
-      drawScene(0);
-      return;
     }
-
-    const draw = () => {
-      const game = gameRef.current;
-      game.frame += 1;
-      game.velocity += 0.58;
-      game.playerY = Math.min(0, game.playerY + game.velocity);
-      if (game.playerY === 0) game.velocity = 0;
-
-      if (game.frame % 92 === 0) game.obstacles.push({ x: width, width: 20, height: 29 });
-      const speed = 4 + Math.min(3, game.score / 350);
-      game.obstacles = game.obstacles.filter((obstacle) => obstacle.x + obstacle.width > 0);
-      drawScene(game.frame, game.playerY);
-      let collided = false;
-      game.obstacles.forEach((obstacle) => {
-        obstacle.x -= speed;
-        const trunkY = ground - obstacle.height;
-        context.fillStyle = "#357b58";
-        context.fillRect(obstacle.x + 7, trunkY, 8, obstacle.height);
-        context.fillRect(obstacle.x, trunkY + 8, 11, 6);
-        context.fillRect(obstacle.x + 12, trunkY + 15, 8, 6);
-        context.fillStyle = "#65ad70";
-        context.fillRect(obstacle.x + 9, trunkY + 2, 3, obstacle.height - 3);
-        if (obstacle.x < 90 && obstacle.x + obstacle.width > 48 && game.playerY > -obstacle.height + 8) collided = true;
-      });
-
-      if (collided) {
-        setGameOver(true);
-        setRunning(false);
-        return;
-      }
-
-      if (game.jumped && game.playerY === 0) {
-        game.score += 1;
-        game.jumped = false;
-      } else if (game.frame % 5 === 0) {
-        game.score += 1;
-      }
-      if (game.score !== lastScore && game.frame % 8 === 0) {
-        lastScore = game.score;
-        setScore(game.score);
-      }
-      frameId = window.requestAnimationFrame(draw);
+    function tick() {
+      const g = game.current;
+      if (mode === "bird") {
+        const speed = 2.8 + Math.min(1.4, g.score * .035); g.v += .23; g.y += g.v; g.distance += speed;
+        if (g.distance >= g.next) {
+          const previous = g.towers.at(-1)?.center ?? H / 2;
+          const center = Math.max(95, Math.min(H - 95, previous + (Math.random() - .5) * 130));
+          g.towers.push({ x: W, center, gap: 145 + Math.random() * 25, passed: false }); g.next = g.distance + 240 + Math.random() * 85;
+        }
+        g.towers.forEach((t) => { t.x -= speed; if (!t.passed && t.x + 48 < 100) { t.passed = true; g.score++; setScore(g.score); } });
+        g.towers = g.towers.filter((t) => t.x > -60);
+        if (g.y < 16 || g.y > H - 16 || g.towers.some((t) => t.x - 4 < 132 && t.x + 48 > 100 && (g.y - 15 < t.center - t.gap / 2 || g.y + 15 > t.center + t.gap / 2))) { setStatus("over"); return false; }
+      } else {
+        g.dir = { ...g.queued }; const head = { x: g.snake[0].x + g.dir.x, y: g.snake[0].y + g.dir.y };
+        const eats = Boolean(g.food && head.x === g.food.x && head.y === g.food.y), body = eats ? g.snake : g.snake.slice(0, -1);
+        if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS || body.some((p) => p.x === head.x && p.y === head.y)) { setStatus("over"); return false; }
+        g.snake.unshift(head);
+        if (eats) { g.score += 10; setScore(g.score); g.food = foodFor(g.snake); if (!g.food) { setStatus("won"); return false; } } else g.snake.pop();
+      } return true;
+    }
+    const animate = (time: number) => {
+      accumulator += last ? Math.min(time - last, 100) : 0; last = time;
+      const step = mode === "bird" ? 1000 / 60 : Math.max(75, 150 - game.current.score / 5);
+      while (status === "running" && accumulator >= step) { accumulator -= step; if (!tick()) { draw(); return; } }
+      draw(); if (status === "running") frame = requestAnimationFrame(animate);
     };
-
-    frameId = window.requestAnimationFrame(draw);
-    return () => window.cancelAnimationFrame(frameId);
-  }, [running]);
-
-  function start() {
-    gameRef.current = { playerY: 0, velocity: 0, obstacles: [], frame: 0, score: 0, jumped: false };
-    setScore(0);
-    setGameOver(false);
-    setRunning(true);
-  }
-
-  return (
-    <section className="break-card">
-      <div className="break-heading"><span className="break-icon">☕</span><div><p className="hero-tag">KISA BİR MOLA</p><h2>Kuşunla engelleri aş</h2></div></div>
-      <p className="break-description">Minik kuşu engellerin üzerinden uçur. Zıplamak için <kbd>Boşluk</kbd>, <kbd>↑</kbd> veya oyun alanına tıkla.</p>
-      <div className="game-stage" onClick={jump} role="button" tabIndex={0} aria-label="Kuş oyunu. Zıplamak için boşluk tuşuna bas.">
-        <canvas ref={canvasRef} width={720} height={220} />
-        {!running && <div className="game-overlay"><span className="game-mascot" aria-hidden="true">🐦</span><strong>{gameOver ? "Oyun bitti" : "Hazır olduğunda başla"}</strong><span>{gameOver ? `Skorun: ${score}` : "Kısa bir mola ver, reflekslerini dene."}</span><button className="button button-navy" onClick={(event) => { event.stopPropagation(); start(); }}>{gameOver ? "Tekrar oyna" : "Oyuna başla"}</button></div>}
-      </div>
-      <div className="game-footer"><span>Skor <strong>{score}</strong></span><span>Oyun yalnızca bu bölüm açıkken çalışır.</span></div>
-    </section>
-  );
+    draw(); if (status === "running") frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [mode, status]);
+  return <section className="studio-card game-studio"><div className="game-heading"><div><p className="hero-tag">KISA BİR MOLA</p><h2>Küçük bir oyun. Taze bir zihin.</h2></div><div className="game-tabs" role="group" aria-label="Oyun seçimi">{(["bird", "snake"] as const).map((m) => <button className={mode === m ? "active" : ""} aria-pressed={mode === m} key={m} onClick={() => { game.current = initial(); setStatus("ready"); setScore(0); setMode(m); }}>{m === "bird" ? "Kuş uçuşu" : "Yılan"}</button>)}</div></div><div className="game-scores"><span>Skor <b>{score}</b></span><span>En iyi <b>{best[mode]}</b></span><span className="badge">Kurumsal Sınav Arcade</span></div><canvas ref={canvasRef} width={W} height={H} className="brand-game-canvas" aria-label={mode === "bird" ? "K logosunu rastgele kulelerin arasından uçurun" : "K başlıklı yılanı yönlendirin"} onPointerDown={() => { if (status === "running" && mode === "bird") game.current.v = -4.8; }} /><div className="game-controls"><p>{mode === "bird" ? "Boşluk / ↑ veya oyun alanına dokun: yüksel. Rastgele kulelerin arasından geç." : "Yön tuşları / WASD veya aşağıdaki düğmeler: yön değiştir. Duvarlardan ve kendinden kaçın."} P: duraklat.</p><div className="studio-actions">{status === "running" ? <button className="button button-quiet" onClick={() => setStatus("paused")}>Duraklat</button> : status === "paused" ? <button className="button button-navy" onClick={() => setStatus("running")}>Devam et</button> : <button className="button button-navy" onClick={start}>{status === "ready" ? "Oyuna başla" : "Yeniden oyna"}</button>}</div></div>{mode === "snake" && <div className="direction-pad" aria-label="Yılan yön düğmeleri">{[[0, -1, "↑", "Yukarı"], [-1, 0, "←", "Sola"], [0, 1, "↓", "Aşağı"], [1, 0, "→", "Sağa"]].map(([x, y, label, name]) => <button key={String(name)} className="button button-quiet" aria-label={String(name)} disabled={status !== "running"} onClick={() => direction(Number(x), Number(y))}>{label}</button>)}</div>}</section>;
 }

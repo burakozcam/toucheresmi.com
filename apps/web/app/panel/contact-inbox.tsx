@@ -81,7 +81,7 @@ export default function ContactInbox({ token }: { token: string }) {
                 <span className="contact-message-status">{message.readAt ? "Okundu" : "Okunmadı"}</span>
               </div>
               <div className="contact-message-meta">
-                <a href={`mailto:${encodeURIComponent(message.email)}`}>{message.email}</a>
+                <span>{message.email}</span>
                 {message.phone && <a href={`tel:${encodeURIComponent(message.phone)}`}>{message.phone}</a>}
                 {message.user && <span>Hesap: {message.user.firstName} {message.user.lastName} ({message.user.role})</span>}
               </div>

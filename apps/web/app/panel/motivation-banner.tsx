@@ -36,7 +36,8 @@ export default function MotivationBanner() {
   return (
     <aside className="motivation-banner" aria-label="Günün sözü">
       <span className="motivation-mark" aria-hidden="true">“</span>
-      <p>{quote.text}<small>— {quote.author}</small></p>
+      <p>{quote.text}<small>— {quote.author} <a href={quote.source} target="_blank" rel="noreferrer" title={quote.note}>Kaynak ↗</a></small></p>
+      <button type="button" aria-label="Başka bir söz göster" onClick={() => setQuoteIndex((current) => (current + 1) % quotes.length)}>↻</button>
       <button type="button" aria-label="Motivasyon alanını kapat" onClick={dismiss}>×</button>
     </aside>
   );
