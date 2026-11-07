@@ -1,6 +1,8 @@
-# Optik Okuma, Ölçme-Değerlendirme ve Raporlama Platformu
+# Kurumsal Sınav v1.0.5
 
-Multi-tenant optik okuma uygulamasının başlangıç monoreposu.
+Next.js Web, Node.js API ve PostgreSQL/Prisma tabanlı sınav yönetim uygulaması.
+
+v1.0.5: 2.500 satırlık düzenlenebilir Excel takvimi, onaylı yayınevi/seri eşleştirme, yükleme geçmişi ve güvenli geri alma; derslik düzeltmeleri, mobil oyunlar, tek kullanımlık hesap kurulumu ve kurumsal OG görseli. Ayrıntılı değişiklikler, test sınırları ve GitHub/cPanel adımları [sürüm raporunda](docs/v1.0.5-release.md), özet [changelog dosyasında](CHANGELOG.md).
 
 ## Önerilen teknoloji seti
 

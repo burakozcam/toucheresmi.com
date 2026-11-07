@@ -857,3 +857,24 @@ button, .button { touch-action: manipulation; }
 @media(max-width:650px) { .welcome-motivation-card { padding: 18px; }.welcome-card-heading { align-items: start; flex-direction: column; gap: 10px; }.welcome-quote > .motivation-mark { display: none; }.quote-controls { margin-left: 0; }.security-grid,.admin-create-user-form,.schedule-edit-form,.scanner-workspace { grid-template-columns: 1fr; }.calendar-agenda-item { flex-wrap: wrap; gap: 12px; }.calendar-agenda-item strong { flex-basis: 65%; }.report-summary-metrics { grid-template-columns: 1fr 1fr; }.report-bar-row { grid-template-columns: 85px 1fr 72px; gap: 6px; }.scanner-settings { padding: 18px; } }
 @media(prefers-reduced-motion:reduce) { .auth-page::before { animation: none; } }
 @media print { .report-summary-metrics { grid-template-columns: repeat(4,1fr); }.report-bar-row,.report-insight { break-inside: avoid; }.report-analysis h3 { break-after: avoid; }.report-monochrome * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }.report-print-area .question-analysis { break-before: page; }.detailed-report { overflow: visible; } }
+/* v1.0.5: bounded tables and touch-friendly tools */
+.schedule-preview { max-height: 65vh; overflow: auto; }
+.schedule-preview thead { position: sticky; top: 0; z-index: 1; background: var(--surface); }
+.schedule-preview input:not([type=checkbox]), .schedule-preview select { min-width: 130px; max-width: 260px; width: 100%; }
+.schedule-preview td { vertical-align: top; }
+.schedule-preview button { min-height: 36px; margin: 3px; }
+.blocks-layout { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; margin: 20px 0; }
+.blocks-canvas { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; touch-action: none; }
+.direction-pad { flex-wrap: wrap; }
+.direction-pad button { min-width: 48px; min-height: 48px; }
+.studio-actions { flex-wrap: wrap; }
+.temporary-credentials textarea { display: block; width: 100%; }
+@media (max-width: 640px) {
+  .studio-card, .pdf-editor, .schedule-management, .scanner-workspace { min-width: 0; max-width: 100%; }
+  .studio-actions > *, .game-controls > * { max-width: 100%; }
+  .table-scroll { max-width: 100%; overflow-x: auto; }
+  .blocks-layout { gap: 12px; }
+  .blocks-layout aside { font-size: 12px; }
+  .button, .editor-tabs button { min-height: 44px; }
+  .editor-tabs { flex-wrap: wrap; }
+}

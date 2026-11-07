@@ -244,7 +244,7 @@
         <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div><p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">03 · Dağıtım planı</p><h2 class="mt-1 text-lg font-bold text-slate-900">Derslikler ve kapasiteler</h2></div>
           <div class="flex flex-wrap gap-2">
-            <button id="addRoomBtn" class="btn btn-secondary">＋ Derslik ekle</button>
+            <button type="button" id="addRoomBtn" class="btn btn-secondary">＋ Derslik ekle</button>
             <button id="distributeBtn" type="button" class="btn btn-primary">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 19h16M6 19V9l6-4 6 4v10M9 19v-5h6v5M9 10h.01M15 10h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Öğrencileri dağıt
@@ -998,15 +998,14 @@
           showToast("Bu kampüste aynı adla bir derslik zaten var.", true);
           return;
         }
-        const hadAssignments = students.some((student) => student.room);
-        const copiesDiscarded = discardNumericCopies();
-        clearAssignments();
         rooms.push({ id: nextId++, campus, name, capacity, floor: floorValue === "" ? null : Number(floorValue) });
         $("#roomForm").reset();
         renderRooms();
         renderStudentSelects();
         renderCampusSuggestions();
-        showToast(`Derslik eklendi.${copiesDiscarded || hadAssignments ? " Sözel dağıtımı ve sayısal onayını tekrarlayın." : ""}`);
+        renderTable();
+        renderDistributionSummary();
+        showToast("Derslik eklendi. Mevcut yerleşimler korundu.");
       }
 
       function distributeStudents() {
@@ -1385,7 +1384,16 @@
         showToast(`${session.name} seansı ${session.enabled ? "etkinleştirildi" : "kapatıldı; öğrenci atamaları temizlendi"}.${copiesDiscarded ? " Sayısal oturumu yeniden onaylayın." : ""}`);
       });
       $("#roomForm").addEventListener("submit", addRoom);
-      $("#addRoomBtn").addEventListener("click", () => $("#roomName").focus());
+      $("#addRoomBtn").addEventListener("click", async () => {
+        const name = await askUser("Yeni derslik adı", ""); if (name === null) return;
+        const capacity = await askUser("Kapasite (pozitif tam sayı)", "20"); if (capacity === null) return;
+        const campuses = campusNames();
+        const campus = campuses.length > 1 ? await askUser("Kampüs adı", "") : campuses[0] || "";
+        if (campus === null) return;
+        $("#roomName").value = name; $("#roomCapacity").value = capacity; $("#roomCampus").value = campus;
+        $("#roomFloor").value = "";
+        addRoom({ preventDefault() {} });
+      });
       $("#roomList").addEventListener("click", async (event) => {
         const button = event.target.closest("[data-remove-room], [data-edit-room], [data-move-room]");
         if (!button) return;
@@ -1436,16 +1444,19 @@
             showToast("Bu kampüste aynı adla bir derslik zaten var.", true);
             return;
           }
-          const copiesDiscarded = discardNumericCopies();
+          const occupants = students.filter((student) => student.roomId === room.id);
+          const groups = new Map();
+          occupants.forEach((student) => { const key = `${student.session}|${student.examSession}`; groups.set(key, (groups.get(key) || 0) + 1); });
+          if (occupants.some((student) => normalize(student.campus) !== normalize(nextCampus)) || [...groups.values()].some((count) => count > nextCapacity)) {
+            showToast("Derslik doluyken kampüs değiştirilemez veya kapasite öğrenci sayısının altına indirilemez. Önce öğrencileri taşıyın.", true); return;
+          }
           room.name = nextName;
           room.capacity = nextCapacity;
           room.floor = nextFloor;
           room.campus = nextCampus;
-          clearAssignments();
-          renderRooms();
-          renderStudentSelects();
-          renderTable();
-          if (copiesDiscarded) showToast("Derslik güncellendi. Sayısal oturumu yeniden onaylayın.", true);
+          occupants.forEach((student) => { student.room = nextName; });
+          renderRooms(); renderStudentSelects(); renderTable(); renderDistributionSummary();
+          showToast("Derslik güncellendi. Yerleşimler korundu.");
           return;
         }
         const fixedStudents = students.filter((student) => student.fixedRoomId === room.id);
@@ -1454,14 +1465,12 @@
           return;
         }
         if (!await askUser(`“${room.name}” dersliği silinsin mi?`)) return;
-        const hadAssignments = students.some((student) => student.room);
-        const copiesDiscarded = discardNumericCopies();
+        if (students.some((student) => student.roomId === room.id)) { showToast("Bu derslikte öğrenciler var. Önce başka dersliğe taşıyın.", true); return; }
         rooms = rooms.filter((item) => item.id !== room.id);
-        clearAssignments();
         renderRooms();
         renderStudentSelects();
         renderTable();
-        if (copiesDiscarded || hadAssignments) showToast("Derslik değiştiği için yerleşim temizlendi; sözel dağıtımı ve sayısal onayını tekrarlayın.", true);
+        renderDistributionSummary(); showToast("Boş derslik silindi. Diğer yerleşimler korundu.");
       });
       $("#studentBody").addEventListener("change", (event) => {
         const input = event.target;

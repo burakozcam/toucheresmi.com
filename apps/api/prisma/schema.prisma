@@ -54,6 +54,8 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
+  setupTokenHash String? @unique
+  setupExpiresAt DateTime?
   firstName    String
   lastName     String
   phone        String?
@@ -341,11 +343,16 @@ model ExamScheduleEntry {
   published   Boolean @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  importId String?
+  importBaseline DateTime?
+  series String?
+  sourcePublisher String?
   publisher Publisher @relation(fields: [publisherId], references: [id], onDelete: Restrict)
   answerKey PublishedAnswerKey? @relation(fields: [answerKeyId], references: [id], onDelete: SetNull)
   @@unique([publisherId, level, sequence, examDate])
   @@index([published, level, examDate])
   @@index([answerKeyId])
+  @@index([importId])
 }
 
 model AnswerKeyFile {
@@ -413,4 +420,22 @@ model AuditLog {
   @@index([actorUserId, createdAt])
   @@index([action, createdAt])
   @@index([createdAt])
+}
+
+model ScheduleImport {
+  id String @id @default(cuid())
+  actorId String
+  createdAt DateTime @default(now())
+  total Int
+  saved Int @default(0)
+  invalid Int @default(0)
+  duplicates Int @default(0)
+  status String @default("processing")
+}
+model PublisherAlias {
+  id String @id @default(cuid())
+  source String @unique
+  publisherId String
+  series String?
+  updatedAt DateTime @updatedAt
 }

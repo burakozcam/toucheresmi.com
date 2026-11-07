@@ -15,11 +15,13 @@ import { RequestLimiter } from "./rate-limit";
 import { prisma } from "./db";
 import { scheduleRouter } from "./schedule";
 
-const app = express();
+export const app = express();
 app.use(cors({ origin: env.WEB_ORIGIN }));
+app.use("/api/admin/exam-schedule", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "20mb" }));
 app.use(express.json({ limit: "1mb" }));
 
 const recentContactSubmissions = new Map<string, number>();
+app.use("/api/auth/setup", new RequestLimiter(10, 10 * 60_000).middleware());
 app.use("/api/auth/login", new RequestLimiter(20, 10 * 60_000).middleware());
 app.use("/api/account/password", new RequestLimiter(10, 10 * 60_000).middleware());
 app.use("/api/auth/register", new RequestLimiter(8, 30 * 60_000).middleware());
@@ -300,7 +302,7 @@ app.patch("/api/account", requireAuth, async (request: AuthenticatedRequest, res
 
 const newAccountSchema = z.object({
   firstName: z.string().trim().min(2).max(80), lastName: z.string().trim().min(2).max(80),
-  email: z.string().trim().email().max(254), phone: z.string().trim().max(30).default(""),
+  email: z.string().trim().email().max(254), phone: z.string().trim().max(30).refine((v) => !v || /^[+\d\s().-]+$/.test(v) && /^(?:0?5\d{9}|905\d{9}|00[1-9]\d{7,14}|[1-9]\d{7,14})$/.test(v.replace(/\D/g, ""))).default(""),
 });
 app.post("/api/admin/users", requireAuth, requireRole(Role.SUPER_ADMIN), async (request: AuthenticatedRequest, response, next) => {
   const parsed = newAccountSchema.safeParse(request.body);
@@ -308,12 +310,28 @@ app.post("/api/admin/users", requireAuth, requireRole(Role.SUPER_ADMIN), async (
   try {
     const temporaryPassword = crypto.randomBytes(18).toString("base64url");
     const passwordHash = await bcrypt.hash(temporaryPassword, 12);
-    const user = await prisma.user.create({ data: { ...parsed.data, email: parsed.data.email.toLowerCase(), phone: parsed.data.phone || null, passwordHash, role: Role.DEALER, mustChangePassword: true }, select: profileSelect });
-    response.status(201).json({ user, temporaryPassword, message: "Hesap oluşturuldu. Geçici şifreyi kullanıcıyla güvenli biçimde paylaşın; ilk girişte yeni şifre belirlenecek." });
+    const setupToken = crypto.randomBytes(32).toString("base64url");
+    const setupTokenHash = crypto.createHash("sha256").update(setupToken).digest("hex");
+    const setupExpiresAt = new Date(Date.now() + 30 * 60_000);
+    const user = await prisma.user.create({ data: { setupTokenHash, setupExpiresAt, ...parsed.data, email: parsed.data.email.toLowerCase(), phone: parsed.data.phone || null, passwordHash, role: Role.DEALER, mustChangePassword: true }, select: profileSelect });
+    response.setHeader("Cache-Control", "no-store");
+    response.status(201).json({ user, setupUrl: `${env.WEB_ORIGIN}/hesap-kur#${setupToken}`, expiresAt: setupExpiresAt, message: "30 dakika geçerli tek kullanımlık şifre belirleme bağlantısı oluşturuldu." });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") { response.status(409).json({ error: "Bu e-posta adresi zaten kullanılıyor." }); return; }
     next(error);
   }
+});
+app.post("/api/auth/setup", async (request, response, next) => {
+  response.setHeader("Cache-Control", "no-store");
+  const parsed = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), password: z.string().min(12).max(128).refine((v) => Buffer.byteLength(v, "utf8") <= 72) }).safeParse(request.body);
+  if (!parsed.success) { response.status(400).json({ error: "Bağlantı veya şifre geçersiz. Şifre en az 12 karakter ve en fazla 72 bayt olmalıdır." }); return; }
+  try {
+    const setupTokenHash = crypto.createHash("sha256").update(parsed.data.token).digest("hex");
+    const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+    const result = await prisma.user.updateMany({ where: { setupTokenHash, setupExpiresAt: { gt: new Date() }, active: true, mustChangePassword: true }, data: { passwordHash, mustChangePassword: false, setupTokenHash: null, setupExpiresAt: null } });
+    if (!result.count) { response.status(400).json({ error: "Bağlantının süresi dolmuş veya daha önce kullanılmış. Yöneticinizle iletişim kurun." }); return; }
+    response.json({ message: "Şifreniz belirlendi. Giriş yapabilirsiniz." });
+  } catch (error) { next(error); }
 });
 const ownPasswordSchema = z.object({
   currentPassword: z.string().min(1).max(128),
@@ -327,7 +345,7 @@ app.patch("/api/account/password", requireAuth, async (request: AuthenticatedReq
     if (!await bcrypt.compare(parsed.data.currentPassword, current.passwordHash)) { response.status(400).json({ error: "Geçerli / geçici şifre hatalı." }); return; }
     if (await bcrypt.compare(parsed.data.newPassword, current.passwordHash)) { response.status(400).json({ error: "Yeni şifre önceki şifreden farklı olmalıdır." }); return; }
     const passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
-    const result = await prisma.user.updateMany({ where: { id: current.id, passwordHash: current.passwordHash, active: true }, data: { passwordHash, mustChangePassword: false } });
+    const result = await prisma.user.updateMany({ where: { id: current.id, passwordHash: current.passwordHash, active: true }, data: { passwordHash, mustChangePassword: false, setupTokenHash: null, setupExpiresAt: null } });
     if (!result.count) { response.status(409).json({ error: "Hesap değişti. Yeniden giriş yapın." }); return; }
     const token = jwt.sign({ role: current.role, dealerId: current.dealerId, schoolId: current.schoolId, credentialVersion: credentialVersion(passwordHash) }, env.JWT_SECRET, { subject: current.id, expiresIn: "8h" });
     await recordAudit(current.id, "PASSWORD_CHANGED", "user", current.id, "Kullanıcı kendi şifresini belirledi.");
@@ -766,7 +784,7 @@ app.patch(
       const passwordHash = await bcrypt.hash(parsed.data.password, 12);
       const result = await prisma.user.updateMany({
         where: { id: userId, role: { not: Role.SUPER_ADMIN } },
-        data: { passwordHash },
+        data: { passwordHash, setupTokenHash: null, setupExpiresAt: null },
       });
       if (result.count === 0) {
         response.status(404).json({ error: "Kullanıcı bulunamadı." });
@@ -1933,6 +1951,7 @@ app.delete(
 
 app.use(
   (error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+    if ((error as { type?: string })?.type === "entity.too.large") { response.status(413).json({ error: "İstek boyutu sınırı aşıldı. Takvim dosyasını daha küçük parçalara bölün." }); return; }
     if (error instanceof multer.MulterError) {
       response.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({ error: error.code === "LIMIT_FILE_SIZE" ? "Dosya boyutu izin verilen sınırı aşıyor." : "Yüklenen dosya sayısını ve dosya alanlarını kontrol edin." });
       return;
@@ -1943,6 +1962,6 @@ app.use(
 );
 
 const port = env.PORT ?? env.API_PORT;
-app.listen(port, () => {
-  console.info(`API ${port} portunda çalışıyor.`);
-});
+if (require.main === module) {
+  app.listen(port, () => { console.info(`API ${port} portunda çalışıyor.`); });
+}

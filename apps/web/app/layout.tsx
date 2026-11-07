@@ -20,13 +20,14 @@ export const metadata: Metadata = {
     title: "Kurumsal Sınav | Optik Okuma ve Sınav Yönetimi",
     description: "Optik okuma, sınav değerlendirme ve raporlama süreçleri için kurumsal platform.",
     url: SITE_URL,
+    images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, type: "image/png", alt: "Kurumsal Sınav" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Kurumsal Sınav | Optik Okuma ve Sınav Yönetimi",
     description: "Optik okuma, sınav değerlendirme ve raporlama süreçleri için kurumsal platform.",
   },
-  icons: { icon: [{ url: "/favicon.svg?v=1.0.3", type: "image/svg+xml" }] },
+  icons: { icon: [{ url: "/favicon.svg?v=1.0.5", type: "image/svg+xml" }] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

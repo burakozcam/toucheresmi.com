@@ -8,7 +8,7 @@ function roster() {
   const script = html.slice(html.indexOf('"use strict";'), html.indexOf('      $("#fileInput").addEventListener'));
   const nodes = new Map<string, any>();
   const node = (key: string) => {
-    if (!nodes.has(key)) nodes.set(key, { value: "", checked: false, disabled: false, innerHTML: "", textContent: "", classList: { add() {}, remove() {}, toggle() {} } });
+    if (!nodes.has(key)) nodes.set(key, { value: "", checked: false, disabled: false, reset() {}, innerHTML: "", textContent: "", classList: { add() {}, remove() {}, toggle() {} } });
     return nodes.get(key);
   };
   node("#examName").value = "Test Denemesi"; node("#distributionMethod").value = "sequential"; node("#examDate").value = "2026-11-07";
@@ -18,7 +18,7 @@ function roster() {
     globalThis.api = {
       seed: (people, classes) => { students = people; rooms = classes; numericCreated = false; nextId = 100; },
       state: () => ({ students, rooms, numericCreated }),
-      distribute: distributeStudents, numeric: cloneNumericSession, output: buildExportData,
+      addRoom, distribute: distributeStudents, numeric: cloneNumericSession, output: buildExportData,
       duplicates: findDuplicateStudents, controls: updateControls,
       mapping: (headers) => { sourceHeaders = headers; renderMappingFields(); }
     };`, context);
@@ -66,4 +66,17 @@ test("liste, PDF aracı ve statik önizleme betikleri sözdizimi açısından ge
       if (match[1].trim()) assert.doesNotThrow(() => new vm.Script(match[1]), path);
     }
   }
+});
+
+test("derslik ekleme gerçekten kayıt oluşturur, yineleneni reddeder ve mevcut iki oturumu korur", () => {
+  const { api, node } = roster();
+  api.seed([student(1), student(2)], [{ id: 20, campus: "", name: "101", capacity: 2, floor: 1 }]);
+  api.distribute(); api.numeric();
+  const before = JSON.stringify(api.state().students);
+  node("#roomName").value = "102"; node("#roomCapacity").value = "20";
+  api.addRoom({ preventDefault() {} });
+  assert.equal(api.state().rooms.length, 2); assert.equal(api.state().rooms[1].name, "102");
+  assert.equal(JSON.stringify(api.state().students), before); assert.equal(api.state().numericCreated, true);
+  api.addRoom({ preventDefault() {} }); assert.equal(api.state().rooms.length, 2);
+  assert.match(api.output().rows.map((r: any[]) => r.join(" ")).join(" "), /101/);
 });
