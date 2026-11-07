@@ -1,0 +1,20 @@
+import type { Lesson } from "../lib/evaluation";
+export const EXAM_SOURCES = {
+  lgs: "https://odsgm.meb.gov.tr/meb_iys_dosyalar/2026_04/69cfb9daaf8f2557696260_LGS_Basvuru_ve_Uygulama_K%C4%B1lavuzu_2026.pdf",
+  yks: "https://dokuman.osym.gov.tr/pdfdokuman/2026/YKS/basvuru_kilavuz06022026.pdf",
+};
+const lesson = (name: string, count: number, weight: number): Lesson => ({ name, count, weight });
+const tyt = [lesson("TYT Türkçe", 40, 13.2 / 40), lesson("TYT Sosyal Bilimler", 20, 6.8 / 20), lesson("TYT Temel Matematik", 40, 13.2 / 40), lesson("TYT Fen Bilimleri", 20, 6.8 / 20)];
+/** YKS percentages divided by question count give the local per-question weighting.
+ * Official scores use standardized test scores and cannot be recreated from these alone.
+ */
+export const EXAM_PRESETS: Record<string, { title: string; penalty: number; source?: string; note: string; lessons: Lesson[] }> = {
+  custom: { title: "Özel sınav", penalty: 0, note: "Dersler eşit ağırlıkla başlar; düzenleyebilirsiniz.", lessons: [lesson("Türkçe", 20, 1), lesson("Matematik", 20, 1)] },
+  lgs: { title: "LGS · 90 soru", penalty: 3, source: EXAM_SOURCES.lgs, note: "2026 MEB kılavuzu: Türkçe, matematik, fen 4; diğer testler 1. Resmî puan standartlaştırma gerektirir.", lessons: [lesson("Türkçe", 20, 4), lesson("Matematik", 20, 4), lesson("Fen Bilimleri", 20, 4), lesson("İnkılap Tarihi", 10, 1), lesson("Din Kültürü", 10, 1), lesson("İngilizce", 10, 1)] },
+  tyt: { title: "TYT · 120 soru", penalty: 4, source: EXAM_SOURCES.yks, note: "2026 ÖSYM Tablo 1B–1C: test ağırlıkları %33 / %17 / %33 / %17. Yerel hesapta ağırlık soru sayısına bölünür.", lessons: [lesson("Türkçe", 40, 33 / 40), lesson("Sosyal Bilimler", 20, 17 / 20), lesson("Temel Matematik", 40, 33 / 40), lesson("Fen Bilimleri", 20, 17 / 20)] },
+  "ayt-say": { title: "AYT Sayısal · 80 soru", penalty: 4, source: EXAM_SOURCES.yks, note: "AYT: Matematik 40, Fizik 14, Kimya 13, Biyoloji 13. SAY içindeki ağırlıklar %30 / %10 / %10 / %10; TYT %40 ayrıca gerekir. Bu şablon yalnızca AYT bölümünü değerlendirir.", lessons: [lesson("Matematik", 40, 30 / 40), lesson("Fizik", 14, 10 / 14), lesson("Kimya", 13, 10 / 13), lesson("Biyoloji", 13, 10 / 13)] },
+  "ayt-ea": { title: "AYT Eşit Ağırlık · 80 soru", penalty: 4, source: EXAM_SOURCES.yks, note: "AYT: Matematik 40, Edebiyat 24, Tarih-1 10, Coğrafya-1 6. EA ağırlıkları %30 / %18 / %7 / %5; TYT %40 ayrıca gerekir.", lessons: [lesson("Matematik", 40, 30 / 40), lesson("Türk Dili ve Edebiyatı", 24, 18 / 24), lesson("Tarih-1", 10, 7 / 10), lesson("Coğrafya-1", 6, 5 / 6)] },
+  "ayt-soz": { title: "AYT Sözel · 80 soru", penalty: 4, source: EXAM_SOURCES.yks, note: "AYT ağırlıkları: Edebiyat 18, Tarih-1 7, Coğrafya-1 5, Tarih-2 8, Coğrafya-2 8, Felsefe grubu 9, Din 5. TYT %40 ayrıca gerekir.", lessons: [lesson("Türk Dili ve Edebiyatı", 24, 18 / 24), lesson("Tarih-1", 10, 7 / 10), lesson("Coğrafya-1", 6, 5 / 6), lesson("Tarih-2", 11, 8 / 11), lesson("Coğrafya-2", 11, 8 / 11), lesson("Felsefe Grubu", 12, 9 / 12), lesson("Din Kültürü", 6, 5 / 6)] },
+  "yks-say": { title: "TYT + AYT Sayısal · 200 soru", penalty: 4, source: EXAM_SOURCES.yks, note: "ÖSYM Tablo 1C–1E: TYT %40, AYT %60. Test yüzdeleri soru başına bölünerek yerel ölçekte kullanılır; resmî YKS puanı değildir.", lessons: [...tyt, lesson("AYT Matematik", 40, 30 / 40), lesson("AYT Fizik", 14, 10 / 14), lesson("AYT Kimya", 13, 10 / 13), lesson("AYT Biyoloji", 13, 10 / 13)] },
+};
+EXAM_PRESETS["ayt-all"] = { title: "AYT tüm testler · 160 soru / eşit ağırlık", penalty: 4, source: EXAM_SOURCES.yks, note: "AYT kitapçığında 4 × 40 = 160 soru vardır. Tüm kitapçık için tek resmî puan katsayısı bulunmaz; bu görünüm dersleri eşit ağırlıkla sayar. Alan ağırlıkları için Sayısal / EA / Sözel şablonunu seçin.", lessons: [lesson("Türk Dili ve Edebiyatı", 24, 1), lesson("Tarih-1", 10, 1), lesson("Coğrafya-1", 6, 1), lesson("Tarih-2", 11, 1), lesson("Coğrafya-2", 11, 1), lesson("Felsefe Grubu", 12, 1), lesson("Din Kültürü", 6, 1), lesson("Matematik", 40, 1), lesson("Fizik", 14, 1), lesson("Kimya", 13, 1), lesson("Biyoloji", 13, 1)] };

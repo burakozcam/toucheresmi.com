@@ -13,6 +13,7 @@ export interface AuthenticatedRequest extends Request {
     role: Role;
     dealerId: string | null;
     schoolId: string | null;
+    mustChangePassword?: boolean;
   };
 }
 
@@ -50,7 +51,7 @@ export async function requireAuth(
   try {
     const user = await prisma.user.findUnique({
       where: { id: claims.sub },
-      select: { role: true, dealerId: true, schoolId: true, active: true, passwordHash: true },
+      select: { role: true, dealerId: true, schoolId: true, active: true, passwordHash: true, mustChangePassword: true },
     });
     if (!user || !user.active || user.role !== claims.role || claims.credentialVersion !== credentialVersion(user.passwordHash)) {
       response.status(401).json({ error: "Kullanıcı oturumu artık geçerli değil." });
@@ -62,7 +63,14 @@ export async function requireAuth(
       role: user.role,
       dealerId: user.dealerId,
       schoolId: user.schoolId,
+      mustChangePassword: user.mustChangePassword,
     };
+    const accountSetupPath = request.originalUrl?.split("?")[0];
+    const setupRequest = accountSetupPath === "/api/account/password" || accountSetupPath === "/api/account" && request.method === "GET";
+    if (user.mustChangePassword && !setupRequest) {
+      response.status(403).json({ code: "PASSWORD_CHANGE_REQUIRED", error: "Hesabınız yönetici tarafından oluşturuldu. Devam etmek için kendi şifrenizi belirlemelisiniz." });
+      return;
+    }
     next();
   } catch (error) {
     next(error);

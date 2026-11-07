@@ -1,5 +1,302 @@
 [
-  { "text": "Bütün ümidim gençliktedir.", "author": "Mustafa Kemal Atatürk", "source": "https://tubitak.gov.tr/tr/haber/prof-dr-arif-erginin-19-mayis-ataturku-anma-genclik-ve-spor-bayrami-mesaji", "note": "TÜBİTAK" },
-  { "text": "İlim ilim bilmektir, ilim kendin bilmektir.", "author": "Yunus Emre", "source": "https://manyas.gov.tr/ilim-ilim-bilmektir-ilim-kendi-bilmektir-sen-kendin-bilmezsen-bu-nice-okumaktir-yunus-emre", "note": "Manyas Kaymakamlığı" },
-  { "text": "Daha uzağı görebildiysem, devlerin omuzlarında durduğum içindir.", "author": "Isaac Newton", "source": "https://wedc-knowledge.lboro.ac.uk/resources/posters/bk-010_lit_a5_booklet.pdf", "note": "Robert Hooke'a mektubu, 1676 · Türkçe çeviri" }
+  {
+    "text": "Bütün ümidim gençliktedir.",
+    "author": "Mustafa Kemal Atatürk",
+    "source": "https://tubitak.gov.tr/tr/haber/prof-dr-arif-erginin-19-mayis-ataturku-anma-genclik-ve-spor-bayrami-mesaji",
+    "note": "TÜBİTAK"
+  },
+  {
+    "text": "İlim ilim bilmektir, ilim kendin bilmektir.",
+    "author": "Yunus Emre",
+    "source": "https://manyas.gov.tr/ilim-ilim-bilmektir-ilim-kendi-bilmektir-sen-kendin-bilmezsen-bu-nice-okumaktir-yunus-emre",
+    "note": "Manyas Kaymakamlığı"
+  },
+  {
+    "text": "Daha uzağı görebildiysem, devlerin omuzlarında durduğum içindir.",
+    "author": "Isaac Newton",
+    "source": "https://wedc-knowledge.lboro.ac.uk/resources/posters/bk-010_lit_a5_booklet.pdf",
+    "note": "Robert Hooke'a mektubu, 1676 · Türkçe çeviri"
+  },
+  {
+    "text": "İyi insanın nasıl olması gerektiğini tartışmayı bırak; iyi insan ol.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · X"
+  },
+  {
+    "text": "Doğru değilse yapma; gerçek değilse söyleme.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · XII"
+  },
+  {
+    "text": "Başkalarının yardımına ihtiyaç duyduğunda bundan utanma.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · VII"
+  },
+  {
+    "text": "Gelecek seni kaygılandırmasın; gerektiğinde bugünkü aklınla onu da karşılayacaksın.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · VII"
+  },
+  {
+    "text": "Tökezlediğinde cesaretini kaybetme; yeniden doğru yola dön.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · V"
+  },
+  {
+    "text": "En doğru bulduğunu nezaketle, alçakgönüllülükle ve içtenlikle söyle.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · VIII"
+  },
+  {
+    "text": "Engel senin kusurundan kaynaklanmıyorsa onun için üzülme.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · VIII"
+  },
+  {
+    "text": "Seni üzen kendi düşüncense onu düzeltebilirsin.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · VIII"
+  },
+  {
+    "text": "Koşullarına uyum sağla; birlikte yaşadığın insanları içtenlikle sev.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · VI"
+  },
+  {
+    "text": "Aklın iş için yeterliyse onu gösterişsizce kullan.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · VII"
+  },
+  {
+    "text": "Her sözün gerçek anlamını dikkatle düşün.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · VII"
+  },
+  {
+    "text": "Gerçek iyilik; adalete, doğruluğa, nezakete ve ölçülülüğe dayanır.",
+    "author": "Marcus Aurelius",
+    "source": "https://www.gutenberg.org/cache/epub/2680/pg2680-images.html",
+    "note": "Eserden Türkçe kısa çeviri · IV"
+  },
+  {
+    "text": "Bazı şeyler elimizdedir, bazıları değildir.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · I"
+  },
+  {
+    "text": "İnsanları olaylar değil, olaylar hakkındaki düşünceleri sarsar.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · V"
+  },
+  {
+    "text": "Olayların istediğin gibi olmasını isteme; oldukları gibi olmasını iste.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · VIII"
+  },
+  {
+    "text": "Küçük şeylerden başla.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · XII"
+  },
+  {
+    "text": "Elinde olanı geliştirmeye çalış.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · XIV"
+  },
+  {
+    "text": "Hayatta bir sofradaymış gibi davran; sıranı sabırla bekle.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · XV"
+  },
+  {
+    "text": "Sana verilen rolü iyi oynamak senin işindir.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · XVII"
+  },
+  {
+    "text": "Bir işe girişmeden önce öncesini ve sonrasını düşün.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · XXIX"
+  },
+  {
+    "text": "Yalnızken de başkalarıyla birlikteyken de koruyacağın bir tutum belirle.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · XXXIII"
+  },
+  {
+    "text": "Gerekeni az sözle söyle.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · XXXIII"
+  },
+  {
+    "text": "Kendi başına gelene, başkasının başına geldiğindeki ölçülülükle bak.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · XXVI"
+  },
+  {
+    "text": "Davranışlarında yumuşaklık, dikkat ve ölçülülük kullan.",
+    "author": "Epiktetos",
+    "source": "https://www.gutenberg.org/cache/epub/45109/pg45109-images.html",
+    "note": "Eserden Türkçe kısa çeviri · II"
+  },
+  {
+    "text": "Okumak insanı doldurur; konuşmak hazırlar; yazmak kesinleştirir.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Bazı kitaplar tadılır, bazıları yutulur, bazıları çiğnenip sindirilir.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Öğrenim doğayı geliştirir; deneyim de öğrenimi geliştirir.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Doğal yetenekler, öğrenimle budanması gereken bitkiler gibidir.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Bilge kişiler öğrendiklerini kullanır.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Çürütmek için değil, tartmak ve düşünmek için oku.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Tarih insanı bilgeleştirir.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Şiir insanın hayal gücünü keskinleştirir.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Matematik insanın düşüncesini inceltir.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Doğa felsefesi insanı derinleştirir.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Ahlak bilgisi insanı ağırbaşlı kılar.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "Az yazan kişinin güçlü bir belleğe ihtiyacı vardır.",
+    "author": "Francis Bacon",
+    "source": "https://www.gutenberg.org/cache/epub/575/pg575-images.html",
+    "note": "Eserden Türkçe kısa çeviri · Of Studies"
+  },
+  {
+    "text": "İyi bir akla sahip olmak yetmez; onu iyi kullanmak gerekir.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · I"
+  },
+  {
+    "text": "Doğru yolda yavaş ilerleyenler, yoldan çıkanlardan daha uzağa gidebilir.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · I"
+  },
+  {
+    "text": "İyi kitapları okumak, geçmişin seçkin insanlarıyla konuşmaktır.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · I"
+  },
+  {
+    "text": "Açıkça doğru olduğunu bilmediğin şeyi doğru kabul etme.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · II"
+  },
+  {
+    "text": "Her güçlüğü, çözümü için gereken sayıda parçaya ayır.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · II"
+  },
+  {
+    "text": "En basit olandan başla, adım adım karmaşığa ilerle.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · II"
+  },
+  {
+    "text": "Hiçbir şeyin atlanmadığından emin olmak için bütünü gözden geçir.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · II"
+  },
+  {
+    "text": "Talihi değiştirmekten önce kendini yenmeye çalış.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · III"
+  },
+  {
+    "text": "Düşünüyorum, öyleyse varım.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · IV"
+  },
+  {
+    "text": "Düşüncelerini açık ve anlaşılır biçimde düzenle.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · I"
+  },
+  {
+    "text": "İnsanların gerçek görüşlerini anlamak için söylediklerinden çok yaptıklarına bak.",
+    "author": "René Descartes",
+    "source": "https://www.gutenberg.org/files/59/59-h/59-h.htm",
+    "note": "Eserden Türkçe kısa çeviri · III"
+  }
 ]

@@ -13,6 +13,7 @@ import { env } from "./config";
 import { AuthenticatedRequest, credentialVersion, requireAuth, requireRole } from "./auth";
 import { RequestLimiter } from "./rate-limit";
 import { prisma } from "./db";
+import { scheduleRouter } from "./schedule";
 
 const app = express();
 app.use(cors({ origin: env.WEB_ORIGIN }));
@@ -20,6 +21,7 @@ app.use(express.json({ limit: "1mb" }));
 
 const recentContactSubmissions = new Map<string, number>();
 app.use("/api/auth/login", new RequestLimiter(20, 10 * 60_000).middleware());
+app.use("/api/account/password", new RequestLimiter(10, 10 * 60_000).middleware());
 app.use("/api/auth/register", new RequestLimiter(8, 30 * 60_000).middleware());
 app.use("/api/applications", new RequestLimiter(8, 30 * 60_000).middleware());
 app.use("/api/contact", new RequestLimiter(10, 10 * 60_000).middleware());
@@ -134,6 +136,12 @@ const allowedMimeTypes = new Set([
   "image/webp",
 ]);
 
+function answerKeyDownloadName(file: { originalFileName: string; category: AnswerKeyFileCategory; publishedAnswerKey: { examName: string; grade: number; publisher: { name: string } } }) {
+  const key = file.publishedAnswerKey;
+  const name = `${key.publisher.name} ${key.grade}. Sınıf ${key.examName} ${file.category === AnswerKeyFileCategory.ANSWER_KEY ? "Cevap Anahtarı" : "Kazanımlar"}`;
+  return name.replace(/[\\/:*?"<>|\x00-\x1f]/g, "-").slice(0, 180).trim() + path.extname(file.originalFileName).toLowerCase();
+}
+
 function validateFileSignature(filePath: string, extension: string) {
   const buffer = fs.readFileSync(filePath).subarray(0, 16);
   const hex = Array.from(buffer).map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase();
@@ -208,6 +216,8 @@ function toPublicPublisher(publisher: { id: string; name: string; normalizedName
   };
 }
 
+app.use(scheduleRouter);
+
 app.get("/api/health", (_request, response) => {
   response.json({ status: "ok" });
 });
@@ -255,6 +265,7 @@ app.post("/api/auth/login", async (request, response, next) => {
         lastName: user.lastName,
         phone: user.phone,
         role: user.role,
+        mustChangePassword: user.mustChangePassword,
       },
     });
   } catch (error) {
@@ -262,7 +273,7 @@ app.post("/api/auth/login", async (request, response, next) => {
   }
 });
 
-const profileSelect = { id: true, email: true, firstName: true, lastName: true, phone: true, role: true } as const;
+const profileSelect = { id: true, email: true, firstName: true, lastName: true, phone: true, role: true, mustChangePassword: true } as const;
 app.get("/api/account", requireAuth, async (request: AuthenticatedRequest, response, next) => {
   try {
     response.json(await prisma.user.findUniqueOrThrow({ where: { id: request.user!.id }, select: profileSelect }));
@@ -285,6 +296,43 @@ app.patch("/api/account", requireAuth, async (request: AuthenticatedRequest, res
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") { response.status(409).json({ error: "Bu e-posta adresi başka bir hesapta kullanılıyor." }); return; }
     next(error);
   }
+});
+
+const newAccountSchema = z.object({
+  firstName: z.string().trim().min(2).max(80), lastName: z.string().trim().min(2).max(80),
+  email: z.string().trim().email().max(254), phone: z.string().trim().max(30).default(""),
+});
+app.post("/api/admin/users", requireAuth, requireRole(Role.SUPER_ADMIN), async (request: AuthenticatedRequest, response, next) => {
+  const parsed = newAccountSchema.safeParse(request.body);
+  if (!parsed.success) { response.status(400).json({ error: "Kullanıcı bilgilerini kontrol edin." }); return; }
+  try {
+    const temporaryPassword = crypto.randomBytes(18).toString("base64url");
+    const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+    const user = await prisma.user.create({ data: { ...parsed.data, email: parsed.data.email.toLowerCase(), phone: parsed.data.phone || null, passwordHash, role: Role.DEALER, mustChangePassword: true }, select: profileSelect });
+    response.status(201).json({ user, temporaryPassword, message: "Hesap oluşturuldu. Geçici şifreyi kullanıcıyla güvenli biçimde paylaşın; ilk girişte yeni şifre belirlenecek." });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") { response.status(409).json({ error: "Bu e-posta adresi zaten kullanılıyor." }); return; }
+    next(error);
+  }
+});
+const ownPasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: z.string().min(12).max(128).refine((value) => Buffer.byteLength(value, "utf8") <= 72),
+});
+app.patch("/api/account/password", requireAuth, async (request: AuthenticatedRequest, response, next) => {
+  const parsed = ownPasswordSchema.safeParse(request.body);
+  if (!parsed.success) { response.status(400).json({ error: "Yeni şifre en az 12 karakter, en fazla 72 UTF-8 bayt olmalıdır." }); return; }
+  try {
+    const current = await prisma.user.findUniqueOrThrow({ where: { id: request.user!.id } });
+    if (!await bcrypt.compare(parsed.data.currentPassword, current.passwordHash)) { response.status(400).json({ error: "Geçerli / geçici şifre hatalı." }); return; }
+    if (await bcrypt.compare(parsed.data.newPassword, current.passwordHash)) { response.status(400).json({ error: "Yeni şifre önceki şifreden farklı olmalıdır." }); return; }
+    const passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
+    const result = await prisma.user.updateMany({ where: { id: current.id, passwordHash: current.passwordHash, active: true }, data: { passwordHash, mustChangePassword: false } });
+    if (!result.count) { response.status(409).json({ error: "Hesap değişti. Yeniden giriş yapın." }); return; }
+    const token = jwt.sign({ role: current.role, dealerId: current.dealerId, schoolId: current.schoolId, credentialVersion: credentialVersion(passwordHash) }, env.JWT_SECRET, { subject: current.id, expiresIn: "8h" });
+    await recordAudit(current.id, "PASSWORD_CHANGED", "user", current.id, "Kullanıcı kendi şifresini belirledi.");
+    response.json({ token, user: { id: current.id, email: current.email, firstName: current.firstName, lastName: current.lastName, phone: current.phone, role: current.role, mustChangePassword: false } });
+  } catch (error) { next(error); }
 });
 
 const registrationSchema = z.object({
@@ -1124,7 +1172,7 @@ app.delete(
     try {
       const publisher = await prisma.publisher.findUnique({
         where: { id: publisherId },
-        include: { _count: { select: { exams: true, answerKeys: true, publisherRequests: true } } },
+        include: { _count: { select: { exams: true, answerKeys: true, publisherRequests: true, scheduleEntries: true } } },
       });
       if (!publisher) {
         response.status(404).json({ error: "Yayınevi bulunamadı." });
@@ -1134,6 +1182,7 @@ app.delete(
         publisher._count.exams ? `${publisher._count.exams} sınav` : "",
         publisher._count.answerKeys ? `${publisher._count.answerKeys} yayımlanmış cevap anahtarı` : "",
         publisher._count.publisherRequests ? `${publisher._count.publisherRequests} yayınevi talebi` : "",
+        publisher._count.scheduleEntries ? `${publisher._count.scheduleEntries} takvim kaydı` : "",
       ].filter(Boolean);
       if (linkedRecords.length) {
         response.status(409).json({
@@ -1634,7 +1683,7 @@ app.get(
   async (request, response, next) => {
     try {
       const fileId = getRouteParamId(request.params.id);
-      const fileRecord = await prisma.answerKeyFile.findUnique({ where: { id: fileId } });
+      const fileRecord = await prisma.answerKeyFile.findUnique({ where: { id: fileId }, include: { publishedAnswerKey: { include: { publisher: true } } } });
       if (!fileRecord) {
         response.status(404).json({ error: "Dosya bulunamadı." });
         return;
@@ -1643,7 +1692,7 @@ app.get(
         response.status(404).json({ error: "Dosya sunucuda bulunamadı." });
         return;
       }
-      response.download(fileRecord.storagePath, fileRecord.originalFileName, {
+      response.download(fileRecord.storagePath, answerKeyDownloadName(fileRecord), {
         headers: { "Content-Type": fileRecord.mimeType },
       });
     } catch (error) {
@@ -1657,6 +1706,7 @@ app.get("/api/answer-key-files/:id", async (request, response, next) => {
     const fileId = getRouteParamId(request.params.id);
     const fileRecord = await prisma.answerKeyFile.findFirst({
       where: { id: fileId, publishedAnswerKey: { published: true } },
+      include: { publishedAnswerKey: { include: { publisher: true } } },
     });
     if (!fileRecord) {
       response.status(404).json({ error: "Dosya bulunamadı." });
@@ -1666,7 +1716,7 @@ app.get("/api/answer-key-files/:id", async (request, response, next) => {
       response.status(404).json({ error: "Dosya sunucuda bulunamadı." });
       return;
     }
-    response.download(fileRecord.storagePath, fileRecord.originalFileName, {
+    response.download(fileRecord.storagePath, answerKeyDownloadName(fileRecord), {
       headers: { "Content-Type": fileRecord.mimeType },
     });
   } catch (error) {

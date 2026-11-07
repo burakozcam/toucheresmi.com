@@ -1,7 +1,8 @@
 export type Lesson = { name: string; count: number; weight: number };
-export type Question = { lesson: string; number: number; answer: string; weight: number; column: string };
+export type Question = { lesson: string; number: number; answer: string; weight: number; column: string; outcomeCode?: string; outcomeName?: string };
 export type Candidate = { id: string; name: string; school: string; branch: string; answers: string[] };
 export type EvaluationData = { questions: Question[]; students: Candidate[] };
+export type CohortContext = Map<string, { members: Candidate[]; scores: number[]; rates: (number | null)[] }>;
 export type QuestionState = "correct" | "wrong" | "blank" | "cancelled";
 export type LessonResult = { lesson: string; correct: number; wrong: number; blank: number; cancelled: number; net: number; weighted: number };
 export const text = (value: unknown) => String(value ?? "").trim();
@@ -17,6 +18,8 @@ export function parseEvaluation(keyRows: unknown[][], studentRows: unknown[][]):
   const questions: Question[] = [];
   const seen = new Set<string>();
   const weights = new Map<string, number>();
+  const hasOutcomes = text(keyRows[0][4]) === "Kazanım Kodu" && text(keyRows[0][5]) === "Kazanım Adı";
+  if ((text(keyRows[0][4]) || text(keyRows[0][5])) && !hasOutcomes) throw new Error("Kazanım sütunları Kazanım Kodu ve Kazanım Adı olarak birlikte bulunmalıdır.");
   keyRows.slice(1).forEach((row, index) => {
     if (row.every((cell) => !text(cell))) return;
     const lesson = text(row[0]);
@@ -32,7 +35,9 @@ export function parseEvaluation(keyRows: unknown[][], studentRows: unknown[][]):
     if (weights.has(lesson) && weights.get(lesson) !== weight) throw new Error(`${label}: aynı dersin katsayıları tutarlı olmalıdır.`);
     weights.set(lesson, weight);
     seen.add(column);
-    questions.push({ lesson, number, answer, weight, column });
+    const outcomeCode = hasOutcomes ? text(row[4]) : "", outcomeName = hasOutcomes ? text(row[5]) : "";
+    if (Boolean(outcomeCode) !== Boolean(outcomeName) || outcomeCode.length > 80 || outcomeName.length > 500) throw new Error(`${label}: kazanım kodu ve adı birlikte yazılmalıdır (en fazla 80 / 500 karakter).`);
+    questions.push({ lesson, number, answer, weight, column, ...(outcomeCode ? { outcomeCode, outcomeName } : {}) });
   });
   if (!questions.length || questions.length > 300) throw new Error("Şablonda 1–300 soru bulunmalıdır.");
   for (const lesson of new Set(questions.map((q) => q.lesson))) {
@@ -42,9 +47,12 @@ export function parseEvaluation(keyRows: unknown[][], studentRows: unknown[][]):
   const headers = studentRows[0].map(text);
   if (["Öğrenci No", "Ad Soyad", "Okul", "Şube"].some((name, i) => headers[i] !== name)) throw new Error("Öğrenci Cevapları başlıkları değiştirilmiş. Yeni bir şablon indirin.");
   if (new Set(headers).size !== headers.length) throw new Error("Öğrenci Cevapları sayfasında yinelenen sütun başlığı var.");
-  const columns = questions.map((q) => headers.indexOf(q.column));
+  const lessonNames = [...new Set(questions.map((q) => q.lesson))];
+  const compact = lessonNames.some((lesson) => headers.includes(`${lesson} Cevapları`));
+  const validHeaders = compact ? new Set(lessonNames.map((lesson) => `${lesson} Cevapları`)) : seen;
+  const columns = questions.map((q) => headers.indexOf(compact ? `${q.lesson} Cevapları` : q.column));
   if (columns.some((index) => index < 4)) throw new Error("Öğrenci cevaplarında bazı ders/soru sütunları eksik. Şablonla cevap anahtarı eşleşmiyor.");
-  if (headers.slice(4).some((header) => !seen.has(header))) throw new Error("Cevap anahtarında bulunmayan öğrenci cevap sütunları var.");
+  if (headers.slice(4).some((header) => !validHeaders.has(header))) throw new Error("Cevap anahtarında bulunmayan öğrenci cevap sütunları var.");
   const students: Candidate[] = [];
   const ids = new Set<string>();
   studentRows.slice(1).forEach((row, index) => {
@@ -56,8 +64,15 @@ export function parseEvaluation(keyRows: unknown[][], studentRows: unknown[][]):
     const identity = `${school}\u0000${branch}\u0000${id}`;
     if (ids.has(identity)) throw new Error(`${label}: aynı okul ve şubede ${id} numaralı öğrenci yinelenmiş.`);
     ids.add(identity);
-    const answers = columns.map((column) => {
-      const answer = choice(row[column]);
+    const chains = new Map<string, string>();
+    if (compact) for (const lesson of lessonNames) {
+      const column = headers.indexOf(`${lesson} Cevapları`), count = questions.filter((q) => q.lesson === lesson).length;
+      const chain = String(row[column] ?? "").toLocaleUpperCase("tr-TR").replace(/[ .]/g, "-");
+      if (chain && (chain.length !== count || !/^[ABCDE-]+$/.test(chain))) throw new Error(`${label}: ${lesson} hücresi tam ${count} cevap içermelidir. A–E kullanın, boş soru için - yazın; araya ayırıcı koymayın.`);
+      chains.set(lesson, chain || "-".repeat(count));
+    }
+    const answers = columns.map((column, index) => {
+      const answer = compact ? chains.get(questions[index].lesson)![questions[index].number - 1] : choice(row[column]);
       if (answer && !/^[ABCDE\-]$/.test(answer)) throw new Error(`${label}: ${headers[column]} cevabı A–E ya da boş olmalıdır.`);
       return answer === "-" ? "" : answer;
     });
@@ -65,6 +80,35 @@ export function parseEvaluation(keyRows: unknown[][], studentRows: unknown[][]):
   });
   if (!students.length || students.length > 500) throw new Error("Bir dosyada 1–500 öğrenci bulunmalıdır.");
   return { questions, students };
+}
+
+/** A transparent scale for local practice exams, not the official standardized score. */
+export function scaledScore(questions: Question[], student: Candidate, penalty: number, weights: Record<string, number>, scale: 100 | 500) {
+  const maximum = questions.reduce((total, q) => total + (q.answer === "X" ? 0 : weights[q.lesson] ?? q.weight), 0);
+  const total = evaluate(questions, student, penalty, weights).reduce((n, r) => n + r.weighted, 0);
+  return maximum > 0 ? Math.min(scale, Math.max(0, total / maximum * scale)) : 0;
+}
+export function buildCohortContext(data: EvaluationData, penalty: number, weights: Record<string, number>, scale: 100 | 500): CohortContext {
+  const groups: CohortContext = new Map();
+  for (const student of data.students) {
+    const group = groups.get(student.school) ?? { members: [], scores: [], rates: data.questions.map(() => 0) };
+    group.members.push(student); group.scores.push(scaledScore(data.questions, student, penalty, weights, scale));
+    data.questions.forEach((q, i) => { if (questionState(q, student.answers[i]) === "correct") group.rates[i] = (group.rates[i] ?? 0) + 1; });
+    groups.set(student.school, group);
+  }
+  for (const group of groups.values()) group.rates = group.rates.map((correct, i) => data.questions[i].answer === "X" ? null : (correct ?? 0) / group.members.length * 100);
+  return groups;
+}
+export function questionCohort(data: EvaluationData, student: Candidate, context?: CohortContext) {
+  const school = data.students.filter((s) => s.school === student.school);
+  const cohort = school.filter((s) => s.id !== student.id || s.branch !== student.branch);
+  return data.questions.map((q, index) => {
+    const cached = context?.get(student.school);
+    const own = questionState(q, student.answers[index]) === "correct" ? 1 : 0;
+    const correct = cached ? Math.max(0, Math.round((cached.rates[index] ?? 0) / 100 * school.length) - own) : cohort.filter((s) => questionState(q, s.answers[index]) === "correct").length;
+    const rate = q.answer === "X" || !cohort.length ? null : correct / cohort.length * 100;
+    return { count: cohort.length, correct, rate, difference: rate === null ? null : (questionState(q, student.answers[index]) === "correct" ? 100 : 0) - rate };
+  });
 }
 
 export function questionState(question: Question, answer: string): QuestionState {

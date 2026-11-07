@@ -58,8 +58,8 @@ export default function Home() {
         </Link>
         <nav className="header-actions" aria-label="Ana menü">
           <a className="header-link" href="#cozumler">Çözümler</a>
-          <Link className="header-link gradient-link" href="/cevap-anahtarlari">Cevap Anahtarları</Link>
-          <Link className="header-link" href="/sinav-degerlendir">Sınav Değerlendir</Link>
+          <Link className="header-link flowing-gradient header-gradient-button" href="/cevap-anahtarlari">Cevap Anahtarları</Link>
+          <Link className="header-link calendar-gradient-link" href="/sinav-takvimi">Sınav Takvimi</Link><Link className="header-link" href="/sinav-degerlendir">Sınav Değerlendir</Link>
           <ThemeToggle />
           <Link className="button button-navy" href="/login">Giriş Yap <span aria-hidden="true">↗</span></Link>
         </nav>
@@ -154,6 +154,7 @@ export default function Home() {
         <Link className="button button-navy" href="/sinav-degerlendir">Sınav Değerlendir <span>→</span></Link>
       </section>
       <section className="answer-request-section" aria-labelledby="answer-request-title"><div className="section-heading"><p className="hero-tag">BİRLİKTE TAMAMLAYALIM</p><h2 id="answer-request-title">Aradığın cevap<br /><span>anahtarı burada yok mu?</span></h2><p>Yayınevi ve deneme bilgilerini gönder; ekleme talebini inceleyelim.</p></div><ContactForm purpose="answer-key" /></section>
+      <section className="evaluation-promo schedule-promo"><div><p className="hero-tag">YAYINEVLERİ · KURUMSAL SINAVLAR</p><h2>Sınav tarihlerin tek takvimde.</h2><p>Sınıfını seç, yayınevlerinin denemelerini ay ay gör. Kapsam ve cevap anahtarları sınavın detayında.</p></div><Link className="button button-quiet calendar-gradient-button" href="/sinav-takvimi">Sınav Takvimi →</Link></section>
       <LgsCountdown />
 
       <section id="contact-section" className="home-contact" aria-labelledby="home-contact-title">

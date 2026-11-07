@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PDF ve Excel Araçları | kurumsalsinav.com</title>
+  <title>PDF Düzenleyici | kurumsalsinav.com</title>
   <meta name="description" content="PDF birleştirin, bölün, PNG'ye dönüştürün; görsellerden PDF oluşturun, Excel ve PDF dosyalarını tarayıcınızda dönüştürün.">
   <meta name="theme-color" content="#111c30">
   <script>if (window.parent !== window) document.documentElement.classList.add("embedded-tool");</script>
@@ -18,7 +18,7 @@
     .pdf-hero::before { position: absolute; inset: -160px 15% auto; height: 340px; border-radius: 50%; background: rgba(80,125,190,.14); filter: blur(100px); content: ""; pointer-events: none; }
     .pdf-hero > * { position: relative; }
     .pdf-shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
-    .pdf-tool-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+    .pdf-tool-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
     .pdf-tool-tab { min-height: 104px; padding: 14px 12px; border: 1px solid #29364c; border-radius: 12px; color: #9caac0; background: #17243a; text-align: left; transition: .18s ease; }
     .pdf-tool-tab:hover, .pdf-tool-tab[aria-selected="true"] { border-color: #587eb8; color: #e1e9f5; background: linear-gradient(145deg, #243653, #17243a); box-shadow: 0 10px 32px rgba(0,0,0,.16); }
     .pdf-tool-tab .tab-icon { display: grid; width: 34px; height: 34px; margin-bottom: 10px; place-items: center; border-radius: 9px; color: #8bb2ff; background: #243653; font-size: 17px; }
@@ -82,8 +82,9 @@
       <div class="pdf-tool-tabs" role="tablist" aria-label="PDF ve Excel araçları">
         <button class="pdf-tool-tab" role="tab" id="tab-merge" aria-controls="tool-panel" aria-selected="true" data-tool="merge"><span class="tab-icon">⊕</span><strong>PDF Birleştir</strong><small>Birden çok dosyayı birleştir</small></button>
         <button class="pdf-tool-tab" role="tab" id="tab-split" aria-controls="tool-panel" aria-selected="false" data-tool="split"><span class="tab-icon">⤓</span><strong>PDF Böl</strong><small>Sayfa aralıklarını ayır</small></button>
-        <button class="pdf-tool-tab" role="tab" id="tab-pdf-image" aria-controls="tool-panel" aria-selected="false" data-tool="pdf-image"><span class="tab-icon">▧</span><strong>PDF → PNG</strong><small>Sayfaları görsel indir</small></button>
+        <button class="pdf-tool-tab" role="tab" id="tab-pdf-image" aria-controls="tool-panel" aria-selected="false" data-tool="pdf-image"><span class="tab-icon">▧</span><strong>PDF → Görsel</strong><small>Sayfaları görsel indir</small></button>
         <button class="pdf-tool-tab" role="tab" id="tab-image-pdf" aria-controls="tool-panel" aria-selected="false" data-tool="image-pdf"><span class="tab-icon">▤</span><strong>Görsel → PDF</strong><small>Görsellerden PDF oluştur</small></button>
+        <button class="pdf-tool-tab" role="tab" id="tab-image-image" aria-controls="tool-panel" aria-selected="false" data-tool="image-image"><span class="tab-icon">⇄</span><strong>Görsel Dönüştür</strong><small>PNG · JPEG · WebP</small></button>
         <button class="pdf-tool-tab" role="tab" id="tab-excel-pdf" aria-controls="tool-panel" aria-selected="false" data-tool="excel-pdf"><span class="tab-icon">▦</span><strong>Excel → PDF</strong><small>Tablolarını PDF kaydet</small></button>
         <button class="pdf-tool-tab" role="tab" id="tab-pdf-excel" aria-controls="tool-panel" aria-selected="false" data-tool="pdf-excel"><span class="tab-icon">▧</span><strong>PDF → Excel</strong><small>Metinleri tabloya aktar</small></button>
         <button class="pdf-tool-tab" role="tab" id="tab-split-text" aria-controls="tool-panel" aria-selected="false" data-tool="split-text"><span class="tab-icon">⌕</span><strong>Metne göre böl</strong><small>Öğrenci / isim bazlı</small></button>
@@ -109,22 +110,23 @@
       </section>
     </div>
   </main>
-  <footer class="pdf-footer py-5"><div class="pdf-shell flex flex-wrap justify-between gap-3"><span class="font-bold text-slate-300">kurumsalsinav.com</span><span>PDF ve Excel Araçları</span></div></footer>
+  <footer class="pdf-footer py-5"><div class="pdf-shell flex flex-wrap justify-between gap-3"><span class="font-bold text-slate-300">kurumsalsinav.com</span><span>PDF Düzenleyici</span></div></footer>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="/vendor/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="/vendor/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="/vendor/jszip.min.js"></script>
   <script>
     (function () {
       "use strict";
       var definitions = {
         merge: { title: "PDF dosyalarını birleştir", description: "Birleştirmek istediğin PDF dosyalarını seç. Dosya sıralaması, seçtiğin sırayla korunur.", action: "PDF'leri birleştir", accept: "application/pdf,.pdf", multiple: true, minFiles: 2, drop: "PDF dosyalarını buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB / dosya", icon: "↑" },
         split: { title: "PDF sayfalarını böl", description: "Tek bir PDF seç ve ayırmak istediğin sayfa aralıklarını yaz.", action: "Sayfaları ayır ve indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "Bölmek istediğin PDF'yi buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Örnek: 1-3, 5, 8-10. Birden fazla aralık ZIP olarak indirilir." },
-        "pdf-image": { title: "PDF sayfalarını PNG'ye dönüştür", description: "PDF sayfalarını yüksek çözünürlüklü PNG görselleri olarak dışa aktar.", action: "PNG'leri oluştur ve indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "PNG'ye dönüştürülecek PDF'yi buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Tüm sayfalar ayrı PNG dosyaları olarak hazırlanır ve ZIP içinde indirilir.", options: "scale" },
+        "pdf-image": { title: "PDF sayfalarını görsele dönüştür", description: "PDF sayfalarını PNG, JPG/JPEG veya WebP olarak dışa aktar.", action: "Görselleri oluştur ve indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "PNG'ye dönüştürülecek PDF'yi buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Tüm sayfalar seçilen görsel biçiminde hazırlanır ve ZIP içinde indirilir.", options: "scale" },
         "image-pdf": { title: "Görselleri PDF'e dönüştür", description: "Birden fazla görsel seçerek sayfa başına bir görsel içeren PDF oluştur.", action: "PDF oluştur ve indir", accept: "image/*", multiple: true, minFiles: 1, drop: "Görselleri buraya bırak", hint: "veya cihazından seç · JPG, PNG, WebP · en fazla 100 MB / dosya", icon: "▧", options: "page-size" },
+        "image-image": { title: "Görsellerin biçimini değiştir", description: "PNG, JPG/JPEG ve WebP görsellerini birbirine dönüştür.", action: "Görselleri dönüştür ve indir", accept: "image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp", multiple: true, minFiles: 1, drop: "Görselleri buraya bırak", hint: "PNG, JPG, JPEG, WebP · en fazla 100 MB / dosya", icon: "⇄" },
         "excel-pdf": { title: "Excel dosyasını PDF'e dönüştür", description: "Çalışma kitabındaki sayfaları tablo düzeninde PDF olarak indir.", action: "PDF oluştur ve indir", accept: ".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv", multiple: false, minFiles: 1, drop: "Excel dosyanı buraya bırak", hint: "veya cihazından seç · XLSX, XLS, CSV · en fazla 100 MB", icon: "▦", note: "Her çalışma sayfası ayrı bir PDF bölümüne aktarılır. Yazdırma önizlemesi için yatay A4 sayfa kullanılır." },
         "pdf-excel": { title: "PDF dosyasını Excel'e dönüştür", description: "PDF içindeki seçilebilir metinleri sayfa ve satır düzeninde Excel çalışma kitabına aktar.", action: "Excel dosyasını indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "Excel'e dönüştürülecek PDF'yi buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Metin tabanlı PDF'ler desteklenir. Taranmış belgelerde OCR yapılmaz; tablo sütunları ve biçim birebir korunamayabilir." },
         "split-text": { title: "PDF'i seçtiğin metne göre böl", description: "Önizlemede öğrenci numarası, isim veya başka bir alanı fareyle seç. Aynı konumdaki değerleri tüm sayfalarda bulup her değer için ayrı PDF hazırla.", action: "PDF'leri ZIP olarak indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "Öğrenci kayıtlarının bulunduğu PDF'yi yükle", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Metin tabanlı PDF gerekir. Her sayfada aynı konumdaki metin okunur; aynı değerli sayfalar aynı PDF'te gruplanır. Tarama görüntülerinde OCR yapılmaz." }
@@ -232,6 +234,12 @@
           options.innerHTML = '<label class="pdf-field" for="render-scale">Görsel çözünürlüğü<select id="render-scale"><option value="1.5">Standart · 1.5×</option><option value="2" selected>Yüksek · 2×</option><option value="3">Çok yüksek · 3×</option></select></label>';
         } else if (tool === "image-pdf") {
           options.innerHTML = '<label class="pdf-field" for="image-page-size">PDF sayfa boyutu<select id="image-page-size"><option value="image">Görsele sığdır</option><option value="a4">A4</option><option value="letter">Letter</option></select></label>';
+        }
+        if (tool === "pdf-image" || tool === "image-image") {
+          const field = document.createElement("label"); field.className = "pdf-field"; field.textContent = "Görsel çıktı biçimi";
+          const select = document.createElement("select"); select.id = "output-image-format";
+          ["png", "jpg", "jpeg", "webp"].forEach((format) => { const option = document.createElement("option"); option.value = format; option.textContent = format.toUpperCase(); select.append(option); });
+          field.append(select); options.append(field);
         }
         textSplitPreview.hidden = tool !== "split-text";
         if (tool === "split-text") {
@@ -578,8 +586,10 @@
         var documentPdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
         var scale = Number(document.getElementById("render-scale").value);
         var zip = new JSZip();
+        var format = document.getElementById("output-image-format").value;
+        var mime = format === "jpg" || format === "jpeg" ? "image/jpeg" : "image/" + format;
         for (var pageNumber = 1; pageNumber <= documentPdf.numPages; pageNumber += 1) {
-          setStatus("Sayfa " + pageNumber + " / " + documentPdf.numPages + " PNG'ye dönüştürülüyor…");
+          setStatus("Sayfa " + pageNumber + " / " + documentPdf.numPages + " görsele dönüştürülüyor…");
           var page = await documentPdf.getPage(pageNumber);
           var viewport = page.getViewport({ scale: scale });
           if (viewport.width * viewport.height > 40000000) throw new Error("Sayfa " + pageNumber + " seçilen çözünürlükte çok büyük. Daha düşük çözünürlük seç.");
@@ -588,16 +598,17 @@
           canvas.height = Math.ceil(viewport.height);
           var context = canvas.getContext("2d");
           await page.render({ canvasContext: context, viewport: viewport }).promise;
-          var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, "image/png"); });
+          var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, mime, .94); });
+          if (blob && blob.type !== mime) throw new Error("Tarayıcı bu biçimi desteklemiyor. PNG veya JPEG seçin.");
           if (!blob) throw new Error("Sayfa " + pageNumber + " görseli oluşturulamadı.");
-          zip.file("sayfa-" + String(pageNumber).padStart(3, "0") + ".png", blob);
+          zip.file("sayfa-" + String(pageNumber).padStart(3, "0") + "." + format, blob);
           canvas.width = 0;
           canvas.height = 0;
         }
-        downloadBlob(await zip.generateAsync({ type: "blob" }), safeBaseName(file.name) + "-png.zip");
+        downloadBlob(await zip.generateAsync({ type: "blob" }), safeBaseName(file.name) + "-" + format + ".zip");
       }
 
-      function imageAsPng(file) {
+      function imageAsPng(file, mime = "image/png") {
         return new Promise(function (resolve, reject) {
           var url = URL.createObjectURL(file);
           var image = new Image();
@@ -608,15 +619,29 @@
             canvas.height = image.naturalHeight;
             var context = canvas.getContext("2d");
             if (!context) { reject(new Error("Tarayıcı görseli işleyemedi.")); return; }
+            if (mime === "image/jpeg") { context.fillStyle = "white"; context.fillRect(0, 0, canvas.width, canvas.height); }
             context.drawImage(image, 0, 0);
             canvas.toBlob(function (blob) {
               if (!blob) { reject(new Error(file.name + " görseli dönüştürülemedi.")); return; }
               resolve({ bytes: blob, width: canvas.width, height: canvas.height });
-            }, "image/png");
+            }, mime, .94);
           };
           image.onerror = function () { URL.revokeObjectURL(url); reject(new Error(file.name + " görseli açılamadı.")); };
           image.src = url;
         });
+      }
+
+      async function convertImages() {
+        const format = document.getElementById("output-image-format").value;
+        const mime = format === "jpg" || format === "jpeg" ? "image/jpeg" : "image/" + format;
+        const zip = new JSZip();
+        for (const [index, file] of selectedFiles.entries()) {
+          const result = await imageAsPng(file, mime);
+          if (result.bytes.type !== mime) throw new Error("Tarayıcı seçilen biçimi desteklemiyor. PNG veya JPEG seçin.");
+          const filename = String(index + 1).padStart(3, "0") + "-" + safeBaseName(file.name) + "." + format;
+          if (selectedFiles.length === 1) downloadBlob(result.bytes, filename); else zip.file(filename, result.bytes);
+        }
+        if (selectedFiles.length > 1) downloadBlob(await zip.generateAsync({ type: "blob" }), "donusturulen-gorseller.zip");
       }
 
       async function imagesToPdf() {
@@ -715,7 +740,7 @@
         XLSX.writeFile(workbook, safeBaseName(file.name) + ".xlsx");
       }
 
-      var actions = { merge: mergePdfs, split: splitPdf, "pdf-image": pdfToPng, "image-pdf": imagesToPdf, "excel-pdf": excelToPdf, "pdf-excel": pdfToExcel, "split-text": splitPdfByText };
+      var actions = { merge: mergePdfs, split: splitPdf, "pdf-image": pdfToPng, "image-pdf": imagesToPdf, "image-image": convertImages, "excel-pdf": excelToPdf, "pdf-excel": pdfToExcel, "split-text": splitPdfByText };
       actionButton.addEventListener("click", async function () {
         if (busy) return;
         if (!selectedFiles.length) { setStatus("Önce dosya seç.", "error"); return; }

@@ -3,6 +3,7 @@ export type Workbook = { SheetNames: string[]; Sheets: Record<string, Sheet> };
 export type SheetJs = {
   read(data: ArrayBuffer, options: Record<string, unknown>): Workbook;
   writeFile(book: Workbook, filename: string): void;
+  write(book: Workbook, options: Record<string, unknown>): ArrayBuffer;
   utils: {
     book_new(): Workbook;
     book_append_sheet(book: Workbook, sheet: Sheet, name: string): void;
@@ -11,4 +12,4 @@ export type SheetJs = {
     decode_range(ref: string): { s: { r: number; c: number }; e: { r: number; c: number } };
   };
 };
-declare global { interface Window { XLSX?: SheetJs } }
+declare global { interface Window { XLSX?: SheetJs; JSZip?: any } }

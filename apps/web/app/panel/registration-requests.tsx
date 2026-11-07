@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import CreateUser from "./create-user";
 import { API_URL } from "../../lib/api";
 
 type Registration = {
@@ -207,6 +208,7 @@ export default function RegistrationRequests({ token }: { token: string }) {
         </div>
       </header>
       {error && <p className="registration-notice registration-error" role="alert">{error}</p>}
+      <CreateUser token={token} onCreated={() => void loadMembers()} />
       {notice && <p className="registration-notice registration-success" role="status">{notice}</p>}
       {loading ? <p className="registration-empty">Üye kayıtları yükleniyor...</p> : rows.length === 0 ? (
         <p className="registration-empty">Henüz kullanıcı veya üyelik talebi bulunmuyor.</p>

@@ -12,6 +12,9 @@ export default function SiteFooter() {
       <nav aria-label="Alt menü">
         <Link href="/cevap-anahtarlari">Cevap Anahtarları</Link>
         <Link href="/sinav-degerlendir">Sınav Değerlendir</Link>
+        <Link href="/sinav-takvimi">Sınav Takvimi</Link>
+        <Link href="/verilerinizin-guvenligi">Verilerinizin Güvenliği</Link>
+        <Link href="/pdf-duzenleyici">PDF Düzenleyici</Link>
         <Link href="/contact">İletişim</Link>
         <a href="/contact#contact-form">destek@kurumsalsinav.com</a>
       </nav>

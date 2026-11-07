@@ -61,6 +61,7 @@ model User {
   dealerId     String?
   schoolId     String?
   active       Boolean  @default(true)
+  mustChangePassword Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -280,6 +281,7 @@ model Publisher {
   answerKeys        PublishedAnswerKey[]
   publisherRequests PublisherRequest[]
   exams             Exam[]
+  scheduleEntries   ExamScheduleEntry[]
 
   @@index([active, name])
 }
@@ -321,10 +323,29 @@ model PublishedAnswerKey {
   publisher Publisher       @relation(fields: [publisherId], references: [id], onDelete: Restrict)
   createdBy User            @relation("PublishedAnswerKeyCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   files     AnswerKeyFile[]
+  scheduleEntries ExamScheduleEntry[]
 
   @@index([published, createdAt])
   @@index([published, publishedAt])
   @@index([publisherId, grade])
+}
+
+model ExamScheduleEntry {
+  id          String @id @default(cuid())
+  publisherId String
+  level       String
+  sequence    Int
+  examDate    DateTime @db.Date
+  scope       String @db.Text
+  answerKeyId String?
+  published   Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publisher Publisher @relation(fields: [publisherId], references: [id], onDelete: Restrict)
+  answerKey PublishedAnswerKey? @relation(fields: [answerKeyId], references: [id], onDelete: SetNull)
+  @@unique([publisherId, level, sequence, examDate])
+  @@index([published, level, examDate])
+  @@index([answerKeyId])
 }
 
 model AnswerKeyFile {

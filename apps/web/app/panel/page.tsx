@@ -6,6 +6,9 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import ThemeToggle from "../theme-toggle";
 import BreakGame from "./break-game";
+import PasswordSetup from "./password-setup";
+import PdfEditor from "../pdf-duzenleyici/editor";
+import ScheduleManagement from "./schedule-management";
 import Calendar from "./calendar";
 import PublisherManagement from "./publisher-management";
 import AnswerKeyManagement from "./answer-key-management";
@@ -17,8 +20,8 @@ import ContactInbox from "./contact-inbox";
 import AuditLogManagement from "./audit-log-management";
 import { API_URL } from "../../lib/api";
 
-type Section = "exam" | "fmt-upload" | "fmt-edit" | "fmt-delete" | "school-add" | "school-edit" | "school-delete" | "students" | "calendar" | "break" | "rebuilder" | "pdf-tools" | "publishers" | "publisher-requests" | "answer-keys" | "system-users" | "contact-inbox" | "audit-logs" | "account";
-type AuthUser = { id: string; email: string; firstName: string; lastName: string; phone?: string | null; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" };
+type Section = "exam" | "fmt-upload" | "fmt-edit" | "fmt-delete" | "school-add" | "school-edit" | "school-delete" | "students" | "calendar" | "bird" | "snake" | "exam-schedule" | "rebuilder" | "pdf-tools" | "publishers" | "publisher-requests" | "answer-keys" | "system-users" | "contact-inbox" | "audit-logs" | "account";
+type AuthUser = { id: string; email: string; firstName: string; lastName: string; phone?: string | null; mustChangePassword?: boolean; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" };
 
 const pages: Record<Section, { title: string; eyebrow: string; description: string; action: string }> = {
   exam: { title: "Sınav Yükle", eyebrow: "SINAV YÖNETİMİ", description: "Yeni sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.", action: "Sınav dosyası seç" },
@@ -30,9 +33,11 @@ const pages: Record<Section, { title: string; eyebrow: string; description: stri
   "school-delete": { title: "Kurum Durumu", eyebrow: "KURUM YÖNETİMİ", description: "İlişkili sınav ve değerlendirmeler korunarak kurumları pasife alın veya yeniden aktifleştirin.", action: "Kurumları görüntüle" },
   students: { title: "Öğrenciler", eyebrow: "ÖĞRENCİ YÖNETİMİ", description: "Öğrenci kayıtlarını ve sınav katılımlarını görüntüleyin.", action: "Öğrencileri görüntüle" },
   calendar: { title: "Takvim", eyebrow: "TAKVİM", description: "Ayları gezin; hafta sonlarını ve resmî tatilleri görüntüleyin.", action: "Bugüne git" },
-  break: { title: "Mola", eyebrow: "KISA BİR MOLA", description: "Kısa bir mola verip mini koşu oyununu oynayabilirsiniz.", action: "Oyuna başla" },
+  bird: { title: "K ile Uçma Zamanı", eyebrow: "K ARCADE", description: "K logomuzla kulelerin arasından uç, kendi rekorunu geç.", action: "Oyuna başla" },
+  snake: { title: "Kıvrıla Kıvrıla K", eyebrow: "K ARCADE", description: "K ile izini büyüt, kıvrımları takip et.", action: "Oyuna başla" },
+  "exam-schedule": { title: "Sınav Takvimi", eyebrow: "KURUMSAL SINAVLAR", description: "Yayınevlerinin sınav tarihlerini Excel ile ekleyin, düzenleyin ve cevap anahtarlarıyla eşleştirin.", action: "Takvimi yönet" },
   rebuilder: { title: "Sınav Listesi Düzenleyici", eyebrow: "SINAV ARAÇLARI", description: "Öğrenci listenizi düzenleyin, derslik dağılımını planlayın ve çıktınızı indirin.", action: "Aracı aç" },
-  "pdf-tools": { title: "PDF ve Excel Araçları", eyebrow: "DOSYA ARAÇLARI", description: "PDF ve Excel dosyalarını tarayıcınızda birleştirin, bölün veya dönüştürün.", action: "Aracı aç" },
+  "pdf-tools": { title: "PDF Düzenleyici", eyebrow: "DOSYA ARAÇLARI", description: "PDF ve Excel dosyalarını tarayıcınızda birleştirin, bölün veya dönüştürün.", action: "Aracı aç" },
   publishers: { title: "Yayınevleri", eyebrow: "YAYINEVİ YÖNETİMİ", description: "Sisteme kayıtlı yayınevlerini görüntüleyin ve yayınevi talebi oluşturun.", action: "Yayınevi ekle" },
   "publisher-requests": { title: "Yayınevi Talepleri", eyebrow: "ONAY SÜRECİ", description: "Yayınevi ekleme taleplerini inceleyip onaylayın veya reddedin.", action: "Talep listesi" },
   "answer-keys": { title: "Cevap Anahtarları", eyebrow: "DOSYA YÖNETİMİ", description: "Cevap anahtarı ve kazanım dosyalarını yönetin, yayımlayın ve indirilebilir halde tutun.", action: "Yeni dosya ekle" },
@@ -49,9 +54,9 @@ const groups: { title: string; items: { id: Section; label: string; icon: string
   { title: "YAYINEVLERİ", items: [{ id: "publishers", label: "Yayınevleri", icon: "▣" }] },
   { title: "CEVAP ANAHTARLARI", items: [{ id: "answer-keys", label: "Cevap Anahtarları", icon: "✦" }] },
   { title: "ÖĞRENCİLER", items: [{ id: "students", label: "Öğrenciler", icon: "♙" }] },
-  { title: "ARAÇLAR", items: [{ id: "calendar", label: "Takvim", icon: "▦" }, { id: "break", label: "Mola", icon: "☕" }, { id: "rebuilder", label: "Sınav Listesi", icon: "▤" }, { id: "pdf-tools", label: "PDF / Excel", icon: "▧" }] },
+  { title: "ARAÇLAR", items: [{ id: "calendar", label: "Takvim", icon: "▦" }, { id: "bird", label: "K ile Uçma Zamanı", icon: "↗" }, { id: "snake", label: "Kıvrıla Kıvrıla K", icon: "〰" }, { id: "rebuilder", label: "Sınav Listesi", icon: "▤" }, { id: "pdf-tools", label: "PDF Düzenleyici", icon: "▧" }] },
   { title: "SİSTEM KULLANICILARI", items: [{ id: "system-users", label: "Üye Kayıtları", icon: "♙" }] },
-  { title: "YÖNETİM", items: [{ id: "contact-inbox", label: "Gelen Kutusu", icon: "✉" }, { id: "audit-logs", label: "İşlem Kayıtları", icon: "≡" }] },
+  { title: "YÖNETİM", items: [{ id: "contact-inbox", label: "Gelen Kutusu", icon: "✉" }, { id: "audit-logs", label: "İşlem Kayıtları", icon: "≡" }, { id: "exam-schedule", label: "Sınav Takvimi", icon: "▦" }] },
   { title: "HESAP", items: [{ id: "account", label: "Hesap Ayarları", icon: "⚙" }] },
 ];
 
@@ -182,13 +187,14 @@ export default function PanelPage() {
   }
 
   if (!authorized) return <main className="panel-loading">Oturum kontrol ediliyor...</main>;
+  if (authUser?.mustChangePassword) return <PasswordSetup token={authToken} onComplete={(token, user) => { setAuthToken(token); setAuthUser(user); }} />;
   const activePage = pages[section];
 
   return (
     <main className="dashboard">
       <aside className={`sidebar ${menuOpen ? "sidebar-open" : ""}`}>
         <Link className="brand sidebar-brand" href="/panel"><span className="brand-mark">K</span><span>kurumsal<span className="brand-light">sinav.com</span></span></Link>
-        <button className="sidebar-profile profile-link" onClick={() => setSection("account")}><span className="profile-avatar">{profile.firstName.slice(0, 1).toUpperCase() || "B"}</span><span><strong>{profile.firstName} {profile.lastName}</strong><small>{authUser?.role === "SUPER_ADMIN" ? "Sistem yöneticisi" : "Bayi hesabı"}</small></span><span className="online-dot" /></button>
+        <button className="sidebar-profile profile-link" onClick={() => setSection("account")}><span className="profile-avatar">{profile.firstName.slice(0, 1).toUpperCase() || "B"}</span><span><strong>{authUser?.role === "SUPER_ADMIN" ? "Yönetici hesabı" : `${profile.firstName} ${profile.lastName}`}</strong><small>Hesap ayarlarını aç ↗</small></span><span className="online-dot" /></button>
         <nav className="side-nav" aria-label="Yönetim menüsü">
           {groups.filter((group) => !["SİSTEM KULLANICILARI", "YÖNETİM"].includes(group.title) || authUser?.role === "SUPER_ADMIN").map((group) => {
             const items = group.items.filter((item) =>
@@ -205,13 +211,12 @@ export default function PanelPage() {
         <div className="sidebar-bottom"><div className="support-box"><span>?</span><p><strong>Yardıma mı ihtiyacınız var?</strong><small>Destek ekibimize ulaşın.</small></p><Link href="/contact#contact-form">→</Link></div><button className="logout-button" onClick={logout}><span>↪</span> Güvenli çıkış yap</button></div>
       </aside>
       <section className="dashboard-main">
-        <header className="dashboard-header"><button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç">☰</button><div className="breadcrumbs">Yönetim Paneli <span>/</span> <strong>{activePage.title}</strong></div><div className="dashboard-actions"><ThemeToggle /><button className="notification-button" aria-label="Bildirimler">♧<i /></button><button className="header-avatar profile-avatar-button" aria-label="Hesap ayarlarını aç" onClick={() => setSection("account")}>{profile.firstName.slice(0, 1).toUpperCase() || "B"}</button><button className="header-logout" onClick={logout}>Çıkış Yap <span>↪</span></button></div></header>
+        <header className="dashboard-header"><button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç">☰</button><div className="breadcrumbs">Yönetim Paneli <span>/</span> <strong>{activePage.title}</strong></div><div className="dashboard-actions"><ThemeToggle /><button className="header-avatar profile-avatar-button" aria-label="Hesap ayarlarını aç" onClick={() => setSection("account")}>{profile.firstName.slice(0, 1).toUpperCase() || "B"}</button><button className="header-logout" onClick={logout}>Çıkış Yap <span>↪</span></button></div></header>
         <div className="dashboard-content">
-          <div className="welcome-strip"><div><span className="welcome-emoji">✦</span><span><strong>Hoş geldiniz, {profile.firstName}</strong><small>Sınav süreçlerinizi buradan yönetebilirsiniz.</small></span></div><span className="today-date">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "long" }).format(new Date())}</span></div>
-          <MotivationBanner />
-          <div className="page-title"><div><p className="hero-tag">{activePage.eyebrow}</p><h1>{activePage.title}</h1><p>{activePage.description}</p></div>{!["account", "calendar", "break", "rebuilder", "pdf-tools", "system-users", "contact-inbox", "audit-logs", "publishers", "publisher-requests", "answer-keys"].includes(section) && <button className="button button-navy" onClick={() => document.getElementById("main-action")?.click()}><span>＋</span> {activePage.action}</button>}</div>
+          <MotivationBanner firstName={profile.firstName} />
+          <div className="page-title"><div><p className="hero-tag">{activePage.eyebrow}</p><h1>{activePage.title}</h1><p>{activePage.description}</p></div>{!["account", "calendar", "bird", "snake", "exam-schedule", "rebuilder", "pdf-tools", "system-users", "contact-inbox", "audit-logs", "publishers", "publisher-requests", "answer-keys"].includes(section) && <button className="button button-navy" onClick={() => document.getElementById("main-action")?.click()}><span>＋</span> {activePage.action}</button>}</div>
           {logoutNotice && <div className="logout-toast" role="status">{logoutNotice}</div>}
-          {section === "contact-inbox" && authUser?.role === "SUPER_ADMIN" ? <ContactInbox token={authToken} /> : section === "audit-logs" && authUser?.role === "SUPER_ADMIN" ? <AuditLogManagement token={authToken} /> : section === "account" ? <section className="account-card">
+          {section === "exam-schedule" && authUser?.role === "SUPER_ADMIN" ? <ScheduleManagement token={authToken} /> : section === "contact-inbox" && authUser?.role === "SUPER_ADMIN" ? <ContactInbox token={authToken} /> : section === "audit-logs" && authUser?.role === "SUPER_ADMIN" ? <AuditLogManagement token={authToken} /> : section === "account" ? <section className="account-card">
             <form className="account-form" onSubmit={saveProfile}>
               <div className="account-avatar">{profile.firstName.slice(0, 1).toUpperCase() || "B"}</div>
               <div className="account-fields">
@@ -223,7 +228,7 @@ export default function PanelPage() {
                 {profileNotice && <p className="profile-notice" role="status">{profileNotice}</p>}
               </div>
             </form>
-          </section> : section === "calendar" ? <Calendar /> : section === "break" ? <BreakGame /> : section === "rebuilder" ? <iframe ref={rebuilderFrame} className="tool-frame rebuilder-frame" src="/rebuilder.html" title="Sınav Listesi Düzenleyici" sandbox="allow-scripts allow-downloads allow-popups allow-modals" referrerPolicy="no-referrer" /> : section === "pdf-tools" ? <iframe ref={pdfToolsFrame} className="tool-frame pdf-tools-frame" src="/araclar/pdf-tools.html" title="PDF ve Excel Araçları" sandbox="allow-scripts allow-downloads" referrerPolicy="no-referrer" /> : section === "system-users" && authUser?.role === "SUPER_ADMIN" ? <RegistrationRequests token={authToken} /> : section === "publishers" || section === "publisher-requests" ? <PublisherManagement token={authToken} role={authUser?.role ?? "DEALER"} /> : section === "answer-keys" ? <AnswerKeyManagement token={authToken} readOnly={authUser?.role !== "SUPER_ADMIN"} /> : ["school-add", "school-edit", "school-delete"].includes(section) && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <SchoolManagement token={authToken} role={authUser.role} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ExamManagement token={authToken} /> : <section className="dashboard-empty">
+          </section> : section === "calendar" ? <Calendar /> : section === "bird" || section === "snake" ? <BreakGame key={section} initialMode={section === "bird" ? "bird" : "snake"} /> : section === "rebuilder" ? <iframe ref={rebuilderFrame} className="tool-frame rebuilder-frame" src="/rebuilder.html" title="Sınav Listesi Düzenleyici" sandbox="allow-scripts allow-downloads allow-popups allow-modals" referrerPolicy="no-referrer" /> : section === "pdf-tools" ? <PdfEditor /> : section === "system-users" && authUser?.role === "SUPER_ADMIN" ? <RegistrationRequests token={authToken} /> : section === "publishers" || section === "publisher-requests" ? <PublisherManagement token={authToken} role={authUser?.role ?? "DEALER"} /> : section === "answer-keys" ? <AnswerKeyManagement token={authToken} readOnly={authUser?.role !== "SUPER_ADMIN"} /> : ["school-add", "school-edit", "school-delete"].includes(section) && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <SchoolManagement token={authToken} role={authUser.role} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ExamManagement token={authToken} /> : <section className="dashboard-empty">
             <div className="empty-art"><div className="empty-paper"><span className="empty-paper-mark">K</span><i /><i /><i /><div className="empty-bubbles"><b /><b /><b /><b /></div></div><span className="empty-spark">✳</span><span className="empty-orbit" /></div>
             <h2>{section === "exam" ? "İlk sınavınızı yükleyin" : `${activePage.title} işlemlerine başlayın`}</h2>
             <p>{section === "exam" ? "Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın." : activePage.description}</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import BulkAnswerKeys from "./bulk-answer-keys";
 import { API_URL } from "../../lib/api";
 import PublisherSelect from "./publisher-select";
 
@@ -23,6 +24,8 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [records, setRecords] = useState<AnswerKeyRecord[]>([]);
   const [query, setQuery] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState<AnswerKeyRecord | null>(null);
@@ -159,7 +162,9 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       {notice && <p className="notice success" role="status">{notice}</p>}
       {error && <p className="notice error" role="alert">{error}</p>}
 
-      {!readOnly && (
+      {!readOnly && <div className="answer-add-tabs"><button className={`button ${!bulkMode ? "button-navy" : "button-quiet"}`} disabled={bulkBusy} onClick={() => setBulkMode(false)}>Cevap anahtarı ekle</button><button className={`button ${bulkMode ? "button-navy" : "button-quiet"}`} disabled={bulkBusy} onClick={() => setBulkMode(true)}>Toplu ekle</button></div>}
+      {!readOnly && bulkMode && <BulkAnswerKeys token={token} publishers={publishers} onComplete={() => void loadData()} onBusyChange={setBulkBusy} />}
+      {!readOnly && !bulkMode && (
         <form className="answer-key-form" onSubmit={handleSubmit}>
           <div className="two-column-fields">
             <label className="publisher-select-field">
@@ -224,7 +229,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                     <span className="badge">{item.grade}. Sınıf</span>
                     <span className="status-dot">{item.published ? "Yayında" : "Taslak"}</span>
                   </div>
-                  <h4>{item.examName}</h4>
+                  <h4>{item.examName}</h4>{!readOnly && <small className="publication-id">Takvim eşleştirme ID: <code>{item.id}</code></small>}
                   <p>{item.publisher.name}</p>
                   <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
                   {!readOnly && editing?.id === item.id && (
@@ -254,10 +259,10 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                   <div className="download-actions">
                     {answerFile && (readOnly
                       ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>
-                      : <button type="button" className="button button-quiet" onClick={() => void downloadFile(answerFile)}>Cevap Anahtarını İncele</button>)}
+                      : <button type="button" className="button button-quiet" onClick={() => void downloadFile(answerFile, item)}>Cevap Anahtarını İncele</button>)}
                     {outcomesFile && (readOnly
                       ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${outcomesFile.id}`} target="_blank" rel="noreferrer">Kazanımı İndir</a>
-                      : <button type="button" className="button button-quiet" onClick={() => void downloadFile(outcomesFile)}>Kazanımı İncele</button>)}
+                      : <button type="button" className="button button-quiet" onClick={() => void downloadFile(outcomesFile, item)}>Kazanımı İncele</button>)}
                     {!readOnly && <>
                       <button type="button" className="button button-quiet" onClick={() => setEditing(item)}>Düzenle</button>
                       <button type="button" className="button button-quiet" onClick={() => void setPublished(item, !item.published)}>{item.published ? "Yayından kaldır" : "Yeniden yayımla"}</button>
@@ -305,7 +310,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
     await saveRecord(item.id, formData);
   }
 
-  async function downloadFile(file: AnswerKeyFile) {
+  async function downloadFile(file: AnswerKeyFile, item: AnswerKeyRecord) {
     setError("");
     try {
       const response = await fetch(`${API_URL}/api/admin/answer-key-files/${encodeURIComponent(file.id)}`, {
@@ -318,9 +323,11 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
       link.href = url;
-      link.download = file.originalFileName;
+      const extension = file.originalFileName.match(/\.[^.]+$/)?.[0]?.toLowerCase() ?? "";
+      const title = `${item.publisher.name} ${item.grade}. Sınıf ${item.examName} ${file.category === "ANSWER_KEY" ? "Cevap Anahtarı" : "Kazanımlar"}`;
+      link.download = title.replace(/[\\/:*?"<>|\x00-\x1f]/g, "-").slice(0, 180).trim() + extension;
       link.click();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (downloadError) {
       setError(downloadError instanceof Error ? downloadError.message : "Dosya indirilemedi.");
     }

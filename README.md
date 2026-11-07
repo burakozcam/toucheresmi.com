@@ -35,7 +35,25 @@ Web tarafında sürüm `apps/web/config/site.ts` üzerinden yönetilir. Yayımla
 
 ## v1.0.3 geliştirmeleri
 
-### Arayüz ve herkese açık değerlendirme
+### Yönetici hesapları, takvim ve değerlendirme şablonu v2
+
+Yönetici **Üyeler → Kullanıcı ekle** üzerinden bayi hesabı açabilir. Geçici şifre yalnızca oluşturma yanıtında gösterilir; veritabanında bcrypt özeti tutulur. `mustChangePassword` işaretli kullanıcılar yalnızca hesap bilgisini okuyabilir ve `/api/account/password` üzerinden kendi şifresini belirleyebilir. Diğer korunan API uçları bu işlem bitene kadar 403 döner. Yeni şifre belirlenince önceki token geçersiz olur ve yeni oturum verilir.
+
+`/sinav-takvimi`, sınıf (1–12 / TYT / AYT) ve ay filtreli herkese açık takvimdir. Aynı güne birden fazla yayınevi sınavı eklenebilir; gün kutusunda ilk dört sınav ve tümünü açan bağlantı bulunur. Kapsam ve eşleşen yayımlanmış cevap anahtarı detay sayfasındadır. Yönetici panelinde açılır sınıf/yayınevi listeleri içeren Excel şablonu, yükleme önizlemesi, tek kayıt ekleme/düzenleme ve toplu silme bulunur. Excel yeni kayıt ekler; aynı yayınevi/sınıf/deneme/tarih tekrarları transaction ile reddedilir. Yayınevi sistemde önceden bulunmalıdır. Excel'de tarih sütunu metin biçimindedir: YYYY-AA-GG.
+
+**Bu özellikler için `20261108000000_account_setup_exam_schedule` migration'ı gerekir.** Mevcut kullanıcılara `mustChangePassword=false` eklenir; mevcut kayıtlar silinmez. Yeni takvim tablosu eklenir. API'nin yeni sürümü yayımlanmadan önce yedek, gerçek migration geçmişi ve SQL incelenerek migration uygulanmalıdır; bu çalışma canlı migration çalıştırmaz. Önceden bildirilmiş başarısız migration konusu için aşağıdaki dağıtım uyarıları geçerlidir.
+
+Değerlendirme şablonu v2'de öğrenci cevapları ders başına tek hücrede yazılır (örn. 8 soru: `ABCD--EA`; boş soru `-`). Eski soru-sütunlu v1 şablonlar da okunur. İsteğe bağlı Kazanım Kodu / Kazanım Adı sütunları Cevap Anahtarı sayfasına eklenir. Karne; 100/500 yerel ölçek, renkli/siyah beyaz çıktı, ders grafikleri, dosyadaki okul/şube sırası, kazanım analizi ve isteğe bağlı soru bazında aynı okulun diğer öğrencilerinin doğru oranını içerir. Karşılaştırmaya yalnızca aynı dosyadaki aynı okul öğrencileri dahildir; Türkiye geneli karşılaştırma yapılmaz. İptal sorular puandan ve soru oranlarından çıkarılır.
+
+LGS ve YKS soru sayıları/ağırlıkları 2026 MEB/ÖSYM kılavuzlarından `apps/web/config/exam-presets.ts` içine kaynaklarıyla eklenmiştir. TYT %33/%17/%33/%17; AYT SAY/EA/SÖZ alanları ve tüm 160 soruluk kitapçık için ayrı seçenekler vardır. YKS yüzdeleri yerel net hesabında soru sayısına bölünür. Resmî puanlar standart puan ve yıllık sınav istatistikleri gerektirdiğinden burada üretilmez. 500 ölçeği resmî LGS/YKS puanı değildir. Yeni kılavuz çıktığında kaynaklar ve yapılandırma güncellenmelidir.
+
+Cevap Anahtarları'nda **Toplu ekle**, en fazla 100 dosyayı ayrı sınav satırları olarak hazırlar; her satırın yayınevi/sınıf/adı düzenlenebilir ve kazanım dosyası eşlenebilir. Yüklemeler sırayla ve ayrı işlemlerle yapılır; başarılı satırlar tekrar gönderilmez. Bağlantı hatası sonrası tekrar denemeden önce kayıt listesini kontrol edin. Dosyalar hem herkese açık hem yönetici indirmelerinde yayın adı/yayınevi/sınıf ve dosya türüne göre yeniden adlandırılır.
+
+**K ile Uçma Zamanı** ve **Kıvrıla Kıvrıla K** ayrı menü öğeleridir. Karşılama ile özlü sözler tek kutudadır; 50 farklı kaynaklı söz arasında ileri/geri gidilir. Yabancı eserlerden kısa alıntılar Türkçe çeviri olarak işaretlidir. Bildirim lambası kaldırılmış, menü yatay taşması ve yayınevi durum hizaları düzenlenmiştir.
+
+`/pdf-duzenleyici`, mevcut araçların yanında kamera/dosya ile belge tarama sunar. Kamera yalnızca kullanıcı isteğiyle ve HTTPS/localhost ortamında izin verilirse açılır; kapanışta medya izleri durdurulur. Tarama; siyah beyaz, gri veya renkli görünüm, kontrast/eşik, 90° dönüş ve kenar kırpma içerir. PDF/PNG/JPG/JPEG/WebP çıktıları desteklenir; çoklu görseller ZIP olur. OCR ve perspektif düzeltme yapılmaz. PDF'den görsele dönüşüm ve görseller arası dönüşümde PNG/JPEG/WebP seçilebilir. `/verilerinizin-guvenligi` gerçek uygulama önlemlerini, dış kaynakları ve sertifika doğrulama sınırlarını açıklar; bağımsız güvenlik sertifikası iddiası içermez.
+
+### Önceki arayüz geliştirmeleri
 
 - `/sinav-degerlendir`: Düzenlenebilir ders/soru/katsayılarla Excel şablonu indirme; doldurulmuş XLSX dosyasını doğrulama; öğrenci, toplu karne ve okul/şube listeleri. En fazla 500 öğrenci, 300 soru ve 10 MB desteklenir. Dosyalar tarayıcıda işlenir; öğrenci verisi API'ye gönderilmez. PDF çıktısı yazdırma penceresindeki **PDF olarak kaydet** seçeneğiyle alınır. İptal sorular hesap dışıdır. Katsayılı net resmî LGS/YKS puanı değildir.
 - Cevap anahtarları dizini sunucuda oluşturulur; yayınlar ilk HTML'de, sayfalama bağlantıları ve CollectionPage/ItemList verisiyle sunulur. Filtreli sayfalar yinelenen indeksleri önlemek için noindex/follow kullanır. Yeni değerlendirme sayfası site haritasına eklenmiştir.

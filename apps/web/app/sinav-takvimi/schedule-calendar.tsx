@@ -1,0 +1,25 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { API_URL } from "../../lib/api";
+import { SCHEDULE_LEVELS, scheduleTitle } from "../../lib/schedule";
+import type { ScheduleEntry } from "../../lib/schedule";
+const currentMonth = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Istanbul", year: "numeric", month: "2-digit" }).format(new Date());
+export default function ScheduleCalendar() {
+  const [month, setMonth] = useState(currentMonth), [level, setLevel] = useState("8"), [items, setItems] = useState<ScheduleEntry[]>([]);
+  const [loading, setLoading] = useState(true), [error, setError] = useState(""), [day, setDay] = useState(""), [view, setView] = useState("calendar");
+  useEffect(() => { if (day) document.querySelector(".calendar-agenda")?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [day]);
+  useEffect(() => {
+    const controller = new AbortController(); setLoading(true); setError(""); setDay("");
+    void fetch(`${API_URL}/api/exam-schedule?${new URLSearchParams({ month, ...(level ? { level } : {}) })}`, { signal: controller.signal }).then(async (r) => { const d = await r.json(); if (!r.ok || !Array.isArray(d)) throw new Error(d.error ?? "Takvim yüklenemedi."); if (!controller.signal.aborted) setItems(d); }).catch((e) => { if (!controller.signal.aborted) { setError(e instanceof Error ? e.message : "Takvim yüklenemedi."); setItems([]); } }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [month, level]);
+  const [year, index] = month.split("-").map(Number); const first = new Date(Date.UTC(year, index - 1, 1)); const offset = (first.getUTCDay() + 6) % 7; const count = new Date(Date.UTC(year, index, 0)).getUTCDate();
+  const groups = new Map<string, ScheduleEntry[]>(); items.forEach((i) => { const d = i.examDate.slice(0, 10); groups.set(d, [...groups.get(d) ?? [], i]); });
+  function move(delta: number) { const d = new Date(Date.UTC(year, index - 1 + delta, 1)); setMonth(d.toISOString().slice(0, 7)); }
+  const title = new Intl.DateTimeFormat("tr-TR", { month: "long", year: "numeric", timeZone: "UTC" }).format(first);
+  const list = day ? items.filter((i) => i.examDate.startsWith(day)) : items;
+  return <section className="calendar-workspace"><div className="calendar-toolbar"><label>Sınıf / sınav<select value={level} onChange={(e) => setLevel(e.target.value)}><option value="">Tüm sınıflar</option>{SCHEDULE_LEVELS.map((l) => <option key={l} value={l}>{/^\d+$/.test(l) ? `${l}. Sınıf` : l}</option>)}</select></label><div className="calendar-month-controls"><button aria-label="Önceki ay" className="button button-quiet" onClick={() => move(-1)}>←</button><h2>{title}</h2><button aria-label="Sonraki ay" className="button button-quiet" onClick={() => move(1)}>→</button><button className="button button-quiet" onClick={() => setMonth(currentMonth())}>Bu ay</button></div><div className="game-tabs"><button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}>Takvim</button><button className={view === "list" ? "active" : ""} onClick={() => setView("list")}>Liste</button></div></div>{error && <p className="notice error" role="alert">{error}</p>}<p className="field-help" aria-live="polite">{loading ? "Takvim yükleniyor..." : `${items.length} sınav · ${new Set(items.map((i) => i.publisherId)).size} yayınevi`}</p>
+    {view === "calendar" && <div className="calendar-grid-scroll"><div className="public-month-grid">{["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"].map((d) => <div className="calendar-weekday" key={d}>{d}</div>)}{Array.from({ length: Math.ceil((offset + count) / 7) * 7 }, (_, i) => { const n = i - offset + 1; const date = `${month}-${String(n).padStart(2, "0")}`; const exams = groups.get(date) ?? []; return <div key={i} className={`public-calendar-day ${n < 1 || n > count ? "outside-month" : ""}`}>{n >= 1 && n <= count && <><strong>{n}</strong>{exams.slice(0, 4).map((exam) => <Link className="calendar-exam-chip" href={`/sinav-takvimi/${exam.id}`} key={exam.id}>{scheduleTitle(exam)}</Link>)}{exams.length > 4 && <button className="calendar-more" onClick={() => setDay(date)}>+{exams.length - 4} sınavın tümünü gör</button>}</>}</div>; })}</div></div>}
+    {(view === "list" || day) && <div className="calendar-agenda">{day && <div className="list-header-row"><h3>{day} · Tüm sınavlar</h3><button className="button button-quiet" onClick={() => setDay("")}>Kapat ×</button></div>}{list.map((exam) => <Link className="calendar-agenda-item" key={exam.id} href={`/sinav-takvimi/${exam.id}`}><time>{new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(exam.examDate))}</time><strong>{scheduleTitle(exam)}</strong><span>Detayları gör →</span></Link>)}</div>}{!loading && !items.length && !error && <p className="empty-state">Bu ay ve sınıf için yayımlanmış sınav bulunmuyor. Başka bir ay veya sınıf seçebilirsiniz.</p>}</section>;
+}
