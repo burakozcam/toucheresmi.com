@@ -6,3 +6,12 @@ import "./features-v2.test";
 
 import "./v105.test";
 import "./api-v105.test";
+import "./optical.test";
+import "./unified-catalog.test";
+import "./reader-portal.test";
+import "./txt-converter.test";
+import "./8050.test";
+import "./optical-workflow.test";
+import "./optical-admin.test";
+import "./formats-v111.test";
+import "./critical-v111.test";

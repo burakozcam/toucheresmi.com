@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import BulkAnswerKeys from "./bulk-answer-keys";
 import { API_URL } from "../../lib/api";
+import AnswerArchiveFileInput from "./answer-archive-file-input";
+import AnswerKeyFileInput from "./answer-key-file-input";
 import PublisherSelect from "./publisher-select";
 
 type Publisher = { id: string; name: string; active: boolean };
@@ -14,6 +16,8 @@ type AnswerKeyRecord = {
   grade: number;
   examName: string;
   published: boolean;
+  showInEvaluation: boolean;
+  opticalKey?: { id: string; penalty: number; active: boolean } | null;
   createdAt: string;
   publishedAt: string;
   publisher: Publisher;
@@ -24,6 +28,9 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [records, setRecords] = useState<AnswerKeyRecord[]>([]);
   const [query, setQuery] = useState("");
+  const [targetPublicationId,setTargetPublicationId]=useState("");
+  const [answerFileKey,setAnswerFileKey]=useState("");
+  const [uploadReset,setUploadReset]=useState(0);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,7 +38,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   const [editing, setEditing] = useState<AnswerKeyRecord | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ publisherId: "", grade: "8", examName: "", published: true, publishedAt: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState({ publisherId: "", grade: "8", examName: "", published: true, showInEvaluation: false, penalty: 3, publishedAt: new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Istanbul"}).format(new Date()) });
 
   const filteredRecords = useMemo(() => {
     const value = query.trim().toLocaleLowerCase("tr-TR");
@@ -95,7 +102,11 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       setError("Etkin bir yayınevi seçmelisiniz.");
       return;
     }
-    const formData = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const formData = new FormData(formElement);
+    formData.set("published", String(form.published));
+    formData.set("showInEvaluation", String(form.showInEvaluation));
+    formData.set("penalty", String(form.penalty));
     const inputFiles = formData.getAll("answerKeyFile") as File[];
     const outcomeFiles = formData.getAll("learningOutcomesFile") as File[];
 
@@ -106,8 +117,8 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
 
     setSubmitting(true);
     try {
-      const response = await fetch(`${API_URL}/api/admin/answer-keys`, {
-        method: "POST",
+      const response = await fetch(`${API_URL}/api/admin/answer-keys${targetPublicationId?`/${encodeURIComponent(targetPublicationId)}`:""}`, {
+        method: targetPublicationId?"PATCH":"POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
@@ -119,8 +130,8 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       }
 
       setNotice(result.message ?? "Cevap anahtarı kaydedildi.");
-      event.currentTarget.reset();
-      setForm({ publisherId: publishers.find((publisher) => publisher.active)?.id ?? "", grade: "8", examName: "", published: true, publishedAt: new Date().toISOString().slice(0, 10) });
+      formElement.reset();setTargetPublicationId("");setUploadReset(value=>value+1);
+      setForm({ publisherId: publishers.find((publisher) => publisher.active)?.id ?? "", grade: "8", examName: "", published: true, showInEvaluation: false, penalty: 3, publishedAt: new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Istanbul"}).format(new Date()) });
       await loadData();
     } catch {
       setError("Dosya yükleme sırasında hata oluştu.");
@@ -166,6 +177,8 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       {!readOnly && bulkMode && <BulkAnswerKeys token={token} publishers={publishers} onComplete={() => void loadData()} onBusyChange={setBulkBusy} />}
       {!readOnly && !bulkMode && (
         <form className="answer-key-form" onSubmit={handleSubmit}>
+          <label>Sınav kaydı<select aria-label="Cevap anahtarının sınav kaydı" value={targetPublicationId} disabled={submitting} onChange={e=>{const id=e.target.value;setTargetPublicationId(id);const item=records.find(r=>r.id===id);if(item)setForm({publisherId:item.publisherId,grade:String(item.grade),examName:item.examName,published:item.published,showInEvaluation:item.showInEvaluation,penalty:item.opticalKey?.penalty??3,publishedAt:item.publishedAt.slice(0,10)});}}><option value="">Yeni sınav kaydı oluştur</option>{records.map(item=><option key={item.id} value={item.id}>{item.publisher.name} · {item.grade}. Sınıf · {item.examName}</option>)}</select></label>
+          {targetPublicationId&&<p className="notice">Mevcut sınav güncellenecek; yeni mükerrer sınav oluşturulmayacak. Önceki sonuç kopyaları korunur.</p>}
           <div className="two-column-fields">
             <label className="publisher-select-field">
               Yayınevi
@@ -189,18 +202,15 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
 
           <label className="checkbox-row">
             <input type="checkbox" name="published" checked={form.published} onChange={(event) => setForm((current) => ({ ...current, published: event.target.checked }))} />
-            Yayımlansın
+            ANA SAYFA CEVAP ANAHTARLARI SİSTEMİNDE GÖSTER
           </label>
 
+          <label className="checkbox-row"><input type="checkbox" name="showInEvaluation" checked={form.showInEvaluation} onChange={e=>setForm({...form,showInEvaluation:e.target.checked})}/>ÖLÇME DEĞERLENDİRME SİSTEMİNDE GÖSTER</label>
+          <label>Değerlendirme kuralı<select name="penalty" value={form.penalty} onChange={e=>setForm({...form,penalty:Number(e.target.value)})}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
+          <p className="field-help">Değerlendirmede görünmesi için cevap anahtarı ve kazanım dosyası yükleyin. F / Fernus veya O / Okulizyon seçerseniz tek kazanım Excel’i yeterlidir; cevap anahtarı da aynı dosyadan oluşturulur. Diğer biçimlerde cevap ve kazanım dosyalarını ayrı ekleyin.</p>
           <div className="file-upload-grid">
-            <label>
-              Cevap Anahtarı
-              <input type="file" name="answerKeyFile" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.webp" />
-            </label>
-            <label>
-              Kazanım dosyası
-              <input type="file" name="learningOutcomesFile" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.webp" />
-            </label>
+            <AnswerArchiveFileInput key={`answer-${uploadReset}`} label="Cevap Anahtarı" disabled={submitting} onChange={setAnswerFileKey}/>
+            <AnswerKeyFileInput key={uploadReset} disabled={submitting} reviewContext={targetPublicationId+JSON.stringify(form)+answerFileKey} onFormatChange={format=>{if(format==="f"||format==="o")setForm(current=>({...current,showInEvaluation:true}));}} onExamName={examName=>setForm(current=>current.examName.trim()?current:{...current,examName})}/>
           </div>
 
           <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Yükleniyor..." : "Cevap anahtarı ekle"}</button>
@@ -227,7 +237,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                 <article className="answer-key-card" key={item.id}>
                   <div className="answer-key-header">
                     <span className="badge">{item.grade}. Sınıf</span>
-                    <span className="status-dot">{item.published ? "Yayında" : "Taslak"}</span>
+                    <span className="status-dot">Ana sayfa: {item.published ? "Görünür" : "Gizli"} · Değerlendirme: {item.showInEvaluation ? "Görünür" : "Gizli"}</span>
                   </div>
                   <h4>{item.examName}</h4>{!readOnly && <small className="publication-id">Takvim eşleştirme ID: <code>{item.id}</code></small>}
                   <p>{item.publisher.name}</p>
@@ -236,6 +246,8 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                     <form className="answer-key-edit-form" onSubmit={(event) => {
                       event.preventDefault();
                       const formData = new FormData(event.currentTarget);
+                      formData.set("published", String(editing.published));
+                      formData.set("showInEvaluation", String(editing.showInEvaluation));
                       void saveRecord(item.id, formData);
                     }}>
                       <input type="hidden" name="publisherId" value={editing.publisherId} />
@@ -245,10 +257,12 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                         <label>Yayın tarihi<input type="date" name="publishedAt" value={editing.publishedAt.slice(0, 10)} onChange={(event) => setEditing({ ...editing, publishedAt: event.target.value })} required /></label>
                       </div>
                       <label>Sınav / deneme adı<input name="examName" value={editing.examName} onChange={(event) => setEditing({ ...editing, examName: event.target.value })} required maxLength={180} /></label>
-                      <label className="checkbox-row"><input type="checkbox" name="published" checked={editing.published} onChange={(event) => setEditing({ ...editing, published: event.target.checked })} />Yayımlansın</label>
+                      <label className="checkbox-row"><input type="checkbox" name="published" checked={editing.published} onChange={(event) => setEditing({ ...editing, published: event.target.checked })} />ANA SAYFA CEVAP ANAHTARLARI SİSTEMİNDE GÖSTER</label>
+                      <label className="checkbox-row"><input type="checkbox" name="showInEvaluation" checked={editing.showInEvaluation??false} onChange={e=>setEditing({...editing,showInEvaluation:e.target.checked})}/>ÖLÇME DEĞERLENDİRME SİSTEMİNDE GÖSTER</label>
+                      <label>Değerlendirme kuralı<select name="penalty" defaultValue={editing.opticalKey?.penalty??3}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
                       <div className="file-upload-grid">
-                        <label>Yeni cevap anahtarı dosyası<input type="file" name="answerKeyFile" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.webp" /></label>
-                        <label>Yeni kazanım dosyası<input type="file" name="learningOutcomesFile" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.webp" /></label>
+                        <AnswerArchiveFileInput label="Yeni cevap anahtarı dosyası" disabled={submitting} onChange={setAnswerFileKey}/>
+                        <AnswerKeyFileInput label="Yeni kazanım dosyası" disabled={submitting} reviewContext={JSON.stringify(editing)+answerFileKey}/>
                       </div>
                       <div className="download-actions">
                         <button className="button button-navy" type="submit">Değişiklikleri kaydet</button>
@@ -305,7 +319,9 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
     formData.set("publisherId", item.publisherId);
     formData.set("grade", String(item.grade));
     formData.set("examName", item.examName);
-    formData.set("published", String(published));
+    formData.set("published", String(published));formData.set("confirmPublication","true");
+    formData.set("showInEvaluation", String(item.showInEvaluation??false));
+    formData.set("penalty", String(item.opticalKey?.penalty??3));
     formData.set("publishedAt", item.publishedAt.slice(0, 10));
     await saveRecord(item.id, formData);
   }

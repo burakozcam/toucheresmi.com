@@ -14,10 +14,15 @@ import { AuthenticatedRequest, credentialVersion, requireAuth, requireRole } fro
 import { RequestLimiter } from "./rate-limit";
 import { prisma } from "./db";
 import { scheduleRouter } from "./schedule";
+import { opticalRouter } from "./optical-routes";
+import { reviewImportedQuestions } from "./answer-import-review";
+import { prepareEvaluation } from "./optical-catalog";
+import { readerRouter } from "./reader-routes";
 
 export const app = express();
 app.use(cors({ origin: env.WEB_ORIGIN }));
 app.use("/api/admin/exam-schedule", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "20mb" }));
+app.use("/api/optical/templates/bulk", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use(express.json({ limit: "1mb" }));
 
 const recentContactSubmissions = new Map<string, number>();
@@ -57,6 +62,8 @@ async function recordAudit(
 app.use((request: AuthenticatedRequest, response, next) => {
   const method = request.method.toUpperCase();
   const isAuditedResource = request.path.startsWith("/api/admin/")
+    || request.path.startsWith("/api/optical/")
+    || request.path.startsWith("/api/reader-accounts") || request.path.startsWith("/api/reader-access/")
     || ["/api/exams", "/api/schools", "/api/publisher-requests"].some((prefix) =>
       request.path === prefix || request.path.startsWith(`${prefix}/`)
     );
@@ -65,7 +72,8 @@ app.use((request: AuthenticatedRequest, response, next) => {
     return;
   }
   response.on("finish", () => {
-    if (response.statusCode < 200 || response.statusCode >= 300 || request.user?.role !== Role.SUPER_ADMIN) return;
+    const readerChange = request.path.startsWith("/api/reader-") || request.path.includes("/publication");
+    if (response.statusCode < 200 || response.statusCode >= 300 || !(request.user?.role === Role.SUPER_ADMIN || readerChange && request.user?.role === Role.DEALER)) return;
     const route = request.route?.path;
     const routePath = typeof route === "string" ? route : request.path;
     const segments = routePath.split("/").filter(Boolean);
@@ -193,14 +201,22 @@ const publisherDecisionSchema = z.object({
 });
 
 const answerKeyUploadBodySchema = z.object({
+  confirmPublication:z.preprocess(v=>v===true||v==="true"||v==="on",z.boolean()),
+  confirmImport:z.preprocess(v=>v===true||v==="true"||v==="on",z.boolean()),
+  reviewedQuestions:z.string().max(1000000).optional(),
+  sourceChecksum:z.string().max(64).optional(),
+  evaluationFormat:z.enum(["auto","f","o","standard"]).default("auto"),
+  showInEvaluation: z.preprocess(v=>v===undefined?undefined:v===true||v==="true"||v==="on"?true:v===false||v==="false"?false:v,z.boolean().optional()),
+  penalty: z.preprocess(v=>v===undefined||v===""?undefined:Number(v),z.union([z.literal(0),z.literal(3),z.literal(4)]).optional()),
   publisherId: z.string().min(1),
   grade: z.coerce.number().int().min(1).max(12),
   examName: z.string().trim().min(2).max(180),
   published: z.preprocess((value) => {
-    if (value === undefined || value === true || value === "true" || value === "on") return true;
+    if (value === undefined) return undefined;
+    if (value === true || value === "true" || value === "on") return true;
     if (value === false || value === "false") return false;
     return value;
-  }, z.boolean()),
+  }, z.boolean().optional()),
   publishedAt: z.preprocess(
     (value) => typeof value === "string" && value.trim() ? value : undefined,
     z.coerce.date().optional(),
@@ -1683,6 +1699,7 @@ app.get(
         include: {
           publisher: true,
           files: true,
+          opticalKey: { select: { id: true, penalty: true, active: true } },
           createdBy: { select: { id: true, firstName: true, lastName: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -1766,6 +1783,12 @@ app.post(
       }
       const publisher = await prisma.publisher.findFirst({ where: { id: parsed.data.publisherId, active: true }, select: { id: true } });
       if (!publisher) { response.status(404).json({ error: "Etkin yayınevi bulunamadı." }); return; }
+      if(((parsed.data.published??true)||parsed.data.showInEvaluation)&&!parsed.data.confirmPublication){response.status(400).json({error:"Önizleme ve yayın seçeneklerini açıkça onaylayın. Hiçbir kayıt yayımlanmadı."});return;}
+      let reviewed;try{reviewed=reviewImportedQuestions(uploadedFiles,parsed.data);}catch(error){response.status(400).json({error:(error as Error).message});return;}
+      let evaluation;
+      const showInEvaluation=parsed.data.showInEvaluation??false, penalty=parsed.data.penalty??3;
+      try { evaluation = reviewed??prepareEvaluation(uploadedFiles.map(f=>({category:f.fieldname==="answerKeyFile"?"ANSWER_KEY":"LEARNING_OUTCOMES",storagePath:f.path,originalFileName:f.originalname})),showInEvaluation,null,true,parsed.data.evaluationFormat); }
+      catch(error){response.status(400).json({error:error instanceof Error?error.message:"Değerlendirme anahtarı okunamadı."});return;}
       const answerKeyId = crypto.randomUUID().replace(/-/g, "");
       const files = uploadedFiles.map((file) => {
         const storedFileName = `${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`;
@@ -1780,7 +1803,9 @@ app.post(
       });
       await prisma.publishedAnswerKey.create({ data: {
         id: answerKeyId, publisherId: publisher.id, grade: parsed.data.grade,
-        examName: parsed.data.examName.trim(), published: parsed.data.published,
+        examName: parsed.data.examName.trim(), published: parsed.data.published??true,
+        showInEvaluation,
+        ...(evaluation ? {opticalKey:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:showInEvaluation}}} : {}),
         ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
         createdByUserId: request.user!.id, files: { create: files },
       } });
@@ -1827,7 +1852,7 @@ app.patch(
     try {
       const current = await prisma.publishedAnswerKey.findUnique({
         where: { id: answerKeyId },
-        include: { files: true },
+        include: { files: true, opticalKey: true },
       });
       if (!current) {
         removeTemporaryUploads();
@@ -1855,6 +1880,14 @@ app.patch(
         }
       }
 
+      if(((parsed.data.published??current.published)||(parsed.data.showInEvaluation??current.showInEvaluation))&&!parsed.data.confirmPublication){response.status(400).json({error:"Önizleme ve yayın seçeneklerini açıkça onaylayın."});return;}
+      let reviewed;try{reviewed=reviewImportedQuestions(uploadedFiles,parsed.data);}catch(error){response.status(400).json({error:(error as Error).message});return;}
+      const replacedFields = new Set(uploadedFiles.map(f=>f.fieldname==="answerKeyFile"?"ANSWER_KEY":"LEARNING_OUTCOMES"));
+      const effectiveFiles = [...current.files.filter(f=>!replacedFields.has(f.category)),...uploadedFiles.map(f=>({category:f.fieldname==="answerKeyFile"?"ANSWER_KEY":"LEARNING_OUTCOMES",storagePath:f.path,originalFileName:f.originalname}))];
+      let evaluation;
+      const showInEvaluation=parsed.data.showInEvaluation??current.showInEvaluation, penalty=parsed.data.penalty??current.opticalKey?.penalty??3;
+      try { evaluation=reviewed??prepareEvaluation(effectiveFiles,showInEvaluation,current.opticalKey?.questions,uploadedFiles.length>0,parsed.data.evaluationFormat); }
+      catch(error){response.status(400).json({error:error instanceof Error?error.message:"Değerlendirme anahtarı okunamadı."});return;}
       const replacementFiles = uploadedFiles.map((file) => {
         const extension = path.extname(file.originalname).toLowerCase().replace(".", "");
         const targetDirectory = path.join(storageRoot, "answer-keys", answerKeyId);
@@ -1889,7 +1922,9 @@ app.patch(
               publisherId: parsed.data.publisherId,
               grade: parsed.data.grade,
               examName: parsed.data.examName.trim(),
-              published: parsed.data.published,
+              published: parsed.data.published??current.published,
+              showInEvaluation,
+              ...(evaluation ? {opticalKey:{upsert:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:showInEvaluation},update:{questions:evaluation as Prisma.InputJsonValue,penalty,active:showInEvaluation}}}} : current.opticalKey ? {opticalKey:{update:{active:false}}} : {}),
               ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
             },
           });
@@ -1948,6 +1983,9 @@ app.delete(
     }
   },
 );
+
+app.use("/api/optical", opticalRouter);
+app.use("/api", readerRouter);
 
 app.use(
   (error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {

@@ -1,0 +1,4 @@
+7108      00001ORNEK     BIR       8 SAMPLE00001K B                                                                                DDCABCBCDBDDBCDCBCBBBDBADDDBDCDCBABCADCA
+7108      00001ORNEK     BIR       8 SAMPLE00001K ABCDCBCADBDAACABDBCDCBCAADBCABD          BAACADCBDB          ACADACBDCD                                                  
+7108           ORNEK     IKI       8 SAMPLE00002K BCDCBDBACDADBDACBCACBDBACDDAACD          CDBADACACB          CCDACABCCA                                                  
+7108      00002ORNEK     IKI       8 SAMPLE00002K B                                                                                DADAB BC BD  CDDB  ADBDACDABDCDCCACCADCA

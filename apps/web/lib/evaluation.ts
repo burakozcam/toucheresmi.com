@@ -112,7 +112,7 @@ export function questionCohort(data: EvaluationData, student: Candidate, context
 }
 
 export function questionState(question: Question, answer: string): QuestionState {
-  return question.answer === "X" ? "cancelled" : !answer ? "blank" : answer === question.answer ? "correct" : "wrong";
+  return question.answer === "X" ? "cancelled" : question.answer === "H" ? "correct" : !answer ? "blank" : answer === question.answer ? "correct" : "wrong";
 }
 
 export function evaluate(questions: Question[], student: Candidate, penalty: number, overrides: Record<string, number> = {}): LessonResult[] {

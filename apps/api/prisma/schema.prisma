@@ -12,6 +12,7 @@ enum Role {
   DEALER
   SCHOOL_ADMIN
   STUDENT
+  PARENT
 }
 
 enum ApplicationType {
@@ -51,6 +52,12 @@ enum AnswerKeyFileCategory {
 }
 
 model User {
+  readerManagerId String?
+  readerStudentNo String?
+  readerManager User? @relation("ReaderManager", fields: [readerManagerId], references: [id], onDelete: SetNull)
+  managedReaders User[] @relation("ReaderManager")
+  studentResultAccess StudentResultAccess[]
+  opticalResults OpticalResult[]
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
@@ -82,6 +89,7 @@ model User {
   @@index([dealerId])
   @@index([schoolId])
   @@index([role, active])
+  @@index([readerManagerId, role, createdAt])
 }
 
 model RegistrationRequest {
@@ -113,6 +121,7 @@ model Dealer {
 }
 
 model School {
+  opticalResults OpticalResult[]
   id              String   @id @default(cuid())
   dealerId        String?
   createdByUserId String?
@@ -136,6 +145,70 @@ model School {
   @@index([dealerId])
   @@index([createdByUserId, active])
   @@index([name])
+}
+
+model OpticalTemplate {
+  validation Json?
+  id String @id @default(cuid())
+  name String @unique
+  originalFmt String
+  originalBase64 String?
+  layout Json
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  results OpticalResult[]
+}
+
+model OpticalKey {
+  id String @id @default(cuid())
+  name String @unique
+  questions Json
+  penalty Int @default(3)
+  active Boolean @default(true)
+  publicationId String? @unique
+  publication PublishedAnswerKey? @relation(fields: [publicationId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  results OpticalResult[]
+}
+
+model OpticalResult {
+  id String @id @default(cuid())
+  seriesId String @default(cuid())
+  revision Int @default(1)
+  supersedesId String? @unique
+  supersedes OpticalResult? @relation("ResultRevisions", fields: [supersedesId], references: [id], onDelete: Restrict)
+  nextRevision OpticalResult? @relation("ResultRevisions")
+  uploadChecksum String?
+  reviewedAt DateTime?
+  schoolId String
+  templateId String
+  keyId String
+  createdById String
+  filename String
+  snapshot Json
+  studentPublished Boolean @default(false)
+  studentAccess StudentResultAccess[]
+  createdAt DateTime @default(now())
+  school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  template OpticalTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  key OpticalKey @relation(fields: [keyId], references: [id], onDelete: Restrict)
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  @@index([schoolId, createdAt])
+  @@unique([seriesId, revision])
+}
+
+model StudentResultAccess {
+  id String @id @default(cuid())
+  userId String
+  resultId String
+  studentNo String
+  studentName String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  result OpticalResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  @@unique([userId, resultId, studentNo])
+  @@index([userId, createdAt])
+  @@index([resultId])
 }
 
 model SchoolDuplicateAttempt {
@@ -317,6 +390,8 @@ model PublishedAnswerKey {
   grade           Int
   examName        String
   published       Boolean  @default(true)
+  showInEvaluation Boolean @default(false)
+  opticalKey OpticalKey?
   publishedAt     DateTime @default(now())
   createdByUserId String
   createdAt       DateTime @default(now())

@@ -1,4 +1,14 @@
-# Kurumsal Sınav v1.0.5
+# Kurumsal Sınav v1.1.1
+
+**v1.1.1:** F / Fernus ve O / Okulizyon kazanım dosyasından tek yüklemeyle cevap anahtarı ve arşiv kaydı; tam düzenlenebilir önizleme ve açık onay; çoklu FMT kuyruğu, koordinat/TXT/okuyucu doğrulaması ve toplu kayıt. Son kritik ek için `20261109010000_fmt_validation` migration'ı hazırlanmıştır; canlıda çalıştırılmadı. [Kullanım ve doğrulama](docs/v1.1.1-release.md).
+
+**Yeni sınav akışı:** Ayrı yükleme/sonuç ekranları, sınıf listeleri ve analiz, kontrol özeti ve anahtar düzeltmelerinde sonuç sürümleri. `20261108210000_result_revisions` migration'ı gerekir; [kullanım ve dağıtım notları](docs/7108-optical-evaluation.md#ayrı-yükleme-ve-sonuç-akışı).
+
+**v1.0.6:** Gerçek örneklerle doğrulanan [Palme 8050 hazır yerleşimi](docs/8050-layout.md), kaynak/hedef FMT arasında TXT dönüştürme, indirilebilir kontrol raporu, genişletilmiş FMT alan/sabit tanımları ve gerçek giriş sayfasında kurumsal hareketli gradient. [Sürüm ve doğrulama notları](docs/v1.0.6-release.md).
+
+**Öğrenci / veli erişimi:** Bayi hesap ve açık sonuç bağlantısı oluşturur, sonucu yayımlar; öğrenci/veli `/sonuclarim` ekranında yalnızca kendi karnelerini görür. Bayilere **FMT İndir** menüsü eklendi. Yeni migration ve kullanım: [öğrenci/veli portalı](docs/student-parent-portal.md).
+
+**7108 optik değerlendirme:** Tek sınav kaydı üzerinden bağımsız ana sayfa/değerlendirme görünürlüğü, yayınevi → sınıf → sınav seçimi; admin FMT ve soru bazında cevap anahtarı ekleme; bayi TXT yükleme/önizleme, oturum birleştirme, A/B kitapçık eşleştirme, kayıtlı sonuç geçmişi, Excel listesi ve PDF karne akışı eklendi. Kurulum ve yeni migration bilgisi: [7108 kullanım ve doğrulama notları](docs/7108-optical-evaluation.md).
 
 Next.js Web, Node.js API ve PostgreSQL/Prisma tabanlı sınav yönetim uygulaması.
 
@@ -131,7 +141,7 @@ Panel demosunda hesap ayarları, hafta sonları/resmî tatil işaretleri bulunan
 - Kullanıcı, bayi, okul, FMT alan eşlemesi, TXT yükleme işi, sınav, ders/cevap anahtarı ve optik kayıt Prisma modelleri.
 - Ana sayfa, rol seçimi/oturum formu ve bayi/kurum başvuru formu.
 
-Henüz eklenmesi gerekenler: gerçek kullanıcı/tenant yönetim CRUD'ları, FMT eşleme arayüzü ve satır ayrıştırıcı, TXT dosya doğrulama, puanlama motoru, raporlar/PDF, denetim kayıtları, hız sınırlama ve üretim dağıtım ayarları.
+7108 için FMT eşleme, TXT doğrulama, oturum birleştirme, değerlendirme, sonuç arşivi ve liste/karne akışı [optik değerlendirme modülünde](docs/7108-optical-evaluation.md) uygulanmıştır. FMT’ler arası TXT dönüşümü [v1.0.6’da](docs/v1.0.6-release.md) eklenmiştir. Diğer optik formatlar için gerçek, doğrulanmış TXT yerleşimleri ve üretim dağıtım doğrulaması gerekir.
 
 ## Çok kiracılı erişim kuralı
 

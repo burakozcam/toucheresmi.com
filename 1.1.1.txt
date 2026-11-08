@@ -1,0 +1,252 @@
+sKURUMSAL SINAV — v1.1.1
+Özellik ve değişiklik listesi
+Hazırlanma tarihi: 9 Kasım 2026 / Europe-Istanbul
+Durum: Yerel geliştirme ve test; canlıya dağıtılmadı.
+
+KAPSAM VE REFERANS SÜRÜM
+8 Kasım 2026 saat 17:05 civarında yüklendiği belirtilen sürüme ait ayrı bir
+commit, etiket veya dağıtım kaydı bu çalışma alanında bulunamadı. Son Git
+commit'i 58138bd, 8 Kasım 2026 01:24:58 +03:00, v1.0.5'tir.
+Bu nedenle aşağıdaki liste v1.0.5 commit'inden sonraki çalışma alanı
+özelliklerinin tamamını kapsar; kesin olarak 17:05 sonrasına ait olduğu
+iddia edilmez. Sunucudaki eski paket/commit karşılaştırıldığında kapsam
+kesinleştirilebilir. v1.0.5'te zaten bulunan takvim, oyunlar vb. bu listede
+yeni geliştirme olarak tekrar sayılmadı.
+
+1. OPTİK TXT DEĞERLENDİRME ALTYAPISI
+- Üyelik ve bayi/yönetici girişiyle kurum kapsamlı TXT yükleme.
+- Kurum, yayınevi, sınıf, sınav ve kaynak FMT seçimi.
+- UTF-8 ve Türkçe Windows-1254 çözümleme; otomatik veya açık kodlama seçimi.
+- 7108 optik yerleşimiyle değerlendirme ve Palme Ortaokul 8050 yerleşimi.
+- 8050'de birleşik ad-soyad, sınav numarası ve gerçek TXT konumları desteği.
+- Sözel ve sayısal oturumları aynı öğrenci altında birleştirme.
+- Ders bazında farklı A/B/C/D kitapçıklarının ortak A sırasına eşlenmesi.
+- Yinelenen satır, öğrenci numarası/kimlik çelişkisi, geçersiz kitapçık,
+  geçersiz cevap karakteri, satır uzunluğu ve cevap kapasitesi kontrolü.
+- Boş ders/eksik oturumların gösterilmesi ve onaylanması.
+- TXT başındaki sıfırların, öğrenci numaralarının ve Türkçe metnin korunması.
+- Ham TXT ve TC/Tel bilgisinin sonuç arşivine kaydedilmemesi; kimliğin
+  yalnızca oturum eşleştirmesi sırasında kullanılması.
+- Bir yüklemede en fazla 2 MB TXT, 2.000 satır ve 500 öğrenci sınırları.
+
+2. YÜKLEME İLE SONUÇ ALMANIN AYRILMASI
+- SINAV YÜKLE: Dosya/FMT seçimi, önizleme, kontrol ve kayıt.
+- SINAV DEĞERLENDİR / SONUÇ AL: Kurum ve kaydedilmiş sınav seçimi.
+- Son 50 güncel sınavın kurum bazında geçmişten açılabilmesi.
+- Eski sonuçların kullanılan anahtarın anlık kopyasıyla saklanması.
+- Yüklemeden sonra doğrudan ilgili sınavın sonuç ekranına geçiş.
+
+3. HESAPLAMA, LİSTE VE KARNELER
+- 0, 3 veya 4 yanlış götürme kuralı ve ders katsayıları.
+- H: boş/çoklu işaret dahil tüm cevapları doğru kabul etme.
+- X: soruyu net ve maksimum puan hesabı dışında bırakma.
+- Normal sorularda çoklu işareti yanlış, boş işareti boş değerlendirme.
+- Yerel 500 puan ölçeği; bunun resmî LGS/YKS/yayınevi puanı olmadığı açıklaması.
+- Eşit puanlara eşit sıra; bu yükleme içindeki kurum/şube sıralamaları.
+- Sadece toplu liste çıktısı.
+- Sınıf sınıf liste; PDF'de sınıfların ayrı sayfalara ayrılması.
+- Liste + öğrenci karneleri, tek öğrenci ve toplu karne seçenekleri.
+- Kurum/sınıf/şube ve öğrenci filtreleri.
+- Excel sonuç listesi, sınıf başına çalışma sayfası ve soru detayları.
+- Tarayıcıdan PDF kaydetme; renkli/siyah-beyaz çıktı.
+- Karnede ders, soru ve kazanım sonuçları; kurum/şube karşılaştırmaları.
+- Kaynak kitapçıkların ve A sırasına çevrilmiş soru sırasının belirtilmesi.
+
+4. SORU / KAZANIM ANALİZİ
+- Kurum ve sınıf/şube ortalama net ve yerel puanları.
+- Ders bazında toplam doğru/yanlış/boş ve ortalama net.
+- A kitapçığı soru sırasıyla soru bazında başarı yüzdeleri.
+- A/B/C/D/E, çoklu ve boş cevap dağılımları.
+- En düşük başarı gösterilen ilk 20 soru ve görsel başarı çubukları.
+- Kazanım bazında soru sayısı, doğru/yanlış/boş ve başarı oranı.
+- H/X sorularının zor sorular ve kazanım başarı hesabından ayrılması.
+- Sınıf filtresiyle analizin yeniden hesaplanması.
+- Analiz PDF ve özet/sınıflar/dersler/sorular/kazanımlar Excel sayfaları.
+- Analizlerin ulusal sıralama yerine yalnızca ilgili yüklemeyi kapsaması.
+
+5. YÜKLEME / YAYIMLAMA ÖNCESİ KONTROLLER
+- Öğrenci, TXT satırı, sınıf ve soru sayılarının kontrol özeti.
+- Yinelenen öğrenci numarası ve sınav/TXT sınıf uyuşmazlığında kayıt engeli.
+- Boş dersler, çoklu işaretler ve eksik sınıf/şube bilgilerinin gösterilmesi.
+- Belirgin olası kitapçık hatası için uyarı; otomatik kitapçık değişikliği yok.
+- Aynı TXT'nin aynı kurum/sınav/FMT için yeniden yüklenmesinin engellenmesi.
+- Aynı öğrencilerin başka yüklemelerde bulunması halinde çakışma uyarısı.
+- Kullanıcı/dosya/kurum/FMT/anahtara bağlı, süreli yükleme önizleme onayı.
+- Anahtar veya dosya değişince önizlemenin yenilenmesi.
+- Öğrenci/veli yayını öncesinde ayrı kontrol ve açık onay.
+
+6. CEVAP ANAHTARI DEĞİŞİKLİĞİNDE SONUÇ SÜRÜMLERİ
+- Güncel anahtarla tekrar değerlendirme önizlemesi.
+- Öğrenci bazında önceki/yeni net ve puan farklarının gösterilmesi.
+- Eski sonucu değiştirmeden ayrı sonuç sürümü oluşturma.
+- Kitapçık sırası değiştiğinde eski eşleştirmeden kaynak sırasını kurup
+  yeni eşleştirmeye göre yeniden hesaplama.
+- Soru/ders sayısı değişirse ham TXT'nin yeniden yüklenmesini isteme.
+- Yeni sürümün öğrenci/veli yayını kapalı başlaması.
+- Yeni sürüm onaylanıp yayımlanınca aynı serinin eski yayınının kapanması.
+- Eski sürümlere bakabilme; eski sürümü yeniden yayımlamayı engelleme.
+- Eşzamanlı işlem/eskimiş önizleme kontrolleri ve benzersiz sürüm zinciri.
+
+7. ORTAK CEVAP ANAHTARI KATALOĞU VE ANA SAYFA KÜTÜPHANESİ
+- Cevap anahtarı arşiviyle optik değerlendirmenin aynı sınava bağlanması.
+- Mevcut yayınevi ve sınıf bağlantısı; yayınevi/sınıf/sınav seçimi.
+- Yeni sınav veya mevcut sınav kaydına cevap/kazanım yükleme seçimi.
+- Mevcut sınavı güncellerken yeni mükerrer sınav oluşturmama.
+- ANA SAYFA CEVAP ANAHTARLARI SİSTEMİNDE GÖSTER seçeneği.
+- ÖLÇME DEĞERLENDİRME SİSTEMİNDE GÖSTER seçeneği.
+- İki görünürlüğün birbirinden bağımsız yönetilmesi.
+- Eksik cevap/kazanım verisinin değerlendirmeye açılmasının engellenmesi.
+- Bayinin yalnızca etkin ve değerlendirmeye hazır sınavları seçebilmesi.
+- Ana sayfa kütüphanesi, cevap/kazanım indirme ve sınav bağlantılarıyla entegrasyon.
+- Yeni kayıt tarihinin İstanbul takvim gününe göre başlatılması.
+
+8. F / FERNUS VE O / OKULİZYON İÇE AKTARMA
+- Kullanıcının özgün 082701 Fernus XLS ve Ankara Okulizyon XLSX dosyaları
+  incelenerek, gözlenen gerçek sütun/sekmelere göre geliştirme.
+- F ve O için ayrı parser modülleri; ortak kontroller ve standart/Nartest parser'ı.
+- Fernus'ta A Kitapçığı, B-Çaprazı ve varsa diğer kitapçık sekmelerinin kontrolü.
+- Tekrarlayan kazanım metninden soru eşleştirmesi tahmin etmeme.
+- A/B çaprazı ile ayrı kitapçık cevaplarının çelişmesini gösterme.
+- Okulizyon'da başlık öncesi metinleri, A/B soru numaralarını, ders,
+  cevap, kazanım kodu ve Kazanım-1…6 alanlarını okuma.
+- Birden fazla kazanımın bütün kod ve metinlerini koruma; mevcut analizde
+  birlikte ilişkili kazanım grubu olarak işleme.
+- Soru/ders/cevap/kod/açıklamanın yanında özgün sekme, satır, sütun adları
+  ve ham hücre değerlerini kaynak bilgisi olarak saklama.
+- Özgün kazanım dosyasını arşivde koruma; kaynak satırlarını düzeltilmiş
+  tabloyla karıştırmama.
+- Resmî kodu metinde bulunan Fernus kazanımlarında kodu ayırma.
+- Resmî kodu olmayan metinlerde METİN- iç kodu kullanıldığını açıkça bildirme.
+- Yanlış format, eksik/hatalı alan ve kaynak çelişkilerini kullanıcıya gösterme.
+- Tanınmayan başlıkları dosya adına bakarak tahmin etmeme.
+- Boş sınav adı için dosyadaki adı önerme; elle girilen adı koruma.
+- Aynı parser'ların tarayıcı ve API tarafından kullanılması.
+
+9. TAM DÜZENLENEBİLİR ÖNİZLEME VE AÇIK ONAY
+- İlk 8 soruyla sınırlı görünüm yerine bütün soruların düzenlenebilir önizlemesi.
+- Ders, A soru numarası, B/C/D eşleştirmesi, cevap, katsayı ve kazanım düzenleme.
+- Ders filtresi, ders başına soru özeti ve hata listeleri.
+- Eksik alan veya tutarsız eşleştirme varken onay verilememesi.
+- Önizleme/metadata değişince önceki onayın kaldırılması.
+- Açık onay olmadan API'nin yayın veya değerlendirme kaydı oluşturmaması.
+- Dosya SHA-256 kontrolüyle eski dosyanın önizlemesini yeni dosyaya uygulamama.
+- Kaynak soru sayısının korunması; sessizce soru düşürmeme.
+- Tek kazanım dosyasıyla yüklemede, onaylanan tablodan güncel cevap Excel'i üretme.
+- Ana sayfadaki cevap indirmesinin bu onaylanan tabloyu göstermesi.
+- Özgün kazanımın ayrı dosya olarak korunması.
+- Ayrı cevap dosyası verilmişken tablo düzeltilirse, uyumsuz dosyayı sessizce
+  yayımlamak yerine kaldırılıp güncel Excel üretilmesini isteme.
+- Çoklu cevap anahtarı yüklemesinde de satır başına tam önizleme/onay.
+- Elle ders/soru ekleme, cevap dizisi yapıştırma ve genel Excel şablonu.
+- Kayıtlı anahtarlarda cevap/kitapçık/katsayı/kazanım düzenleme.
+- Eskimiş anahtar parmak iziyle başka işlemin değişikliğinin üzerine yazmama.
+
+10. FMT EKLEME, TEST, İNDİRME VE TOPLU KAYIT
+- Admin FMT yükleme, adlandırma ve TXT bilgi/ders/sabit alan eşleştirme.
+- Bilgi alanı, ders, başlangıç, uzunluk, hizalama ve sabit metin düzenleme.
+- 7108/8050 hazır yerleşimleri; dosya adından değil tam içerikten tanıma.
+- FMT özgün baytlarını saklama ve bayi girişinden sonra indirme.
+- Öğrenci no, ad/soyad, sınıf/şube, kurum, kitapçık, oturum, cinsiyet,
+  sınav numarası ve geçici TC/Tel eşleştirme alanları.
+- Yerleşim çakışması, satır sınırı, yinelenen ders ve alan uzunluğu kontrolleri.
+- Örnek TXT'nin bütün satırlarını kontrol etme; ilk 5 satırı alanlara ayırma.
+- Örnek TXT önizlemesinde TC/Tel alanını gizleme; örnek dosyayı saklamama.
+- Çoklu dosya seçimi: en fazla 30 FMT, dosya başına 64 KB.
+- Dosya bazında kuyruk, isim değiştirme, önizleme, düzenleme, test ve onay.
+- Kuyrukta/sistemde mükerrer isim kontrolü.
+- Onaylı ve hatasız dosyaları tek veritabanı işlemiyle toplu kaydetme.
+- Grupta hata olursa grubun tamamını geri alma; bekleyenleri koruma.
+- Kaydedilenleri yeniden göndermeme; kuyruktan çıkarmayı kayıt silmeyle karıştırmama.
+- Özgün örneklerde gözlenen FMT koordinat sözdizimi, pozitif/sıralı koordinat,
+  optik alan çakışması ve alan kapasitesi kontrolleri.
+- FMT başlığındaki okuyucu parametrelerini varsayımla form boyutuna çevirmeme.
+  Gerçek 7108 örneğinde ikinci parametre 42 iken 43. sütunda alan bulunduğu
+  için koordinat kapsamı alanların kendisinden hesaplanır.
+- Yeni kayıtta TXT/kodlama testi, okuyucu-yazılım bilgisi ve gerçek okuyucu
+  uyumluluk testi beyanı gerektirme.
+- Kullanıcı, FMT içeriği, yerleşim, okuyucu ve kodlamaya bağlı süreli doğrulama kanıtı.
+- Teste göre alan/kodlama/okuyucu değişmişse kanıtı geçersiz sayma.
+- Doğrulama bilgilerini şablonda saklama; eski şablonları otomatik değiştirmeme.
+
+ÖNEMLİ FMT SINIRI:
+Uygulama fiziksel optik okuyucuya bağlanmaz ve kâğıt form taramaz; okuyucunun
+ürettiği TXT'yi işler. Koordinat/kapasite/kodlama/TXT kontrolleri yazılımla
+yapılır. Belirli okuyucu modeli veya yazılım sürümündeki gerçek çalışma,
+kullanıcının o cihaz/yazılımda yaptığı testle ayrıca onaylanmalıdır.
+Tarayıcı testindeki okuyucu onayı simülasyondur; fiziksel cihaz testi yapılmış
+olduğu iddia edilmez. Eski aktif şablonlara geriye dönük doğrulama uydurulmaz.
+
+11. TXT DÖNÜŞTÜRME ARACI
+- Kaynak/hedef FMT arasında satır bazında TXT dönüştürme.
+- 7108 → 8050 dahil bilgi alanı ve ders eşleştirmesi.
+- Sabit kod, sola/sağa hizalama, birleşik/ad-soyad alanları ve sınav numarası.
+- Başlangıç sıfırlarını, kitapçık türünü ve oturum satırlarını koruma.
+- UTF-8 / Windows-1254 çıktı ve CRLF / LF satır sonu seçimi.
+- Dönüşüm önizlemesi ve CSV kontrol raporu.
+- Sığmayan alanları kesmeme; taşma varsa indirmeyi engelleme.
+- Aktarılamayan alan ve eşlenmeyen işaretli dersler için açık veri kaybı onayı.
+- Derslerin soru sırasını dönüşüm sırasında değiştirmeme.
+
+12. ÖĞRENCİ / VELİ PORTALI
+- Öğrenci ve veli girişleri; kişisel sonuç ve PDF karne ekranı.
+- Bayinin yönettiği hesaplar için sonuç/öğrenci bağlantısı.
+- Veli hesabında birden çok çocuk; öğrenci hesabında tek öğrenci sınırı.
+- Tek kullanımlık, süreli şifre belirleme daveti ve daveti kopyalama.
+- Yeni davette eski davet ve oturumları geçersiz kılma.
+- Hesap erişimini kapatma ve yeniden davetle açma.
+- Yalnızca açıkça hesaba bağlanan ve yayımlanan sonuçları gösterme.
+- Başka öğrencilerin bireysel cevaplarını/sonuçlarını API'den göndermeme.
+- Karnede karşılaştırmayı diğer öğrencilerin kimlikleri yerine toplu değerlerle verme.
+- Sonuç sürümünde açık bağlantıları taşıma; farklı sınavlara otomatik yetki vermeme.
+- Erişim kaldırmayı aynı öğrenci/sınavın bütün sürümlerine uygulama.
+- Kişisel sonuçlar için özel/no-store yanıtlar ve arama motoru engelleri.
+
+13. PDF EDİTÖRÜ DÜZELTMESİ
+- Metne göre ayırmada gerçek karakter kutularını kullanma.
+- ÖĞRENCİ NUMARASI:456 içinden yalnızca 456 seçildiğinde dosya adına
+  RASI:456 veya SI:456 gibi komşu etiketlerin karışmasını düzeltme.
+- Değişken genişlikte yazı, farklı uzunlukta numara ve bölünmüş metin kontrolü.
+
+14. ARAYÜZ VE SÜRÜM
+- Gerçek şifre girilen /login ekranında sakin, hareketli kurumsal gradient.
+- Açık/koyu tema, mobil görünüm ve azaltılmış hareket tercihi desteği.
+- Gradientin form/metni hareket ettirmeden arka planda kalması.
+- Yeni sınav/sonuç, FMT indirme, TXT dönüştürme ve öğrenci/veli menüleri.
+- Anahtar Ekle / Düzenle menüsü ve mevcut sınava bağlama seçimi.
+- Ana sayfa, uygulama alt bilgisi ve favicon sürümünün v1.1.1 olması.
+- Kullanım, veri sınırları ve dağıtım notlarının güncellenmesi.
+
+15. VERİTABANI VE VERİYİ KORUMA
+Bu çalışma canlı veritabanına migration uygulamadı; reset, db push veya
+canlı seed çalıştırılmadı. Mevcut veri silinmedi veya topluca yeniden yazılmadı.
+Yeni kaynak satırı bilgileri mevcut JSON soru yapısında tutulur.
+Gereken yeni migration dosyaları:
+- 20261108180000_optical_evaluation
+- 20261108190000_unified_exam_catalog
+- 20261108200000_student_parent_portal
+- 20261108210000_result_revisions
+- 20261109010000_fmt_validation
+Son migration yalnızca OpticalTemplate.validation JSONB alanını ekler.
+Eski şablonların etkinliğini veya sonuçları değiştirmez.
+Bu migration'lar canlıya uygulanmış varsayılmamalı; sunucu geçmişiyle
+karşılaştırılıp yalnızca eksik olanlar kontrollü dağıtımda uygulanmalıdır.
+
+16. DOĞRULAMA
+- Otomatik testler: 97 test geçti.
+- Gerçek özgün Fernus XLS ve Okulizyon XLSX dosyaları test fixture'ı olarak
+  kullanılır; yalnızca tahmini veya yapay tabloyla doğrulama yapılmaz.
+- Parser ayrımı, ham satırların korunması, tüm kazanım sütunları, çapraz
+  cevap kontrolü, onaysız yayın engeli, eski dosya onayı, düzeltilmiş cevap
+  Excel'i ve FMT doğrulama kanıtı test kapsamındadır.
+- Prisma istemcisi üretimi, API ve Next.js üretim derlemesi kontrol edilir.
+- Tarayıcı testleri yerel API ve taklit veritabanında yapılır; canlı sistem
+  testi veya fiziksel optik okuyucu testi sayılmaz.
+
+17. YAYINA HAZIRLAMA AŞAMASINDA KONTROL EDİLECEKLER
+- 17:05 civarındaki gerçek sunucu paketini/commit'ini belirleyip karşılaştırma.
+- Mevcut migration geçmişi ve veritabanı yedeğini inceleme.
+- API ve web'i birlikte hazırlama; ortak parser JS modüllerini pakete dahil etme.
+- .env, yükleme dizini izinleri, API adresi ve kalıcı dosya arşivini koruma.
+- Gerçek veritabanıyla ayrı test ortamında uçtan uca doğrulama.
+- Kullanılan gerçek okuyucu/yazılımda FMT uyumluluğunu kullanıcıyla test etme.
+- İnceleme tamamlanmadan canlıya dağıtmama.

@@ -25,7 +25,7 @@ type PublisherRequest = {
   reviewedBy?: { id: string; firstName: string; lastName: string } | null;
 };
 
-export default function PublisherManagement({ token, role }: { token: string; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" }) {
+export default function PublisherManagement({ token, role }: { token: string; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" | "PARENT" }) {
   const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [requests, setRequests] = useState<PublisherRequest[]>([]);
   const [query, setQuery] = useState("");

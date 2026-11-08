@@ -1,0 +1,19 @@
+        1000016CORNEK 001 KISI      BSAMPLE00001CDDDBCADBDADCDBACBDACDCCBBDBDD          CAABACABBB          CADABCDBCB                                                   E1
+        1000026PORNEK 002 KISI      ASAMPLE00002DCDBACBDACADDBCAABAABDDCDCDBDD          BACABBBCBA          BCACADABCD                                                   E 
+        1000036CORNEK 003 KISI      BSAMPLE00003CBDDBCAABBDACDBACBDACDCCBDDBDD          ABABBCADBB          CBDABCDBCA                                                   E1
+        14    6 ORNEK 004 KISI      ASAMPLE00004DCDBACBDACBDDBAAABBABDDCDCCDDD          BACABABBBA           C CADDBCD                                                   E 
+        1000056PORNEK 005 KISI      BSAMPLE00005CBDDBCAABCAACDBDCDDACDCCDDDBDD          CDABACCBBB          CBDABCDCCB                                                     
+        1000066 ORNEK 006 KISI      ASAMPLE00006                                                                                A A ADCBCBCD CDCABDBDBCDDABCBAADCDCBAACD  2
+        1000066 ORNEK 007 KISI      ASAMPLE00006ACDBACBDADBDDBCAABCABDDBDCCBDD                              BCACADABCD                                                   E1
+        1000076 ORNEK 008 KISI      A                                                                                                  B   DB  CA   D CDDAACBAADCBCBAACD K2
+              6 ORNEK 009 KISI      B                                                                                           DDCBDBDACBCABCBAABCCDCACBADCDDBCDDABCBAA K 
+        1008  6CORNEK 001 KISI      BSAMPLE00001                                                                                AABBADCABDBABABBDCACDCDCBAACDDCCDDABCBAA E2
+        1000026PORNEK 002 KISI      ASAMPLE00002                                                                                ABABADCBCBCDDDACABDBDBCDDABCBAADCDCBAACD E2
+        1000096ZORNEK 010 KISI      B           CCDDBCACCCADCDBACBDABDCCDDDCDD          CBABACABBB          CADABCDCCA                                                     
+        10010 6 ORNEK 008 KISI      A           DCDBDCBDA ADDB ADB ABDDB CDDD           BACADBBCBA           CBDCD BCD                                                   K 
+              6 ORNEK 003 KISI      BSAMPLE00003                                                                                BCABC CABDBABABADCACDCBCBAADDDBCDDABCBCA E2
+        1000116 ORNEK 011 KISI      ASAMPLE00004                                                                                ABCBACCDD CDBC  AACDDBCDDABABAADCDCBAACD E 
+        1000056PORNEK 005 KISI      BSAMPLE00005                                                                                BCDDCDCABDBABABADBBCDCBCBADADDBCDDABABAA   
+                ORNEK 012 KISI      BSAMPLE00007                                                                                BCDCD CABDBABAB DCACDCBCBAACDDBCDDABCBAA K2
+        100012  ORNEK 013 KISI      ASAMPLE00008DCDBACBDACBDDBCAABCABDDCDCCBDD          BBCABBBCBA          CCBDBDABCD                                                   K1
+        100012  ORNEK 013 KISI      ASAMPLE00008                                                                                ABABADCCCBCDDCDCABDBDBCDDABCBAADCBCBAACD K2

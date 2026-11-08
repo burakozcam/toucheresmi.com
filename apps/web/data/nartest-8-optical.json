@@ -1,0 +1,916 @@
+[
+  [
+    "TEST KODU",
+    "DERS\nADI",
+    "A\nSoru No",
+    "B\nSoru No",
+    "Doğru\nCevap",
+    "Kazanım Kodu",
+    " SEVİYESİ",
+    "Kazanım Metni"
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    1,
+    20,
+    "B",
+    "8.3.2.1.",
+    "KOLAY",
+    "Bağlamdan yararlanarak bilmediği kelime ve kelime gruplarının anlamını tahmin eder."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    2,
+    19,
+    "A",
+    "8.3.2.1.",
+    "KOLAY",
+    "Bağlamdan yararlanarak bilmediği kelime ve kelime gruplarının anlamını tahmin eder."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    3,
+    18,
+    "D",
+    "8.3.3.14.",
+    "KOLAY",
+    "Okudukları ile ilgili çıkarımlarda bulunur."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    4,
+    17,
+    "C",
+    "8.3.2.1.",
+    "KOLAY",
+    "Bağlamdan yararlanarak bilmediği kelime ve kelime gruplarının anlamını tahmin eder."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    5,
+    16,
+    "B",
+    "8.3.2.2.",
+    "KOLAY",
+    "Deyim, atasözü ve özdeyişlerin metne katkısını belirler."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    6,
+    15,
+    "C",
+    "8.3.3.24.",
+    "KOLAY",
+    "Metindeki iş ve işlem basamaklarını kavrar."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    7,
+    14,
+    "A",
+    "8.3.3.5.",
+    "ORTA",
+    "Metnin konusunu belirler."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    8,
+    13,
+    "D",
+    "8.3.3.6.",
+    "KOLAY",
+    "Metnin ana fikrini/ana duygusunu belirler."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    9,
+    12,
+    "B",
+    "8.3.3.23.",
+    "KOLAY",
+    "Okuduklarında kullanılan düşünceyi geliştirme yollarını belirler."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    10,
+    11,
+    "D",
+    "8.3.3.14.",
+    "KOLAY",
+    "Okudukları ile ilgili çıkarımlarda bulunur."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    11,
+    10,
+    "A",
+    "8.3.3.14.",
+    "ORTA",
+    "Okudukları ile ilgili çıkarımlarda bulunur."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    12,
+    9,
+    "A",
+    "8.4.1.16.",
+    "KOLAY",
+    "Yazdıklarını düzenler."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    13,
+    8,
+    "C",
+    "8.3.3.21.",
+    "KOLAY",
+    "Grafik, tablo ve çizelgeyle sunulan bilgileri yorumlar."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    14,
+    7,
+    "A",
+    "8.3.2.1.",
+    "KOLAY",
+    "Bağlamdan yararlanarak bilmediği kelime ve kelime gruplarının anlamını tahmin eder."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    15,
+    6,
+    "B",
+    "8.3.3.21.",
+    "ORTA",
+    "Grafik, tablo ve çizelgeyle sunulan bilgileri yorumlar."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    16,
+    5,
+    "D",
+    "8.3.2.5.",
+    "KOLAY",
+    "Fiilimsilerin cümledeki işlevlerini kavrar."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    17,
+    4,
+    "B",
+    "8.3.2.5.",
+    "KOLAY",
+    "Fiilimsilerin cümledeki işlevlerini kavrar."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    18,
+    3,
+    "C",
+    "8.3.2.5.",
+    "ORTA",
+    "Fiilimsilerin cümledeki işlevlerini kavrar."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    19,
+    2,
+    "D",
+    "8.3.2.3.",
+    "ORTA",
+    "Metindeki söz sanatlarını tespit eder."
+  ],
+  [
+    1,
+    "TÜRKÇE",
+    20,
+    1,
+    "C",
+    "8.4.1.16.",
+    "KOLAY",
+    "Yazdıklarını düzenler."
+  ],
+  [
+    2,
+    "İNKILAP",
+    1,
+    10,
+    "B",
+    "8.1.1.1.",
+    "KOLAY",
+    "Avrupa'daki gelişmelerin yansımaları bağlamında Osmanlı Devleti'nin yirminci yüzyılın başlarındaki siyasi ve sosyal durumunu kavrar."
+  ],
+  [
+    2,
+    "İNKILAP",
+    2,
+    9,
+    "C",
+    "8.1.1.1.",
+    "ORTA",
+    "Avrupa'daki gelişmelerin yansımaları bağlamında Osmanlı Devleti'nin yirminci yüzyılın başlarındaki siyasi ve sosyal durumunu kavrar."
+  ],
+  [
+    2,
+    "İNKILAP",
+    3,
+    8,
+    "A",
+    "8.1.1.3.",
+    "KOLAY",
+    "Gençlik döneminde Mustafa Kemal'in fikir hayatını etkileyen önemli kişileri ve olayları kavrar."
+  ],
+  [
+    2,
+    "İNKILAP",
+    4,
+    7,
+    "A",
+    "8.1.1.2.",
+    "KOLAY",
+    "Mustafa Kemal'in çocukluk ve öğrenim hayatından hareketle onun kişilik özelliklerinin oluşumu hakkında çıkarımlarda bulunur."
+  ],
+  [
+    2,
+    "İNKILAP",
+    5,
+    6,
+    "D",
+    "8.1.1.3.",
+    "ORTA",
+    "Gençlik döneminde Mustafa Kemal'in fikir hayatını etkileyen önemli kişileri ve olayları kavrar."
+  ],
+  [
+    2,
+    "İNKILAP",
+    6,
+    5,
+    "B",
+    "8.1.1.2.",
+    "ZOR",
+    "Mustafa Kemal'in çocukluk ve öğrenim hayatından hareketle onun kişilik özelliklerinin oluşumu hakkında çıkarımlarda bulunur."
+  ],
+  [
+    2,
+    "İNKILAP",
+    7,
+    4,
+    "C",
+    "8.1.1.2.",
+    "KOLAY",
+    "Mustafa Kemal'in çocukluk ve öğrenim hayatından hareketle onun kişilik özelliklerinin oluşumu hakkında çıkarımlarda bulunur."
+  ],
+  [
+    2,
+    "İNKILAP",
+    8,
+    3,
+    "A",
+    "8.1.1.1.",
+    "ORTA",
+    "Avrupa'daki gelişmelerin yansımaları bağlamında Osmanlı Devleti'nin yirminci yüzyılın başlarındaki siyasi ve sosyal durumunu kavrar."
+  ],
+  [
+    2,
+    "İNKILAP",
+    9,
+    2,
+    "B",
+    "8.1.1.4.",
+    "ORTA",
+    "Mustafa Kemal'in askerlik hayatı ile ilgili olayları ve olguları onun kişilik özellikleri ile ilişkilendirir."
+  ],
+  [
+    2,
+    "İNKILAP",
+    10,
+    1,
+    "D",
+    "8.1.1.4.",
+    "ZOR",
+    "Mustafa Kemal'in askerlik hayatı ile ilgili olayları ve olguları onun kişilik özellikleri ile ilişkilendirir."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    1,
+    10,
+    "B",
+    "8.1.1.1.",
+    "KOLAY",
+    "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    2,
+    9,
+    "A",
+    "8.1.1.1.",
+    "ORTA",
+    "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    3,
+    8,
+    "A",
+    "8.1.1.2.",
+    "ORTA",
+    "İnsanın ilmi, iradesi, sorumluluğu ile kader arasında ilişki kurar."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    4,
+    7,
+    "C",
+    "8.1.1.1.",
+    "KOLAY",
+    "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    5,
+    6,
+    "A",
+    "8.1.1.2.",
+    "KOLAY",
+    "İnsanın ilmi, iradesi, sorumluluğu ile kader arasında ilişki kurar."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    6,
+    5,
+    "D",
+    "8.1.1.1.",
+    "ORTA",
+    "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    7,
+    4,
+    "C",
+    "8.1.1.1.",
+    "ORTA",
+    "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    8,
+    3,
+    "B",
+    "8.1.1.2.",
+    "ORTA",
+    "İnsanın ilmi, iradesi, sorumluluğu ile kader arasında ilişki kurar."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    9,
+    2,
+    "D",
+    "8.1.1.3.",
+    "KOLAY",
+    "Kaza ve kader ile ilgili kavramları analiz eder."
+  ],
+  [
+    3,
+    "DİN KÜLTÜRÜ",
+    10,
+    1,
+    "B",
+    "8.1.1.3.",
+    "KOLAY",
+    "Kaza ve kader ile ilgili kavramları analiz eder."
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    1,
+    10,
+    "A",
+    "8.1.11.",
+    "KOLAY",
+    "Accepting & Refusing an Invitation"
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    2,
+    9,
+    "H",
+    "8.1.11.",
+    "KOLAY",
+    "Accepting & Refusing an Invitation"
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    3,
+    8,
+    "A",
+    "8.1.16.",
+    "KOLAY",
+    "Some Qualities of a True Friend"
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    4,
+    7,
+    "D",
+    "8.1.17.",
+    "ORTA",
+    "Writing an E-Mail"
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    5,
+    6,
+    "C",
+    "8.1.13.",
+    "KOLAY",
+    "Making an Excuse and Apologizing"
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    6,
+    5,
+    "C",
+    "8.1.19.",
+    "ORTA",
+    "Understanding Texts on Friendship"
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    7,
+    4,
+    "B",
+    "8.1.15.",
+    "ORTA",
+    "Invitation Cards and Letters"
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    8,
+    3,
+    "D",
+    "8.1.12.",
+    "ORTA",
+    "Offers and Suggestions"
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    9,
+    2,
+    "C",
+    "8.1.18.",
+    "KOLAY",
+    "Making Simple Inquiries"
+  ],
+  [
+    4,
+    "İNGİLİZCE",
+    10,
+    1,
+    "D",
+    "8.1.13.",
+    "ORTA",
+    "Making an Excuse and Apologizing"
+  ],
+  [
+    5,
+    "MATEMATİK",
+    1,
+    20,
+    "B",
+    "8.1.1.1.",
+    "KOLAY",
+    "Verilen pozitif tam sayıların pozitif tam sayı çarpanlarını bulur, pozitif tam sayıların pozitif tam sayı çarpanlarını üslü ifadelerin çarpımı şeklinde yazar."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    2,
+    19,
+    "A",
+    "8.1.1.1.",
+    "ORTA",
+    "Verilen pozitif tam sayıların pozitif tam sayı çarpanlarını bulur, pozitif tam sayıların pozitif tam sayı çarpanlarını üslü ifadelerin çarpımı şeklinde yazar."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    3,
+    18,
+    "C",
+    "8.1.1.2.",
+    "ORTA",
+    "İki doğal sayının en büyük ortak bölenini (EBOB) ve en küçük ortak katını (EKOK) hesaplar, ilgili problemleri çözer."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    4,
+    17,
+    "B",
+    "8.1.2.3.",
+    "KOLAY",
+    "Sayıların ondalık gösterimlerini 10'un tam sayı kuvvetlerini kullanarak çözümler."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    5,
+    16,
+    "C",
+    "8.1.1.3.",
+    "KOLAY",
+    "Verilen iki doğal sayının aralarında asal olup olmadığını belirler."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    6,
+    15,
+    "D",
+    "8.1.2.1.",
+    "ORTA",
+    "Tam sayıların, tam sayı kuvvetlerini hesaplar."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    7,
+    14,
+    "C",
+    "8.1.2.1.",
+    "KOLAY",
+    "Tam sayıların, tam sayı kuvvetlerini hesaplar."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    8,
+    13,
+    "B",
+    "8.1.1.2.",
+    "ORTA",
+    "İki doğal sayının en büyük ortak bölenini (EBOB) ve en küçük ortak katını (EKOK) hesaplar, ilgili problemleri çözer."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    9,
+    12,
+    "D",
+    "8.1.1.1.",
+    "ZOR",
+    "Verilen pozitif tam sayıların pozitif tam sayı çarpanlarını bulur, pozitif tam sayıların pozitif tam sayı çarpanlarını üslü ifadelerin çarpımı şeklinde yazar."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    10,
+    11,
+    "C",
+    "8.1.1.1.",
+    "ZOR",
+    "Verilen pozitif tam sayıların pozitif tam sayı çarpanlarını bulur, pozitif tam sayıların pozitif tam sayı çarpanlarını üslü ifadelerin çarpımı şeklinde yazar."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    11,
+    10,
+    "B",
+    "8.1.1.3.",
+    "ORTA",
+    "Verilen iki doğal sayının aralarında asal olup olmadığını belirler."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    12,
+    9,
+    "A",
+    "8.1.2.2.",
+    "ORTA",
+    "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    13,
+    8,
+    "C",
+    "8.1.1.2.",
+    "ORTA",
+    "İki doğal sayının en büyük ortak bölenini (EBOB) ve en küçük ortak katını (EKOK) hesaplar, ilgili problemleri çözer."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    14,
+    7,
+    "B",
+    "8.1.1.3.",
+    "ZOR",
+    "Verilen iki doğal sayının aralarında asal olup olmadığını belirler."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    15,
+    6,
+    "D",
+    "8.1.2.2.",
+    "ORTA",
+    "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    16,
+    5,
+    "B",
+    "8.1.1.2.",
+    "ORTA",
+    "İki doğal sayının en büyük ortak bölenini (EBOB) ve en küçük ortak katını (EKOK) hesaplar, ilgili problemleri çözer."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    17,
+    4,
+    "A",
+    "8.1.2.2.",
+    "ORTA",
+    "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    18,
+    3,
+    "A",
+    "8.1.2.3.",
+    "ORTA",
+    "Sayıların ondalık gösterimlerini 10'un tam sayı kuvvetlerini kullanarak çözümler."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    19,
+    2,
+    "D",
+    "8.1.2.1.",
+    "KOLAY",
+    "Tam sayıların, tam sayı kuvvetlerini hesaplar."
+  ],
+  [
+    5,
+    "MATEMATİK",
+    20,
+    1,
+    "D",
+    "8.1.2.2.",
+    "ORTA",
+    "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    1,
+    20,
+    "A",
+    "8.1.1.1.",
+    "KOLAY",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    2,
+    19,
+    "C",
+    "8.1.1.1.",
+    "ORTA",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    3,
+    18,
+    "D",
+    "8.1.1.1.",
+    "ORTA",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    4,
+    17,
+    "A",
+    "8.1.1.1.",
+    "ORTA",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    5,
+    16,
+    "C",
+    "8.1.1.1.",
+    "ORTA",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    6,
+    15,
+    "C",
+    "8.2.1.1.",
+    "KOLAY",
+    "Nükleotid, gen, DNA ve kromozom kavramlarını açıklayarak bu kavramlar arasında ilişki kurar."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    7,
+    14,
+    "A",
+    "8.1.1.1.",
+    "KOLAY",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    8,
+    13,
+    "B",
+    "8.1.1.1.",
+    "ORTA",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    9,
+    12,
+    "C",
+    "8.1.1.1.",
+    "ORTA",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    10,
+    11,
+    "D",
+    "8.1.2.1.",
+    "ORTA",
+    "İklim ve hava olayları arasındaki farkı açıklar."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    11,
+    10,
+    "C",
+    "8.1.2.2.",
+    "ORTA",
+    "İklim biliminin (klimatoloji) bir bilim dalı olduğunu ve bu alanda çalışan uzmanlara iklim bilimci (klimatolog) adı verildiğini söyler."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    12,
+    9,
+    "D",
+    "8.1.1.1.",
+    "ORTA",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    13,
+    8,
+    "B",
+    "8.1.2.2.",
+    "KOLAY",
+    "İklim biliminin (klimatoloji) bir bilim dalı olduğunu ve bu alanda çalışan uzmanlara iklim bilimci (klimatolog) adı verildiğini söyler."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    14,
+    7,
+    "D",
+    "8.2.1.2.",
+    "KOLAY",
+    "DNA'nın yapısını model üzerinde gösterir."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    15,
+    6,
+    "D",
+    "8.1.2.1.",
+    "ORTA",
+    "İklim ve hava olayları arasındaki farkı açıklar."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    16,
+    5,
+    "C",
+    "8.1.1.1.",
+    "ZOR",
+    "Mevsimlerin oluşumuna yönelik tahminlerde bulunur."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    17,
+    4,
+    "A",
+    "8.1.2.1.",
+    "ORTA",
+    "İklim ve hava olayları arasındaki farkı açıklar."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    18,
+    3,
+    "B",
+    "8.2.1.2.",
+    "ORTA",
+    "DNA'nın yapısını model üzerinde gösterir."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    19,
+    2,
+    "D",
+    "8.2.1.3.",
+    "KOLAY",
+    "DNA'nın kendini nasıl eşlediğini ifade eder."
+  ],
+  [
+    6,
+    "FEN BİLİMLERİ",
+    20,
+    1,
+    "B",
+    "8.2.1.2.",
+    "ORTA",
+    "DNA'nın yapısını model üzerinde gösterir."
+  ],
+  [],
+  [
+    "H Bütün cevaplar doğru kabul edildi."
+  ]
+]

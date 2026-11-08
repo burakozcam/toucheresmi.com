@@ -11,7 +11,8 @@ const loginTypes = [
   { id: "dealer", title: "Bayi Girişi", description: "Bayi hesabınızla giriş yapın", available: true, icon: "⌂" },
   { id: "admin", title: "Yönetici Girişi", description: "Sistem yönetici hesabınızla giriş yapın", available: true, icon: "⚙" },
   { id: "institution", title: "Kurum Girişi", description: "Okul veya kurum hesabınızla giriş yapın", available: false, icon: "▦" },
-  { id: "student", title: "Öğrenci Girişi", description: "Sınav sonuçlarınıza ulaşın", available: false, icon: "♙" },
+  { id: "student", title: "Öğrenci Girişi", description: "Sınav sonuçlarınıza ulaşın", available: true, icon: "♙" },
+  { id: "parent", title: "Veli Girişi", description: "Çocuğunuzun sonuçlarına ulaşın", available: true, icon: "♧" },
 ] as const;
 
 type LoginType = (typeof loginTypes)[number]["id"];
@@ -35,13 +36,7 @@ export default function LoginPage() {
     setMessage("");
     setSuccess(false);
     setSubmitting(true);
-    if (selectedType !== "dealer") {
-      if (selectedType !== "admin") {
-        setMessage("Bu giriş yöntemi henüz aktif değil. Lütfen sistem yöneticisine başvurun.");
-        setSubmitting(false);
-        return;
-      }
-    }
+    if (!loginTypes.find(t=>t.id===selectedType)?.available) { setMessage("Bu giriş yöntemi henüz aktif değil."); setSubmitting(false); return; }
 
     const form = new FormData(event.currentTarget);
     try {
@@ -51,7 +46,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           email: form.get("email"),
           password: form.get("password"),
-          role: selectedType === "admin" ? "SUPER_ADMIN" : "DEALER",
+          role: selectedType === "admin" ? "SUPER_ADMIN" : selectedType === "student" ? "STUDENT" : selectedType === "parent" ? "PARENT" : "DEALER",
         }),
       });
       const result = await response.json() as {
@@ -68,7 +63,7 @@ export default function LoginPage() {
       window.sessionStorage.setItem("kurumsal-auth-user", JSON.stringify(result.user));
       setSuccess(true);
       setMessage("Giriş başarılı. Yönetim paneline yönlendiriliyorsunuz...");
-      window.setTimeout(() => window.location.assign("/panel"), 650);
+      window.setTimeout(() => window.location.assign(result.user!.role === "STUDENT" || result.user!.role === "PARENT" ? "/sonuclarim" : "/panel"), 650);
     } catch {
       setMessage("Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.");
       setSubmitting(false);
@@ -111,7 +106,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="auth-page">
+    <main className="auth-page login-page">
+      <div className="login-ambient" aria-hidden="true"><span className="login-ambient-one" /><span className="login-ambient-two" /><span className="login-ambient-three" /></div>
       <header className="auth-header">
         <Link className="brand" href={homeHref}><span className="brand-mark">K</span><span>kurumsal<span className="brand-light">sinav.com</span></span></Link>
         <div className="header-actions"><ThemeToggle /><Link className="header-link" href="/">← Ana sayfa</Link></div>
@@ -142,12 +138,13 @@ export default function LoginPage() {
             <label>E-posta<div className="input-wrap"><input name="email" type="email" autoComplete="email" maxLength={254} required /></div></label>
             <label>Şifre <small>(en az 12 karakter)</small><div className="input-wrap"><input name="password" type="password" autoComplete="new-password" minLength={12} maxLength={72} required /></div></label>
             <button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Üyelik talebi gönder"} <span>→</span></button>
-          </form> : selectedType === "dealer" || selectedType === "admin" ? <form className="login-form" onSubmit={submitLogin}>
+          </form> : selectedType !== "institution" ? <form className="login-form" onSubmit={submitLogin}>
             <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>
             <label>Şifre<div className="input-wrap"><span>▣</span><input name="password" type="password" autoComplete="current-password" placeholder="Şifrenizi girin" required /></div></label>
             <button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span>→</span></button>
           </form> : <div className="inactive-panel"><span>i</span><p>Bu giriş türü şu anda kullanıma kapalı. Erişim için sistem yöneticisine başvurun.</p></div>}
           {message && <p className={`login-message ${success ? "message-success" : "message-error"}`} role="status">{success ? "✓" : "!"} {message}</p>}
+          <p className="field-help">Öğrenci ve veli hesaplarını kurumunuzun bayisi oluşturur; ilk şifrenizi verilen davet bağlantısından belirleyin.</p>
           <p className="login-help">{registering ? "Zaten hesabınız var?" : "Üye olmak mı istiyorsunuz?"} <button type="button" className="auth-switch" onClick={() => { setRegistering(!registering); setMessage(""); setSuccess(false); }}>{registering ? "Giriş yapın" : "Üye ol"}</button></p>
           {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <Link href="/contact#contact-form">Bize ulaşın</Link></p>}
         </section>

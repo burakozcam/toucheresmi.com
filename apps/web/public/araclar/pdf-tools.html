@@ -6,6 +6,7 @@
   <title>PDF Düzenleyici | kurumsalsinav.com</title>
   <meta name="description" content="PDF birleştirin, bölün, PNG'ye dönüştürün; görsellerden PDF oluşturun, Excel ve PDF dosyalarını tarayıcınızda dönüştürün.">
   <meta name="theme-color" content="#111c30">
+  <script src="pdf-text-selection.js"></script>
   <script>if (window.parent !== window) document.documentElement.classList.add("embedded-tool");</script>
   <script>tailwind = { config: { corePlugins: { preflight: false }, darkMode: "class" } };</script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -368,75 +369,26 @@
         var selection = window.getSelection();
         if (!selection || !selection.rangeCount || !selection.toString().trim() || !layer.contains(selection.anchorNode)) return;
         var range = selection.getRangeAt(0);
-        var bounds = range.getBoundingClientRect();
-        var pageBounds = layer.getBoundingClientRect();
-        if (!bounds.width || !bounds.height || !pageBounds.width || !pageBounds.height) return;
-        var textDivs = layer._pdfTextDivs || [];
-        var segments = [];
-        textDivs.forEach(function (span, index) {
-          if (!range.intersectsNode(span)) return;
-          var text = span.textContent || "";
-          var start = span.contains(range.startContainer) ? range.startOffset : 0;
-          var end = span.contains(range.endContainer) ? range.endOffset : text.length;
-          segments.push({ index: index, start: start, end: end });
-        });
-        splitTextAnchor = {
-          text: selection.toString().replace(/\s+/g, " ").trim(),
-          xStart: Math.max(0, bounds.left - pageBounds.left) / pageBounds.width,
-          xEnd: Math.min(pageBounds.width, bounds.right - pageBounds.left) / pageBounds.width,
-          yCenter: (bounds.top + bounds.height / 2 - pageBounds.top) / pageBounds.height,
-          segments: segments
-        };
+        if (!layer.contains(range.endContainer)) return;
+        splitTextAnchor = PdfTextSelection.capture(range, layer._pdfTextDivs || [], layer.getBoundingClientRect());
+        if (!splitTextAnchor) return;
         document.getElementById("text-selection-status").textContent = "Seçilen alan: “" + splitTextAnchor.text.slice(0, 100) + (splitTextAnchor.text.length > 100 ? "…" : "") + "” · Şimdi tüm sayfalara göre PDF'leri hazırla.";
         setStatus("Metin seçildi. Sayfaları ayırmaya hazırsın.");
         renderFiles();
       }
 
-      function extractTextAtAnchor(items, viewport, anchor) {
-        var entries = items.filter(function (item) { return typeof item.str === "string" && item.str.trim(); }).map(function (item, index) {
-          var point = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
-          var direction = item.dir === "rtl" ? -1 : 1;
-          var xEnd = point[0] + item.width * viewport.scale * direction;
-          return {
-            text: item.str,
-            textIndex: index,
-            xStart: Math.min(point[0], xEnd),
-            xEnd: Math.max(point[0], xEnd),
-            y: point[1]
-          };
-        });
-        if (!entries.length) return "";
-        var targetY = anchor.yCenter * viewport.height;
-        var targetXStart = anchor.xStart * viewport.width;
-        var targetXEnd = anchor.xEnd * viewport.width;
-        var targetXCenter = (targetXStart + targetXEnd) / 2;
-        var nearestY = entries.reduce(function (closest, entry) {
-          return Math.abs(entry.y - targetY) < Math.abs(closest - targetY) ? entry.y : closest;
-        }, entries[0].y);
-        var rowTolerance = Math.max(9, viewport.height * 0.012);
-        var row = entries.filter(function (entry) { return Math.abs(entry.y - nearestY) < rowTolerance; });
-        var matching = row.filter(function (entry) { return entry.xEnd >= targetXStart - 2 && entry.xStart <= targetXEnd + 2; });
-        if (!matching.length) {
-          matching = [row.reduce(function (closest, entry) {
-            var distance = targetXCenter < entry.xStart ? entry.xStart - targetXCenter : targetXCenter > entry.xEnd ? targetXCenter - entry.xEnd : 0;
-            var best = targetXCenter < closest.xStart ? closest.xStart - targetXCenter : targetXCenter > closest.xEnd ? targetXCenter - closest.xEnd : 0;
-            return distance < best ? entry : closest;
-          }, row[0])];
-        }
-        matching.sort(function (a, b) { return a.xStart - b.xStart; });
-        var singleSegment = anchor.segments.length === 1 ? anchor.segments[0] : null;
-        return matching.map(function (entry) {
-          if (singleSegment && entry.textIndex === singleSegment.index && singleSegment.end > singleSegment.start) {
-            return entry.text.slice(singleSegment.start, singleSegment.end);
-          }
-          var itemWidth = Math.max(1, entry.xEnd - entry.xStart);
-          var from = Math.max(0, Math.min(1, (targetXStart - entry.xStart) / itemWidth));
-          var to = Math.max(0, Math.min(1, (targetXEnd - entry.xStart) / itemWidth));
-          if (to - from < 0.08) return entry.text;
-          var start = Math.floor(from * entry.text.length);
-          var end = Math.max(start + 1, Math.ceil(to * entry.text.length));
-          return entry.text.slice(start, end);
-        }).join(" ").replace(/\s+/g, " ").trim();
+      async function extractTextAtAnchor(items, viewport, anchor, styles) {
+        var layer = document.createElement("div");
+        layer.className = "pdf-text-layer";
+        Object.assign(layer.style, { position: "fixed", left: "0", top: "0", width: viewport.width + "px", height: viewport.height + "px", visibility: "hidden", pointerEvents: "none" });
+        layer.style.setProperty("--scale-factor", String(viewport.scale));
+        document.body.appendChild(layer);
+        try {
+          var divs = [];
+          await pdfjsLib.renderTextLayer({ textContent: { items: items, styles: styles }, container: layer, viewport: viewport, textDivs: divs }).promise;
+          if (document.fonts) await document.fonts.ready;
+          return PdfTextSelection.extractEntries(PdfTextSelection.readEntries(layer, divs), anchor);
+        } finally { layer.remove(); }
       }
 
       function filenameFromValue(value) {
@@ -458,7 +410,7 @@
           var page = await splitTextDocument.getPage(pageNumber);
           var viewport = page.getViewport({ scale: 1 });
           var textContent = await page.getTextContent();
-          var value = extractTextAtAnchor(textContent.items, viewport, splitTextAnchor).trim();
+          var value = (await extractTextAtAnchor(textContent.items, viewport, splitTextAnchor, textContent.styles)).trim();
           if (!value) {
             unmatchedPages.push(pageNumber - 1);
             continue;
