@@ -16,7 +16,7 @@ import AnswerKeyManagement from "./answer-key-management";
 import RegistrationRequests from "./registration-requests";
 import SchoolManagement from "./school-management";
 import ExamManagement from "./exam-management";
-import OpticalAdmin from "./optical-admin";
+import FmtManager from "./fmt-manager";
 import OpticalEvaluation from "./optical-evaluation";
 import FmtDownloads from "./fmt-downloads";
 import ReaderAccounts from "./reader-accounts";
@@ -36,7 +36,7 @@ const pages: Record<Section, { title: string; eyebrow: string; description: stri
   exam: { title: "Sınav Yükle", eyebrow: "OPTİK DEĞERLENDİRME", description: "TXT dosyanızı FMT ve cevap anahtarıyla değerlendirin; sonuç listesi ve öğrenci karneleri alın.", action: "TXT seç" },
   "exam-records": { title: "Sınav Kayıtları", eyebrow: "SINAV YÖNETİMİ", description: "Kurumlarınızın sınav kayıtlarını yönetin.", action: "Sınav oluştur" },
   "optical-keys": { title: "Değerlendirme Anahtarları", eyebrow: "CEVAP ANAHTARLARI", description: "Soru cevapları, kitapçık eşleştirmeleri ve kazanımları değerlendirmeye hazırlayın.", action: "Anahtar ekle" },
-  "fmt-upload": { title: "FMT Yükle", eyebrow: "FMT YÖNETİMİ", description: "Optik verilerinizin okunacağı FMT format şablonunu ekleyin.", action: "FMT dosyası seç" },
+  "fmt-upload": { title: "FMT Yönetimi", eyebrow: "FMT YÖNETİMİ", description: "Optik verilerinizin okunacağı FMT format şablonunu ekleyin.", action: "FMT dosyası seç" },
   "fmt-edit": { title: "FMT Düzenle", eyebrow: "FMT YÖNETİMİ", description: "Kayıtlı FMT şablonlarını ve alan eşlemelerini düzenleyin.", action: "Şablonları görüntüle" },
   "fmt-delete": { title: "FMT Durumu", eyebrow: "FMT YÖNETİMİ", description: "Geçmiş değerlendirmeleri koruyarak FMT şablonlarını pasife alın veya yeniden etkinleştirin.", action: "Şablonları görüntüle" },
   "school-add": { title: "Kurum Ekle", eyebrow: "KURUM YÖNETİMİ", description: "Sisteme yeni bir okul veya kurum kaydı ekleyin.", action: "Yeni kurum ekle" },
@@ -61,10 +61,10 @@ const pages: Record<Section, { title: string; eyebrow: string; description: stri
 
 const groups: { title: string; items: { id: Section; label: string; icon: string }[] }[] = [
   { title: "SINAV İŞLEMLERİ", items: [{ id: "exam", label: "Sınav Yükle", icon: "⇧" }, { id: "results", label: "Sınav Değerlendir / Sonuç Al", icon: "▥" }, { id: "exam-records", label: "Sınav Kayıtları", icon: "▤" }] },
-  { title: "FMT YÖNETİMİ", items: [{ id: "fmt-download", label: "FMT İndir", icon: "↓" }, { id: "fmt-upload", label: "FMT Yükle", icon: "＋" }, { id: "fmt-edit", label: "FMT Düzenle", icon: "✎" }, { id: "fmt-delete", label: "FMT Durumu", icon: "⌫" }] },
+  { title: "FMT YÖNETİMİ", items: [{ id: "fmt-download", label: "FMT İndir", icon: "↓" }, { id: "fmt-upload", label: "FMT Yönetimi", icon: "＋" }] },
   { title: "KURUM YÖNETİMİ", items: [{ id: "school-add", label: "Kurum Ekle", icon: "＋" }, { id: "school-edit", label: "Kurum Düzenle", icon: "✎" }, { id: "school-delete", label: "Kurum Durumu", icon: "◉" }] },
   { title: "YAYINEVLERİ", items: [{ id: "publishers", label: "Yayınevleri", icon: "▣" }] },
-  { title: "CEVAP ANAHTARLARI", items: [{ id: "answer-keys", label: "Cevap Anahtarları", icon: "✦" }, { id: "optical-keys", label: "Anahtar Ekle / Düzenle", icon: "✓" }] },
+  { title: "CEVAP ANAHTARLARI", items: [{ id: "answer-keys", label: "Cevap Anahtarları", icon: "✦" }] },
   { title: "ÖĞRENCİLER", items: [{ id: "students", label: "Öğrenci / Veli Hesapları", icon: "♙" }] },
   { title: "ARAÇLAR", items: [{ id: "txt-converter", label: "TXT Dönüştür", icon: "⇄" }, { id: "calendar", label: "Takvim", icon: "▦" }, { id: "bird", label: "K ile Uçma Zamanı", icon: "↗" }, { id: "blocks", label: "Blok Zamanı", icon: "▦" }, { id: "snake", label: "Kıvrıla Kıvrıla K", icon: "〰" }, { id: "rebuilder", label: "Sınav Listesi", icon: "▤" }, { id: "pdf-tools", label: "PDF Düzenleyici", icon: "▧" }] },
   { title: "SİSTEM KULLANICILARI", items: [{ id: "system-users", label: "Üye Kayıtları", icon: "♙" }] },
@@ -231,7 +231,7 @@ export default function PanelPage() {
           <MotivationBanner firstName={profile.firstName} />
           <div className="page-title"><div><p className="hero-tag">{activePage.eyebrow}</p><h1>{activePage.title}</h1><p>{activePage.description}</p></div>{!["txt-converter", "students", "fmt-download", "results", "exam", "exam-records", "fmt-upload", "fmt-edit", "fmt-delete", "optical-keys", "account", "calendar", "bird", "snake", "blocks", "exam-schedule", "rebuilder", "pdf-tools", "system-users", "contact-inbox", "audit-logs", "publishers", "publisher-requests", "answer-keys"].includes(section) && <button className="button button-navy" onClick={() => document.getElementById("main-action")?.click()}><span>＋</span> {activePage.action}</button>}</div>
           {logoutNotice && <div className="logout-toast" role="status">{logoutNotice}</div>}
-          {section === "txt-converter" ? <TxtConverter token={authToken} /> : section === "fmt-download" ? <FmtDownloads token={authToken} /> : section === "students" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ReaderAccounts token={authToken} /> : ["fmt-upload", "fmt-edit", "fmt-delete", "optical-keys"].includes(section) && authUser?.role === "SUPER_ADMIN" ? <OpticalAdmin token={authToken} mode={section === "optical-keys" ? "keys" : "templates"} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} screen="upload" onSaved={id=>{setSavedOpticalId(id);setSection("results");}} /> : section === "results" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} screen="results" initialResultId={savedOpticalId} /> : section === "exam-schedule" && authUser?.role === "SUPER_ADMIN" ? <ScheduleManagement token={authToken} /> : section === "contact-inbox" && authUser?.role === "SUPER_ADMIN" ? <ContactInbox token={authToken} /> : section === "audit-logs" && authUser?.role === "SUPER_ADMIN" ? <AuditLogManagement token={authToken} /> : section === "account" ? <section className="account-card">
+          {section === "txt-converter" ? <TxtConverter token={authToken} /> : section === "fmt-download" ? <FmtDownloads token={authToken} /> : section === "students" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ReaderAccounts token={authToken} /> : ["fmt-upload", "fmt-edit", "fmt-delete", "optical-keys"].includes(section) && authUser?.role === "SUPER_ADMIN" ? <FmtManager token={authToken} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} screen="upload" onSaved={id=>{setSavedOpticalId(id);setSection("results");}} /> : section === "results" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} screen="results" initialResultId={savedOpticalId} /> : section === "exam-schedule" && authUser?.role === "SUPER_ADMIN" ? <ScheduleManagement token={authToken} /> : section === "contact-inbox" && authUser?.role === "SUPER_ADMIN" ? <ContactInbox token={authToken} /> : section === "audit-logs" && authUser?.role === "SUPER_ADMIN" ? <AuditLogManagement token={authToken} /> : section === "account" ? <section className="account-card">
             <form className="account-form" onSubmit={saveProfile}>
               <div className="account-avatar">{profile.firstName.slice(0, 1).toUpperCase() || "B"}</div>
               <div className="account-fields">
@@ -249,7 +249,7 @@ export default function PanelPage() {
             <p>{section === "exam" ? "Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın." : activePage.description}</p>
             <button id="main-action" className="button button-navy" onClick={() => window.alert("Bu özellik sonraki geliştirme adımında aktif edilecek.")}><span>＋</span> {activePage.action}</button>
           </section>}
-          <div className="dashboard-footnote"><span>◈</span> Optik sınav yönetiminiz için ihtiyacınız olan her şey tek panelde.</div>
+          <div className="dashboard-footnote"><span>◈</span> Optik sınav yönetiminiz için ihtiyacınız olan her şey tek panelde. <span className="version-badge">v1.1.2</span> <span className="release-date">9 Kasım 2026</span></div>
         </div>
       </section>
     </main>

@@ -15,3 +15,5 @@ import "./optical-workflow.test";
 import "./optical-admin.test";
 import "./formats-v111.test";
 import "./critical-v111.test";
+
+import "./v112.test";

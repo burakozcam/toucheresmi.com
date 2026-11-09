@@ -15,12 +15,12 @@ test("gerçek özgün Fernus XLS ve Okulizyon XLSX: ham kaynak değerleri ve kaz
  for(const [file,format]of [["fernus-082701.xls","f"],["okulizyon-ankara.xlsx","o"]] as const){const q=readEvaluationExcel(fixture(file),format);assert.equal(q.length,90);assert.equal(q[0].source!.system,format);assert.equal(q[0].source!.values[format==="f"?2:5],q[0].answer);assert.equal(q[0].source!.row,format==="f"?3:4);assert.ok(q[0].source!.columns.length>0);}
  const q=readEvaluationExcel(fixture("okulizyon-ankara.xlsx"),"o").find(q=>q.lesson==="FEN"&&q.number===17)!;assert.equal(q.source!.values[6],q.outcomeCode);assert.ok(q.source!.values[10]);
 });
-test("içe aktarma: onaysız ve dosyadan kopuk önizleme reddedilir; düzeltme kaydedilir, özgün satır korunur",()=>{
+test("içe aktarma: onaysız ve dosyadan kopuk önizleme reddedilir; düzeltme kaydedilir, özgün satır korunur",async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"critical-import-")),file=path.join(dir,"source.xls");fs.copyFileSync(fixture("fernus-082701.xls"),file);
  const source={fieldname:"learningOutcomesFile",originalname:"source.xls",path:file,mimetype:"application/vnd.ms-excel",size:fs.statSync(file).size} as Express.Multer.File;
  try{const original=readEvaluationExcel(file,"f"),q=structuredClone(original);q[0].answer="H";q[0].outcomeName="Kullanıcının düzelttiği kazanım";q[0].source!.values[2]="FAKE";const checksum=crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex"),input={evaluationFormat:"f" as const,reviewedQuestions:JSON.stringify(q),sourceChecksum:checksum,confirmImport:false};
- assert.throws(()=>reviewImportedQuestions([source],input),/onaylayın/);assert.equal(fs.readdirSync(dir).length,1);assert.throws(()=>reviewImportedQuestions([source],{...input,confirmImport:true,sourceChecksum:"stale"}),/değişti/);
- const files=[source],saved=reviewImportedQuestions(files,{...input,confirmImport:true})!;assert.equal(saved[0].answer,"H");assert.equal(saved[0].source!.values[2],"C");assert.equal(files.length,2);assert.equal(files[1].fieldname,"answerKeyFile");assert.equal(readEvaluationExcel(files[1].path)[0].answer,"H");assert.deepEqual(fs.readFileSync(file),fs.readFileSync(fixture("fernus-082701.xls")));
+ await assert.rejects(()=>reviewImportedQuestions([source],input),/onaylayın/);assert.equal(fs.readdirSync(dir).length,1);await assert.rejects(()=>reviewImportedQuestions([source],{...input,confirmImport:true,sourceChecksum:"stale"}),/değişti/);
+ const files=[source],saved=(await reviewImportedQuestions(files,{...input,confirmImport:true}))!;assert.equal(saved[0].answer,"H");assert.equal(saved[0].source!.values[2],"C");assert.equal(files.length,2);assert.equal(files[1].fieldname,"answerKeyFile");assert.equal(fs.readFileSync(files[1].path).subarray(0,5).toString(),"%PDF-");assert.deepEqual(fs.readFileSync(file),fs.readFileSync(fixture("fernus-082701.xls")));
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 test("FMT gerçek koordinatlar: iki örnek, kapasite ve çakışma; başlık parametreleri boyut tahminine dönüştürülmez",()=>{

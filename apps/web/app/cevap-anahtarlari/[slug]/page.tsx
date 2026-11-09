@@ -13,7 +13,7 @@ type AnswerKeyDetails = {
   examName: string;
   publishedAt: string;
   publisher: { id: string; name: string };
-  files: Array<{ id: string; category: "ANSWER_KEY" | "LEARNING_OUTCOMES"; originalFileName: string }>;
+  files: Array<{ id: string; category: "ANSWER_KEY" | "LEARNING_OUTCOMES"; generated?:boolean; originalFileName: string }>;
 };
 
 const getAnswerKey = cache(async (id: string): Promise<AnswerKeyDetails | null> => {
@@ -69,7 +69,7 @@ export default async function AnswerKeyDetailPage({
 
   const canonicalPath = answerKeyPath(item);
   if (slug !== canonicalPath.slice(canonicalPath.lastIndexOf("/") + 1)) permanentRedirect(canonicalPath);
-  const answerFile = item.files.find((file) => file.category === "ANSWER_KEY");
+  const answerFile = item.files.find(file=>file.category==="ANSWER_KEY"&&file.generated)??item.files.find(file=>file.category==="ANSWER_KEY"&&/\.pdf$/i.test(file.originalFileName))??item.files.find(file=>file.category==="ANSWER_KEY");
   const learningFile = item.files.find((file) => file.category === "LEARNING_OUTCOMES");
   const structuredData = {
     "@context": "https://schema.org",

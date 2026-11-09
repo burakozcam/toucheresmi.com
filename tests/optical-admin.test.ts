@@ -22,7 +22,7 @@ test("anahtar şablonu kullanıma hazırdır; C/D içe aktarımı sunucu ve tara
   const rows=structuredClone(keyTemplateRows);rows[1][7]=2;rows[1][8]=1;rows[2][7]=1;rows[2][8]=2;
   const questions=parseOpticalKeyRows(rows);assert.deepEqual(questionProblems(questions),[]);assert.equal(opticalQuestionsSchema.safeParse(questions).success,true);assert.deepEqual(questions[0].positions,{A:1,B:2,C:2,D:1});
   const x=require("../apps/web/public/vendor/xlsx.full.min.js"),w=x.utils.book_new();x.utils.book_append_sheet(w,x.utils.aoa_to_sheet(rows),"Cevap Anahtarı");const dir=fs.mkdtempSync(path.join(os.tmpdir(),"key-import-")),file=path.join(dir,"key.xlsx");
-  try{fs.writeFileSync(file,x.write(w,{type:"buffer",bookType:"xlsx"}));assert.deepEqual(readEvaluationExcel(file),questions);}finally{fs.rmSync(dir,{recursive:true,force:true});}
+  try{fs.writeFileSync(file,x.write(w,{type:"buffer",bookType:"xlsx"}));assert.deepEqual(readEvaluationExcel(file),questions.map(q=>({...q,source:{...q.source!,sheet:"Cevap Anahtarı"}})));}finally{fs.rmSync(dir,{recursive:true,force:true});}
   questions[1].positions.B=2;questions[0].outcomeCode="";assert.ok(questionProblems(questions).some(e=>e.includes("tekrarsız")));assert.ok(questionProblems(questions).some(e=>e.includes("kazanım")));
 });
 test("anahtar kontrolü dersler arasında farklı kitapçık kümelerini ve eksik cevapları reddeder",()=>{
@@ -32,6 +32,7 @@ test("kayıtlı anahtar API: admin detayına erişir; eski sürümle yazma ve ek
   const {prisma}=await import("../apps/api/src/db"),{opticalRouter}=await import("../apps/api/src/optical-routes");const originals:Array<[any,string,any]>=[],patch=(o:any,k:string,v:any)=>{originals.push([o,k,o[k]]);o[k]=v;};
   const key:any={id:"key",name:"Deneme",publicationId:"publication",questions:parseOpticalKeyRows(keyTemplateRows),penalty:3,active:true};let writes=0;
   patch(prisma.opticalKey,"findUnique",async()=>structuredClone(key));patch(prisma.opticalKey,"update",async({data}:any)=>{writes++;Object.assign(key,data);return key;});patch(prisma,"$transaction",async(fn:any)=>fn(prisma));
+  patch(prisma.publishedAnswerKey,"findUnique",async()=>null);
   const route=(p:string,method:string)=>(opticalRouter as any).stack.find((l:any)=>l.route?.path===p&&l.route.methods[method]).route.stack;
   async function invoke(body:any){let status=200,result:any;await route("/keys/:id","patch").at(-1).handle({params:{id:"key"},body:{confirmImport:true,...body},user:{role:"SUPER_ADMIN"}},{status(n:number){status=n;return this;},json(v:any){result=v;}},(e:any)=>{if(e)throw e;});return{status,result};}
   try{

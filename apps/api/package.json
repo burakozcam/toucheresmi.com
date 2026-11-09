@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/copy-assets.cjs",
     "start": "node dist/src/server.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -21,6 +21,9 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.5.0",
     "nodemailer": "^7.0.3",
+    "pdfjs-dist": "4.10.38",
+    "pdfkit": "0.17.2",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^3.25.28"
   },
   "devDependencies": {

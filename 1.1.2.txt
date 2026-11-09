@@ -1,0 +1,37 @@
+KURUMSAL SINAV — v1.1.2
+9 Kasım 2026
+
+DÜZELTMELER
+- API Excel okuması Web vendor dizininden ayrıldı; bağımsız XLS/XLSX desteği.
+- Tek Cevap Anahtarları yönetimi; liste, ekleme, düzenleme ve eski anahtar eşleştirme.
+- F / O / Otomatik-Genel kazanım içe aktarma; Genel CSV/TSV ve okunabilir tablo PDF desteği.
+- Kazanımdan otomatik cevap anahtarı, tam düzenlenebilir önizleme ve açık onay.
+- Türkçe fontlu indirilebilir cevap PDF’si; soru düzenlemesinde PDF yenileme.
+- Bağımsız ana sayfa / ölçme yayını; aynı sınav kaydı, önceki sonuçların korunması.
+- Birleşik FMT yönetimi, gerçek alan analizi, düzeltilebilir eşleştirme, gelişmiş ayarlar.
+- Çoklu FMT, isim/içerik mükerrer kontrolü, gerçek TXT testi ve okuyucu onayı.
+- 7108 / 8050 dahil özgün FMT indirme; JSON yerleşimi ayrı biçimde indirme/içe aktarma.
+- Süreli, iptal edilebilir tek-dosya FMT paylaşımı; bağlantı ve WhatsApp metni kopyalama.
+- Sınav Yükle yayınevi/sınıf/sınav/FMT seçimi; TXT’den mevcut sonuç ve karne akışı.
+- TXT dönüştürme varsayılan ayar açıklaması; daha geniş panel, sade menüler.
+- v1.1.2 altın parıltılı sürüm ve silik 9 Kasım 2026 tarihi.
+
+DOĞRULAMA
+105 otomatik test geçti. API ve Web üretim derlemeleri başarılı.
+Üretim Web + gerçek API ile F/O yükleme, PDF, toplu FMT, 7108 TXT’den sonuç,
+sınıf listesi/karne/analiz ve süreli paylaşım/iptal/süre aşımı tarayıcıda test edildi.
+Bağımsız API üretim paketinde XLS/XLSX/PDF ve health kontrolü geçti.
+Login gradienti, sabit form, reduced-motion ve mobil görünüm kontrol edildi.
+
+SINIRLAR
+Tarayıcı/API testlerinde Prisma için izole bellek kayıtları kullanıldı.
+Gerçek PostgreSQL migration, gerçek Veridyen Passenger ve fiziksel optik okuyucu
+testi yapılmadı. Bunlar staging/canlıya hazırlık adımında doğrulanmalı.
+OCR eklenmedi; okunamayan PDF için açık yönlendirme var.
+
+MIGRATION
+20261109020000_fmt_shares_answer_pdf — yalnız eklemeli. Canlıya uygulanmadı.
+
+GitHub commit/push, canlı dağıtım ve seed yapılmadı.
+Dosyalar, bağımlılıklar, ayrıntılı test sonuçları ve kesin sıralı cPanel dağıtım
+planı: docs/v1.1.2-release.md

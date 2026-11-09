@@ -148,6 +148,7 @@ model School {
 }
 
 model OpticalTemplate {
+  shares FmtShare[]
   validation Json?
   id String @id @default(cuid())
   name String @unique
@@ -431,6 +432,7 @@ model ExamScheduleEntry {
 }
 
 model AnswerKeyFile {
+  generated Boolean @default(false)
   id               String                @id @default(cuid())
   answerKeyId      String
   category         AnswerKeyFileCategory
@@ -513,4 +515,17 @@ model PublisherAlias {
   publisherId String
   series String?
   updatedAt DateTime @updatedAt
+}
+
+model FmtShare {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  templateId String
+  createdById String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  template OpticalTemplate @relation(fields:[templateId],references:[id],onDelete:Cascade)
+  @@index([createdById,createdAt])
+  @@index([expiresAt])
 }

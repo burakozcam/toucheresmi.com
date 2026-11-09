@@ -12,15 +12,15 @@ export function evaluationQuestions(value: unknown): OpticalQuestion[] {
   if (questions.some(q => !q.outcomeCode?.trim() || !q.outcomeName?.trim())) throw new Error("Ölçme değerlendirme için her sorunun kazanım kodu ve kazanım metni bulunmalıdır.");
   return questions;
 }
-// Same locally licensed SheetJS build as the browser, resolved through the workspace package.
-const xlsx = () => require("@optik/web/public/vendor/xlsx.full.min.js") as {
+// API production dependency; works without any web app directory.
+const xlsx = () => require("xlsx") as {
   read(bytes: Buffer, options: object): {SheetNames: string[]; Sheets: Record<string, unknown>};
   utils: { sheet_to_json(sheet: unknown, options: object): unknown[][] };
 };
 export type ImportFormat="auto"|"f"|"o"|"standard";
 export function inspectEvaluationExcel(filePath:string,format:ImportFormat="auto",allowInvalid=false){
   const lib=xlsx(),book=lib.read(fs.readFileSync(filePath),{type:"buffer"});
-  const {parseWorkbook}=require("@optik/web/lib/optical-import.js");
+  const {parseWorkbook}=require("../lib/optical-import");
   const sheets=book.SheetNames.map(name=>({name,rows:lib.utils.sheet_to_json(book.Sheets[name],{header:1,defval:""})}));
   return parseWorkbook(sheets,format,{allowInvalid}) as {questions:OpticalQuestion[];format:string;issues:string[]};
 }

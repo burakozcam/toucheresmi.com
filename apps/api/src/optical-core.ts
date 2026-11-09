@@ -31,7 +31,7 @@ export const layout8050:OpticalLayout={
   literals:[],
 };
 export const opticalQuestionSchema = z.object({
-  source:z.object({system:z.enum(["f","o"]),sheet:z.string().max(100),row:z.number().int().positive(),columns:z.array(z.string()).max(50),values:z.array(z.union([z.string(),z.number(),z.boolean(),z.null()])).max(50)}).optional(),
+  source:z.object({system:z.enum(["f","o","general"]),sheet:z.string().max(100),row:z.number().int().positive(),columns:z.array(z.string()).max(50),values:z.array(z.union([z.string(),z.number(),z.boolean(),z.null()])).max(50)}).optional(),
   lesson: z.string().trim().min(1).max(80), number: z.number().int().min(1).max(300), answer: z.string().regex(/^[ABCDEHX]$/),
   weight: z.number().positive().max(100), positions: z.record(z.string().regex(/^[A-D]$/), z.number().int().min(1).max(300)),
   outcomeCode: z.string().max(80).optional(), outcomeName: z.string().max(1000).optional(),

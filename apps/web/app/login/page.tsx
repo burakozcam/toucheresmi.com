@@ -149,7 +149,7 @@ export default function LoginPage() {
           {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <Link href="/contact#contact-form">Bize ulaşın</Link></p>}
         </section>
       </section>
-      <footer className="auth-footer">© 2026 kurumsalsinav.com · {SITE_VERSION} <span>Ölçün. Değerlendirin. Geliştirin.</span></footer>
+      <footer className="auth-footer">© 2026 kurumsalsinav.com · <span className="version-badge">{SITE_VERSION}</span> <span className="release-date">9 Kasım 2026</span> <span>Ölçün. Değerlendirin. Geliştirin.</span></footer>
     </main>
   );
 }

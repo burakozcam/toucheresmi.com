@@ -1,4 +1,6 @@
 import express from "express";
+import fs from "node:fs";
+import path from "node:path";
 import crypto from "node:crypto";
 import { env } from "./config";
 import { checksum, keyFingerprint, reviewSnapshot, reEvaluate, scoreChanges, type Snapshot } from "./optical-review";
@@ -11,9 +13,12 @@ import { requireAuth, requireRole, type AuthenticatedRequest } from "./auth";
 import { decodeOptical, opticalLayoutSchema, opticalQuestionsSchema, parseOptical, opticalSummary } from "./optical-core";
 import { RequestLimiter } from "./rate-limit";
 import { evaluationPublicationWhere, evaluationQuestions } from "./optical-catalog";
+import { hasFmt } from "./fmt-share";
 import { fmtBytes } from "./fmt-download";
 import { fmtProof,checkFmtProof,verificationSchema,inspectFmtCoordinates } from "./fmt-verification";
-import { bulkTemplatesInput,templateInput } from "./fmt-bulk";
+import { createAnswerKeyPdf } from "./answer-key-pdf";
+import { analyzeFmt } from "./fmt-analyze";
+import { bulkTemplatesInput,templateInput,fmtContentIdentity } from "./fmt-bulk";
 import { previewFmt } from "./fmt-preview";
 import { convertTxt } from "./txt-converter";
 
@@ -41,11 +46,23 @@ const idParam = (req: AuthenticatedRequest)=>String(req.params.id ?? "");
 opticalRouter.get("/templates", wrap(async(req,res)=>{
   res.json(await prisma.opticalTemplate.findMany({where:req.user!.role===Role.SUPER_ADMIN?{}:{active:true},orderBy:{createdAt:"desc"}}));
 }));
+opticalRouter.get("/templates/examples/:code/download",wrap(async(req,res)=>{
+ const code=String(req.params.code);if(!["7108","8050"].includes(code)){res.status(404).json({error:"Örnek FMT bulunamadı."});return;}
+ res.attachment(`${code}.fmt`).type("application/octet-stream").send(fs.readFileSync(path.join(__dirname,"../assets/templates",`${code}.fmt`)));
+}));
 opticalRouter.get("/templates/:id/download",wrap(async(req,res)=>{
   const template=await prisma.opticalTemplate.findFirst({where:{id:idParam(req),...(req.user!.role===Role.SUPER_ADMIN?{}:{active:true})}});
   if(!template){res.status(404).json({error:"Etkin FMT dosyası bulunamadı."});return;}
+  if(!hasFmt(template)){res.status(404).json({error:"Bu şablonda özgün FMT dosyası yok. JSON yerleşimi FMT olarak indirilemez; özgün dosyayı yeniden içe aktarın."});return;}
   const filename=template.name.replace(/[\\/:*?"<>|\x00-\x1f]/g,"-").replace(/\.fmt$/i,"").slice(0,140)+".fmt";
   res.setHeader("Cache-Control","private, no-store");res.attachment(filename).type("application/octet-stream").send(fmtBytes(template.originalFmt,template.originalBase64));
+}));
+opticalRouter.get("/templates/:id/layout",wrap(async(req,res)=>{
+ const template=await prisma.opticalTemplate.findFirst({where:{id:idParam(req),...(req.user!.role===Role.SUPER_ADMIN?{}:{active:true})}});if(!template){res.status(404).json({error:"Şablon bulunamadı."});return;}
+ res.attachment(`${template.name.replace(/[\\/:*?"<>|]/g,"-")}.layout.json`).type("application/json").send(JSON.stringify({schemaVersion:1,name:template.name,layout:template.layout},null,2));
+}));
+opticalRouter.post("/templates/analyze",admin,wrap(async(req,res)=>{
+ const {originalFmt}=z.object({originalFmt:z.string().min(1).max(64000)}).parse(req.body);try{res.json(analyzeFmt(originalFmt));}catch(e){res.status(400).json({error:(e as Error).message});}
 }));
 opticalRouter.post("/templates",admin,wrap(async(req,res)=>{
   const data=templateInput.parse(req.body);
@@ -60,6 +77,9 @@ opticalRouter.post("/templates/bulk",admin,wrap(async(req,res)=>{
   const outcome=await prisma.$transaction(async tx=>{
     const existing=await tx.opticalTemplate.findMany({where:{name:{in:templates.map(t=>t.name),mode:"insensitive"}},select:{name:true}});
     if(existing.length)return{error:`Kayıtlı şablon adı var: ${existing.map(t=>t.name).join(", ")}. İsimleri düzeltin; hiçbir kayıt eklenmedi.`};
+    const saved=await tx.opticalTemplate.findMany({select:{name:true,originalFmt:true,layout:true}});
+    const duplicate=templates.find(t=>saved.some(s=>s.originalFmt&&fmtContentIdentity(s)===fmtContentIdentity(t)));
+    if(duplicate)return{error:`${duplicate.name}: aynı FMT içeriği ve TXT yerleşimi zaten kayıtlı; mevcut şablonu kullanın.`};
     const created=[];for(const t of templates){const {verification,...data}=t;created.push(await tx.opticalTemplate.create({data:{...data,validation:{readerName:verification!.readerName,readerConfirmed:true,encoding:verification!.encoding,verifiedAt:new Date().toISOString(),coordinates:inspectFmtCoordinates(t.originalFmt,t.layout)} as unknown as Prisma.InputJsonValue,layout:t.layout as Prisma.InputJsonValue}}));}return{created};
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   if("error"in outcome){res.status(409).json({error:outcome.error});return;}res.status(201).json(outcome.created);
@@ -69,6 +89,7 @@ opticalRouter.patch("/templates/:id",admin,wrap(async(req,res)=>{
   if(!await prisma.opticalTemplate.findUnique({where:{id:idParam(req)}})){res.status(404).json({error:"FMT bulunamadı."});return;}
   res.json(await prisma.opticalTemplate.update({where:{id:idParam(req)},data}));
 }));
+opticalRouter.get("/publishers",wrap(async(_req,res)=>{res.json(await prisma.publisher.findMany({select:{id:true,name:true},orderBy:{name:"asc"}}));}));
 opticalRouter.get("/keys",wrap(async(req,res)=>{
   const available=req.user!.role!==Role.SUPER_ADMIN||req.query.available==="true";
   const keys=await prisma.opticalKey.findMany({where:available?{active:true,publication:evaluationPublicationWhere}:{},include:{publication:{include:{publisher:{select:{id:true,name:true}}}}},orderBy:{createdAt:"desc"}});
@@ -91,6 +112,7 @@ opticalRouter.patch("/keys/:id",admin,wrap(async(req,res)=>{
   if(input.publicationId&&!await prisma.publishedAnswerKey.findUnique({where:{id:input.publicationId}})){res.status(400).json({error:"Arşivdeki sınav bulunamadı."});return;}
   const contentChange=input.questions!==undefined||input.penalty!==undefined;
   if(contentChange&&!input.confirmImport){res.status(400).json({error:"Tam önizlemeyi inceleyip anahtar değişikliğini onaylayın."});return;}
+  let generatedPath:string|undefined;
   const save=async(tx:Prisma.TransactionClient)=>{
     const current=await tx.opticalKey.findUnique({where:{id:idParam(req)}});
     if(!current)return{status:404,error:"Cevap anahtarı bulunamadı."};
@@ -99,9 +121,18 @@ opticalRouter.patch("/keys/:id",admin,wrap(async(req,res)=>{
     if((current.publicationId||input.publicationId)&&input.questions){try{evaluationQuestions(input.questions);}catch(e){return {status:400,error:(e as Error).message};}}
     const {expectedFingerprint,confirmImport,...data}=input;
     const key=await tx.opticalKey.update({where:{id:idParam(req)},data:{...data,...(data.questions?{questions:data.questions as Prisma.InputJsonValue}:{})}});
+    if(contentChange&&key.publicationId){
+      const publication=await tx.publishedAnswerKey.findUnique({where:{id:key.publicationId},include:{publisher:true}});
+      if(publication){
+        const bytes=await createAnswerKeyPdf(evaluationQuestions(key.questions),{examName:publication.examName,grade:publication.grade,publisherName:publication.publisher.name});
+        const storedFileName=`${crypto.randomUUID()}.generated-answer.pdf`;
+        const directory=path.resolve(env.STORAGE_DIR,"answer-keys",publication.id);fs.mkdirSync(directory,{recursive:true});generatedPath=path.join(directory,storedFileName);fs.writeFileSync(generatedPath,bytes);
+        await tx.answerKeyFile.create({data:{answerKeyId:publication.id,category:"ANSWER_KEY",generated:true,originalFileName:"Onaylı Cevap Anahtarı.pdf",storedFileName,mimeType:"application/pdf",size:bytes.length,storagePath:generatedPath}});
+      }
+    }
     return{key};
   };
-  const result=contentChange?await prisma.$transaction(save,{isolationLevel:Prisma.TransactionIsolationLevel.Serializable}):await save(prisma);
+  const result=await (contentChange?prisma.$transaction(save,{isolationLevel:Prisma.TransactionIsolationLevel.Serializable}):save(prisma)).catch(error=>{if(generatedPath)fs.rmSync(generatedPath,{force:true});throw error;});
   if("error"in result){res.status(result.status!).json({error:result.error});return;}
   res.json(result.key);
 }));

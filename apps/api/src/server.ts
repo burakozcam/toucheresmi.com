@@ -15,6 +15,8 @@ import { RequestLimiter } from "./rate-limit";
 import { prisma } from "./db";
 import { scheduleRouter } from "./schedule";
 import { opticalRouter } from "./optical-routes";
+import { fmtShareRouter } from "./fmt-share";
+import { inspectOutcomeFile } from "./outcome-file";
 import { reviewImportedQuestions } from "./answer-import-review";
 import { prepareEvaluation } from "./optical-catalog";
 import { readerRouter } from "./reader-routes";
@@ -136,12 +138,16 @@ const examSchema = z.object({
   examDate: z.coerce.date(),
 });
 
-const allowedExtensions = new Set(["pdf", "xlsx", "xls", "png", "jpg", "jpeg", "webp"]);
+const allowedExtensions = new Set(["pdf", "xlsx", "xls", "csv", "tsv", "png", "jpg", "jpeg", "webp"]);
 const allowedMimeTypes = new Set([
   "application/pdf",
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "image/png",
+  "text/csv",
+  "text/tab-separated-values",
+  "text/plain",
+  "application/octet-stream",
   "image/jpeg",
   "image/webp",
 ]);
@@ -156,6 +162,7 @@ function validateFileSignature(filePath: string, extension: string) {
   const buffer = fs.readFileSync(filePath).subarray(0, 16);
   const hex = Array.from(buffer).map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase();
 
+  if (["csv","tsv"].includes(extension)) return !buffer.includes(0);
   if (extension === "pdf") return buffer.subarray(0, 5).toString("ascii") === "%PDF-";
   if (["xlsx", "xls"].includes(extension)) return hex.startsWith("D0CF11E0A1B11AE1") || hex.startsWith("504B0304");
   if (["png"].includes(extension)) return hex.startsWith("89504E470D0A1A0A");
@@ -1649,8 +1656,8 @@ app.get("/api/answer-keys", async (request, response, next) => {
         include: {
           publisher: { select: { id: true, name: true } },
           files: {
-            orderBy: { createdAt: "asc" },
-            select: { id: true, category: true, originalFileName: true, mimeType: true, size: true, createdAt: true },
+            orderBy: { createdAt: "desc" },
+            select: { id: true, category: true, originalFileName: true, mimeType: true, size: true, createdAt: true,generated:true },
           },
         },
         orderBy: { publishedAt: "desc" },
@@ -1674,8 +1681,8 @@ app.get("/api/answer-keys/:id", async (request, response, next) => {
       include: {
         publisher: { select: { id: true, name: true } },
         files: {
-          orderBy: { createdAt: "asc" },
-          select: { id: true, category: true, originalFileName: true, mimeType: true, size: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, category: true, originalFileName: true, mimeType: true, size: true, createdAt: true,generated:true },
         },
       },
     });
@@ -1759,6 +1766,13 @@ app.get("/api/answer-key-files/:id", async (request, response, next) => {
   }
 });
 
+app.post("/api/admin/outcome-preview",requireAuth,requireRole(Role.SUPER_ADMIN),upload.single("file"),async(request:AuthenticatedRequest,response,next)=>{
+ try{if(!request.file){response.status(400).json({error:"Kazanım dosyasını seçin."});return;}const format=z.enum(["auto","standard","f","o"]).parse(request.body.evaluationFormat??"auto");
+ if(!validateFileSignature(request.file.path,path.extname(request.file.originalname).slice(1).toLowerCase())){response.status(400).json({error:"Dosya içeriği uzantısıyla eşleşmiyor."});return;}
+ const result=await inspectOutcomeFile(request.file.path,request.file.originalname,format,true);response.json({...result,checksum:crypto.createHash("sha256").update(fs.readFileSync(request.file.path)).digest("hex")});
+ }catch(error){response.status(400).json({error:error instanceof Error?error.message:"Kazanım dosyası okunamadı."});}finally{if(request.file&&fs.existsSync(request.file.path))fs.unlinkSync(request.file.path);}
+});
+
 app.post(
   "/api/admin/answer-keys",
   requireAuth,
@@ -1781,10 +1795,10 @@ app.post(
           response.status(400).json({ error: `Dosya içeriği doğrulanamadı: ${file.originalname}` }); return;
         }
       }
-      const publisher = await prisma.publisher.findFirst({ where: { id: parsed.data.publisherId, active: true }, select: { id: true } });
+      const publisher = await prisma.publisher.findFirst({ where: { id: parsed.data.publisherId, active: true }, select: { id: true,name:true } });
       if (!publisher) { response.status(404).json({ error: "Etkin yayınevi bulunamadı." }); return; }
-      if(((parsed.data.published??true)||parsed.data.showInEvaluation)&&!parsed.data.confirmPublication){response.status(400).json({error:"Önizleme ve yayın seçeneklerini açıkça onaylayın. Hiçbir kayıt yayımlanmadı."});return;}
-      let reviewed;try{reviewed=reviewImportedQuestions(uploadedFiles,parsed.data);}catch(error){response.status(400).json({error:(error as Error).message});return;}
+      if(((parsed.data.published??false)||parsed.data.showInEvaluation)&&!parsed.data.confirmPublication){response.status(400).json({error:"Önizleme ve yayın seçeneklerini açıkça onaylayın. Hiçbir kayıt yayımlanmadı."});return;}
+      let reviewed;try{reviewed=await reviewImportedQuestions(uploadedFiles,parsed.data,{examName:parsed.data.examName,grade:parsed.data.grade,publisherName:(typeof publisher!=="undefined"?publisher?.name:undefined)});}catch(error){response.status(400).json({error:(error as Error).message});return;}
       let evaluation;
       const showInEvaluation=parsed.data.showInEvaluation??false, penalty=parsed.data.penalty??3;
       try { evaluation = reviewed??prepareEvaluation(uploadedFiles.map(f=>({category:f.fieldname==="answerKeyFile"?"ANSWER_KEY":"LEARNING_OUTCOMES",storagePath:f.path,originalFileName:f.originalname})),showInEvaluation,null,true,parsed.data.evaluationFormat); }
@@ -1799,11 +1813,12 @@ app.post(
           originalFileName: file.originalname, storedFileName, storagePath,
           mimeType: file.mimetype, size: file.size,
           category: file.fieldname === "answerKeyFile" ? AnswerKeyFileCategory.ANSWER_KEY : AnswerKeyFileCategory.LEARNING_OUTCOMES,
+          generated:file.filename?.endsWith(".generated-answer.pdf")??false,
         };
       });
       await prisma.publishedAnswerKey.create({ data: {
         id: answerKeyId, publisherId: publisher.id, grade: parsed.data.grade,
-        examName: parsed.data.examName.trim(), published: parsed.data.published??true,
+        examName: parsed.data.examName.trim(), published: parsed.data.published??false,
         showInEvaluation,
         ...(evaluation ? {opticalKey:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:showInEvaluation}}} : {}),
         ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
@@ -1852,23 +1867,25 @@ app.patch(
     try {
       const current = await prisma.publishedAnswerKey.findUnique({
         where: { id: answerKeyId },
-        include: { files: true, opticalKey: true },
+        include: { files: true, opticalKey: true,publisher:true },
       });
       if (!current) {
         removeTemporaryUploads();
         response.status(404).json({ error: "Cevap anahtarı bulunamadı." });
         return;
       }
+      let pdfPublisherName=current.publisher?.name;
       if (parsed.data.publisherId !== current.publisherId) {
         const activePublisher = await prisma.publisher.findFirst({
           where: { id: parsed.data.publisherId, active: true },
-          select: { id: true },
+          select: { id: true,name:true },
         });
         if (!activePublisher) {
           removeTemporaryUploads();
           response.status(400).json({ error: "Yeni yayınevi seçimi etkin değil veya bulunamadı." });
           return;
         }
+        pdfPublisherName=activePublisher.name;
       }
 
       for (const file of uploadedFiles) {
@@ -1881,7 +1898,7 @@ app.patch(
       }
 
       if(((parsed.data.published??current.published)||(parsed.data.showInEvaluation??current.showInEvaluation))&&!parsed.data.confirmPublication){response.status(400).json({error:"Önizleme ve yayın seçeneklerini açıkça onaylayın."});return;}
-      let reviewed;try{reviewed=reviewImportedQuestions(uploadedFiles,parsed.data);}catch(error){response.status(400).json({error:(error as Error).message});return;}
+      let reviewed;try{reviewed=await reviewImportedQuestions(uploadedFiles,parsed.data,{examName:parsed.data.examName,grade:parsed.data.grade,publisherName:pdfPublisherName});}catch(error){response.status(400).json({error:(error as Error).message});return;}
       const replacedFields = new Set(uploadedFiles.map(f=>f.fieldname==="answerKeyFile"?"ANSWER_KEY":"LEARNING_OUTCOMES"));
       const effectiveFiles = [...current.files.filter(f=>!replacedFields.has(f.category)),...uploadedFiles.map(f=>({category:f.fieldname==="answerKeyFile"?"ANSWER_KEY":"LEARNING_OUTCOMES",storagePath:f.path,originalFileName:f.originalname}))];
       let evaluation;
@@ -1904,6 +1921,7 @@ app.patch(
         return {
           answerKeyId,
           category,
+          generated:file.filename?.endsWith(".generated-answer.pdf")??false,
           originalFileName: file.originalname,
           storedFileName: path.basename(destinationFilePath),
           mimeType: file.mimetype,
@@ -1984,6 +2002,7 @@ app.delete(
   },
 );
 
+app.use(fmtShareRouter);
 app.use("/api/optical", opticalRouter);
 app.use("/api", readerRouter);
 

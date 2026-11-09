@@ -86,6 +86,8 @@ Yeni veritabanı tabloları için `apps/api/prisma/migrations/20261107190000_v1_
 
 ## cPanel production dağıtımı
 
+v1.1.2 için güncel bağımlılıklar, Passenger başlangıcı, migration sırası ve doğrulama sınırları: [v1.1.2 dağıtım raporu](docs/v1.1.2-release.md). Aşağıdaki tarihsel genel notları uygulamadan önce bu raporu izleyin.
+
 Web uygulamasındaki API istekleri `NEXT_PUBLIC_API_URL` üzerinden yapılır (giriş/kayıt, yönetici üyelik/kullanıcı işlemleri ve iletişim formu). Bu değişken Next.js build sırasında derlemeye gömüldüğünden canlı değeri build'den önce ayarlayın:
 
 ```sh
