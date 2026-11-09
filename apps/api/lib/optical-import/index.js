@@ -18,6 +18,8 @@ function parseWorkbook(sheets,format="auto",options={}){
   }
   result={format:kind,questions,issues,warnings:[],examName:"",publisher:""};
  }
+ const missing=result.questions.filter(q=>!q.outcomeCode||!q.outcomeName).length;
+ if(missing)result.warnings.push(`${missing} sorunun kazanım bilgisi bulunamadı. Cevaplar korunur; kazanım eşleşmesi yapılmadı.`);
  if(!result.questions.length)throw new Error("Cevap anahtarı 1–300 soru içermeli.");
  if(result.issues.length&&!options.allowInvalid)throw new Error(result.issues[0]);
  return result;

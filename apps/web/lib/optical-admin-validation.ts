@@ -15,7 +15,7 @@ export function layoutProblems(layout:OpticalLayout):string[]{
   if((layout.literals??[]).some(l=>!l.text||/[\x00-\x1f\x7f]/.test(l.text)))errors.push("Sabit metinler boş veya kontrol karakteri içeremez.");
   return [...new Set(errors)];
 }
-export function questionProblems(questions:OpticalQuestion[],requireOutcomes=true):string[]{
+export function questionProblems(questions:OpticalQuestion[],requireOutcomes=false):string[]{
   const errors:string[]=[];if(!questions.length||questions.length>300)return["Cevap anahtarı 1–300 soru içermeli."];
   for(const q of questions){const label=`${q.lesson||"Ders yok"} / A ${q.number}`;
     if(!q.lesson.trim()||q.lesson.length>80)errors.push(`${label}: ders adı gerekli (en fazla 80 karakter).`);

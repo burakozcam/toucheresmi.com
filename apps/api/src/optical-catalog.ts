@@ -5,11 +5,10 @@ import { opticalQuestionsSchema, type OpticalQuestion } from "./optical-core";
 
 export const evaluationPublicationWhere: Prisma.PublishedAnswerKeyWhereInput = {
   showInEvaluation: true, publisher: { active: true },
-  AND: [{ files: { some: { category: "ANSWER_KEY" } } }, { files: { some: { category: "LEARNING_OUTCOMES" } } }],
+  files: { some: { category: "ANSWER_KEY" } },
 };
 export function evaluationQuestions(value: unknown): OpticalQuestion[] {
   const questions = opticalQuestionsSchema.parse(value);
-  if (questions.some(q => !q.outcomeCode?.trim() || !q.outcomeName?.trim())) throw new Error("Ölçme değerlendirme için her sorunun kazanım kodu ve kazanım metni bulunmalıdır.");
   return questions;
 }
 // API production dependency; works without any web app directory.
@@ -27,7 +26,7 @@ export function inspectEvaluationExcel(filePath:string,format:ImportFormat="auto
 export function readEvaluationExcel(filePath:string,format:ImportFormat="auto"):OpticalQuestion[]{return evaluationQuestions(inspectEvaluationExcel(filePath,format).questions);}
 type FileInfo={category:string;storagePath:string;originalFileName:string};
 export function prepareEvaluation(files:FileInfo[],enabled:boolean,previous:unknown,filesChanged:boolean,format:ImportFormat="auto"):OpticalQuestion[]|null {
-  if(enabled && !["ANSWER_KEY","LEARNING_OUTCOMES"].every(c=>files.some(f=>f.category===c)))throw new Error("Ölçme değerlendirmede göstermek için hem cevap anahtarı hem kazanım dosyası gereklidir.");
+  if(enabled && !files.some(f=>f.category==="ANSWER_KEY"))throw new Error("Ölçme değerlendirmede göstermek için cevap anahtarı dosyası gereklidir.");
   const candidates=[...files].sort((a,b)=>Number(b.category==="LEARNING_OUTCOMES")-Number(a.category==="LEARNING_OUTCOMES")).filter(f=>/\.(xlsx|xls)$/i.test(path.extname(f.originalFileName)));
   let problem:unknown;
   if(!filesChanged && previous){try{return evaluationQuestions(previous);}catch(e){problem=e;}}

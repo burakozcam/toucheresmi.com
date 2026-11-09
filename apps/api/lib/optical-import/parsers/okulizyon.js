@@ -6,7 +6,7 @@ module.exports=function parse(sheets){
  for(let i=index+1;i<sheet.rows.length;i++){
   const row=sheet.rows[i];if(row.every(v=>!String(v??"").trim()))continue;
   const label=`${sheet.name} satır ${i+1}`;let q;
- 
+
       const at=name=>row[head.indexOf(name)],book=norm(at("KİTAPÇIK"));if(book!=="A")issues.push(`${label}: ortak sıra için A kitapçığı kayıtları gerekli.`);
       const number=Number(at("A SORU")),lesson=lessonName(at("DERS")),texts=head.map((h,c)=>/^KAZANIM-\d+$/.test(h)?String(row[c]??"").trim():"").filter(Boolean);
       q={lesson,number,answer:norm(at("CEVAP")),weight:weightFor(lesson),positions:{A:number},outcomeCode:String(at("KAZANIM KODU")??"").trim(),outcomeName:texts.join(" | ")};
@@ -16,7 +16,7 @@ module.exports=function parse(sheets){
   if(questions.length>300)throw new Error("Cevap anahtarı en fazla 300 soru içerebilir.");
  }
  try{validateMapping(questions);}catch(e){issues.push(e.message);}
- if(questions.some(q=>!q.outcomeCode||!q.outcomeName))issues.push("Her soruda kazanım bilgisi bulunmalı.");
- 
+
+
  return {format:"o",questions,warnings,issues,examName:String(sheet.rows[0]?.[2]??"").trim(),publisher:String(sheet.rows[0]?.[0]??"").trim(),grade:Number(String(sheet.rows[1]?.[2]??"").match(/\d+/)?.[0])||undefined};
 };

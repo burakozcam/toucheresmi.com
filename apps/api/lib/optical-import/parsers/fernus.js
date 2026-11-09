@@ -6,7 +6,7 @@ module.exports=function parse(sheets){
  for(let i=index+1;i<sheet.rows.length;i++){
   const row=sheet.rows[i];if(row.every(v=>!String(v??"").trim()))continue;
   const label=`${sheet.name} satır ${i+1}`;let q;
- 
+
       const number=Number(row[1]),lesson=lessonName(row[0]),o=outcome(row[head.indexOf("KAZANIM")]);
       q={lesson,number,answer:norm(row[2]),weight:weightFor(lesson),positions:{A:number},...o};
       for(const book of ["B","C","D"]){const col=head.findIndex(h=>h.startsWith(book)&&h.includes("ÇAPRAZ"));if(col>=0)q.positions[book]=Number(row[col]);}
@@ -15,7 +15,7 @@ module.exports=function parse(sheets){
   if(questions.length>300)throw new Error("Cevap anahtarı en fazla 300 soru içerebilir.");
  }
  try{validateMapping(questions);}catch(e){issues.push(e.message);}
- if(questions.some(q=>!q.outcomeCode||!q.outcomeName))issues.push("Her soruda kazanım bilgisi bulunmalı.");
+
  const internal=questions.filter(q=>q.outcomeCode.startsWith("METİN-")).length;if(internal)warnings.push(`${internal} soruda resmî kazanım kodu yok; metinden türetilmiş METİN- iç kodu kullanıldı.`);
       // Cross-check all supplied B/C/D answer sheets; never infer mappings from repeated outcomes.
       for(const book of ["B","C","D"]){if(!questions.some(q=>q.positions[book]))continue;const other=sheets.find(s=>s.rows.slice(0,20).some(r=>norm(r[0])==="DERS"&&norm(r[1])==="SORU NO"&&norm(r[2]).startsWith(`${book} KİTAPÇIK`)));

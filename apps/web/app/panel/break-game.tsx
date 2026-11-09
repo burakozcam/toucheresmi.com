@@ -9,13 +9,16 @@ function logo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number)
   ctx.save(); ctx.translate(x, y); ctx.scale(size / 64, size / 64); ctx.fillStyle = "#fff";
   ctx.fill(new Path2D("M17 13h9v17l16-17h12L35 31l19 20H42L29 37l-3 3v11h-9z")); ctx.restore();
 }
-function foodFor(snake: Point[]): Point | null {
+function foodFor(snake: Point[], cols = COLS, rows = ROWS): Point | null {
   const cells: Point[] = [];
-  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (!snake.some((p) => p.x === x && p.y === y)) cells.push({ x, y });
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) if (!snake.some((p) => p.x === x && p.y === y)) cells.push({ x, y });
   return cells.length ? cells[Math.floor(Math.random() * cells.length)] : null;
 }
-const initial = () => ({ y: H / 2, v: 0, distance: 0, next: 280, towers: [] as Tower[], snake: [{ x: 7, y: 7 }, { x: 6, y: 7 }, { x: 5, y: 7 }], dir: { x: 1, y: 0 }, queued: { x: 1, y: 0 }, food: { x: 18, y: 7 } as Point | null, score: 0 });
+const makeInitial = (width = W, height = H) => ({ y: height / 2, v: 0, distance: 0, next: 280, towers: [] as Tower[], snake: [{ x: 7, y: 7 }, { x: 6, y: 7 }, { x: 5, y: 7 }], dir: { x: 1, y: 0 }, queued: { x: 1, y: 0 }, food: { x: Math.min(18,width / CELL - 2), y: 7 } as Point | null, score: 0 });
 export default function BreakGame({ initialMode = "bird" }: { initialMode?: "bird" | "snake" }) {
+  const [compact,setCompact]=useState(false);
+  const W=compact?360:720,H=360,COLS=W/CELL,ROWS=H/CELL;
+  const initial=()=>makeInitial(W,H);
   const sound = useGameSound();
   const touch = useRef<{ x: number; y: number } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,6 +27,7 @@ export default function BreakGame({ initialMode = "bird" }: { initialMode?: "bir
   const [score, setScore] = useState(0);
   const [best, setBest] = useState({ bird: 0, snake: 0 });
   const game = useRef(initial());
+  useEffect(()=>{const media=window.matchMedia("(max-width:700px)");const resize=()=>{setCompact(media.matches);game.current=makeInitial(media.matches?360:720,360);setScore(0);setStatus("ready");};resize();media.addEventListener("change",resize);return()=>media.removeEventListener("change",resize);},[]);
   useEffect(() => { try { const saved = JSON.parse(localStorage.getItem("kurumsal-game-best") ?? "{}"); setBest({ bird: Number(saved.bird) || 0, snake: Number(saved.snake) || 0 }); } catch { /* Optional local records. */ } }, []);
   useEffect(() => { setBest((current) => { const next = { ...current, [mode]: Math.max(current[mode], score) }; try { localStorage.setItem("kurumsal-game-best", JSON.stringify(next)); } catch { /* Gameplay stays available. */ } return next; }); }, [mode, score]);
   function start() { sound.unlock(); game.current = initial(); setScore(0); setStatus("running"); }
@@ -85,7 +89,7 @@ export default function BreakGame({ initialMode = "bird" }: { initialMode?: "bir
         const eats = Boolean(g.food && head.x === g.food.x && head.y === g.food.y), body = eats ? g.snake : g.snake.slice(0, -1);
         if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS || body.some((p) => p.x === head.x && p.y === head.y)) { sound.play("death"); setStatus("over"); return false; }
         g.snake.unshift(head);
-        if (eats) { sound.play("eat"); g.score += 10; setScore(g.score); g.food = foodFor(g.snake); if (!g.food) { setStatus("won"); return false; } } else g.snake.pop();
+        if (eats) { sound.play("eat"); g.score += 10; setScore(g.score); g.food = foodFor(g.snake,COLS,ROWS); if (!g.food) { setStatus("won"); return false; } } else g.snake.pop();
       } return true;
     }
     const animate = (time: number) => {
@@ -96,6 +100,6 @@ export default function BreakGame({ initialMode = "bird" }: { initialMode?: "bir
     };
     draw(); if (status === "running") frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [mode, status]);
+  }, [mode, status, compact]);
   return <section className="studio-card game-studio"><div className="game-heading"><div><p className="hero-tag">KISA BİR MOLA</p><h2>{mode === "bird" ? "K ile Uçma Zamanı" : "Kıvrıla Kıvrıla K"}</h2></div></div><div className="game-scores"><span>Skor <b>{score}</b></span><span>En iyi <b>{best[mode]}</b></span><span className="badge">Kurumsal Sınav Arcade</span></div><canvas ref={canvasRef} width={W} height={H} className="brand-game-canvas" aria-label={mode === "bird" ? "K logosunu rastgele kulelerin arasından uçurun" : "K başlıklı yılanı yönlendirin"} style={{ touchAction: "none" }} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); touch.current = { x: e.clientX, y: e.clientY }; if (status === "running" && mode === "bird") { sound.unlock(); game.current.v = -4.8; sound.play("jump"); } }} onPointerUp={(e) => { const start = touch.current; touch.current = null; if (!start || mode !== "snake" || status !== "running") return; const dx = e.clientX - start.x, dy = e.clientY - start.y; if (Math.max(Math.abs(dx), Math.abs(dy)) < 12) return; if (Math.abs(dx) > Math.abs(dy)) direction(Math.sign(dx), 0); else direction(0, Math.sign(dy)); }} onPointerCancel={() => { touch.current = null; }} /><div className="game-controls"><p>{mode === "bird" ? "Boşluk / ↑ veya oyun alanına dokun: yüksel. Rastgele kulelerin arasından geç." : "Yön tuşları / WASD veya aşağıdaki düğmeler: yön değiştir. Duvarlardan ve kendinden kaçın."} P: duraklat.</p><div className="studio-actions"><button className="button button-quiet" aria-pressed={sound.enabled} onClick={() => { sound.unlock(); sound.toggle(); }}>Ses: {sound.enabled ? "Açık" : "Kapalı"}</button><button className="button button-quiet" onClick={start}>Yeniden başlat</button>{status === "running" ? <button className="button button-quiet" onClick={() => setStatus("paused")}>Duraklat</button> : status === "paused" ? <button className="button button-navy" onClick={() => { sound.unlock(); setStatus("running"); }}>Devam et</button> : <button className="button button-navy" onClick={start}>{status === "ready" ? "Oyuna başla" : "Yeniden oyna"}</button>}</div></div>{mode === "snake" && <div className="direction-pad" aria-label="Yılan yön düğmeleri">{[[0, -1, "↑", "Yukarı"], [-1, 0, "←", "Sola"], [0, 1, "↓", "Aşağı"], [1, 0, "→", "Sağa"]].map(([x, y, label, name]) => <button key={String(name)} className="button button-quiet" aria-label={String(name)} disabled={status !== "running"} onClick={() => direction(Number(x), Number(y))}>{label}</button>)}</div>}</section>;
 }

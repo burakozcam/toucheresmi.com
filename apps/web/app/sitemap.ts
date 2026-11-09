@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/sinav-takvimi`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE_URL}/pdf-duzenleyici`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/verilerinizin-guvenligi`, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${SITE_URL}/blog`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${SITE_URL}/contact`, changeFrequency: "monthly", priority: 0.5 },
   ];
   try {
@@ -36,7 +37,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     };
   });
-  return [...staticPages, ...entries];
+  const blogEntries: MetadataRoute.Sitemap=[];
+  // Bounded traversal; unavailable blog service never hides the rest of the sitemap.
+  try{for(let page=1;page<=100;page++){const r=await fetch(`${API_URL}/api/blog?page=${page}`,{cache:"no-store",signal:AbortSignal.timeout(4000)});if(!r.ok)break;const d=await r.json();for(const p of d.items)blogEntries.push({url:`${SITE_URL}/blog/${p.id}`,lastModified:new Date(p.updatedAt),changeFrequency:"monthly",priority:.6});if(page>=d.pages)break;}}catch{}
+  return [...staticPages, ...entries, ...blogEntries];
   } catch (error) {
     console.error("Dinamik site haritası alınamadı", error instanceof Error ? error.message : "Bağlantı hatası");
     return staticPages;

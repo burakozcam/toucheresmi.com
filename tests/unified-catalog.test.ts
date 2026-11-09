@@ -16,8 +16,8 @@ test("birleşik katalog: Nartest kazanım Excel’i cevapları ve A/B eşleştir
     assert.deepEqual(readEvaluationExcel(file),parseOpticalKeyRows(rows));
     const files=[{category:"ANSWER_KEY",storagePath:"unused.pdf",originalFileName:"key.pdf"},{category:"LEARNING_OUTCOMES",storagePath:file,originalFileName:"outcomes.xlsx"}];
     assert.equal(prepareEvaluation(files,true,null,true)?.length,90);
-    assert.throws(()=>prepareEvaluation(files.slice(1),true,null,true),/hem cevap anahtarı hem kazanım/);
-    const noOutcomes=parseOpticalKeyRows(rows).map(q=>({...q,outcomeCode:""}));assert.throws(()=>evaluationQuestions(noOutcomes),/kazanım/);
+    assert.throws(()=>prepareEvaluation(files.slice(1),true,null,true),/cevap anahtarı dosyası/);
+    const noOutcomes=parseOpticalKeyRows(rows).map(q=>({...q,outcomeCode:""}));assert.equal(evaluationQuestions(noOutcomes).length,90);
     const pdfOnly=files.map(f=>({...f,originalFileName:"file.pdf"}));
     assert.throws(()=>prepareEvaluation(pdfOnly,true,null,true),/Excel/);
     assert.equal(prepareEvaluation(pdfOnly,false,null,true),null);
@@ -51,7 +51,7 @@ test("sınav düzenleme: görünürlükler bağımsız değişir, gönderilmeyen
     assert.equal(await invoke({published:"false"}),200);assert.equal(current.published,false);assert.equal(current.showInEvaluation,true);
     assert.equal(await invoke({showInEvaluation:"false"}),200);assert.equal(current.published,false);assert.equal(current.showInEvaluation,false);
     assert.equal(await invoke({showInEvaluation:"true"}),200);assert.equal(current.published,false);assert.equal(current.showInEvaluation,true);
-    current.files.pop();assert.equal(await invoke({showInEvaluation:"true"}),400);assert.equal(updates,3);
+    current.files.pop();assert.equal(await invoke({showInEvaluation:"true"}),200);assert.equal(updates,4);
   }finally{prisma.publishedAnswerKey.findUnique=originalFind;prisma.$transaction=originalTransaction;}
 });
 

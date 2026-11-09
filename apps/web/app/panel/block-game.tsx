@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { canPlace, emptyBoard, newPiece, rotateBlock, settleBlock } from "../../lib/blocks";
 import { useGameSound } from "../../lib/game-sound";
-const colors = ["#14243e", "#8bb2ff", "#4169a9", "#aac9ee", "#5b94b5", "#6f76b9", "#c8dbf3", "#387b9d"];
+const colors = ["#14243e", "#22d3ee", "#facc15", "#c084fc", "#fb923c", "#4ade80", "#fb7185", "#60a5fa"];
 const initial = () => ({ board: emptyBoard(), piece: newPiece(), next: newPiece(), score: 0, lines: 0 });
 export default function BlockGame() {
   const game = useRef(initial()), canvas = useRef<HTMLCanvasElement>(null), nextCanvas = useRef<HTMLCanvasElement>(null);

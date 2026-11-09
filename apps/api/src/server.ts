@@ -21,8 +21,12 @@ import { reviewImportedQuestions } from "./answer-import-review";
 import { prepareEvaluation } from "./optical-catalog";
 import { readerRouter } from "./reader-routes";
 
+import { systemObserver, systemRouter } from "./system-center";
+import { contentRouter, imageSchema } from "./admin-content";
+
 export const app = express();
-app.use(cors({ origin: env.WEB_ORIGIN }));
+app.use(systemObserver);
+app.use(cors({ origin: env.WEB_ORIGIN, exposedHeaders: ["Content-Disposition"] }));
 app.use("/api/admin/exam-schedule", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "20mb" }));
 app.use("/api/optical/templates/bulk", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use(express.json({ limit: "1mb" }));
@@ -57,7 +61,7 @@ async function recordAudit(
       },
     });
   } catch (error) {
-    console.error("Audit log kaydı oluşturulamadı", error);
+    console.error("Audit log kaydı oluşturulamadı");
   }
 }
 
@@ -298,13 +302,14 @@ app.post("/api/auth/login", async (request, response, next) => {
   }
 });
 
-const profileSelect = { id: true, email: true, firstName: true, lastName: true, phone: true, role: true, mustChangePassword: true } as const;
+const profileSelect = { avatar: true, id: true, email: true, firstName: true, lastName: true, phone: true, role: true, mustChangePassword: true } as const;
 app.get("/api/account", requireAuth, async (request: AuthenticatedRequest, response, next) => {
   try {
     response.json(await prisma.user.findUniqueOrThrow({ where: { id: request.user!.id }, select: profileSelect }));
   } catch (error) { next(error); }
 });
 const profileSchema = z.object({
+  avatar: imageSchema,
   firstName: z.string().trim().min(2).max(80),
   lastName: z.string().trim().min(2).max(80),
   email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
@@ -531,7 +536,7 @@ app.post("/api/contact", optionalAuth, async (request: AuthenticatedRequest, res
           ].join("\n"),
         });
       } catch (error) {
-        console.error("İletişim mesajı e-posta bildirimi gönderilemedi", error);
+        console.error("İletişim mesajı e-posta bildirimi gönderilemedi");
         warning = "Mesajınız kaydedildi; e-posta bildirimi gönderilemedi.";
       }
     } else {
@@ -1829,7 +1834,7 @@ app.post(
     } catch (error) { next(error); }
     finally {
       for (const filePath of [...uploadedFiles.map((file) => file.path), ...(!committed ? movedPaths : [])]) {
-        try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (error) { console.error("Geçici yükleme temizlenemedi", error); }
+        try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (error) { console.error("Geçici yükleme temizlenemedi"); }
       }
     }
   },
@@ -1957,7 +1962,7 @@ app.patch(
         replacementCommitted = true;
         for (const file of previousFiles) {
           try { if (fs.existsSync(file.storagePath)) fs.unlinkSync(file.storagePath); }
-          catch (error) { console.error("Eski dosya temizlenemedi", error); }
+          catch (error) { console.error("Eski dosya temizlenemedi"); }
         }
         response.json({ message: "Cevap anahtarı güncellendi.", answerKey: updated });
       } catch (error) {
@@ -1968,7 +1973,7 @@ app.patch(
     } finally {
       for (const filePath of [...uploadedFiles.map((file) => file.path), ...(!replacementCommitted ? movedUploads : [])]) {
         try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); }
-        catch (error) { console.error("Yükleme dosyası temizlenemedi", error); }
+        catch (error) { console.error("Yükleme dosyası temizlenemedi"); }
       }
     }
   },
@@ -1993,7 +1998,7 @@ app.delete(
       await prisma.publishedAnswerKey.delete({ where: { id: answerKey.id } });
       for (const file of answerKey.files) {
         try { if (fs.existsSync(file.storagePath)) fs.unlinkSync(file.storagePath); }
-        catch (error) { console.error("Silinen kaydın dosyası temizlenemedi", error); }
+        catch (error) { console.error("Silinen kaydın dosyası temizlenemedi"); }
       }
       response.status(204).end();
     } catch (error) {
@@ -2002,6 +2007,8 @@ app.delete(
   },
 );
 
+app.use(systemRouter);
+app.use(contentRouter);
 app.use(fmtShareRouter);
 app.use("/api/optical", opticalRouter);
 app.use("/api", readerRouter);
@@ -2013,7 +2020,8 @@ app.use(
       response.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({ error: error.code === "LIMIT_FILE_SIZE" ? "Dosya boyutu izin verilen sınırı aşıyor." : "Yüklenen dosya sayısını ve dosya alanlarını kontrol edin." });
       return;
     }
-    console.error("API request failed", error);
+    response.locals.failureKind = error instanceof Prisma.PrismaClientKnownRequestError || error instanceof Prisma.PrismaClientInitializationError ? "DATABASE_ERROR" : /pdf/i.test(_request.route?.path ?? "") ? "PDF_ERROR" : "SERVER_ERROR";
+    console.error("API request failed", { category: error instanceof Prisma.PrismaClientKnownRequestError ? "DATABASE" : "SERVER", route: _request.route?.path ?? "unknown" });
     response.status(500).json({ error: "Beklenmeyen bir sunucu hatası oluştu." });
   },
 );

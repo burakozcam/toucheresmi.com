@@ -1,4 +1,6 @@
-# Kurumsal Sınav v1.1.1
+# Kurumsal Sınav v1.1.3
+
+**v1.1.3:** Kazanım kodu olmadan onaylı cevap anahtarı/PDF; SUPER_ADMIN Sistem Merkezi (IP izleme modu), özel klasör/dosya ve zamanlanmış paylaşım, görselli blog/profil, sayfa/metin/resim eklenebilen PDF Editörü, takvim ve mobil arayüz düzenlemeleri. Yeni geriye uyumlu migration hazırlanmıştır; uygulanmadı. [Teslim, testler, sınırlar ve canlıya geçiş sırası](docs/v1.1.3-release.md).
 
 **v1.1.1:** F / Fernus ve O / Okulizyon kazanım dosyasından tek yüklemeyle cevap anahtarı ve arşiv kaydı; tam düzenlenebilir önizleme ve açık onay; çoklu FMT kuyruğu, koordinat/TXT/okuyucu doğrulaması ve toplu kayıt. Son kritik ek için `20261109010000_fmt_validation` migration'ı hazırlanmıştır; canlıda çalıştırılmadı. [Kullanım ve doğrulama](docs/v1.1.1-release.md).
 

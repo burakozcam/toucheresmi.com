@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BlogPreview from "./blog-preview";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./theme-toggle";
 import SiteFooter from "./site-footer";
@@ -50,7 +51,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="landing">
+    <main className="landing"><a className="whatsapp-float" href="https://wa.me/905323872074" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp üzerinden bize yazın"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M21 11.5a9 9 0 0 1-13.4 7.9L3 21l1.6-4.6A9 9 0 1 1 21 11.5Z"/><path d="M8 7c0 5 4 9 9 9l1-3-3-1-1 1-3-3 1-1-1-3Z"/></svg></a>
       <header className="landing-header">
         <Link className="brand" href="/" aria-label="Kurumsal Sınav ana sayfa">
           <span className="brand-mark">K</span>
@@ -60,7 +61,7 @@ export default function Home() {
           <a className="header-link" href="#cozumler">Çözümler</a>
           <Link className="header-link flowing-gradient header-gradient-button" href="/cevap-anahtarlari">Cevap Anahtarları</Link>
           <Link className="header-link calendar-gradient-link" href="/sinav-takvimi">Sınav Takvimi</Link><Link className="header-link" href="/sinav-degerlendir">Sınav Değerlendir</Link>
-          <ThemeToggle />
+          <Link className="header-link" href="/blog">Blog</Link><ThemeToggle />
           <Link className="button button-navy" href="/login">Giriş Yap <span aria-hidden="true">↗</span></Link>
         </nav>
       </header>
@@ -165,7 +166,7 @@ export default function Home() {
         <ContactForm showBrand />
       </section>
 
-      <SiteFooter />
+      <BlogPreview/><SiteFooter />
     </main>
   );
 }

@@ -63,6 +63,7 @@ model User {
   passwordHash String
   setupTokenHash String? @unique
   setupExpiresAt DateTime?
+  avatar       String?
   firstName    String
   lastName     String
   phone        String?
@@ -529,4 +530,94 @@ model FmtShare {
   template OpticalTemplate? @relation(fields:[templateId],references:[id],onDelete:Cascade)
   @@index([createdById,createdAt])
   @@index([expiresAt])
+}
+
+model SystemEvent {
+  id String @id @default(cuid())
+  kind String
+  severity String
+  route String
+  status Int
+  ip String?
+  actorId String?
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+  @@index([kind, createdAt])
+}
+
+model IpRestriction {
+  id String @id @default(cuid())
+  ip String
+  reason String
+  actorId String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  revokedBy String?
+  @@index([ip, expiresAt])
+}
+
+model BlogPost {
+  id String @id @default(cuid())
+  title String
+  summary String
+  content String
+  image String?
+  published Boolean @default(false)
+  actorId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([published, createdAt])
+}
+
+model ManagedFolder {
+  id String @id @default(cuid())
+  name String
+  parentId String?
+  parent ManagedFolder? @relation("FolderTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children ManagedFolder[] @relation("FolderTree")
+  files ManagedFile[]
+  createdAt DateTime @default(now())
+  @@index([parentId])
+}
+
+model ManagedFile {
+  id String @id @default(cuid())
+  name String
+  storedName String @unique
+  size Int
+  folderId String?
+  folder ManagedFolder? @relation(fields: [folderId], references: [id], onDelete: Restrict)
+  actorId String
+  createdAt DateTime @default(now())
+  shares ManagedFileShare[]
+  @@index([folderId, createdAt])
+}
+
+model ManagedFileShare {
+  id String @id @default(cuid())
+  fileId String
+  file ManagedFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  tokenHash String @unique
+  startsAt DateTime
+  expiresAt DateTime
+  revokedAt DateTime?
+  actorId String
+  createdAt DateTime @default(now())
+  @@index([fileId, createdAt])
+}
+
+model AnalyticsMetric {
+  day String
+  page String
+  hour Int
+  views Int @default(0)
+  @@id([day, page, hour])
+  @@index([day])
+}
+
+model AnalyticsVisitor {
+  day String
+  visitor String
+  @@id([day, visitor])
 }

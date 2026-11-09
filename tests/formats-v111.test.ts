@@ -27,7 +27,7 @@ test("F/O yanlış seçim ve bozuk çapraz cevap/soru kayıtları sessizce kabul
   assert.throws(()=>parseWorkbook(fernus,"o"),/O Excel/);assert.throws(()=>parseWorkbook(okulizyon,"f"),/F Excel/);
   const bad=structuredClone(fernus);bad[0].rows[2][3]=14;assert.throws(()=>parseWorkbook(bad,"f"),/yinelenmiş/);
   const mismatch=structuredClone(fernus);mismatch[1].rows[2][2]="E";assert.throws(()=>parseWorkbook(mismatch,"f"),/çelişiyor/);
-  const missing=structuredClone(okulizyon);missing[0].rows[3][7]="";assert.throws(()=>parseWorkbook(missing,"o"),/kazanım/);
+  const missing=structuredClone(okulizyon);missing[0].rows[3][7]="";assert.equal(parseWorkbook(missing,"o").questions.length,90);
 });
 test("tek F/O kazanımı fiziksel olarak ayrı cevap/kazanım kopyalarıyla arşivlenir; mevcut cevap korunur",()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),"format-archive-")),file=path.join(dir,"source.xls");fs.writeFileSync(file,"content");const source={fieldname:"learningOutcomesFile",originalname:"source.xls",path:file,size:7} as Express.Multer.File;
@@ -49,4 +49,4 @@ test("toplu FMT API: admin sınırı, mevcut isim kontrolü ve tek işlem içind
   async function invoke(){let status=200,body:any;await route.at(-1).handle({user:{id:"admin"},body:{templates:[{name:"FMT A",originalFmt:fmt7108.originalFmt,layout:layout7108,verification:{readerName:"QA Reader",readerConfirmed:true,encoding:"auto",token:fmtProof("admin",fmt7108.originalFmt,layout7108,"QA Reader","auto")}},{name:"FMT B",originalFmt:fmt7108.originalFmt.replace("53=42","53=43"),layout:layout7108,verification:{readerName:"QA Reader",readerConfirmed:true,encoding:"auto",token:fmtProof("admin",fmt7108.originalFmt.replace("53=42","53=43"),layout7108,"QA Reader","auto")}}]}},{status(n:number){status=n;return this;},json(v:any){body=v;}},(e:any)=>{if(e)throw e;});return{status,body};}
   try{existing=true;assert.equal((await invoke()).status,409);assert.equal(writes,0);existing=false;const result=await invoke();assert.equal(result.status,201);assert.equal(result.body.length,2);assert.equal(writes,2);}finally{prisma.$transaction=original;}
 });
-test("v1.1.2 ana sayfa, uygulama ve favicon sürümleri tutarlı",()=>{assert.equal(SITE_VERSION,"v1.1.2");assert.ok(fs.readFileSync(path.join(__dirname,"../index.html"),"utf8").includes("Versiyon: v1.1.2"));assert.ok(fs.readFileSync(path.join(__dirname,"../apps/web/app/layout.tsx"),"utf8").includes("v=1.1.2"));});
+test("v1.1.3 ana sayfa, uygulama ve favicon sürümleri tutarlı",()=>{assert.equal(SITE_VERSION,"v1.1.3");assert.ok(fs.readFileSync(path.join(__dirname,"../index.html"),"utf8").includes("Versiyon: v1.1.3"));assert.ok(fs.readFileSync(path.join(__dirname,"../apps/web/app/layout.tsx"),"utf8").includes("v=1.1.3"));});
