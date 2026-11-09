@@ -1,0 +1,2 @@
+ALTER TABLE "FmtShare" ALTER COLUMN "templateId" DROP NOT NULL;
+ALTER TABLE "FmtShare" ADD COLUMN "fileRefs" JSONB;

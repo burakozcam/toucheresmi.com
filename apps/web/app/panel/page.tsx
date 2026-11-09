@@ -1,4 +1,5 @@
 "use client";
+import ReleaseMark from "../release-mark";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ import ExamManagement from "./exam-management";
 import FmtManager from "./fmt-manager";
 import OpticalEvaluation from "./optical-evaluation";
 import FmtDownloads from "./fmt-downloads";
+import FmtSharing from "./fmt-sharing";
 import ReaderAccounts from "./reader-accounts";
 import TxtConverter from "./txt-converter";
 import MotivationBanner from "./motivation-banner";
@@ -26,10 +28,11 @@ import ContactInbox from "./contact-inbox";
 import AuditLogManagement from "./audit-log-management";
 import { API_URL } from "../../lib/api";
 
-type Section = "txt-converter" | "fmt-download" | "optical-keys" | "exam-records" | "results" | "exam" | "fmt-upload" | "fmt-edit" | "fmt-delete" | "school-add" | "school-edit" | "school-delete" | "students" | "calendar" | "bird" | "snake" | "blocks" | "exam-schedule" | "rebuilder" | "pdf-tools" | "publishers" | "publisher-requests" | "answer-keys" | "system-users" | "contact-inbox" | "audit-logs" | "account";
+type Section = "fmt-share" | "txt-converter" | "fmt-download" | "optical-keys" | "exam-records" | "results" | "exam" | "fmt-upload" | "fmt-edit" | "fmt-delete" | "school-add" | "school-edit" | "school-delete" | "students" | "calendar" | "bird" | "snake" | "blocks" | "exam-schedule" | "rebuilder" | "pdf-tools" | "publishers" | "publisher-requests" | "answer-keys" | "system-users" | "contact-inbox" | "audit-logs" | "account";
 type AuthUser = { id: string; email: string; firstName: string; lastName: string; phone?: string | null; mustChangePassword?: boolean; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" | "PARENT" };
 
 const pages: Record<Section, { title: string; eyebrow: string; description: string; action: string }> = {
+  "fmt-share": {title:"FMT Paylaş",eyebrow:"SÜRELİ FMT PAYLAŞIMI",description:"7108, 8050 ve kayıtlı FMT dosyalarını ayrı ayrı veya birlikte süreli paylaşın.",action:"Paylaş"},
   "fmt-download": {title:"FMT İndir",eyebrow:"FMT DOSYALARI",description:"Optik okuma programınız için kayıtlı FMT şablonlarını indirin.",action:"FMT indir"},
   "txt-converter": {title:"TXT Dönüştür",eyebrow:"OPTİK DOSYA ARAÇLARI",description:"TXT dosyanızı kayıtlı kaynak ve hedef FMT yerleşimleri arasında dönüştürün.",action:"TXT dönüştür"},
   results: { title: "Sınav Değerlendir / Sonuç Al", eyebrow: "SONUÇ VE ANALİZ", description: "Kurum ve sınavı seçin; liste, karne ve soru / kazanım analizi alın.", action: "Sonuç al" },
@@ -61,7 +64,7 @@ const pages: Record<Section, { title: string; eyebrow: string; description: stri
 
 const groups: { title: string; items: { id: Section; label: string; icon: string }[] }[] = [
   { title: "SINAV İŞLEMLERİ", items: [{ id: "exam", label: "Sınav Yükle", icon: "⇧" }, { id: "results", label: "Sınav Değerlendir / Sonuç Al", icon: "▥" }, { id: "exam-records", label: "Sınav Kayıtları", icon: "▤" }] },
-  { title: "FMT YÖNETİMİ", items: [{ id: "fmt-download", label: "FMT İndir", icon: "↓" }, { id: "fmt-upload", label: "FMT Yönetimi", icon: "＋" }] },
+  { title: "FMT YÖNETİMİ", items: [{ id:"fmt-share",label:"FMT Paylaş",icon:"↗" }, { id: "fmt-download", label: "FMT İndir", icon: "↓" }, { id: "fmt-upload", label: "FMT Yönetimi", icon: "＋" }] },
   { title: "KURUM YÖNETİMİ", items: [{ id: "school-add", label: "Kurum Ekle", icon: "＋" }, { id: "school-edit", label: "Kurum Düzenle", icon: "✎" }, { id: "school-delete", label: "Kurum Durumu", icon: "◉" }] },
   { title: "YAYINEVLERİ", items: [{ id: "publishers", label: "Yayınevleri", icon: "▣" }] },
   { title: "CEVAP ANAHTARLARI", items: [{ id: "answer-keys", label: "Cevap Anahtarları", icon: "✦" }] },
@@ -94,35 +97,8 @@ export default function PanelPage() {
     if (authCheckStarted.current) return;
     authCheckStarted.current = true;
     const token = window.sessionStorage.getItem("kurumsal-auth-token");
-    const storedUser = window.sessionStorage.getItem("kurumsal-auth-user");
-    if (!token || !storedUser) {
-      router.replace("/login");
-      return;
-    }
-
-    let user: AuthUser;
-    try {
-      user = JSON.parse(storedUser) as AuthUser;
-    } catch {
-      window.sessionStorage.removeItem("kurumsal-auth-token");
-      window.sessionStorage.removeItem("kurumsal-auth-user");
-      router.replace("/login");
-      return;
-    }
-    if (!user.id || !user.email || !user.firstName || !["SUPER_ADMIN", "DEALER", "SCHOOL_ADMIN", "STUDENT", "PARENT"].includes(user.role)) {
-      window.sessionStorage.removeItem("kurumsal-auth-token");
-      window.sessionStorage.removeItem("kurumsal-auth-user");
-      router.replace("/login");
-      return;
-    }
-
-    if (user.role === "STUDENT" || user.role === "PARENT") { router.replace("/sonuclarim"); return; }
+    if (!token) { router.replace("/login"); return; }
     setAuthToken(token);
-    setAuthUser(user);
-    setProfile((current) => ({ ...current, firstName: user.firstName, lastName: user.lastName, email: user.email }));
-    if (user.role === "SUPER_ADMIN") setSection("system-users");
-
-    window.localStorage.removeItem("kurumsal-profile");
     void fetch(`${API_URL}/api/account`, { headers: { Authorization: `Bearer ${token}` } }).then(async (response) => {
       if (response.status === 401) {
         window.sessionStorage.removeItem("kurumsal-auth-token");
@@ -134,10 +110,11 @@ export default function PanelPage() {
       const account = await response.json() as AuthUser;
       if (account.role === "STUDENT" || account.role === "PARENT") { router.replace("/sonuclarim"); return; }
       setAuthUser(account);
+      if(account.role === "SUPER_ADMIN") setSection("system-users");
+      setAuthorized(true);
       setProfile({ firstName: account.firstName, lastName: account.lastName, email: account.email, phone: account.phone ?? "" });
       window.sessionStorage.setItem("kurumsal-auth-user", JSON.stringify(account));
     }).catch(() => setProfileNotice("Güncel hesap bilgilerine ulaşılamadı. Lütfen tekrar deneyin."));
-    setAuthorized(true);
   }, [router]);
 
   useEffect(() => {
@@ -201,7 +178,7 @@ export default function PanelPage() {
     finally { setProfileSaving(false); }
   }
 
-  if (!authorized) return <main className="panel-loading">Oturum kontrol ediliyor...</main>;
+  if (!authorized) return <main className="panel-loading"><div>{profileNotice||"Oturum kontrol ediliyor..."}{profileNotice&&<button className="button button-navy" onClick={()=>location.reload()}>Tekrar dene</button>}</div></main>;
   if (authUser?.mustChangePassword) return <PasswordSetup token={authToken} onComplete={(token, user) => { setAuthToken(token); setAuthUser(user); }} />;
   const activePage = pages[section];
 
@@ -215,7 +192,7 @@ export default function PanelPage() {
             const items = group.items.filter((item) => !["fmt-upload", "fmt-edit", "fmt-delete", "optical-keys"].includes(item.id) || authUser?.role === "SUPER_ADMIN").filter((item) =>
               !["school-edit", "school-delete"].includes(item.id) || authUser?.role === "SUPER_ADMIN"
             ).filter((item) =>
-              !["school-add", "results", "exam", "exam-records", "students", "fmt-download", "txt-converter"].includes(item.id) || authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER"
+              !["school-add", "results", "exam", "exam-records", "students", "fmt-share", "fmt-download", "txt-converter"].includes(item.id) || authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER"
             );
             return items.length > 0 && <div className="nav-group" key={group.title}>
               <p>{group.title}</p>
@@ -229,9 +206,9 @@ export default function PanelPage() {
         <header className="dashboard-header"><button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç">☰</button><div className="breadcrumbs">Yönetim Paneli <span>/</span> <strong>{activePage.title}</strong></div><div className="dashboard-actions"><ThemeToggle /><button className="header-avatar profile-avatar-button" aria-label="Hesap ayarlarını aç" onClick={() => setSection("account")}>{profile.firstName.slice(0, 1).toUpperCase() || "B"}</button><button className="header-logout" onClick={logout}>Çıkış Yap <span>↪</span></button></div></header>
         <div className="dashboard-content">
           <MotivationBanner firstName={profile.firstName} />
-          <div className="page-title"><div><p className="hero-tag">{activePage.eyebrow}</p><h1>{activePage.title}</h1><p>{activePage.description}</p></div>{!["txt-converter", "students", "fmt-download", "results", "exam", "exam-records", "fmt-upload", "fmt-edit", "fmt-delete", "optical-keys", "account", "calendar", "bird", "snake", "blocks", "exam-schedule", "rebuilder", "pdf-tools", "system-users", "contact-inbox", "audit-logs", "publishers", "publisher-requests", "answer-keys"].includes(section) && <button className="button button-navy" onClick={() => document.getElementById("main-action")?.click()}><span>＋</span> {activePage.action}</button>}</div>
+          <div className="page-title"><div><p className="hero-tag">{activePage.eyebrow}</p><h1>{activePage.title}</h1><p>{activePage.description}</p></div>{!["fmt-share", "txt-converter", "students", "fmt-download", "results", "exam", "exam-records", "fmt-upload", "fmt-edit", "fmt-delete", "optical-keys", "account", "calendar", "bird", "snake", "blocks", "exam-schedule", "rebuilder", "pdf-tools", "system-users", "contact-inbox", "audit-logs", "publishers", "publisher-requests", "answer-keys"].includes(section) && <button className="button button-navy" onClick={() => document.getElementById("main-action")?.click()}><span>＋</span> {activePage.action}</button>}</div>
           {logoutNotice && <div className="logout-toast" role="status">{logoutNotice}</div>}
-          {section === "txt-converter" ? <TxtConverter token={authToken} /> : section === "fmt-download" ? <FmtDownloads token={authToken} /> : section === "students" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ReaderAccounts token={authToken} /> : ["fmt-upload", "fmt-edit", "fmt-delete", "optical-keys"].includes(section) && authUser?.role === "SUPER_ADMIN" ? <FmtManager token={authToken} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} screen="upload" onSaved={id=>{setSavedOpticalId(id);setSection("results");}} /> : section === "results" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} screen="results" initialResultId={savedOpticalId} /> : section === "exam-schedule" && authUser?.role === "SUPER_ADMIN" ? <ScheduleManagement token={authToken} /> : section === "contact-inbox" && authUser?.role === "SUPER_ADMIN" ? <ContactInbox token={authToken} /> : section === "audit-logs" && authUser?.role === "SUPER_ADMIN" ? <AuditLogManagement token={authToken} /> : section === "account" ? <section className="account-card">
+          {section === "fmt-share" ? <FmtSharing token={authToken} /> : section === "txt-converter" ? <TxtConverter token={authToken} /> : section === "fmt-download" ? <FmtDownloads token={authToken} /> : section === "students" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ReaderAccounts token={authToken} /> : ["fmt-upload", "fmt-edit", "fmt-delete", "optical-keys"].includes(section) && authUser?.role === "SUPER_ADMIN" ? <FmtManager token={authToken} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} screen="upload" onSaved={id=>{setSavedOpticalId(id);setSection("results");}} /> : section === "results" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} screen="results" initialResultId={savedOpticalId} /> : section === "exam-schedule" && authUser?.role === "SUPER_ADMIN" ? <ScheduleManagement token={authToken} /> : section === "contact-inbox" && authUser?.role === "SUPER_ADMIN" ? <ContactInbox token={authToken} /> : section === "audit-logs" && authUser?.role === "SUPER_ADMIN" ? <AuditLogManagement token={authToken} /> : section === "account" ? <section className="account-card">
             <form className="account-form" onSubmit={saveProfile}>
               <div className="account-avatar">{profile.firstName.slice(0, 1).toUpperCase() || "B"}</div>
               <div className="account-fields">
@@ -249,7 +226,7 @@ export default function PanelPage() {
             <p>{section === "exam" ? "Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın." : activePage.description}</p>
             <button id="main-action" className="button button-navy" onClick={() => window.alert("Bu özellik sonraki geliştirme adımında aktif edilecek.")}><span>＋</span> {activePage.action}</button>
           </section>}
-          <div className="dashboard-footnote"><span>◈</span> Optik sınav yönetiminiz için ihtiyacınız olan her şey tek panelde. <span className="version-badge">v1.1.2</span> <span className="release-date">9 Kasım 2026</span></div>
+          <div className="dashboard-footnote"><span>◈</span> Optik sınav yönetiminiz için ihtiyacınız olan her şey tek panelde. <ReleaseMark/></div>
         </div>
       </section>
     </main>

@@ -1,11 +1,11 @@
 "use client";
+import ReleaseMark from "../release-mark";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import ThemeToggle from "../theme-toggle";
 import { API_URL } from "../../lib/api";
-import { SITE_VERSION } from "../../config/site";
 
 const loginTypes = [
   { id: "dealer", title: "Bayi Girişi", description: "Bayi hesabınızla giriş yapın", available: true, icon: "⌂" },
@@ -24,6 +24,19 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const homeHref = "/";
+
+  useEffect(()=>{
+    const token=sessionStorage.getItem("kurumsal-auth-token");
+    if(!token)return;
+    const controller=new AbortController();
+    void fetch(`${API_URL}/api/account`,{headers:{Authorization:`Bearer ${token}`},cache:"no-store",signal:controller.signal}).then(async r=>{
+      if(r.status===401){sessionStorage.removeItem("kurumsal-auth-token");sessionStorage.removeItem("kurumsal-auth-user");return;}
+      if(!r.ok)return;
+      const user=await r.json();sessionStorage.setItem("kurumsal-auth-user",JSON.stringify(user));
+      location.replace(["STUDENT","PARENT"].includes(user.role)?"/sonuclarim":"/panel");
+    }).catch(()=>{});
+    return()=>controller.abort();
+  },[]);
 
   function selectType(type: LoginType, available: boolean) {
     setSelectedType(type);
@@ -149,7 +162,7 @@ export default function LoginPage() {
           {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <Link href="/contact#contact-form">Bize ulaşın</Link></p>}
         </section>
       </section>
-      <footer className="auth-footer">© 2026 kurumsalsinav.com · <span className="version-badge">{SITE_VERSION}</span> <span className="release-date">9 Kasım 2026</span> <span>Ölçün. Değerlendirin. Geliştirin.</span></footer>
+      <footer className="auth-footer">© 2026 kurumsalsinav.com · <ReleaseMark/> <span>Ölçün. Değerlendirin. Geliştirin.</span></footer>
     </main>
   );
 }

@@ -1,5 +1,5 @@
+import ReleaseMark from "./release-mark";
 import Link from "next/link";
-import { SITE_VERSION } from "../config/site";
 
 export default function SiteFooter() {
   return (
@@ -8,7 +8,7 @@ export default function SiteFooter() {
         <span className="brand-mark">K</span>
         <span>kurumsal<span className="brand-light">sinav.com</span></span>
       </Link>
-      <p>© 2026 Kurumsal Sınav · <span className="version-badge">Versiyon {SITE_VERSION}</span> <span className="release-date">9 Kasım 2026</span></p>
+      <p>© 2026 Kurumsal Sınav · <ReleaseMark/></p>
       <nav aria-label="Alt menü">
         <Link href="/cevap-anahtarlari">Cevap Anahtarları</Link>
         <Link href="/sinav-degerlendir">Sınav Değerlendir</Link>

@@ -39,6 +39,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   const [bulkMode, setBulkMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [editConfirmed,setEditConfirmed]=useState(false);
   const [editing, setEditing] = useState<AnswerKeyRecord | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -251,11 +252,13 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                   <p>{item.publisher.name}</p>
                   <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
                   {!readOnly && editing?.id === item.id && (
-                    <form className="answer-key-edit-form" onSubmit={(event) => {
+                    <form className="answer-key-edit-form" onChange={()=>setEditConfirmed(false)} onSubmit={(event) => {
                       event.preventDefault();
                       const formData = new FormData(event.currentTarget);
                       formData.set("published", String(editing.published));
                       formData.set("showInEvaluation", String(editing.showInEvaluation));
+                      if(!editConfirmed){setError("Bilgileri ve yayın seçeneklerini onaylayın.");return;}
+                      formData.set("confirmPublication","true");
                       void saveRecord(item.id, formData);
                     }}>
                       <input type="hidden" name="publisherId" value={editing.publisherId} />
@@ -273,7 +276,8 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                         <AnswerKeyFileInput token={token} label="Yeni kazanım dosyası" disabled={submitting} reviewContext={JSON.stringify(editing)+answerFileKey}/>
                       </div>
                       <div className="download-actions">
-                        <button className="button button-navy" type="submit">Değişiklikleri kaydet</button>
+                        <label className="checkbox-row" onChange={e=>e.stopPropagation()}><input type="checkbox" checked={editConfirmed} onChange={e=>setEditConfirmed(e.target.checked)}/>Bilgileri, dosyaları ve yayın seçeneklerini kontrol ettim; kaydı onaylıyorum.</label>
+                        <button className="button button-navy" type="submit" disabled={submitting||!editConfirmed}>{submitting?"Kaydediliyor…":"Değişiklikleri kaydet"}</button>
                         <button className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</button>
                       </div>
                     </form>
@@ -287,7 +291,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                       ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${outcomesFile.id}`} target="_blank" rel="noreferrer">Kazanımı İndir</a>
                       : <button type="button" className="button button-quiet" onClick={() => void downloadFile(outcomesFile, item)}>Kazanımı İncele</button>)}
                     {!readOnly && <>
-                      <button type="button" className="button button-quiet" onClick={() => {setEditing(item);setEditingQuestions(null);}}>Bilgi / dosya düzenle</button>{item.opticalKey&&<button type="button" className="button button-quiet" onClick={()=>{setEditing(null);setEditingQuestions(item.opticalKey!.id);}}>Soruları ve kazanımları düzenle</button>}
+                      <button type="button" className="button button-quiet" onClick={() => {setEditing(item);setEditConfirmed(false);setEditingQuestions(null);}}>Bilgi / dosya düzenle</button>{item.opticalKey&&<button type="button" className="button button-quiet" onClick={()=>{setEditing(null);setEditingQuestions(item.opticalKey!.id);}}>Soruları ve kazanımları düzenle</button>}
                       <button type="button" className="button button-quiet" onClick={() => void setPublished(item, !item.published)}>{item.published ? "Yayından kaldır" : "Yeniden yayımla"}</button>
                       <button type="button" className="button button-navy danger-button" onClick={() => void deleteRecord(item.id)}>Sil</button>
                     </>}
@@ -302,6 +306,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   );
 
   async function saveRecord(id: string, formData: FormData) {
+    setSubmitting(true);
     setError("");
     setNotice("");
     try {
@@ -320,7 +325,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
     await loadData();
     } catch {
       setError("Cevap anahtarı güncellenirken sunucuya ulaşılamadı.");
-    }
+    } finally { setSubmitting(false); }
   }
 
   async function setPublished(item: AnswerKeyRecord, published: boolean) {

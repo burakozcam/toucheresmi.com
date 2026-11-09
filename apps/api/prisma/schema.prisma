@@ -520,12 +520,13 @@ model PublisherAlias {
 model FmtShare {
   id String @id @default(cuid())
   tokenHash String @unique
-  templateId String
+  templateId String?
+  fileRefs Json?
   createdById String
   expiresAt DateTime
   revokedAt DateTime?
   createdAt DateTime @default(now())
-  template OpticalTemplate @relation(fields:[templateId],references:[id],onDelete:Cascade)
+  template OpticalTemplate? @relation(fields:[templateId],references:[id],onDelete:Cascade)
   @@index([createdById,createdAt])
   @@index([expiresAt])
 }

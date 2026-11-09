@@ -1,4 +1,6 @@
 "use client";
+import ReleaseMark from "../release-mark";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -29,5 +31,5 @@ export default function ReaderPortal(){
       <div className="reader-results-grid">{filtered.map(i=><article className={`studio-card ${selectedId===i.id?"reader-result-selected":""}`} key={i.id}><small>{new Date(i.createdAt).toLocaleDateString("tr-TR",{timeZone:"Europe/Istanbul"})} · {i.schoolName}</small><h2>{i.examName}</h2><p>{i.studentName} · {i.studentNo}</p><button className="button button-navy" disabled={busy} onClick={()=>void open(i.id)}>Sonucu ve karneyi gör</button></article>)}</div><p className="field-help">Son 100 sonuç bağlantısı gösterilir. Eksik veya yanlış bağlantı için kurumunuza başvurun.</p>
     </section>
     {detail&&<section className="evaluation-results"><div className="studio-actions"><h2>{detail.data.students[0].name} · {detail.keyName}</h2><label className="checkbox-row"><input type="checkbox" checked={monochrome} onChange={e=>setMonochrome(e.target.checked)}/>Siyah beyaz çıktı</label><button className="button button-navy" onClick={()=>window.print()}>Karnemi PDF kaydet</button></div><p className="field-help">Yazdırma penceresinde “PDF olarak kaydet” seçin. Puanlar 500 üzerinden yerel deneme ölçeğindedir. Sıralamalar bu değerlendirmeye katılan kurum öğrencileriyle sınırlıdır.</p><div className={`report-print-area ${monochrome?"report-monochrome":""}`}><ReportCard data={detail.data} student={detail.data.students[0]} exam={detail.keyName} penalty={detail.penalty} weights={weights} scale={500} confirmed showQuestions={false} privateComparison={detail.comparison} bookletInfo={`Kaynak kitapçıklar: ${Object.entries(detail.booklets).map(([l,b])=>`${l}: ${b}`).join(" · ")}. Sorular A kitapçığı sırasındadır. H: tüm cevaplar doğru kabul edilir.`}/></div></section>}
-  </main>;
+  <footer className="compact-release"><ReleaseMark/></footer></main>;
 }

@@ -1,0 +1,3 @@
+import Link from "next/link";
+import SiteFooter from "./site-footer";
+export default function NotFound(){return <main className="not-found-page"><section className="not-found-card"><Link href="/" className="not-found-brand" aria-label="Kurumsal Sınav ana sayfa"><span className="brand-mark not-found-logo">K</span><span>KURUMSAL SINAV</span></Link><p className="not-found-code" aria-hidden="true">404</p><h1>Bu sayfayı bulamadık.</h1><p>Bağlantı değişmiş veya sayfa kaldırılmış olabilir. Ana sayfadan devam edebilirsiniz.</p><Link className="button button-navy" href="/">Ana sayfaya dön <span aria-hidden="true">→</span></Link></section><SiteFooter/></main>;}
