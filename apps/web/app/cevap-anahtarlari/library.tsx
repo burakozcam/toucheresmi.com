@@ -1,5 +1,7 @@
 "use client";
 
+import PublisherLogo from "../publisher-logo";
+import AnswerPdfOptions from "../answer-pdf-options";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { API_URL } from "../../lib/api";
@@ -145,7 +147,7 @@ export default function PublicAnswerKeysPage({ initialItems, initialPublishers, 
       <section className="public-answer-grid" aria-busy={loading}>
         {loadError ? (
           <p className="notice error" role="alert">{loadError}</p>
-        ) : loading ? (
+        ) : loading && items.length===0 ? (
           <p className="empty-state">Cevap anahtarları yükleniyor...</p>
         ) : items.length === 0 ? (
           <p className="empty-state">Seçilen filtrelere uygun yayın bulunmuyor.</p>
@@ -159,11 +161,11 @@ export default function PublicAnswerKeysPage({ initialItems, initialPublishers, 
                   <span className="badge">{item.grade}. Sınıf</span>
                   <span className="status-dot">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</span>
                 </div>
-                <p className="publisher-kicker">{item.publisher.name}</p><h2 className="library-card-title"><Link href={answerKeyPath(item)}>{item.examName} · {item.grade}. Sınıf Cevap Anahtarı</Link></h2>
+                <PublisherLogo id={item.publisher.id} name={item.publisher.name}/><p className="publisher-kicker">{item.publisher.name}</p><h2 className="library-card-title"><Link href={answerKeyPath(item)}>{item.examName} · {item.grade}. Sınıf Cevap Anahtarı</Link></h2>
                 <p className="exam-name">{item.files.length} dosya · {answerFile ? "Cevap anahtarı" : "Kazanım dosyası"}{answerFile && learningFile ? " ve kazanım" : ""}</p>
                 <Link className="answer-detail-link" href={answerKeyPath(item)}>Sınav detayları <span aria-hidden="true">→</span></Link>
                 <div className="download-actions">
-                  {answerFile && <a className="button button-navy" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>}
+                  <AnswerPdfOptions id={item.id} name={item.examName}/>{answerFile && <a className="button button-navy" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>}
                   {learningFile && <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${learningFile.id}`} target="_blank" rel="noreferrer">Kazanımı İndir</a>}
                 </div>
               </article>

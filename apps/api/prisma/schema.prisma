@@ -149,6 +149,10 @@ model School {
 }
 
 model OpticalTemplate {
+  grade Int?
+  publisherId String?
+  sourceFormat String?
+  publisher Publisher? @relation(fields: [publisherId], references: [id], onDelete: SetNull)
   shares FmtShare[]
   validation Json?
   id String @id @default(cuid())
@@ -348,6 +352,8 @@ model AnswerKey {
 }
 
 model Publisher {
+  opticalTemplates OpticalTemplate[]
+  logo PublisherLogo?
   id             String   @id @default(cuid())
   name           String
   normalizedName String   @unique
@@ -620,4 +626,14 @@ model AnalyticsVisitor {
   day String
   visitor String
   @@id([day, visitor])
+}
+
+model PublisherLogo {
+  publisherId String @id
+  publisher Publisher @relation(fields: [publisherId], references: [id], onDelete: Cascade)
+  storedName String @unique
+  checksum String
+  width Int
+  height Int
+  updatedAt DateTime @updatedAt
 }

@@ -9,13 +9,14 @@ import { prisma } from "./db";
 import { env } from "./config";
 import { requireAuth,requireRole,type AuthenticatedRequest } from "./auth";
 import { RequestLimiter } from "./rate-limit";
+import { safeFilename, renamedFilename, uploadFilename } from "./file-names";
+export { safeFilename } from "./file-names";
 
 export function validImage(value:string){
  const match=value.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/);if(!match||value.length>350_000)return false;
  const b=Buffer.from(match[2],"base64");return match[1]==="png"?b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):match[1]==="jpeg"?b[0]===255&&b[1]===216&&b[2]===255:b.toString("ascii",0,4)==="RIFF"&&b.toString("ascii",8,12)==="WEBP";
 }
 export const imageSchema=z.string().refine(validImage).nullable().optional();
-export const safeFilename=(name:string)=>name.replace(/[\\/:*?"<>|\x00-\x1f\x7f]/g,"_").slice(0,180)||"dosya";
 export const validShareWindow=(start:Date,end:Date,now=Date.now())=>Number.isFinite(+start)&&Number.isFinite(+end)&&+end>Math.max(+start,now)&&+end-now<=90*86400_000;
 const hash=(v:string)=>crypto.createHash("sha256").update(v).digest("hex");
 const root=path.resolve(env.STORAGE_DIR,"admin-files");
@@ -60,10 +61,10 @@ admin.patch("/folders/:id",wrap(async(q,r)=>{
 admin.delete("/folders/:id",wrap(async(q,r)=>{await prisma.managedFolder.delete({where:{id:String(q.params.id)}});r.status(204).end();}));
 admin.post("/files",upload.single("file"),wrap(async(q,r)=>{
  let saved=false;try{if(!q.file){r.status(400).json({error:"Dosya seçin."});return;}
- const folderId=z.string().nullable().parse(q.body.folderId||null),file=await prisma.managedFile.create({data:{name:safeFilename(q.file.originalname),storedName:q.file.filename,size:q.file.size,folderId,actorId:q.user!.id}});saved=true;r.status(201).json({id:file.id,name:file.name,size:file.size});
+ const folderId=z.string().nullable().parse(q.body.folderId||null),file=await prisma.managedFile.create({data:{name:safeFilename(uploadFilename(q.file.originalname)),storedName:q.file.filename,size:q.file.size,folderId,actorId:q.user!.id}});saved=true;r.status(201).json({id:file.id,name:file.name,size:file.size});
  }finally{if(!saved&&q.file)await fs.promises.unlink(q.file.path).catch(()=>{});}
 }));
-admin.patch("/files/:id",wrap(async(q,r)=>{const v=z.object({name:name.optional(),folderId:z.string().nullable().optional()}).parse(q.body);const f=await prisma.managedFile.update({where:{id:String(q.params.id)},data:v});r.json({id:f.id,name:f.name});}));
+admin.patch("/files/:id",wrap(async(q,r)=>{const v=z.object({name:name.optional(),folderId:z.string().nullable().optional()}).parse(q.body);const id=String(q.params.id),current=await prisma.managedFile.findUnique({where:{id},select:{name:true}});if(!current){r.status(404).json({error:"Dosya bulunamadı."});return;}const f=await prisma.managedFile.update({where:{id},data:{...v,...(v.name!==undefined?{name:renamedFilename(current.name,v.name)}:{})}});r.json({id:f.id,name:f.name});}));
 admin.delete("/files/:id",wrap(async(q,r)=>{const file=await prisma.managedFile.delete({where:{id:String(q.params.id)}});await fs.promises.unlink(path.join(root,file.storedName)).catch(()=>{});r.status(204).end();}));
 admin.get("/files/:id/download",wrap(async(q,r)=>{const file=await prisma.managedFile.findUnique({where:{id:String(q.params.id)}});if(!file){r.status(404).json({error:"Dosya bulunamadı."});return;}r.type("application/octet-stream").download(path.join(root,file.storedName),safeFilename(file.name));}));
 admin.get("/files/:id/shares",wrap(async(q,r)=>r.json(await prisma.managedFileShare.findMany({where:{fileId:String(q.params.id)},select:{id:true,startsAt:true,expiresAt:true,revokedAt:true,createdAt:true},orderBy:{createdAt:"desc"},take:100}))));
@@ -71,10 +72,12 @@ admin.post("/files/:id/shares",wrap(async(q,r)=>{const input=z.object({startsAt:
  const token=crypto.randomBytes(32).toString("base64url"),share=await prisma.managedFileShare.create({data:{fileId:String(q.params.id),tokenHash:hash(token),actorId:q.user!.id,startsAt,expiresAt}});r.status(201).json({id:share.id,url:`${env.WEB_ORIGIN}/dosya-paylasim/${share.id}#${token}`,startsAt,expiresAt});
 }));
 admin.delete("/file-shares/:id",wrap(async(q,r)=>{await prisma.managedFileShare.updateMany({where:{id:String(q.params.id),revokedAt:null},data:{revokedAt:new Date()}});r.status(204).end();}));
-contentRouter.post("/api/public/file-shares/:id/download",new RequestLimiter(30,60_000).middleware(),wrap(async(q,r)=>{
+const publicFileLimits={info:new RequestLimiter(30,60_000).middleware(),download:new RequestLimiter(30,60_000).middleware()};
+for(const action of ["info","download"] as const){contentRouter.post(`/api/public/file-shares/:id/${action}`,publicFileLimits[action],wrap(async(q,r)=>{
  const {token}=z.object({token:z.string().regex(/^[A-Za-z0-9_-]{43}$/)}).parse(q.body),share=await prisma.managedFileShare.findFirst({where:{id:String(q.params.id),tokenHash:hash(token),revokedAt:null},include:{file:true}});
  if(!share||+share.expiresAt<=Date.now()){r.status(410).json({error:"Bağlantı geçersiz, iptal edilmiş veya süresi dolmuş."});return;}
  if(+share.startsAt>Date.now()){r.status(425).json({error:`Dosya ${share.startsAt.toLocaleString("tr-TR",{timeZone:"Europe/Istanbul"})} (İstanbul) tarihinde açılacak.`});return;}
+ if(action==="info"){r.json({name:safeFilename(share.file.name)});return;}
  r.type("application/octet-stream").download(path.join(root,share.file.storedName),safeFilename(share.file.name));
-}));
+}));}
 contentRouter.use("/api/admin",admin);

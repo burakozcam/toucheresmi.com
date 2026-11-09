@@ -1,5 +1,6 @@
 "use client";
 
+import AnswerPdfOptions from "../answer-pdf-options";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import ManualKeyEntry,{type ManualReview} from "./manual-key-entry";
@@ -284,7 +285,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                   )}
                   {!readOnly&&editingQuestions===item.opticalKey?.id&&item.opticalKey&&<StoredKeyEditor token={token} keyId={item.opticalKey.id} onClose={()=>setEditingQuestions(null)} onSaved={()=>{setEditingQuestions(null);setNotice("Anahtar ve PDF güncellendi.");void loadData();}}/>}
                   <div className="download-actions">
-                    {answerFile && (readOnly
+                    <AnswerPdfOptions id={item.id} name={item.examName} token={readOnly?undefined:token}/>{answerFile && (readOnly
                       ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>
                       : <button type="button" className="button button-quiet" onClick={() => void downloadFile(answerFile, item)}>Cevap Anahtarını İncele</button>)}
                     {outcomesFile && (readOnly

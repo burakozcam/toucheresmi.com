@@ -15,8 +15,10 @@ import { RequestLimiter } from "./rate-limit";
 import { evaluationPublicationWhere, evaluationQuestions } from "./optical-catalog";
 import { hasFmt } from "./fmt-share";
 import { fmtBytes } from "./fmt-download";
+import { findLibraryFmt, libraryFmtBytes } from "./fmt-library";
 import { fmtProof,checkFmtProof,verificationSchema,inspectFmtCoordinates } from "./fmt-verification";
 import { createAnswerKeyPdf } from "./answer-key-pdf";
+import { detectFmtSource } from "./fmt-source";
 import { analyzeFmt } from "./fmt-analyze";
 import { bulkTemplatesInput,templateInput,fmtContentIdentity } from "./fmt-bulk";
 import { previewFmt } from "./fmt-preview";
@@ -44,11 +46,11 @@ const scope = (req: AuthenticatedRequest): Prisma.SchoolWhereInput => req.user!.
 const idParam = (req: AuthenticatedRequest)=>String(req.params.id ?? "");
 
 opticalRouter.get("/templates", wrap(async(req,res)=>{
-  res.json(await prisma.opticalTemplate.findMany({where:req.user!.role===Role.SUPER_ADMIN?{}:{active:true},orderBy:{createdAt:"desc"}}));
+  res.json(await prisma.opticalTemplate.findMany({where:req.user!.role===Role.SUPER_ADMIN?{}:{active:true},include:{publisher:{select:{id:true,name:true}}},orderBy:{createdAt:"desc"}}));
 }));
 opticalRouter.get("/templates/examples/:code/download",wrap(async(req,res)=>{
- const code=String(req.params.code);if(!["7108","8050"].includes(code)){res.status(404).json({error:"Örnek FMT bulunamadı."});return;}
- res.attachment(`${code}.fmt`).type("application/octet-stream").send(fs.readFileSync(path.join(__dirname,"../assets/templates",`${code}.fmt`)));
+ const code=String(req.params.code),entry=findLibraryFmt(code);if(!entry){res.status(404).json({error:"Sistem FMT dosyası bulunamadı."});return;}
+ res.attachment(entry.downloadName).type("application/octet-stream").send(libraryFmtBytes(code));
 }));
 opticalRouter.get("/templates/:id/download",wrap(async(req,res)=>{
   const template=await prisma.opticalTemplate.findFirst({where:{id:idParam(req),...(req.user!.role===Role.SUPER_ADMIN?{}:{active:true})}});
@@ -62,7 +64,7 @@ opticalRouter.get("/templates/:id/layout",wrap(async(req,res)=>{
  res.attachment(`${template.name.replace(/[\\/:*?"<>|]/g,"-")}.layout.json`).type("application/json").send(JSON.stringify({schemaVersion:1,name:template.name,layout:template.layout},null,2));
 }));
 opticalRouter.post("/templates/analyze",admin,wrap(async(req,res)=>{
- const {originalFmt}=z.object({originalFmt:z.string().min(1).max(64000)}).parse(req.body);try{res.json(analyzeFmt(originalFmt));}catch(e){res.status(400).json({error:(e as Error).message});}
+ const {originalFmt}=z.object({originalFmt:z.string().min(1).max(64000)}).parse(req.body);try{res.json({...analyzeFmt(originalFmt),detectedSource:detectFmtSource(originalFmt)});}catch(e){res.status(400).json({error:(e as Error).message});}
 }));
 opticalRouter.post("/templates",admin,wrap(async(req,res)=>{
   const data=templateInput.parse(req.body);
@@ -83,6 +85,28 @@ opticalRouter.post("/templates/bulk",admin,wrap(async(req,res)=>{
     const created=[];for(const t of templates){const {verification,...data}=t;created.push(await tx.opticalTemplate.create({data:{...data,validation:{readerName:verification!.readerName,readerConfirmed:true,encoding:verification!.encoding,verifiedAt:new Date().toISOString(),coordinates:inspectFmtCoordinates(t.originalFmt,t.layout)} as unknown as Prisma.InputJsonValue,layout:t.layout as Prisma.InputJsonValue}}));}return{created};
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   if("error"in outcome){res.status(409).json({error:outcome.error});return;}res.status(201).json(outcome.created);
+}));
+// New row-wise endpoint; preserve the existing atomic bulk API for old callers.
+opticalRouter.post("/templates/bulk-rows",admin,wrap(async(req,res)=>{
+ const input=z.object({templates:z.array(z.unknown()).min(1).max(30)}).parse(req.body),results=[];
+ for(const [index,value]of input.templates.entries()){
+ const parsed=templateInput.safeParse(value);if(!parsed.success){results.push({index,status:"error",error:parsed.error.issues[0]?.message??"Satır geçersiz."});continue;}
+ const t=parsed.data,source=t.sourceFormat==="auto"?detectFmtSource(t.originalFmt):t.sourceFormat;
+ if(!t.grade||!t.publisherId||!source){results.push({index,status:"error",error:"Sınıf, yayınevi ve kaynak seçin. Kaynak algılanamıyorsa F, O veya MANUEL seçin."});continue;}
+ const v=verificationSchema.safeParse(t.verification);if(!v.success||!checkFmtProof(req.user!.id,t.originalFmt,t.layout,v.data)){results.push({index,status:"error",error:"Koordinat / TXT testi ve onayı eksik veya değişti."});continue;}
+ try{
+ const result=await prisma.$transaction(async tx=>{
+ if(!await tx.publisher.findUnique({where:{id:t.publisherId!},select:{id:true}}))return{error:"Yayınevi bulunamadı."};
+ const saved=await tx.opticalTemplate.findMany({select:{name:true,originalFmt:true,layout:true}});
+ if(saved.some(row=>row.name.toLocaleLowerCase("tr-TR")===t.name.toLocaleLowerCase("tr-TR")))return{error:"Bu isimde FMT zaten kayıtlı."};
+ if(saved.some(row=>row.originalFmt&&fmtContentIdentity(row)===fmtContentIdentity(t)))return{error:"Aynı FMT içeriği ve yerleşimi zaten kayıtlı."};
+ const {verification,...data}=t;
+ const record=await tx.opticalTemplate.create({data:{...data,sourceFormat:source,layout:t.layout as Prisma.InputJsonValue,validation:{readerName:v.data.readerName,readerConfirmed:true,encoding:v.data.encoding,verifiedAt:new Date().toISOString(),coordinates:inspectFmtCoordinates(t.originalFmt,t.layout)} as unknown as Prisma.InputJsonValue}});return{id:record.id,name:record.name};
+ },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+ results.push("error"in result?{index,status:"error",error:result.error}:{index,status:"success",...result});
+ }catch{results.push({index,status:"error",error:"Kayıt tamamlanamadı. Listeyi yenileyip tekrar kontrol edin; başarılı satırlar korunur."});}
+ }
+ res.json({results,successCount:results.filter(r=>r.status==="success").length});
 }));
 opticalRouter.patch("/templates/:id",admin,wrap(async(req,res)=>{
   const data=z.object({active:z.boolean()}).parse(req.body);

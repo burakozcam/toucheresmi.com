@@ -1,4 +1,6 @@
-# Kurumsal Sınav v1.1.3
+# Kurumsal Sınav v1.1.4
+
+**v1.1.4:** Satır bazında sınıf/yayınevi/kaynak içeren toplu FMT kuyruğu; bağımsız hata/tekrar deneme; A/B/C/D PDF seçenekleri ve yalnızca Kurumsal Sınav logosu; SUPER_ADMIN toplu yayınevi logoları (yalnızca web Cevap Anahtarları), sabit login arka planı ve gerçek 404 üzerinde mevcut kuş oyunu. Yeni migration hazırlanmıştır, uygulanmadı. Node >=20.9 ve API için görsel çözümleme/optimizasyon bağımlılığı sharp 0.35.5 gerekir. [Teslim ve dağıtım raporu](docs/v1.1.4-release.md).
 
 **v1.1.3:** Kazanım kodu olmadan onaylı cevap anahtarı/PDF; SUPER_ADMIN Sistem Merkezi (IP izleme modu), özel klasör/dosya ve zamanlanmış paylaşım, görselli blog/profil, sayfa/metin/resim eklenebilen PDF Editörü, takvim ve mobil arayüz düzenlemeleri. Yeni geriye uyumlu migration hazırlanmıştır; uygulanmadı. [Teslim, testler, sınırlar ve canlıya geçiş sırası](docs/v1.1.3-release.md).
 

@@ -38,3 +38,10 @@ Bu dizinde API `dist`, `passenger.cjs`, kendi üretim bağımlılıkları ve ür
 Önce Node >=20 ile `NEXT_PUBLIC_API_URL=https://localhost:4443 npm run build` çalıştırın. `node --import tsx tests/e2e/v113.cjs`, 4443 HTTPS API ve 3100 Web sunucularını kendisi açıp kapatır. Gerçek Prisma bağlantısı yerine bellek içi fonksiyonlar kullanır; DATABASE_URL localhost kapalı portuna ayarlanır. Upload dizini /tmp altında oluşturulup temizlenir. Chromium ve Playwright için yukarıdaki PLAYWRIGHT_MODULE / CHROMIUM_PATH seçenekleri geçerlidir. Portlar boş olmalıdır.
 
 Bu test build'ini üretime taşımayın; üretim için doğru API adresiyle yeniden build alın. Test, gerçek PostgreSQL migration'ını veya gerçek Passenger kurulumunu doğrulamaz.
+
+
+## v1.1.4
+
+Node >=20.9 ile `NEXT_PUBLIC_API_URL=https://localhost:4443 npm run build` sonrasında `node --import tsx tests/e2e/v114.cjs` çalıştırın. Playwright / Chromium ayarları yukarıdakiyle aynıdır. Bu test v113 yerel bellek içi ortamını genişletir; canlı DB kullanmaz. Tek/5 FMT, farklı sınıf/yayınevi, kısmi kayıt hatası ve tekrar, 30 logo + hatalı SVG, değiştirme/silme ve rol kontrolü, web logo kartları, A/B birleşik/ayrı ve tek kitapçık PDF, logosuz yayınevi, sabit login / gerçek login, oturumsuz HTTP 404 / klavye ve dokunmatik oyun kontrollerini kapsar.
+
+`KS_DENY_LOGO_ENGINE=1 node tests/api-package-smoke.cjs` logo motoru modülü yüklenemediğinde derlenmiş API'nin hâlâ başlatılıp health yanıtı verdiğini test eder. Bu işlem de yalnızca yerel sunucu ve sahte DB adresi kullanır. Gerçek Passenger kurulumu ve PostgreSQL migration'ı ayrıca test edilmelidir.

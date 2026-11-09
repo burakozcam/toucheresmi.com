@@ -295,11 +295,11 @@
 /* The login form has its own visible, softly animated corporate background. */
 .login-page { position: relative; isolation: isolate; min-height: 100vh; min-height: 100svh; max-width: none; margin: 0; padding: 0 max(20px,calc((100vw - 1168px)/2)); }
 .login-page::before { content: none; }
-.login-ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(125deg,#101c31,#172e4c 48%,#111c30); background-size: 220% 220%; animation: login-gradient-flow 24s ease-in-out infinite alternate; }
-.login-ambient span { position: absolute; display: block; width: 68vmax; height: 68vmax; border-radius: 50%; filter: blur(35px); will-change: transform; }
-.login-ambient-one { left: -20vmax; top: -22vmax; background: radial-gradient(circle,#416eaf70 0%,#416eaf20 42%,transparent 70%); animation: login-color-drift-one 22s ease-in-out infinite alternate; }
-.login-ambient-two { right: -26vmax; bottom: -24vmax; background: radial-gradient(circle,#2e65c56b 0%,#416eaf24 43%,transparent 70%); animation: login-color-drift-two 28s ease-in-out -8s infinite alternate; }
-.login-ambient-three { left: 23%; top: 8%; width: 50vmax !important; height: 50vmax !important; background: radial-gradient(ellipse,#8bb2ff16,transparent 64%); animation: login-color-drift-two 32s ease-in-out -12s infinite alternate-reverse; }
+.login-ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(125deg,#101c31,#172e4c 48%,#111c30); background-size: 220% 220%;  }
+.login-ambient span { position: absolute; display: block; width: 68vmax; height: 68vmax; border-radius: 50%; filter: none; }
+.login-ambient-one { left: -20vmax; top: -22vmax; background: radial-gradient(circle,#416eaf70 0%,#416eaf20 42%,transparent 70%);  }
+.login-ambient-two { right: -26vmax; bottom: -24vmax; background: radial-gradient(circle,#2e65c56b 0%,#416eaf24 43%,transparent 70%);  }
+.login-ambient-three { left: 23%; top: 8%; width: 50vmax !important; height: 50vmax !important; background: radial-gradient(ellipse,#8bb2ff16,transparent 64%);  }
 .login-page > :not(.login-ambient) { position: relative; z-index: 1; }
 .login-page .login-card { background: color-mix(in srgb,var(--surface) 96%,transparent); border-color: color-mix(in srgb,var(--line) 82%,#416eaf); box-shadow: 0 24px 70px #06102230; }
 :root[data-theme="light"] .login-ambient { background-image: linear-gradient(125deg,#f8faff,#e7effb 48%,#f5f8fd); }
@@ -309,7 +309,7 @@
 @keyframes login-gradient-flow { from { background-position: 0% 20%; } to { background-position: 100% 80%; } }
 @keyframes login-color-drift-one { from { transform: translate3d(-4%,-7%,0) rotate(-15deg); } to { transform: translate3d(25%,19%,0) rotate(28deg); } }
 @keyframes login-color-drift-two { from { transform: translate3d(8%,4%,0) rotate(10deg); } to { transform: translate3d(-27%,-20%,0) rotate(-35deg); } }
-@media(prefers-reduced-motion:reduce) { .login-ambient,.login-ambient span { animation: none !important; } }
+@media(prefers-reduced-motion:reduce) { .login-ambient,.login-ambient span {  } }
 
 </style>
 </head>
@@ -363,7 +363,7 @@
           <article class="card"><span class="card-icon">▥</span><h3>Detaylı raporlama</h3><p>Öğrenci ve sınıf bazlı analizlerle performansı kolayca değerlendirin.</p></article>
         </div>
       </section>
-      <footer class="footer"><a class="brand" href="#"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><span><a class="link" href="#" onclick="showScreen('contact');return false">İletişim</a> &nbsp;·&nbsp; Ölçün. Değerlendirin. Geliştirin.<span class="version-tag">Versiyon: v1.1.3</span> <span style="opacity:.55">9 Kasım 2026</span></span></footer>
+      <footer class="footer"><a class="brand" href="#"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><span><a class="link" href="#" onclick="showScreen('contact');return false">İletişim</a> &nbsp;·&nbsp; Ölçün. Değerlendirin. Geliştirin.<span class="version-tag">Versiyon: v1.1.4</span> <span style="opacity:.55">9 Kasım 2026</span></span></footer>
     </div>
   </main>
 

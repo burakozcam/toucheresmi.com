@@ -925,11 +925,11 @@ button, .button { touch-action: manipulation; }
 /* The login form has its own visible, softly animated corporate background. */
 .login-page { position: relative; isolation: isolate; min-height: 100vh; min-height: 100svh; max-width: none; margin: 0; padding: 0 max(20px,calc((100vw - 1168px)/2)); }
 .login-page::before { content: none; }
-.login-ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(125deg,#101c31,#172e4c 48%,#111c30); background-size: 220% 220%; animation: login-gradient-flow 24s ease-in-out infinite alternate; }
-.login-ambient span { position: absolute; display: block; width: 68vmax; height: 68vmax; border-radius: 50%; filter: blur(35px); will-change: transform; }
-.login-ambient-one { left: -20vmax; top: -22vmax; background: radial-gradient(circle,#416eaf70 0%,#416eaf20 42%,transparent 70%); animation: login-color-drift-one 22s ease-in-out infinite alternate; }
-.login-ambient-two { right: -26vmax; bottom: -24vmax; background: radial-gradient(circle,#2e65c56b 0%,#416eaf24 43%,transparent 70%); animation: login-color-drift-two 28s ease-in-out -8s infinite alternate; }
-.login-ambient-three { left: 23%; top: 8%; width: 50vmax !important; height: 50vmax !important; background: radial-gradient(ellipse,#8bb2ff16,transparent 64%); animation: login-color-drift-two 32s ease-in-out -12s infinite alternate-reverse; }
+.login-ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(125deg,#101c31,#172e4c 48%,#111c30); background-size: 220% 220%;  }
+.login-ambient span { position: absolute; display: block; width: 68vmax; height: 68vmax; border-radius: 50%; filter: none; }
+.login-ambient-one { left: -20vmax; top: -22vmax; background: radial-gradient(circle,#416eaf70 0%,#416eaf20 42%,transparent 70%);  }
+.login-ambient-two { right: -26vmax; bottom: -24vmax; background: radial-gradient(circle,#2e65c56b 0%,#416eaf24 43%,transparent 70%);  }
+.login-ambient-three { left: 23%; top: 8%; width: 50vmax !important; height: 50vmax !important; background: radial-gradient(ellipse,#8bb2ff16,transparent 64%);  }
 .login-page > :not(.login-ambient) { position: relative; z-index: 1; }
 .login-page .login-card { background: color-mix(in srgb,var(--surface) 96%,transparent); border-color: color-mix(in srgb,var(--line) 82%,#416eaf); box-shadow: 0 24px 70px #06102230; }
 :root[data-theme="light"] .login-ambient { background-image: linear-gradient(125deg,#f8faff,#e7effb 48%,#f5f8fd); }
@@ -939,7 +939,7 @@ button, .button { touch-action: manipulation; }
 @keyframes login-gradient-flow { from { background-position: 0% 20%; } to { background-position: 100% 80%; } }
 @keyframes login-color-drift-one { from { transform: translate3d(-4%,-7%,0) rotate(-15deg); } to { transform: translate3d(25%,19%,0) rotate(28deg); } }
 @keyframes login-color-drift-two { from { transform: translate3d(8%,4%,0) rotate(10deg); } to { transform: translate3d(-27%,-20%,0) rotate(-35deg); } }
-@media(prefers-reduced-motion:reduce) { .login-ambient,.login-ambient span { animation: none !important; } }
+@media(prefers-reduced-motion:reduce) { .login-ambient,.login-ambient span {  } }
 
 .converter-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 20px 0; }.converter-metrics span { padding: 14px; background: var(--blue-soft); border-radius: 10px; font-size: 12px; }.converter-metrics strong { display: block; font-size: 20px; margin-bottom: 5px; }
 .converter-previews { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 24px 0; min-width: 0; }.converter-previews > div { min-width: 0; }.converter-previews pre { overflow: auto; padding: 15px; background: var(--canvas); border: 1px solid var(--line); border-radius: 8px; min-height: 100px; font-size: 12px; }.converter-issues { max-height: 400px; overflow: auto; margin: 18px 0; }.txt-converter .checkbox-row { margin: 18px 0; line-height: 1.6; }.txt-converter .studio-card { min-width: 0; }
@@ -1014,10 +1014,24 @@ button, .button { touch-action: manipulation; }
 .whatsapp-float{position:fixed;right:20px;bottom:20px;z-index:45;display:grid;place-items:center;width:48px;height:48px;border-radius:50%;color:white;background:#315b91;box-shadow:0 5px 22px #10243b44;border:1px solid #8bb2ff66}.whatsapp-float:hover{background:#4169a9;transform:translateY(-2px)}
 .blog-section{padding:40px 0 70px}.blog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:28px 0}.blog-card{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}.blog-card>a{display:block;padding:20px}.blog-card h2{font-size:21px;line-height:1.4;overflow-wrap:anywhere}.blog-card p{line-height:1.7;overflow-wrap:anywhere}.blog-cover{display:block;width:100%;max-height:480px;aspect-ratio:16/9;object-fit:cover;border-radius:10px}.blog-article{max-width:850px;padding:40px 24px;margin:auto}.blog-article h1{font-size:clamp(28px,5vw,44px);overflow-wrap:anywhere}.blog-summary{font-size:20px;line-height:1.7}.blog-content{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;margin:32px 0;font-size:17px}.folder-open{border:0;background:none;color:var(--ink);font-size:18px;text-align:left;cursor:pointer}
 .fmt-download-center>.studio-actions{padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--blue-soft);margin-bottom:24px}.fmt-download-center .optical-record{padding:20px;border-radius:12px;margin:12px 0;border:1px solid var(--line);background:var(--surface)}
-.login-ambient{background-image:linear-gradient(120deg,#0c1931,#244570,#3968a3,#172e4c,#0c1931);background-size:350% 350%;animation:login-gradient-flow 12s ease-in-out infinite alternate}.login-ambient-one{opacity:.95}.login-ambient-two{opacity:.95}
+.login-ambient{background-image:linear-gradient(120deg,#0c1931,#244570,#3968a3,#172e4c,#0c1931);background-size:350% 350%;}.login-ambient-one{opacity:.95}.login-ambient-two{opacity:.95}
 @media(max-width:700px){.blog-grid{grid-template-columns:1fr}.blog-section{padding:24px 4px}.system-center .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-card{padding:12px}.metric-card strong{font-size:17px}.game-studio{padding:12px!important}.brand-game-canvas{aspect-ratio:auto;min-height:300px;height:min(58svh,480px);object-fit:contain;background:#11223f}.blocks-canvas{width:min(100%,300px);max-height:65svh;object-fit:contain}.blocks-layout{gap:10px}.blocks-layout aside{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.blocks-layout aside p:last-child{display:none}.direction-pad{gap:8px;flex-wrap:wrap}.direction-pad button{min-height:48px;min-width:48px}.whatsapp-float{right:14px;bottom:14px;width:44px;height:44px}.optical-record{flex-wrap:wrap}.folder-grid{grid-template-columns:1fr}}
-@media(prefers-reduced-motion:reduce){.login-ambient,.login-ambient span{animation:none!important}.whatsapp-float:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){.login-ambient,.login-ambient span{}.whatsapp-float:hover{transform:none}}
 .home-blog .blog-card h3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:21px;line-height:1.4}.home-blog .blog-card p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}.home-blog .blog-card .blog-cover{max-height:220px}.home-blog{border-top:1px solid var(--line)}
 
 .release-date{white-space:nowrap}
 @media(max-width:700px){.brand-game-canvas{height:auto;min-height:0;aspect-ratio:1}}
+.fmt-library-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px;margin:24px 0}.fmt-library-card{border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);min-width:0}.fmt-library-card h3{margin:0 0 12px;line-height:1.5;overflow-wrap:anywhere}.fmt-library-card .studio-actions{justify-content:flex-start}.fmt-library-card .fmt-share-controls{max-width:100%}
+
+/* v1.1.4 */
+.login-page .login-ambient,.login-page .login-ambient span{animation:none!important;will-change:auto;filter:none}.login-page .login-ambient{background-size:100% 100%}.login-page .login-ambient span{display:none}
+.bulk-entry-table{margin:24px 0;max-width:100%}.bulk-entry-head,.bulk-entry-row{display:grid;grid-template-columns:2fr 2fr 1fr;gap:14px;align-items:start;padding:16px;border-bottom:1px solid var(--line)}.bulk-entry-head{font-weight:700;background:var(--blue-soft)}.bulk-entry-row>*,.bulk-entry-row input,.bulk-entry-row select{min-width:0;max-width:100%;width:100%}.bulk-entry-row strong{display:block;overflow-wrap:anywhere}.bulk-entry-row label{font-size:12px;display:grid;gap:8px}.bulk-entry-row input,.bulk-entry-row select{min-height:42px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}.fmt-entry-table .bulk-entry-head,.fmt-entry-row{grid-template-columns:1.2fr 1.4fr .7fr 1.2fr 1fr 1.4fr}.bulk-entry-row input[type=checkbox]{width:20px;min-height:20px}
+.logo-upload-preview{display:block;width:100px;height:64px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px;margin-bottom:10px}.publisher-answer-logo{display:block;width:140px;max-width:100%;height:70px;object-fit:contain;margin:12px 0}.pdf-option-panel{padding:12px;border:1px solid var(--line);border-radius:10px;display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}.answer-pdf-options{max-width:100%;margin:8px 0}.answer-pdf-options .button{white-space:normal;line-height:1.5}.not-found-game{margin:28px auto 0;max-width:850px;text-align:left}.not-found-card{width:min(100%,950px)}.not-found-page .not-found-code{margin:12px 0;font-size:clamp(60px,14vw,100px)}
+@media(max-width:1000px){.bulk-entry-head{display:none}.bulk-entry-row,.fmt-entry-row{grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;margin:12px 0}.bulk-entry-row>.logo-upload-preview{width:100%}}
+@media(max-width:600px){.bulk-entry-row,.fmt-entry-row{grid-template-columns:1fr}.pdf-option-panel,.pdf-option-panel .button{width:100%}.not-found-page{padding:24px 12px 0}.not-found-game .studio-card{padding:12px}.publisher-answer-logo{width:120px;height:60px}}
+
+.login-page::before{animation:none!important;will-change:auto}
+
+.bulk-entry-row .button,.pdf-option-panel .button,.not-found-game .button{min-height:44px}
+
+.publisher-answer-logo{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px}

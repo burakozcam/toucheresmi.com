@@ -24,10 +24,14 @@ import { readerRouter } from "./reader-routes";
 import { systemObserver, systemRouter } from "./system-center";
 import { contentRouter, imageSchema } from "./admin-content";
 
+import { answerPdfRouter } from "./answer-pdf-routes";
+import { publisherLogoRouter } from "./publisher-logos";
+
 export const app = express();
 app.use(systemObserver);
 app.use(cors({ origin: env.WEB_ORIGIN, exposedHeaders: ["Content-Disposition"] }));
 app.use("/api/admin/exam-schedule", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "20mb" }));
+app.use("/api/optical/templates/bulk-rows", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use("/api/optical/templates/bulk", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use(express.json({ limit: "1mb" }));
 
@@ -2007,6 +2011,8 @@ app.delete(
   },
 );
 
+app.use(answerPdfRouter);
+app.use(publisherLogoRouter);
 app.use(systemRouter);
 app.use(contentRouter);
 app.use(fmtShareRouter);

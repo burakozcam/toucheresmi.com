@@ -1,5 +1,7 @@
 "use client";
 
+import PublisherLogo from "./publisher-logo";
+import AnswerPdfOptions from "./answer-pdf-options";
 import Link from "next/link";
 import BlogPreview from "./blog-preview";
 import { useEffect, useState } from "react";
@@ -131,9 +133,9 @@ export default function Home() {
                   <span className="badge">{item.grade}. Sınıf</span>
                   <span className="status-dot">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</span>
                 </div>
-                <h3><Link href={answerKeyPath(item)}>{item.publisher.name}</Link></h3>
+                <PublisherLogo id={item.publisher.id} name={item.publisher.name}/><h3><Link href={answerKeyPath(item)}>{item.publisher.name}</Link></h3>
                 <p className="exam-name">{item.examName}</p>
-                <div className="download-actions">
+                <AnswerPdfOptions id={item.id} name={item.examName}/><div className="download-actions">
                   {item.files.some((file) => file.category === "ANSWER_KEY") && (
                     <Link className="button button-navy" href={answerKeyPath(item)}>İndir</Link>
                   )}

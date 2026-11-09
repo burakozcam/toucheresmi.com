@@ -1,3 +1,5 @@
+import PublisherLogo from "../../publisher-logo";
+import AnswerPdfOptions from "../../answer-pdf-options";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -99,10 +101,10 @@ export default async function AnswerKeyDetailPage({
       </header>
       <article className="answer-detail">
         <p className="hero-tag">YAYIMLANMIŞ CEVAP ANAHTARI</p>
-        <h1>{item.grade}. Sınıf {item.publisher.name} {item.examName}</h1>
+        <PublisherLogo id={item.publisher.id} name={item.publisher.name}/><h1>{item.grade}. Sınıf {item.publisher.name} {item.examName}</h1>
         <p className="answer-detail-meta">Yayın tarihi: {new Intl.DateTimeFormat("tr-TR", { dateStyle: "long" }).format(new Date(item.publishedAt))}</p>
         <p className="answer-detail-description">{descriptionFor(item)}</p>
-        <div className="download-actions">
+        <AnswerPdfOptions id={item.id} name={item.examName}/><div className="download-actions">
           {answerFile && <a className="button button-navy" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>}
           {learningFile && <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${learningFile.id}`} target="_blank" rel="noreferrer">Kazanım Dosyasını İndir</a>}
         </div>

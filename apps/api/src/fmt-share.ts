@@ -1,6 +1,4 @@
 import express from "express";
-import fs from "node:fs";
-import path from "node:path";
 import crypto from "node:crypto";
 import { Role } from "@prisma/client";
 import { z } from "zod";
@@ -10,6 +8,7 @@ import { RequestLimiter } from "./rate-limit";
 import { env } from "./config";
 import { decodeOptical } from "./optical-core";
 import { fmtBytes } from "./fmt-download";
+import { findLibraryFmt, fmtLibraryCodes, libraryFmtBytes } from "./fmt-library";
 export const shareDurations={"5m":300,"10m":600,"30m":1800,"1h":3600,"3h":10800,"5h":18000,"12h":43200,"1d":86400,"2d":172800,"3d":259200,"5d":432000,"1w":604800,"1mo":0} as const;
 export function shareExpiry(duration:keyof typeof shareDurations,now=new Date()){
  if(duration!=="1mo")return new Date(now.getTime()+shareDurations[duration]*1000);
@@ -23,13 +22,13 @@ const wrap=(fn:Handler):express.RequestHandler=>async(q,r,n)=>{try{r.setHeader("
 const manager:express.RequestHandler=(q:AuthenticatedRequest,r,n)=>{if(![Role.SUPER_ADMIN,Role.DEALER].includes(q.user!.role as any)){r.status(403).json({error:"Paylaşım için bayi veya yönetici hesabı gerekir."});return;}n();};
 const limit=new RequestLimiter(90,10*60_000).middleware();
 type FileRef={id:string;name:string;example?:boolean};
-const bundleInput=z.object({duration:z.enum(Object.keys(shareDurations) as [keyof typeof shareDurations,...Array<keyof typeof shareDurations>]),templateIds:z.array(z.string().min(1)).max(30).default([]),exampleCodes:z.array(z.enum(["7108","8050"])).max(2).default([])});
+const bundleInput=z.object({duration:z.enum(Object.keys(shareDurations) as [keyof typeof shareDurations,...Array<keyof typeof shareDurations>]),templateIds:z.array(z.string().min(1)).max(30).default([]),exampleCodes:z.array(z.enum(fmtLibraryCodes as [string,...string[]])).max(fmtLibraryCodes.length).default([])});
 fmtShareRouter.post("/api/optical/fmt-shares",requireAuth,manager,limit,wrap(async(q,r)=>{
  const input=bundleInput.parse(q.body),ids=[...new Set(input.templateIds)],codes=[...new Set(input.exampleCodes)];
  if(!ids.length&&!codes.length){r.status(400).json({error:"En az bir FMT seçin."});return;}
  const templates=ids.length?await prisma.opticalTemplate.findMany({where:{id:{in:ids},active:true}}):[];
  if(templates.length!==ids.length||templates.some(t=>!hasFmt(t))){r.status(400).json({error:"Seçilen özgün FMT dosyalarından biri kullanılamıyor."});return;}
- const fileRefs:FileRef[]=[...codes.map(id=>({id:`example:${id}`,name:id,example:true})),...templates.map(t=>({id:t.id,name:t.name}))];
+ const fileRefs:FileRef[]=[...codes.map(id=>({id:`example:${id}`,name:findLibraryFmt(id)!.name,example:true})),...templates.map(t=>({id:t.id,name:t.name}))];
  const token=crypto.randomBytes(32).toString("base64url"),share=await prisma.fmtShare.create({data:{templateId:null,fileRefs,createdById:q.user!.id,tokenHash:shareHash(token),expiresAt:shareExpiry(input.duration)}});
  r.status(201).json({id:share.id,url:`${env.WEB_ORIGIN}/fmt-paylasim/${share.id}#${token}`,expiresAt:share.expiresAt});
 }));
@@ -40,7 +39,7 @@ async function shareFiles(share:{fileRefs:unknown;template?:{id:string;name:stri
  if(!share.fileRefs)return share.template?.active&&hasFmt(share.template)?[{id:share.template.id,name:share.template.name,bytes:fmtBytes(share.template.originalFmt,share.template.originalBase64)}]:[];
  const refs=share.fileRefs as FileRef[],files:Array<{id:string;name:string;bytes:Buffer}>=[];
  for(const ref of refs){
-  if(ref.example&&["example:7108","example:8050"].includes(ref.id)){files.push({id:ref.id,name:ref.id.slice(8),bytes:fs.readFileSync(path.join(__dirname,"../assets/templates",`${ref.id.slice(8)}.fmt`))});continue;}
+  if(ref.example){const code=ref.id.startsWith("example:")?ref.id.slice(8):"",entry=findLibraryFmt(code);if(!entry)return [];files.push({id:ref.id,name:entry.name,bytes:libraryFmtBytes(code)});continue;}
   const t=await prisma.opticalTemplate.findFirst({where:{id:ref.id,active:true}});
   if(!t||!hasFmt(t))return [];
   files.push({id:t.id,name:t.name,bytes:fmtBytes(t.originalFmt,t.originalBase64)});

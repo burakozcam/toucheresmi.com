@@ -1,0 +1,37 @@
+[
+  {
+    "code": "7108",
+    "name": "7108",
+    "file": "7108.fmt",
+    "downloadName": "7108.fmt",
+    "requiresVerification": false
+  },
+  {
+    "code": "8050",
+    "name": "8050",
+    "file": "8050.fmt",
+    "downloadName": "8050.fmt",
+    "requiresVerification": false
+  },
+  {
+    "code": "kurmay-fenomen-1858",
+    "name": "Kurmay Fenomen Ortaokul",
+    "file": "kurmay-fenomen-1858.fmt",
+    "downloadName": "Kurmay Fenomen Ortaokul.fmt",
+    "requiresVerification": true
+  },
+  {
+    "code": "hiz-1923",
+    "name": "Hız Yayınları 1923 Ortaokul Optiği",
+    "file": "hiz-1923.fmt",
+    "downloadName": "Hız Yayınları 1923 Ortaokul Optiği.fmt",
+    "requiresVerification": true
+  },
+  {
+    "code": "dakika-karekok",
+    "name": "Dakika / Karekök Yayınları Ortaokul Optik",
+    "file": "dakika-karekok.fmt",
+    "downloadName": "Dakika - Karekök Yayınları Ortaokul Optik.fmt",
+    "requiresVerification": true
+  }
+]
