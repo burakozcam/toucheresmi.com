@@ -1,3 +1,10 @@
+## v1.1.5 RC — 10 Kasım 2026 · yerel doğrulama
+
+- Panel karşılama ve RC kutlama sayfası; ölçülü, reduced-motion uyumlu RC işareti.
+- Cevap anahtarı görünürlüğü için satır ve toplu kontroller; kurum oluşturma ve FMT filtreleri sınav yüklemede.
+- Okul/sınıf listesi ve karne sıralama kontrolleri; footer tarihi 10 Kasım 2026.
+- Doğrulama sonuçları ve tamamlanmayan kapsam için [RC teslim raporu](docs/v1.1.5-rc-release.md).
+
 # Kurumsal Sınav
 
 ## v1.1.1 — 9 Kasım 2026 · dağıtım bekliyor

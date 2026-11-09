@@ -1,4 +1,6 @@
-# Kurumsal Sınav v1.1.4
+# Kurumsal Sınav v1.1.5 — Release Candidate
+
+**v1.1.5 RC:** Cevap anahtarı listesinde bağımsız satır/toplu yayın kontrolleri; optik yüklemede FMT arama ve kurum ekleme; sıralama seçenekleri, panel karşılama ekranı ve RC kutlama sayfası. Değerlendirme motoru ve kurum erişim kapsamı mevcut API kurallarını kullanır. Bu RC için doğrulama sınırları ve tamamlanmamış işler [v1.1.5 RC raporunda](docs/v1.1.5-rc-release.md).
 
 **v1.1.4:** Satır bazında sınıf/yayınevi/kaynak içeren toplu FMT kuyruğu; bağımsız hata/tekrar deneme; A/B/C/D PDF seçenekleri ve yalnızca Kurumsal Sınav logosu; SUPER_ADMIN toplu yayınevi logoları (yalnızca web Cevap Anahtarları), sabit login arka planı ve gerçek 404 üzerinde mevcut kuş oyunu. Yeni migration hazırlanmıştır, uygulanmadı. Node >=20.9 ve API için görsel çözümleme/optimizasyon bağımlılığı sharp 0.35.5 gerekir. [Teslim ve dağıtım raporu](docs/v1.1.4-release.md).
 

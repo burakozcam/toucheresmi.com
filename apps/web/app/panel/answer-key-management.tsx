@@ -34,6 +34,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   const [query, setQuery] = useState("");
   const [view,setView]=useState<"list"|"new">("list"),[entryMethod,setEntryMethod]=useState("file"),[manualReview,setManualReview]=useState<ManualReview|null>(null),[editingQuestions,setEditingQuestions]=useState<string|null>(null);
   const [targetPublicationId,setTargetPublicationId]=useState("");
+  const [selectedIds,setSelectedIds]=useState<string[]>([]),[bulkWorking,setBulkWorking]=useState(false);
   const [answerFileKey,setAnswerFileKey]=useState("");
   const [uploadReset,setUploadReset]=useState(0);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -228,6 +229,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       )}
 
       <div className="public-list-panel" hidden={!readOnly&&view!=="list"}>
+        {!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><button className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</button><button className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(undefined,true)}>Ölçme Değerlendirme bölümünde kullanılabilir yap</button></div>}
         <div className="list-header-row">
           <h3>{readOnly ? "Yayımlanan cevap anahtarları" : "Cevap anahtarı kayıtları"}</h3>
           <label className="search-field compact-search">
@@ -245,6 +247,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
               const outcomesFile = item.files.find((file) => file.category === "LEARNING_OUTCOMES");
               return (
                 <article className={`answer-key-card ${editing?.id===item.id||editingQuestions===item.opticalKey?.id?"answer-key-card-editing":""}`} key={item.id}>
+                  {!readOnly&&<label className="checkbox-row answer-row-select"><input type="checkbox" aria-label={`${item.examName} kaydını seç`} checked={selectedIds.includes(item.id)} onChange={e=>setSelectedIds(current=>e.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))}/>Toplu işlem için seç</label>}
                   <div className="answer-key-header">
                     <span className="badge">{item.grade}. Sınıf</span>
                     <span className="status-dot">Ana sayfa: {item.published ? "Görünür" : "Gizli"} · Değerlendirme: {item.showInEvaluation ? "Görünür" : "Gizli"}</span>
@@ -252,6 +255,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                   <h4>{item.examName}</h4>{!readOnly && <small className="publication-id">Takvim eşleştirme ID: <code>{item.id}</code></small>}
                   <p>{item.publisher.name}</p>
                   <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
+                  {!readOnly&&<div className="answer-inline-publication"><label className="checkbox-row"><input type="checkbox" checked={item.published} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,e.target.checked,item.showInEvaluation)}/>Cevap Anahtarları sayfasında göster</label><label className="checkbox-row"><input type="checkbox" checked={item.showInEvaluation} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,item.published,e.target.checked)}/>Ölçme Değerlendirme bölümünde göster</label></div>}
                   {!readOnly && editing?.id === item.id && (
                     <form className="answer-key-edit-form" onChange={()=>setEditConfirmed(false)} onSubmit={(event) => {
                       event.preventDefault();
@@ -330,15 +334,25 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   }
 
   async function setPublished(item: AnswerKeyRecord, published: boolean) {
+    return setPublication(item,published,item.showInEvaluation);
+  }
+
+  async function setPublication(item:AnswerKeyRecord,published:boolean,showInEvaluation:boolean){
     const formData = new FormData();
     formData.set("publisherId", item.publisherId);
     formData.set("grade", String(item.grade));
     formData.set("examName", item.examName);
     formData.set("published", String(published));formData.set("confirmPublication","true");
-    formData.set("showInEvaluation", String(item.showInEvaluation??false));
+    formData.set("showInEvaluation", String(showInEvaluation));
     formData.set("penalty", String(item.opticalKey?.penalty??3));
     formData.set("publishedAt", item.publishedAt.slice(0, 10));
     await saveRecord(item.id, formData);
+  }
+
+  async function applyBulk(published:boolean|undefined,showInEvaluation:boolean|undefined){
+    setBulkWorking(true);setError("");setNotice("");const failed:string[]=[];
+    for(const id of selectedIds){const item=records.find(r=>r.id===id);if(!item)continue;try{const formData=new FormData();formData.set("publisherId",item.publisherId);formData.set("grade",String(item.grade));formData.set("examName",item.examName);formData.set("published",String(published??item.published));formData.set("showInEvaluation",String(showInEvaluation??item.showInEvaluation));formData.set("penalty",String(item.opticalKey?.penalty??3));formData.set("publishedAt",item.publishedAt.slice(0,10));formData.set("confirmPublication","true");const response=await fetch(`${API_URL}/api/admin/answer-keys/${encodeURIComponent(id)}`,{method:"PATCH",headers:{Authorization:`Bearer ${token}`},body:formData});if(!response.ok){const body=await response.json();failed.push(`${item.examName}: ${body.error??"güncellenemedi"}`);}}catch{failed.push(`${item.examName}: sunucuya ulaşılamadı`);}}
+    setBulkWorking(false);await loadData();setSelectedIds([]);if(failed.length){setError(`Güncellenemeyen ${failed.length} kayıt: ${failed.join(" · ")}`);setNotice("Başarılı kayıtlar kaydedildi.");}else setNotice("Seçilen kayıtlar güncellendi.");
   }
 
   async function downloadFile(file: AnswerKeyFile, item: AnswerKeyRecord) {
