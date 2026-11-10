@@ -51,7 +51,7 @@ export const opticalQuestionsSchema = z.array(opticalQuestionSchema).min(1).max(
   }
 });
 export type OpticalQuestion = z.infer<typeof opticalQuestionSchema>;
-export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[] };
+export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[]; studentNo?:string;identityHash?:string;identityEncrypted?:string; separateSession?:boolean };
 export type OpticalData = { questions: Array<OpticalQuestion & { column: string }>; students: OpticalStudent[]; warnings: string[]; lineCount: number };
 
 export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "windows-1254" = "auto") {
@@ -61,7 +61,7 @@ export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "
 }
 
 /** Canonical A-question order; no identity numbers are returned or stored. */
-export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuestions: OpticalQuestion[], school: string): OpticalData {
+export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuestions: OpticalQuestion[], school: string, options:{mergeSessions?:boolean;hashIdentity?:(v:string)=>string;encryptIdentity?:(v:string)=>string}={}): OpticalData {
   const questions = opticalQuestionsSchema.parse(inputQuestions);
   const sourceLayout = opticalLayoutSchema.parse(inputLayout);
   const questionLessons = [...new Set(questions.map(q => q.lesson))];
@@ -78,7 +78,8 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   const lines = txt.replace(/^\uFEFF/, "").split(/\r\n|\n|\r/);
   while (lines.at(-1) === "") lines.pop();
   if (!lines.length || lines.length > 2000) throw new Error("TXT 1–2000 kayıt satırı içermelidir.");
-  type Entry = { id: string; name: string; branch: string; grade: string; chains: Map<string,string>; booklets: Record<string,string>; sourceLines: number[] };
+  type Entry = { id: string; name: string; branch: string; grade: string; chains: Map<string,string>; booklets: Record<string,string>; sourceLines: number[];identity?:string };
+  const identities=new Map<string,Entry>(),numbers=new Map<string,Entry>();
   const entries = new Map<string,Entry>(), seenLines = new Set<string>();
   const slice = (line: string, f?: {start:number;length:number}) => f ? line.slice(f.start-1, f.start-1+f.length).trim() : "";
   lines.forEach((line, index) => {
@@ -91,9 +92,12 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     const grade = slice(line,f.grade), branch = slice(line,f.branch), book = slice(line,f.booklet).toUpperCase();
     if (!name || (!id && !identity) || !/^[A-D]$/.test(book)) throw new Error(`${label}: ad soyad, öğrenci kimliği veya kitapçık türü eksik/geçersiz.`);
     if (!questions.every(q=>q.positions[book])) throw new Error(`${label}: ${book} kitapçığı anahtarda tanımlı değil.`);
-    const key = identity ? `identity:${identity}` : `id:${grade}:${id}`;
-    const entry: Entry = entries.get(key) ?? {id, name, branch, grade, chains: new Map<string,string>(), booklets: {}, sourceLines: []};
-    if (entry.name !== name || entry.grade !== grade || (entry.branch && branch && entry.branch !== branch) || (entry.id && id && entry.id !== id)) throw new Error(`${label}: aynı öğrenciye ait oturumların kimlik bilgileri çelişiyor.`);
+    const numberKey=`${grade}:${id.replace(/^0+(?=\d)/,"")}`;
+    const existing=options.mergeSessions===false?undefined:(identity?identities.get(identity):undefined)??(id?numbers.get(numberKey):undefined);
+    if(existing?.identity&&identity&&existing.identity!==identity)throw new Error(`${label}: aynı numara farklı kimliklerde kullanılmış.`);
+    const entry:Entry=existing??{id,name,branch,grade,chains:new Map(),booklets:{},sourceLines:[],identity};
+    const key=existing?[...entries].find(([,value])=>value===existing)![0]:`row:${index}`;
+    if (entry.name !== name || entry.grade !== grade || (entry.branch && branch && entry.branch !== branch)) throw new Error(`${label}: aynı öğrenciye ait oturumların kimlik bilgileri çelişiyor.`);
     entry.id ||= id; entry.branch ||= branch; entry.sourceLines.push(index+1);
     for (const lesson of layout.lessons) {
       const count = questions.filter(q=>q.lesson===lesson.name).length;
@@ -106,17 +110,21 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
       if (entry.chains.has(lesson.name)) throw new Error(`${label}: ${lesson.name} için aynı öğrenciye ikinci kayıt var. Yinelenen satırı kaldırın.`);
       entry.chains.set(lesson.name,chain); entry.booklets[lesson.name]=book;
     }
-    entries.set(key,entry);
+    entries.set(key,entry);if(identity){entry.identity=identity;identities.set(identity,entry);}if(id)numbers.set(numberKey,entry);
   });
   const warnings: string[] = [], seen = new Set<string>();
   const students = [...entries.values()].map(entry => {
+    if(options.hashIdentity&&/^\d{11}$/.test(entry.id)){entry.identity??=entry.id;if(entry.identity===entry.id)entry.id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;}
+    if(!entry.id&&entry.identity&&options.hashIdentity)entry.id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;
     if (!entry.id) throw new Error(`TXT satır ${entry.sourceLines.join(", ")}: birleştirilen oturumlarda öğrenci numarası bulunamadı.`);
     const identifier = `${entry.grade}:${entry.id}`;
-    if (seen.has(identifier)) throw new Error(`Öğrenci numarası ${entry.id} için farklı kimlikler var; yanlış kurum veya tekrar kaydı kontrol edin.`);
+    if (options.mergeSessions!==false&&seen.has(identifier)) throw new Error(`Öğrenci numarası ${entry.id} için farklı kimlikler var; yanlış kurum veya tekrar kaydı kontrol edin.`);
     seen.add(identifier);
     const missing = layout.lessons.filter(l=>!entry.chains.has(l.name)).map(l=>l.name);
     if (missing.length) warnings.push(`${entry.id}: ${missing.join(", ")} alanları tamamen boş; bu dersler boş cevap olarak değerlendirilecek.`);
-    return {id:entry.id, name:entry.name, school, branch:[entry.grade,entry.branch].filter(Boolean).join("-") || "Belirtilmedi", booklets:entry.booklets, sourceLines:entry.sourceLines,
+    const repeated=options.mergeSessions===false&&[...entries.values()].filter(other=>other.grade===entry.grade&&other.id===entry.id).length>1;
+    return {id:repeated?`${entry.id}-O${entry.sourceLines[0]}`:entry.id,...(options.mergeSessions===false?{studentNo:entry.id,separateSession:true}:{}),
+      ...(entry.identity&&options.hashIdentity?{identityHash:options.hashIdentity(entry.identity)}:{}),...(entry.identity&&options.encryptIdentity?{identityEncrypted:options.encryptIdentity(entry.identity)}:{}),name:entry.name, school, branch:[entry.grade,entry.branch].filter(Boolean).join("-") || "Belirtilmedi", booklets:entry.booklets, sourceLines:entry.sourceLines,
       answers:questions.map(q=>{ const chain=entry.chains.get(q.lesson); return chain ? chain[q.positions[entry.booklets[q.lesson]]-1]?.trim() ?? "" : ""; })};
   });
   if (students.length > 500) throw new Error("Bir değerlendirmede en fazla 500 öğrenci desteklenir.");

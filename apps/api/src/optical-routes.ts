@@ -22,6 +22,9 @@ import { detectFmtSource } from "./fmt-source";
 import { analyzeFmt } from "./fmt-analyze";
 import { bulkTemplatesInput,templateInput,fmtContentIdentity } from "./fmt-bulk";
 import { previewFmt } from "./fmt-preview";
+import { resultRouter } from "./result-routes";
+import { identityHash,encryptIdentity } from "./result-identity";
+import { isDeleted,safeSnapshot,mergeStudentData } from "./result-data";
 import { convertTxt } from "./txt-converter";
 
 import { systemEvaluationTemplates, systemEvaluationTemplate } from "./evaluation-templates";
@@ -31,6 +34,7 @@ opticalRouter.use((_req,res,next)=>{res.setHeader("Cache-Control","private, no-s
 opticalRouter.use(requireAuth, (req: AuthenticatedRequest,res,next)=>{
   if (req.user?.role !== Role.SUPER_ADMIN && req.user?.role !== Role.DEALER) {res.status(403).json({error:"Bu bölüm yalnızca yönetici ve bayilere açıktır."});return;} next();
 });
+opticalRouter.use(resultRouter);
 type Handler = (req: AuthenticatedRequest,res: express.Response)=>Promise<void>;
 const wrap = (handler: Handler): express.RequestHandler => async(req,res,next)=>{
   try {await handler(req as AuthenticatedRequest,res);} catch(error) {
@@ -172,7 +176,7 @@ opticalRouter.patch("/keys/:id",admin,wrap(async(req,res)=>{
   if("error"in result){res.status(result.status!).json({error:result.error});return;}
   res.json(result.key);
 }));
-const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:2*1024*1024,files:1,fields:8,fieldSize:90000}});
+const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:2*1024*1024,files:10,fields:12,fieldSize:90000}});
 const uploadLimit=new RequestLimiter(30,10*60_000).middleware();
 opticalRouter.post("/templates/preview",admin,uploadLimit,upload.single("file"),wrap(async(req,res)=>{
   if(!req.file||!/\.txt$/i.test(req.file.originalname)){res.status(400).json({error:"En fazla 2 MB örnek TXT dosyası seçin."});return;}
@@ -203,26 +207,27 @@ async function evaluationTemplate(id:string){
   return saved ? (saved.active!==false?saved:null) : system;
 }
 for(const endpoint of ["preview","evaluate"]){
-  opticalRouter.post(`/${endpoint}`,uploadLimit,upload.single("file"),wrap(async(req,res)=>{
-    const input=z.object({schoolId:z.string().min(1).max(100),templateId:z.string().min(1).max(100),keyId:z.string().min(1).max(100),encoding:z.enum(["auto","utf-8","windows-1254"]).default("auto"),confirmWarnings:z.enum(["true","false"]).optional(),previewToken:z.string().max(3000).optional()}).parse(req.body);
-    if(!req.file || !/\.txt$/i.test(req.file.originalname)){res.status(400).json({error:"En fazla 2 MB boyutunda bir TXT dosyası seçin."});return;}
+  opticalRouter.post(`/${endpoint}`,uploadLimit,upload.fields([{name:"file",maxCount:1},{name:"files",maxCount:10}]),wrap(async(req,res)=>{
+    const input=z.object({mergeSessions:z.enum(["true","false"]).default("true"),schoolId:z.string().min(1).max(100),templateId:z.string().min(1).max(100),keyId:z.string().min(1).max(100),encoding:z.enum(["auto","utf-8","windows-1254"]).default("auto"),confirmWarnings:z.enum(["true","false"]).optional(),previewToken:z.string().max(3000).optional()}).parse(req.body);
+    const files=req.file?[req.file]:Object.values(req.files??{}).flat() as Express.Multer.File[];
+    if(!files.length||files.some(file=>!file.buffer.length||!/\.txt$/i.test(file.originalname))){res.status(400).json({error:"En fazla 2 MB boyutunda bir TXT dosyası seçin."});return;}
     const school=await prisma.school.findFirst({where:{id:input.schoolId,active:true,...scope(req)},select:{id:true,name:true}});
     if(!school){res.status(403).json({error:"Bu kurum için yükleme yetkiniz yok veya kurum etkin değil."});return;}
     const [template,key]=await Promise.all([evaluationTemplate(input.templateId),prisma.opticalKey.findFirst({where:{id:input.keyId,publication:evaluationPublicationWhere},include:{publication:{select:{examName:true,grade:true,publisherId:true}}}})]);
     if(!template || !key){res.status(400).json({error:"Etkin bir FMT ve cevap anahtarı seçin."});return;}
     let data,decoded="";
-    try {decoded=decodeOptical(req.file.buffer,input.encoding);data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name);}
+    try {decoded=files.map(file=>decodeOptical(file.buffer,input.encoding).replace(/[\r\n]+$/g,"")).join("\n");data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{mergeSessions:input.mergeSessions==="true",hashIdentity:identityHash,encryptIdentity});}
     catch(error){res.status(400).json({error:error instanceof Error?error.message:"TXT okunamadı."});return;}
-    const snapshot={expectedGrade:key.publication?.grade,keyFingerprint:keyFingerprint(key.questions,key.penalty),data,summary:opticalSummary(data,key.penalty),penalty:key.penalty,schoolName:school.name,templateName:template.name,keyName:key.publication?.examName??key.name};
-    const checks=reviewSnapshot(snapshot),uploadChecksum=checksum(decoded);
-    const duplicate=await prisma.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum,supersedesId:null},select:{id:true}});
-    if(duplicate)checks.blockers.push("Bu TXT aynı kurum ve sınav için zaten yüklendi. Sonuç Al ekranından mevcut kaydı açın.");
-    const previous=await prisma.opticalResult.findMany({where:{schoolId:school.id,keyId:key.id,nextRevision:null},select:{snapshot:true},take:100});
-    const numbers=new Set(data.students.map(s=>s.id));
-    const overlaps=previous.filter(p=>(p.snapshot as unknown as Snapshot).data.students.some(s=>numbers.has(s.id))).length;
-    if(overlaps&&!duplicate)checks.warnings.push(`Bu sınavın ${overlaps} önceki yüklemesinde aynı öğrenci numaraları var. Ayrı yüklemeler birleştirilmez; doğru dosyayı seçtiğinizi kontrol edin.`);
-    const uploadFingerprint=checksum(JSON.stringify({schoolId:school.id,template:template.layout,key:snapshot.keyFingerprint,uploadChecksum}));
-    if(endpoint==="preview"){res.json({...snapshot,checks,previewToken:seal("upload",req.user!.id,school.id,uploadFingerprint)});return;}
+    const uploadChecksum=checksum(decoded+"\nmerge:"+input.mergeSessions);
+    const duplicate=await prisma.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum,supersedesId:null},select:{id:true,snapshot:true}});
+    const previousRows=await prisma.opticalResult.findMany({where:{schoolId:school.id,keyId:key.id,nextRevision:null},orderBy:{createdAt:"desc"}});
+    const parent=input.mergeSessions==="true"&&(!duplicate||isDeleted((duplicate as any).snapshot))?previousRows.find(row=>!isDeleted(row.snapshot)):undefined;
+    if(parent){try{data=mergeStudentData((parent.snapshot as any).data,data);}catch(error){res.status(400).json({error:(error as Error).message});return;}}
+    const snapshot={mergeSessions:input.mergeSessions==="true",expectedGrade:key.publication?.grade,keyFingerprint:keyFingerprint(key.questions,key.penalty),data,summary:opticalSummary(data,key.penalty),penalty:key.penalty,schoolName:school.name,templateName:template.name,keyName:key.publication?.examName??key.name};
+    const checks=reviewSnapshot(snapshot);
+    if(duplicate&&!isDeleted((duplicate as any).snapshot))checks.blockers.push("Bu TXT aynı kurum ve sınav için zaten yüklendi. Sonuç Al ekranından mevcut kaydı açın.");
+    const uploadFingerprint=checksum(JSON.stringify({schoolId:school.id,template:template.layout,key:snapshot.keyFingerprint,uploadChecksum,parent:parent?.id,merged:checksum(JSON.stringify(safeSnapshot(snapshot).data))}));
+    if(endpoint==="preview"){res.json({...safeSnapshot(snapshot),checks,previewToken:seal("upload",req.user!.id,school.id,uploadFingerprint)});return;}
     if(!input.previewToken||!validSeal(input.previewToken,"upload",req.user!.id,school.id,uploadFingerprint)){res.status(409).json({error:"Önce TXT’yi kontrol edin. Anahtar veya dosya değiştiyse önizlemeyi yenileyin."});return;}
     if(checks.blockers.length){res.status(409).json({error:checks.blockers.join(" ")});return;}
     if(checks.warnings.length && input.confirmWarnings!=="true"){res.status(400).json({error:"Kontrol özetindeki uyarıları önizlemede inceleyip onaylayın."});return;}
@@ -233,26 +238,31 @@ for(const endpoint of ["preview","evaluate"]){
       const stillAvailable=await tx.opticalKey.findFirst({where:{id:key.id,publication:evaluationPublicationWhere}});
       if(!stillAvailable)return null;
       if(keyFingerprint(stillAvailable.questions,stillAvailable.penalty)!==snapshot.keyFingerprint)throw new z.ZodError([{code:"custom",path:[],message:"Cevap anahtarı değişti. Önizlemeyi yenileyin."}]);
+      const repeated=await tx.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum,supersedesId:null},select:{snapshot:true}});
+      if(repeated&&!isDeleted(repeated.snapshot))throw new z.ZodError([{code:"custom",path:[],message:"Bu TXT zaten kaydedildi. Sınav Sonuçları ekranından açın."}]);
       const systemTemplate=systemEvaluationTemplate(input.templateId);
       const currentTemplate=systemTemplate
         ? await tx.opticalTemplate.upsert({where:{id:systemTemplate.id},update:{},create:{...systemTemplate,layout:systemTemplate.layout as Prisma.InputJsonValue}})
         : await tx.opticalTemplate.findFirst({where:{id:template.id,active:true}});
       if(!currentTemplate||currentTemplate.active===false||JSON.stringify(currentTemplate.layout)!==JSON.stringify(template.layout))throw new z.ZodError([{code:"custom",path:[],message:"FMT değişti veya pasif yapıldı. Önizlemeyi yenileyin."}]);
-      return tx.opticalResult.create({data:{schoolId:school.id,templateId:template.id,keyId:key.id,createdById:req.user!.id,filename:req.file!.originalname.slice(0,200),uploadChecksum,snapshot:snapshot as unknown as Prisma.InputJsonValue}});
-    });
+      if(parent){const current=await tx.opticalResult.findFirst({where:{id:parent.id,nextRevision:null,school:scope(req)}});if(!current||isDeleted(current.snapshot))throw new Error("Oturum kaydı değişti. Dosyayı yeniden değerlendirin.");}
+      const created=await tx.opticalResult.create({data:{schoolId:school.id,templateId:template.id,keyId:key.id,createdById:req.user!.id,filename:files.map(file=>file.originalname).join(" + ").slice(0,200),...(parent?{seriesId:parent.seriesId,revision:parent.revision+1,supersedesId:parent.id,studentPublished:parent.studentPublished}:{}),uploadChecksum,snapshot:snapshot as unknown as Prisma.InputJsonValue}});
+      if(parent){const grants=await tx.studentResultAccess.findMany({where:{resultId:parent.id}});if(grants.length)await tx.studentResultAccess.createMany({data:grants.map(grant=>({userId:grant.userId,resultId:created.id,studentNo:grant.studentNo,studentName:grant.studentName}))});if(parent.studentPublished)await tx.opticalResult.update({where:{id:parent.id},data:{studentPublished:false}});}
+      return created;
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
     if(!result){res.status(403).json({error:"Kurum erişimi değişti. Listeyi yenileyin."});return;}
-    res.status(201).json({id:result.id,createdAt:result.createdAt,studentPublished:result.studentPublished,revision:result.revision,seriesId:result.seriesId,checks,...snapshot});
+    res.status(201).json({id:result.id,createdAt:result.createdAt,studentPublished:result.studentPublished,revision:result.revision,seriesId:result.seriesId,checks,schoolId:school.id,keyId:key.id,...safeSnapshot(snapshot)});
   }));
 }
 opticalRouter.get("/results",wrap(async(req,res)=>{
   const schoolId=typeof req.query.schoolId==="string"?req.query.schoolId:undefined;
-  const items=await prisma.opticalResult.findMany({where:{...(schoolId?{schoolId}:{}),...(typeof req.query.seriesId==="string"?{seriesId:req.query.seriesId}:{}),school:scope(req),...(req.query.history==="true"?{}:{nextRevision:null})},select:{schoolId:true,revision:true,seriesId:true,id:true,filename:true,createdAt:true,studentPublished:true,school:{select:{name:true}},key:{select:{name:true}},template:{select:{name:true}}},orderBy:{createdAt:"desc"},take:50});
-  res.json(items);
+  const items=await prisma.opticalResult.findMany({where:{...(schoolId?{schoolId}:{}),...(typeof req.query.seriesId==="string"?{seriesId:req.query.seriesId}:{}),school:scope(req),...(req.query.history==="true"?{}:{nextRevision:null})},select:{schoolId:true,revision:true,seriesId:true,id:true,filename:true,createdAt:true,studentPublished:true,snapshot:true,school:{select:{name:true}},key:{select:{name:true}},template:{select:{name:true}}},orderBy:{createdAt:"desc"}});
+  res.json(items.filter(item=>req.query.deleted==="true"?isDeleted(item.snapshot):!isDeleted(item.snapshot)).map(({snapshot,...item})=>item));
 }));
 opticalRouter.get("/results/:id",wrap(async(req,res)=>{
   const item=await prisma.opticalResult.findFirst({where:{id:idParam(req),school:scope(req)},select:{schoolId:true,id:true,revision:true,seriesId:true,createdAt:true,snapshot:true,studentPublished:true,nextRevision:{select:{id:true}}}});
-  if(!item){res.status(404).json({error:"Sonuç bulunamadı veya erişim yetkiniz yok."});return;}
-  res.json({schoolId:item.schoolId,id:item.id,revision:item.revision,seriesId:item.seriesId,isLatest:!item.nextRevision,createdAt:item.createdAt,studentPublished:item.studentPublished,...item.snapshot as object,checks:reviewSnapshot(item.snapshot as unknown as Snapshot)});
+  if(!item||isDeleted(item.snapshot)){res.status(404).json({error:"Sonuç bulunamadı veya erişim yetkiniz yok."});return;}
+  res.json({schoolId:item.schoolId,id:item.id,revision:item.revision,seriesId:item.seriesId,isLatest:!item.nextRevision,createdAt:item.createdAt,studentPublished:item.studentPublished,...safeSnapshot(item.snapshot as any),checks:reviewSnapshot(item.snapshot as unknown as Snapshot)});
 }));
 // Tokens bind the reviewed snapshot/key to this user and expire after 15 minutes.
 const seal=(kind:string,userId:string,resultId:string,fingerprint:string)=>{

@@ -1,6 +1,6 @@
 export type Lesson = { name: string; count: number; weight: number };
 export type Question = { lesson: string; number: number; answer: string; weight: number; column: string; outcomeCode?: string; outcomeName?: string };
-export type Candidate = { id: string; name: string; school: string; branch: string; answers: string[] };
+export type Candidate = {studentNo?:string; id: string; name: string; school: string; branch: string; answers: string[] };
 export type EvaluationData = { questions: Question[]; students: Candidate[] };
 export type CohortContext = Map<string, { members: Candidate[]; scores: number[]; rates: (number | null)[] }>;
 export type QuestionState = "correct" | "wrong" | "blank" | "cancelled";

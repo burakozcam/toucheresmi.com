@@ -19,6 +19,7 @@ import { fmtShareRouter } from "./fmt-share";
 import { inspectOutcomeFile } from "./outcome-file";
 import { reviewImportedQuestions } from "./answer-import-review";
 import { prepareEvaluation } from "./optical-catalog";
+import { publicResultsRouter } from "./public-results";
 import { readerRouter } from "./reader-routes";
 
 import { systemObserver, systemRouter } from "./system-center";
@@ -2017,6 +2018,7 @@ app.use(systemRouter);
 app.use(contentRouter);
 app.use(fmtShareRouter);
 app.use("/api/optical", opticalRouter);
+app.use("/api/public-results", publicResultsRouter);
 app.use("/api", readerRouter);
 
 app.use(

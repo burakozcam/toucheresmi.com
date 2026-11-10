@@ -56,3 +56,10 @@ Bu test, boş FMT deposunda sistem 7108 seçimini, bilgisayardan TXT yüklemeyi,
 FMT hata senaryoları da test edilir: kurum/anahtar servisi 503 döndüğünde FMT seçimi korunur; FMT servisi 503 döndüğünde açıklama ve yeniden yükleme gösterilir; yeni FMT liste adresinin HTML 404 yanıtında eski `/templates` adresi kullanılır.
 
 Sınav kataloğu ayrıca yayınevi → sınav gruplarıyla, FMT seçilmeden açılır. Yayın görünürlüğü kapalı ve eski `active=false` anahtarlı sınavın değerlendirilmesi, yalnız PDF kaydında eksik eşleştirme açıklaması, açık/koyu tema ve mobil yükleme düzeni doğrulanır.
+
+
+## Sonuçlar / iki oturum / PDF-Excel-ZIP
+
+`node --import tsx tests/e2e/results-workflow.cjs`, 3100 portunda açık Web uygulamasıyla ve 4101 portunda kendi yerel HTTPS API’siyle çalışır. Prisma bellek kayıtlarına yönlendirilir. İki ayrı dosya/yüklemede oturum birleştirme, kurumdan sınav seçme, genel/kurum/sınıf sıraları, PDF/Excel/ZIP, TC gizleme, öğrenci numarası/TC ile yalnız eşleşen karne sorgusu, yönetim yetkisi ve kaldırma/geri alma sınanır. `PLAYWRIGHT_MODULE` ve `CHROMIUM_PATH` yukarıdaki gibi verilebilir. Sonuç dosyaları `/tmp/ks-e2e-*` altında oluşur.
+
+Bu test, kullanıcı numarasını/TC’sini bilen kişinin kimliğini doğrulamaz. Kimlik doğrulamasız sonuç sorgusu kullanıcının açık tercihiyle uygulanmıştır; yalnız eşleşen kayıt döndürülmesi ve yönetim uç noktalarının oturum istemesi test edilir.

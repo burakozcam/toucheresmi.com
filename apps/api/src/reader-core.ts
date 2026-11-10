@@ -2,6 +2,7 @@ type Student={id:string;name:string;school:string;branch:string;answers:string[]
 type Summary={id:string;score:number;net:number;lessons:unknown[]};
 export type StoredResult={data:{questions:unknown[];students:Student[]};summary:Summary[];penalty:number;schoolName:string;keyName:string;templateName:string};
 export function resultStudent(snapshot:unknown,studentNo:string):Student {
+  if((snapshot as any)?.deletedAt)throw new Error("Sonuç kaldırılmış.");
   const s=snapshot as StoredResult;
   if(!s?.data||!Array.isArray(s.data.students)||!Array.isArray(s.summary))throw new Error("Sonuç verisi okunamadı.");
   const matches=s.data.students.filter(v=>v.id===studentNo);

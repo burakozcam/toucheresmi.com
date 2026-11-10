@@ -89,7 +89,7 @@ readerRouter.patch("/reader-accounts/:id",manager,wrap(async(req,res)=>{
 }));
 readerRouter.get("/my-results",reader,wrap(async(req,res)=>{
   const access=await prisma.studentResultAccess.findMany({where:{userId:req.user!.id,result:{studentPublished:true}},select:{id:true,studentNo:true,studentName:true,result:{select:{id:true,createdAt:true,snapshot:true}}},orderBy:{result:{createdAt:"desc"}},take:100});
-  res.json(access.map(a=>({id:a.id,studentNo:a.studentNo,studentName:a.studentName,resultId:a.result.id,createdAt:a.result.createdAt,examName:(a.result.snapshot as unknown as StoredResult).keyName,schoolName:(a.result.snapshot as unknown as StoredResult).schoolName})));
+  res.json(access.filter(a=>!(a.result.snapshot as any)?.deletedAt).map(a=>({id:a.id,studentNo:a.studentNo,studentName:a.studentName,resultId:a.result.id,createdAt:a.result.createdAt,examName:(a.result.snapshot as unknown as StoredResult).keyName,schoolName:(a.result.snapshot as unknown as StoredResult).schoolName})));
 }));
 readerRouter.get("/my-results/:id",reader,wrap(async(req,res)=>{
   const access=await prisma.studentResultAccess.findFirst({where:{id:id(req),userId:req.user!.id,result:{studentPublished:true}},select:{studentNo:true,result:{select:{createdAt:true,snapshot:true}}}});

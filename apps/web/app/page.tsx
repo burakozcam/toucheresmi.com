@@ -64,6 +64,7 @@ export default function Home() {
           <Link className="header-link flowing-gradient header-gradient-button" href="/cevap-anahtarlari">Cevap Anahtarları</Link>
           <Link className="header-link calendar-gradient-link" href="/sinav-takvimi">Sınav Takvimi</Link><Link className="header-link" href="/sinav-degerlendir">Sınav Değerlendir</Link>
           <Link className="header-link" href="/blog">Blog</Link><ThemeToggle />
+          <Link className="button button-quiet" href="/sonuclar">Sonuçlar</Link>
           <Link className="button button-navy" href="/login">Giriş Yap <span aria-hidden="true">↗</span></Link>
         </nav>
       </header>

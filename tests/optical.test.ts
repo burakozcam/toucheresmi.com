@@ -87,7 +87,7 @@ test("optik API: yalnızca admin FMT/anahtar yazar; sonuç ve yükleme kapsamı 
     const denied=await invoke("/preview",{body:{schoolId:"foreign-school",templateId:"fmt",keyId:"key"},file:{originalname:"test.txt",buffer:Buffer.from(txt)}},"post");assert.equal(denied.status,403);
     prisma.opticalResult.findFirst=(async({where}:any)=>{assert.equal(where.school.dealerId,"dealer-1");return null;}) as any;
     assert.equal((await invoke("/results/:id",{})).status,404);
-    prisma.opticalResult.findMany=(async({where,select}:any)=>{assert.equal(where.school.dealerId,"dealer-1");assert.equal(select.snapshot,undefined);return [];}) as any;
+    prisma.opticalResult.findMany=(async({where,select}:any)=>{assert.equal(where.school.dealerId,"dealer-1");assert.equal(select.snapshot,true);return [];}) as any;
     assert.equal((await invoke("/results",{})).status,200);
   }finally{prisma.school.findFirst=originalSchool;prisma.opticalResult.findFirst=originalDetail;prisma.opticalResult.findMany=originalList;}
 });
