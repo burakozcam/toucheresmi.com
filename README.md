@@ -1,6 +1,6 @@
-# Kurumsal Sınav v1.1.6 — Release Candidate
+# Kurumsal Sınav v1.1.8 — Release Candidate
 
-**v1.1.6 RC:** FMT kütüphane ve arama akışı, TXT/FMT/sınav seçimi, panel metinleri, karşılama alanı ve profil görünümü sadeleştirildi. Değerlendirme motoru ve kurum erişim kapsamı korunmuştur. Doğrulama kapsamı [v1.1.6 RC raporunda](docs/v1.1.6-rc-release.md).
+**v1.1.8 RC:** FMT kütüphane ve arama akışı, TXT/FMT/sınav seçimi, panel metinleri, karşılama alanı ve profil görünümü sadeleştirildi. Değerlendirme motoru ve kurum erişim kapsamı korunmuştur. Doğrulama kapsamı [v1.1.8 RC raporunda](docs/v1.1.8-rc-release.md).
 
 **v1.1.4:** Satır bazında sınıf/yayınevi/kaynak içeren toplu FMT kuyruğu; bağımsız hata/tekrar deneme; A/B/C/D PDF seçenekleri ve yalnızca Kurumsal Sınav logosu; SUPER_ADMIN toplu yayınevi logoları (yalnızca web Cevap Anahtarları), sabit login arka planı ve gerçek 404 üzerinde mevcut kuş oyunu. Yeni migration hazırlanmıştır, uygulanmadı. Node >=20.9 ve API için görsel çözümleme/optimizasyon bağımlılığı sharp 0.35.5 gerekir. [Teslim ve dağıtım raporu](docs/v1.1.4-release.md).
 

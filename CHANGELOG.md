@@ -1,9 +1,16 @@
+## v1.1.8 RC — 11 Kasım 2026 · yerel doğrulama
+
+- Uygulama, Web, API, sağlık bilgisi, footer ve favicon sürümleri 1.1.8 olarak güncellendi.
+- FMT alan sırası karşılaştırması düzeltildi; kalıcı TXT arşivi, tikle toplu değerlendirme ve il/ilçe/kurum seçimi eklendi.
+- 133 test, gerçek PostgreSQL tarayıcı testi ve üretim derlemesi geçti. Yeni arşiv migration’ı dağıtımda uygulanmalıdır.
+- Ayrıntılar: [v1.1.8 RC raporu](docs/v1.1.8-rc-release.md). Canlı dağıtım yapılmadı.
+
 ## v1.1.6 RC — Kasım 2026 · yerel geliştirme
 
 - FMT kütüphane ve arama akışı, TXT/FMT/sınav seçimi, panel metinleri, karşılama alanı ve profil görünümü sadeleştirildi.
 - Sınav değerlendirme motoru, cevap anahtarları, FMT/TXT içeriği ve kurum erişim kapsamı korunmuştur.
 - Test: 124/125 geçti; Sharp native görüntüleme hatası. Build: derleme/lint/type geçti; sayfa verisi toplamada `/cevap-anahtarlari/[slug]` başarısız.
-- Ayrıntılar: [v1.1.6 RC raporu](docs/v1.1.6-rc-release.md).
+- Ayrıntılar: [güncel RC raporu](docs/v1.1.8-rc-release.md).
 
 ## v1.1.5 RC — 10 Kasım 2026 · yerel doğrulama
 
