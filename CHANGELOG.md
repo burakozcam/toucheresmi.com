@@ -1,3 +1,10 @@
+## v1.1.6 RC — Kasım 2026 · yerel geliştirme
+
+- FMT kütüphane ve arama akışı, TXT/FMT/sınav seçimi, panel metinleri, karşılama alanı ve profil görünümü sadeleştirildi.
+- Sınav değerlendirme motoru, cevap anahtarları, FMT/TXT içeriği ve kurum erişim kapsamı korunmuştur.
+- Test: 124/125 geçti; Sharp native görüntüleme hatası. Build: derleme/lint/type geçti; sayfa verisi toplamada `/cevap-anahtarlari/[slug]` başarısız.
+- Ayrıntılar: [v1.1.6 RC raporu](docs/v1.1.6-rc-release.md).
+
 ## v1.1.5 RC — 10 Kasım 2026 · yerel doğrulama
 
 - Panel karşılama ve RC kutlama sayfası; ölçülü, reduced-motion uyumlu RC işareti.

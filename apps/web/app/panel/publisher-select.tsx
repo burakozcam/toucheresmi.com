@@ -32,8 +32,8 @@ export default function PublisherSelect({
     function closeOutside(event: PointerEvent) {
       if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setOpen(false);
     }
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
+    document.addEventListener("click", closeOutside);
+    return () => document.removeEventListener("click", closeOutside);
   }, []);
 
   useEffect(() => {
@@ -103,7 +103,6 @@ export default function PublisherSelect({
                 aria-selected={publisher.id === value}
                 className={index === activeIndex ? "publisher-option-active" : ""}
                 onMouseEnter={() => setActiveIndex(index)}
-                onMouseDown={(event) => event.preventDefault()}
                 onClick={() => { onChange(publisher.id); setOpen(false); }}
               >
                 {publisher.name}

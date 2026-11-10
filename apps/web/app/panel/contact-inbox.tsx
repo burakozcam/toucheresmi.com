@@ -65,7 +65,7 @@ export default function ContactInbox({ token }: { token: string }) {
   return (
     <section className="management-panel">
       <header className="panel-header">
-        <div><p className="hero-tag">İLETİŞİM</p><h2>Yönetici gelen kutusu</h2></div>
+        <div><p className="hero-tag">İLETİŞİM</p></div>
         <span className="inbox-unread-count">{data?.unreadCount ?? 0} okunmamış</span>
       </header>
       {error && <p className="notice error" role="alert">{error}</p>}

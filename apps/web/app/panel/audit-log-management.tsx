@@ -75,7 +75,7 @@ export default function AuditLogManagement({ token }: { token: string }) {
 
   return (
     <section className="management-panel">
-      <header className="panel-header"><div><p className="hero-tag">SİSTEM GÜVENLİĞİ</p><h2>Yönetici işlem kayıtları</h2></div></header>
+      <header className="panel-header"><div><p className="hero-tag">SİSTEM GÜVENLİĞİ</p></div></header>
       {error && <p className="notice error" role="alert">{error}</p>}
       <form className="audit-filter-form" onSubmit={applyFilters}>
         <label>Kullanıcı

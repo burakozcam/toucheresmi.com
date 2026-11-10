@@ -199,7 +199,7 @@ export default function RegistrationRequests({ token }: { token: string }) {
       <header className="registration-header">
         <div>
           <p className="hero-tag">SİSTEM KULLANICILARI</p>
-          <h2>Üyeler ve üyelik talepleri</h2>
+
           <p>Üyeleri onaylayın, erişimlerini yönetin veya güvenli biçimde yeni şifre belirleyin.</p>
         </div>
         <div className="registration-header-actions">

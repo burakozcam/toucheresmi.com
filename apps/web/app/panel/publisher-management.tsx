@@ -196,7 +196,7 @@ export default function PublisherManagement({ token, role }: { token: string; ro
       <header className="panel-header">
         <div>
           <p className="hero-tag">YAYINEVLERİ</p>
-          <h2>Yayınevi yönetimi</h2>
+
         </div>
       </header>
 

@@ -117,7 +117,7 @@ opticalRouter.get("/publishers",wrap(async(_req,res)=>{res.json(await prisma.pub
 opticalRouter.get("/keys",wrap(async(req,res)=>{
   const available=req.user!.role!==Role.SUPER_ADMIN||req.query.available==="true";
   const keys=await prisma.opticalKey.findMany({where:available?{active:true,publication:evaluationPublicationWhere}:{},include:{publication:{include:{publisher:{select:{id:true,name:true}}}}},orderBy:{createdAt:"desc"}});
-  res.json(keys.filter(key=>{if(!available)return true;try{evaluationQuestions(key.questions);return true;}catch{return false;}}).map(key=>({id:key.id,name:key.publication?.examName??key.name,penalty:key.penalty,active:key.active,publicationId:key.publicationId,publisher:key.publication?.publisher??null,grade:key.publication?.grade??null,createdAt:key.createdAt,questionCount:(key.questions as unknown[]).length})));
+  res.json(keys.filter(key=>{if(!available)return true;try{evaluationQuestions(key.questions);return true;}catch{return false;}}).map(key=>{const questions=evaluationQuestions(key.questions);return{id:key.id,name:key.publication?.examName??key.name,penalty:key.penalty,active:key.active,publicationId:key.publicationId,publisher:key.publication?.publisher??null,grade:key.publication?.grade??null,createdAt:key.createdAt,questionCount:questions.length,lessonCounts:Object.fromEntries([...new Set(questions.map(q=>q.lesson))].map(lesson=>[lesson,questions.filter(q=>q.lesson===lesson).length])),booklets:[...new Set(questions.flatMap(q=>Object.keys(q.positions)))].sort()};}));
 }));
 opticalRouter.get("/keys/:id",admin,wrap(async(req,res)=>{
   const key=await prisma.opticalKey.findUnique({where:{id:idParam(req)},include:{publication:{select:{examName:true}}}});

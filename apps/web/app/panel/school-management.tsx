@@ -162,7 +162,7 @@ export default function SchoolManagement({ token, role }: { token: string; role:
   return (
     <section className="management-panel school-management">
       <header className="panel-header">
-        <div><p className="hero-tag">KURUM YÖNETİMİ</p><h2>{role === "SUPER_ADMIN" ? "Kurumlar" : "Kurum ekleme"}</h2></div>
+        <div><p className="hero-tag">KURUM YÖNETİMİ</p></div>
       </header>
       {notice && <p className="notice success" role="status">{notice}</p>}
       {error && <p className="notice error" role="alert">{error}</p>}
