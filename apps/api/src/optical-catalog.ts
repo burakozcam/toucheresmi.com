@@ -4,7 +4,6 @@ import { Prisma } from "@prisma/client";
 import { opticalQuestionsSchema, type OpticalQuestion } from "./optical-core";
 
 export const evaluationPublicationWhere: Prisma.PublishedAnswerKeyWhereInput = {
-  showInEvaluation: true, publisher: { active: true },
   files: { some: { category: "ANSWER_KEY" } },
 };
 export function evaluationQuestions(value: unknown): OpticalQuestion[] {
@@ -33,4 +32,16 @@ export function prepareEvaluation(files:FileInfo[],enabled:boolean,previous:unkn
   for(const file of candidates){try{return readEvaluationExcel(file.storagePath,format);}catch(e){problem=e;}}
   if(enabled||format==="f"||format==="o")throw new Error(problem instanceof Error?problem.message:"Ölçme değerlendirme için cevapları, A/B soru eşleştirmelerini ve kazanımları içeren Excel dosyasını kazanım alanına yükleyin.");
   return null;
+}
+
+/** All exams with an answer file are listed, even when their public listing is hidden. */
+export function evaluationExamChoice(publication:{id:string;examName:string;grade:number;publisher:{id:string;name:string};createdAt:Date;opticalKey:{id:string;questions:unknown;penalty:number}|null}) {
+  let questions:OpticalQuestion[]=[];
+  try{questions=evaluationQuestions(publication.opticalKey?.questions);}catch{}
+  return {id:publication.opticalKey?.id??`publication:${publication.id}`,publicationId:publication.id,
+    name:publication.examName,publisher:publication.publisher,grade:publication.grade,createdAt:publication.createdAt,
+    active:true,penalty:publication.opticalKey?.penalty??3,evaluationReady:questions.length>0,
+    evaluationIssue:questions.length?null:"Bu sınavın cevap dosyası var; hesaplama için soru cevapları ve kitapçık eşleştirmesi henüz okunmamış. Cevap Anahtarları bölümünden anahtarı tamamlayın.",
+    questionCount:questions.length,lessonCounts:Object.fromEntries([...new Set(questions.map(q=>q.lesson))].map(name=>[name,questions.filter(q=>q.lesson===name).length])),
+    booklets:[...new Set(questions.flatMap(q=>Object.keys(q.positions)))].sort()};
 }

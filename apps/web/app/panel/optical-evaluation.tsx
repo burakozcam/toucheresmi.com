@@ -6,11 +6,12 @@ import { API_URL } from "../../lib/api";
 import type { KeyRecord, OpticalSnapshot, TemplateRecord } from "../../lib/optical";
 import { buildCohortContext } from "../../lib/evaluation";
 import ReportCard from "../sinav-degerlendir/report-card";
-import { opticalRequest } from "../../lib/optical-api";
+import { opticalRequest, OpticalRequestError } from "../../lib/optical-api";
 import CheckSummary from "./optical-checks";
 import OpticalRevisions from "./optical-revisions";
 import OpticalAnalysis from "./optical-analysis";
 import SearchableSelect from "./searchable-select";
+import ExamPicker from "./exam-picker";
 import { compatibleEvaluation } from "../../../api/lib/evaluation-compatibility";
 
 type School = {id:string;name:string};
@@ -23,20 +24,45 @@ export default function OpticalEvaluation({token,screen="results",initialResultI
   const [schoolId,setSchoolId]=useState(""),[templateId,setTemplateId]=useState(""),[keyId,setKeyId]=useState(""),[file,setFile]=useState<File|null>(null);
   const [snapshot,setSnapshot]=useState<OpticalSnapshot|null>(null),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState(""),[confirmed,setConfirmed]=useState(false),[ready,setReady]=useState(false);
   const [mode,setMode]=useState("list"),[sortMode,setSortMode]=useState<"score"|"alphabetical">("score"),[branch,setBranch]=useState(""),[studentId,setStudentId]=useState(""),[monochrome,setMonochrome]=useState(false),[showQuestions,setShowQuestions]=useState(false);
+  const [loadErrors,setLoadErrors]=useState<string[]>([]);
+  const fileInputRef=useRef<HTMLInputElement>(null);
   const resultRef=useRef<HTMLElement>(null);
   async function loadHistory(){setHistory(await opticalRequest(token,`/results${schoolId?`?schoolId=${encodeURIComponent(schoolId)}`:""}`));}
   async function load(){
-    const response=await fetch(`${API_URL}/api/schools?active=true`,{headers:{Authorization:`Bearer ${token}`}});
-    const data=await response.json();if(!response.ok||!Array.isArray(data))throw new Error(data.error??"Kurumlar yüklenemedi.");
-    const [t,k]=screen==="upload"?await Promise.all([opticalRequest(token,"/evaluation-templates"),opticalRequest(token,"/keys?available=true")]):[[],[]];
-    setSchools(data);setTemplates(t.filter((x:TemplateRecord)=>x.active));setKeys(k.filter((x:KeyRecord)=>x.active));
-    setSchoolId(data[0]?.id??"");setTemplateId("");setKeyId("");
+    const loadSchools=async()=>{
+      const response=await fetch(`${API_URL}/api/schools?active=true`,{headers:{Authorization:`Bearer ${token}`}});
+      const data=await response.json().catch(()=>null);
+      if(!response.ok||!Array.isArray(data))throw new Error(data?.error??`Kurumlar yüklenemedi (HTTP ${response.status}).`);
+      return data as School[];
+    };
+    const loadTemplates=async()=>{
+      try{return await opticalRequest(token,"/evaluation-templates");}
+      catch(error){
+        // Older API deployments expose registered FMTs through /templates only.
+        if(error instanceof OpticalRequestError&&error.status===404)return opticalRequest(token,"/templates");
+        throw error;
+      }
+    };
+    const loadExams=async()=>{
+      try{return await opticalRequest(token,"/evaluation-exams");}
+      catch(error){if(error instanceof OpticalRequestError&&error.status===404)return opticalRequest(token,"/keys?available=true");throw error;}
+    };
+    const [s,t,k]=await Promise.allSettled([loadSchools(),screen==="upload"?loadTemplates():Promise.resolve([]),screen==="upload"?loadExams():Promise.resolve([])]);
+    const problems:string[]=[];
+    if(s.status==="fulfilled"){setSchools(s.value);setSchoolId(current=>s.value.some(row=>row.id===current)?current:s.value[0]?.id??"");}
+    else problems.push(`Kurum listesi yüklenemedi: ${s.reason instanceof Error?s.reason.message:"Bağlantıyı kontrol edin."}`);
+    if(t.status==="fulfilled"&&Array.isArray(t.value))setTemplates(t.value.filter((row:TemplateRecord)=>row.active));
+    else problems.push(`FMT listesi yüklenemedi: ${t.status==="rejected"&&t.reason instanceof Error?t.reason.message:"Sunucudan geçersiz liste geldi."}`);
+    if(k.status==="fulfilled"&&Array.isArray(k.value))setKeys(k.value.filter((row:KeyRecord)=>row.active));
+    else problems.push(`Sınav/cevap anahtarı listesi yüklenemedi: ${k.status==="rejected"&&k.reason instanceof Error?k.reason.message:"Sunucudan geçersiz liste geldi."}`);
+    setLoadErrors(problems);
   }
-  useEffect(()=>{setSnapshot(null);void load().then(()=>{if(screen==="results"&&initialResultId)return openResult(initialResultId);}).catch(e=>setError(e.message)).finally(()=>setLoading(false));},[token,screen]);
+  function retryLoad(){setLoading(true);void load().catch(e=>setError(e.message)).finally(()=>setLoading(false));}
+  useEffect(()=>{setSnapshot(null);setTemplateId("");setKeyId("");setTemplates([]);setKeys([]);setSchools([]);setSchoolId("");setLoading(true);setLoadErrors([]);void load().then(()=>{if(screen==="results"&&initialResultId)return openResult(initialResultId);}).catch(e=>setError(e.message)).finally(()=>setLoading(false));},[token,screen]);
   useEffect(()=>{if(screen!=="results"||!schoolId)return;let cancelled=false;setHistory([]);void opticalRequest(token,`/results?schoolId=${encodeURIComponent(schoolId)}`).then(rows=>{if(!cancelled)setHistory(rows);}).catch(e=>{if(!cancelled)setError(e.message);});return()=>{cancelled=true;};},[token,screen,schoolId]);
   function invalidate(){setSnapshot(null);setConfirmed(false);setNotice("");setError("");}
   async function run(save:boolean){
-    if(!file||!schoolId||!templateId||!keyId)return;
+    if(!canPreview)return;
     setBusy(true);setError("");setNotice("");
     try{
       const body=new FormData();body.append("file",file);body.append("schoolId",schoolId);body.append("templateId",templateId);body.append("keyId",keyId);body.append("encoding","auto");body.append("confirmWarnings",String(confirmed));if(save&&snapshot?.previewToken)body.append("previewToken",snapshot.previewToken);
@@ -50,7 +76,14 @@ export default function OpticalEvaluation({token,screen="results",initialResultI
   const weights=useMemo(()=>Object.fromEntries(snapshot?.data.questions.map(q=>[q.lesson,q.weight])??[]),[snapshot]);
   const context=useMemo(()=>snapshot?buildCohortContext(snapshot.data,snapshot.penalty,weights,500):undefined,[snapshot,weights]);
   const selectedTemplate=templates.find(t=>t.id===templateId);
-  const compatibleKeys=selectedTemplate?keys.filter(k=>compatibleEvaluation(selectedTemplate,k)):[];
+  const selectedKey=keys.find(key=>key.id===keyId);
+  const incompatible=!!selectedTemplate&&!!selectedKey&&selectedKey.evaluationReady!==false&&!compatibleEvaluation(selectedTemplate,selectedKey);
+  const canPreview=!!file&&!!schoolId&&!!templateId&&!!selectedKey&&selectedKey.evaluationReady!==false&&!incompatible;
+  function selectTxt(selected:File|null){
+    invalidate();
+    if(selected&&(!/\.txt$/i.test(selected.name)||selected.size>2*1024*1024||!selected.size)){setFile(null);if(fileInputRef.current)fileInputRef.current.value="";setError("Boş olmayan, en fazla 2 MB boyutunda bir TXT dosyası seçin.");return;}
+    setFile(selected);if(!selected&&fileInputRef.current)fileInputRef.current.value="";
+  }
   const branches=[...new Set(snapshot?.data.students.map(s=>s.branch)??[])];
   const visible=snapshot?.data.students.filter(s=>!branch||s.branch===branch)??[];
   const sorted=useMemo(()=>snapshot?[...snapshot.summary].sort((a,b)=>sortMode==="score"?b.score-a.score||a.id.localeCompare(b.id,"tr"):((snapshot.data.students.find(s=>s.id===a.id)?.name??"").localeCompare(snapshot.data.students.find(s=>s.id===b.id)?.name??"","tr")||a.id.localeCompare(b.id,"tr"))):[],[snapshot,sortMode]);
@@ -68,20 +101,35 @@ export default function OpticalEvaluation({token,screen="results",initialResultI
   }
   function resultList(listStudents:typeof visible,listBranch:string){if(!snapshot)return null;return <article className="student-report optical-list-report"><header className="report-header"><div className="brand"><span className="brand-mark">K</span><span>Kurumsal Sınav</span></div><div><strong>{snapshot.keyName}</strong><p>{snapshot.schoolName} · {listBranch||"Tüm sınıflar"} · {listStudents.length} öğrenci</p></div></header><h3>Detaylı sonuç listesi {!snapshot.id&&"· ÖNİZLEME"}</h3><div className="table-scroll"><table className="result-table"><thead><tr><th>Kurum sırası</th><th>Öğrenci / No / Şube</th>{lessons.map(l=><th key={l}>{l}<small>D / Y / B · Net</small></th>)}<th>Toplam net</th><th>Yerel puan / 500</th></tr></thead><tbody>{sorted.map(r=>{const s=listStudents.find(s=>s.id===r.id);if(!s)return null;return <tr key={s.id}><td>{1+listStudents.filter(other=>{const score=snapshot.summary.find(x=>x.id===other.id)?.score??-Infinity;return score>r.score+1e-8}).length}</td><td><strong>{s.name}</strong><small>{s.id} · {s.branch}</small></td>{r.lessons.map(l=><td key={l.lesson}>{l.correct} / {l.wrong} / {l.blank}<small>{num(l.net)} net{l.cancelled?` · ${l.cancelled} iptal`:""}</small></td>)}<td>{num(r.net)}</td><td>{num(r.score)}</td></tr>;})}</tbody></table></div><footer className="report-foot">{snapshot.penalty?`Net = doğru − yanlış / ${snapshot.penalty}.`:"Yanlış doğruyu götürmez."} H soruları tüm öğrenciler için doğru kabul edilir; X soruları hesap dışıdır. Puan / 500 yerel ölçektir; resmî LGS/YKS veya yayınevi puanı değildir. Kurum sırası yalnızca bu değerlendirmedeki öğrenciler arasındadır; eşit puanlar aynı sırayı alır.</footer></article>;}
   return <section className="optical-module">
+    {!!loadErrors.length&&<div className="notice error" role="alert">{loadErrors.map(message=><p key={message}>{message}</p>)}<button type="button" className="button button-quiet" disabled={loading||busy} onClick={retryLoad}>Listeleri yeniden yükle</button></div>}
     <Script src="/vendor/xlsx.full.min.js" strategy="afterInteractive" onReady={()=>setReady(true)} onError={()=>setError("Excel dışa aktarma aracı yüklenemedi. Sayfayı yenileyin.")}/>
-    {screen==="upload"&&<section className="management-panel">
+    {screen==="upload"&&<section className="exam-upload-workspace">
       {error&&<p className="notice error" role="alert">{error}</p>}{notice&&<p className="notice success" role="status">{notice}</p>}
-{loading?<p role="status">Kurumlar ve şablonlar yükleniyor…</p>:<>
-        {!schools.length&&<p className="notice">Önce kurum kaydı ekleyin. Yalnızca hesabınıza bağlı etkin kurumlara yükleme yapabilirsiniz.</p>}
-        {(!templates.length||!keys.length)&&<p className="notice">Değerlendirme için etkin bir FMT ve cevap anahtarı bulunmalıdır.</p>}
-        <div className="optical-form"><label>1. TXT dosyası · en fazla 2 MB<input type="file" accept=".txt,text/plain" disabled={busy} onChange={e=>{const selected=e.target.files?.[0]??null;invalidate();if(selected&&selected.size>2*1024*1024){setFile(null);e.currentTarget.value="";setError("TXT en fazla 2 MB olabilir.");return;}setFile(selected);}}/>{file&&<small role="status">Seçildi: {file.name} · {(file.size/1024).toLocaleString("tr-TR",{maximumFractionDigits:0})} KB</small>}</label><label>2. FMT Seçiniz<SearchableSelect label="FMT Seçiniz" disabled={busy||!templates.length} options={templates.map(t=>({id:t.id,label:t.name,detail:[t.grade?`${t.grade}. sınıf`:"",`${t.layout.lineLength} karakter`].filter(Boolean).join(" · ")}))} value={templateId} onChange={id=>{setTemplateId(id);setKeyId("");invalidate();}} placeholder="FMT adı veya sınıf ara…"/></label><label>3. Sınav seçiniz<select aria-label="Değerlendirilecek sınav" disabled={busy||!templateId} value={keyId} onChange={e=>{setKeyId(e.target.value);invalidate();}}><option value="">Sınav seçin</option>{compatibleKeys.map(k=><option value={k.id} key={k.id}>{k.name} · {k.grade?`${k.grade}. sınıf · `:""}{k.questionCount} soru · {k.booklets.join("/")} kitapçık</option>)}</select>{templateId&&!compatibleKeys.length&&<small>Bu FMT ile sınıfı, soru dağılımı ve kitapçıkları uyumlu açık sınav bulunamadı.</small>}</label><label>Kurum<select disabled={busy} value={schoolId} onChange={e=>{setSchoolId(e.target.value);invalidate();}}><option value="">Kurum seçin</option>{schools.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>{canCreateSchool&&<button type="button" className="button button-quiet" onClick={()=>setShowSchoolForm(v=>!v)}>＋ Kurum Ekle</button>}</div>
-        {showSchoolForm&&<form className="inline-school-create" onSubmit={createSchool}><h3>Yeni kurum</h3><label>Kurum adı<input required value={schoolName} onChange={e=>setSchoolName(e.target.value)} maxLength={180}/></label><label>İl<input value={schoolCity} onChange={e=>setSchoolCity(e.target.value)} maxLength={100}/></label><label>İlçe<input value={schoolDistrict} onChange={e=>setSchoolDistrict(e.target.value)} maxLength={100}/></label><button className="button button-navy" disabled={busy}>Kurumu ekle</button></form>}
-        {templates.find(t=>t.id===templateId)&&<p className="notice">Seçili FMT: <strong>{templates.find(t=>t.id===templateId)!.name}</strong> · {templates.find(t=>t.id===templateId)!.layout.lineLength} karakter · {templates.find(t=>t.id===templateId)!.layout.lessons.map(l=>l.name).join(" · ")}</p>}
-        <button className="button button-navy" disabled={busy||!file||!schoolId||!templateId||!keyId} onClick={()=>void run(false)}>{busy?"TXT okunuyor ve sınav değerlendiriliyor…":"4. TXT’yi kontrol et ve önizle"}</button>
-        {(!file||!templateId||!keyId||!schoolId)&&<p className="field-help">Devam etmek için eksik: {[!file&&"TXT dosyası",!templateId&&"FMT",!keyId&&"sınav/cevap anahtarı",!schoolId&&"kurum"].filter(Boolean).join(", ")}.</p>}
-        <p className="field-help">Önizlemeden sonra kontrol özetini inceleyip onay kutusunu işaretleyerek “Sınavı yükle ve kaydet” düğmesine basın.</p>
-        <p className="field-help">FMT alan konumlarıyla öğrenci bilgileri ve işaretlemeler okunur; seçtiğiniz sınavın cevap anahtarıyla doğru, yanlış, boş ve net hesaplanır. TXT kodlaması otomatik algılanır. TXT içindeki TC/telefon yalnızca oturum eşleştirmesinde kullanılır; ham dosya saklanmaz.</p>
-      </>}
+      {loading?<div className="management-panel" role="status">Kurumlar, FMT’ler ve sınavlar yükleniyor…</div>:<div className="exam-upload-grid">
+        <div className="exam-upload-settings">
+          <section className="exam-upload-card">
+            <header className="exam-upload-card-header"><span className="exam-upload-icon" aria-hidden="true">▤</span><div><h2>Yüklenecek sınav bilgileri</h2><p>Yayınevini açın, sınavınızı seçin.</p></div></header>
+            <div className="exam-upload-field"><span>Sınav <small>Yayınevi ve sınav</small></span><ExamPicker exams={keys} value={keyId} disabled={busy} onChange={id=>{setKeyId(id);invalidate();}}/></div>
+            {selectedKey&&<div className="exam-upload-exam-meta"><span>{selectedKey.grade?`${selectedKey.grade}. sınıf`:"Sınav"}</span><span>{selectedKey.questionCount} soru</span><span>{selectedKey.booklets.length?`${selectedKey.booklets.join(" / ")} kitapçık`:"Anahtar bekleniyor"}</span></div>}
+            {selectedKey?.evaluationReady===false&&<p className="notice" role="status">{selectedKey.evaluationIssue}</p>}
+            {!keys.length&&<p className="field-help">Cevap anahtarı eklenmiş sınavlar burada yayınevlerinin altında listelenir.</p>}
+            <div className="exam-upload-field"><span>FMT <small>Optik okuyucu şablonu</small></span><SearchableSelect label="FMT Seçiniz" disabled={busy} emptyMessage="Seçilebilir FMT yok. FMT listesini yeniden yükleyin veya etkin FMT kaydını kontrol edin." options={templates.map(t=>({id:t.id,label:t.name,detail:[t.grade?`${t.grade}. sınıf`:"",`${t.layout.lineLength} karakter`].filter(Boolean).join(" · ")}))} value={templateId} onChange={id=>{setTemplateId(id);invalidate();}} placeholder="FMT adı veya sınıf ara…"/></div>
+            {selectedTemplate&&<p className="exam-upload-format-note">{selectedTemplate.layout.lineLength} karakter · {selectedTemplate.layout.lessons.map(l=>l.name).join(" · ")}</p>}
+            {incompatible&&<p className="notice error" role="alert">Seçilen FMT ile sınavın sınıfı veya ders/soru dağılımı uyuşmuyor. Sınav seçiminiz korundu; uygun FMT’yi seçin.</p>}
+            {!templates.length&&<div className="exam-upload-empty"><p>Seçilebilir etkin FMT bulunamadı.</p>{!loadErrors.length&&<button type="button" className="button button-quiet" disabled={busy} onClick={retryLoad}>Listeleri yeniden yükle</button>}</div>}
+            <div className="exam-upload-field"><label htmlFor="exam-upload-school">Kurum</label><div className="exam-upload-school"><select id="exam-upload-school" disabled={busy} value={schoolId} onChange={e=>{setSchoolId(e.target.value);invalidate();}}><option value="">Kurum seçin</option>{schools.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select>{canCreateSchool&&<button type="button" className="button button-quiet" disabled={busy} onClick={()=>setShowSchoolForm(v=>!v)}>＋ Kurum ekle</button>}</div></div>
+          </section>
+          {showSchoolForm&&<form className="exam-upload-card inline-school-create" onSubmit={createSchool}><h3>Yeni kurum</h3><label>Kurum adı<input required value={schoolName} onChange={e=>setSchoolName(e.target.value)} maxLength={180}/></label><label>İl<input value={schoolCity} onChange={e=>setSchoolCity(e.target.value)} maxLength={100}/></label><label>İlçe<input value={schoolDistrict} onChange={e=>setSchoolDistrict(e.target.value)} maxLength={100}/></label><button className="button button-navy" disabled={busy}>Kurumu ekle</button></form>}
+          <details className="exam-upload-help"><summary><span aria-hidden="true">ⓘ</span> Sınav nasıl yüklenir?</summary><ol><li>Yayınevinizin altından cevap anahtarı eklenmiş sınavı seçin.</li><li>TXT dosyanıza ait FMT’yi seçin ve kurumu kontrol edin.</li><li>Bilgisayarınızdaki TXT’yi ekleyip “Değerlendir” düğmesine basın.</li><li>Önizlemeyi inceleyin, onaylayıp kaydedin. Karnelerinizi Sonuç Al ekranından açın.</li></ol><p>TXT kodlaması otomatik algılanır. A/B kitapçıkları cevap anahtarına göre değerlendirilir.</p></details>
+        </div>
+        <section className="exam-upload-card exam-upload-files">
+          <header className="exam-upload-files-actions"><button type="button" className="button exam-evaluate-button" disabled={busy||!canPreview} onClick={()=>void run(false)}>{busy?"TXT değerlendiriliyor…":"Değerlendir"}</button><button type="button" className="button exam-clear-button" disabled={busy||!file} onClick={()=>selectTxt(null)}>Seçimi kaldır</button></header>
+          <label className={`exam-txt-dropzone ${file?"has-file":""}`} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();if(busy)return;if(e.dataTransfer.files.length>1){setError("Her değerlendirme için tek TXT dosyası ekleyin.");return;}selectTxt(e.dataTransfer.files[0]??null);}}><input ref={fileInputRef} type="file" aria-label="TXT dosyası" accept=".txt,text/plain" disabled={busy} onChange={e=>selectTxt(e.target.files?.[0]??null)}/><span className="exam-txt-drop-icon" aria-hidden="true">⇧</span><strong>{file?"TXT dosyasını değiştir":"TXT dosyanızı buraya bırakın"}</strong><span>veya bilgisayarınızdan dosya seçin</span><small>.TXT · En fazla 2 MB</small></label>
+          <div className="exam-file-table"><div className="exam-file-table-head"><span>Dosya adı</span><span>Boyut</span><span>Durum</span></div>{file?<div className="exam-file-table-row"><span><strong>{file.name}</strong><small>Bilgisayarınızdan seçildi</small></span><span>{(file.size/1024).toLocaleString("tr-TR",{maximumFractionDigits:1})} KB</span><span className="exam-file-status">{snapshot?.id?"Kaydedildi":snapshot?"Önizlendi":"Hazır"}</span></div>:<div className="exam-file-table-empty"><span aria-hidden="true">▱</span><strong>Henüz dosya eklenmedi</strong><p>Optik okuyucunuzdan aldığınız TXT dosyasını seçin.</p></div>}</div>
+          <footer className="exam-upload-files-footer"><span>{file?"1 dosya seçili":"0 dosya"}</span><span>TXT → FMT → Cevap anahtarı</span></footer>
+          {(!file||!templateId||!keyId||!schoolId)&&<p className="field-help">Değerlendirmek için eksik: {[!file&&"TXT dosyası",!templateId&&"FMT",!keyId&&"sınav",!schoolId&&"kurum"].filter(Boolean).join(", ")}.</p>}
+        </section>
+      </div>}
     </section>}
     {screen==="results"&&<section className="management-panel">{error&&<p className="notice error" role="alert">{error}</p>}{notice&&<p className="notice success" role="status">{notice}</p>}<div className="optical-form"><label>Kurum<select disabled={busy} value={schoolId} onChange={e=>{setSchoolId(e.target.value);setSnapshot(null);}}><option value="">Kurum seçin</option>{schools.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Yüklenen sınav<select aria-label="Yüklenen sınav" disabled={busy||!schoolId} value={snapshot?.id??""} onChange={e=>{if(e.target.value)void openResult(e.target.value);else setSnapshot(null);}}><option value="">Sınav seçin</option>{history.filter(h=>h.schoolId===schoolId).map(h=><option key={h.id} value={h.id}>{h.key.name} · Sürüm {h.revision??1} · {new Date(h.createdAt).toLocaleString("tr-TR")}</option>)}</select></label></div>{!loading&&!history.length&&<p>Henüz yüklenmiş sınav yok. Sınav Yükle ekranından başlayın.</p>}</section>}
     {snapshot&&<section className="management-panel optical-results" ref={resultRef}>

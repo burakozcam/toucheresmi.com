@@ -214,7 +214,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
             Ana sayfadaki Cevap Anahtarları bölümünde yayımla
           </label>
 
-          <label className="checkbox-row"><input type="checkbox" name="showInEvaluation" checked={form.showInEvaluation} onChange={e=>setForm({...form,showInEvaluation:e.target.checked})}/>Ölçme ve Değerlendirme sisteminde kullanıma aç</label>
+          <p className="field-help">Cevap anahtarı eklenen her sınav, Sınav Yükle ekranında yayınevinin altında otomatik listelenir.</p>
           <label>Değerlendirme kuralı<select name="penalty" value={form.penalty} onChange={e=>setForm({...form,penalty:Number(e.target.value)})}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
           <p className="field-help">Doğru cevapları içeren kazanım dosyası tek başına yeterlidir; cevap PDF’si onaylanan tablodan oluşturulur. Format seçimi kazanım dosyasının kaynağını belirtir.</p>
           <label>Veri giriş yöntemi<select aria-label="Cevap anahtarı giriş yöntemi" value={entryMethod} onChange={e=>setEntryMethod(e.target.value)}><option value="file">Kazanım dosyasından / hazır PDF</option><option value="manual">Elle soru ve kazanım gir</option></select></label>
@@ -229,7 +229,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       )}
 
       <div className="public-list-panel" hidden={!readOnly&&view!=="list"}>
-        {!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><button className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</button><button className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(undefined,true)}>Ölçme Değerlendirme bölümünde kullanılabilir yap</button></div>}
+        {!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><button className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</button></div>}
         <div className="list-header-row">
           <h3>{readOnly ? "Yayımlanan cevap anahtarları" : "Cevap anahtarı kayıtları"}</h3>
           <label className="search-field compact-search">
@@ -250,12 +250,12 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                   {!readOnly&&<label className="checkbox-row answer-row-select"><input type="checkbox" aria-label={`${item.examName} kaydını seç`} checked={selectedIds.includes(item.id)} onChange={e=>setSelectedIds(current=>e.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))}/>Toplu işlem için seç</label>}
                   <div className="answer-key-header">
                     <span className="badge">{item.grade}. Sınıf</span>
-                    <span className="status-dot">Ana sayfa: {item.published ? "Görünür" : "Gizli"} · Değerlendirme: {item.showInEvaluation ? "Görünür" : "Gizli"}</span>
+                    <span className="status-dot">Ana sayfa: {item.published ? "Görünür" : "Gizli"} · Değerlendirme: {item.opticalKey ? "Anahtar kayıtlı" : "Cevap eşleştirmesi gerekli"}</span>
                   </div>
                   <h4>{item.examName}</h4>{!readOnly && <small className="publication-id">Takvim eşleştirme ID: <code>{item.id}</code></small>}
                   <p>{item.publisher.name}</p>
                   <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
-                  {!readOnly&&<div className="answer-inline-publication"><label className="checkbox-row"><input type="checkbox" checked={item.published} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,e.target.checked,item.showInEvaluation)}/>Cevap Anahtarları sayfasında göster</label><label className="checkbox-row"><input type="checkbox" checked={item.showInEvaluation} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,item.published,e.target.checked)}/>Ölçme Değerlendirme bölümünde göster</label></div>}
+                  {!readOnly&&<div className="answer-inline-publication"><label className="checkbox-row"><input type="checkbox" checked={item.published} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,e.target.checked,item.showInEvaluation)}/>Cevap Anahtarları sayfasında göster</label></div>}
                   {!readOnly && editing?.id === item.id && (
                     <form className="answer-key-edit-form" onChange={()=>setEditConfirmed(false)} onSubmit={(event) => {
                       event.preventDefault();
@@ -274,7 +274,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                       </div>
                       <label>Sınav / deneme adı<input name="examName" value={editing.examName} onChange={(event) => setEditing({ ...editing, examName: event.target.value })} required maxLength={180} /></label>
                       <label className="checkbox-row"><input type="checkbox" name="published" checked={editing.published} onChange={(event) => setEditing({ ...editing, published: event.target.checked })} />Ana sayfadaki Cevap Anahtarları bölümünde yayımla</label>
-                      <label className="checkbox-row"><input type="checkbox" name="showInEvaluation" checked={editing.showInEvaluation??false} onChange={e=>setEditing({...editing,showInEvaluation:e.target.checked})}/>Ölçme ve Değerlendirme sisteminde kullanıma aç</label>
+                      <p className="field-help">Bu sınav, cevap anahtarıyla birlikte Sınav Yükle ekranında otomatik listelenir.</p>
                       <label>Değerlendirme kuralı<select name="penalty" defaultValue={editing.opticalKey?.penalty??3}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
                       <div className="file-upload-grid">
                         <AnswerArchiveFileInput label="Yeni cevap anahtarı dosyası" disabled={submitting} onChange={setAnswerFileKey}/>

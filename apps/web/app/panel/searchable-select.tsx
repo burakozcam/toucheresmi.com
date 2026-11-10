@@ -5,10 +5,10 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 export type SearchOption = { id: string; label: string; detail?: string };
 
 export default function SearchableSelect({
-  options, value, onChange, label, disabled = false, placeholder = "Ara…",
+  options, value, onChange, label, disabled = false, placeholder = "Ara…", emptyMessage = "Eşleşen kayıt bulunamadı.",
 }: {
   options: SearchOption[]; value: string; onChange: (value: string) => void;
-  label: string; disabled?: boolean; placeholder?: string;
+  label: string; disabled?: boolean; placeholder?: string; emptyMessage?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -58,7 +58,7 @@ export default function SearchableSelect({
     </button>
     {open && <div className="publisher-select-popover">
       <input ref={search} type="search" role="combobox" aria-label={`${label} içinde ara`} aria-controls={listId} aria-expanded="true" aria-autocomplete="list" aria-activedescendant={filtered[activeIndex] ? `searchable-option-${filtered[activeIndex].id}` : undefined} value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); }} onKeyDown={onSearchKeyDown} placeholder={placeholder}/>
-      <ul id={listId} role="listbox" aria-label={label}>{filtered.map((option, index) => <li key={option.id} role="presentation" className={index === activeIndex ? "publisher-option-active" : ""}><button type="button" id={`searchable-option-${option.id}`} role="option" aria-selected={option.id === value} onPointerMove={() => setActiveIndex(index)} onClick={() => choose(option)}>{option.label}{option.detail && <small>{option.detail}</small>}</button></li>)}{!filtered.length && <li className="publisher-option-empty" role="option" aria-disabled="true">Eşleşen kayıt bulunamadı.</li>}</ul>
+      <ul id={listId} role="listbox" aria-label={label}>{filtered.map((option, index) => <li key={option.id} role="presentation" className={index === activeIndex ? "publisher-option-active" : ""}><button type="button" id={`searchable-option-${option.id}`} role="option" aria-selected={option.id === value} onPointerMove={() => setActiveIndex(index)} onClick={() => choose(option)}>{option.label}{option.detail && <small>{option.detail}</small>}</button></li>)}{!filtered.length && <li className="publisher-option-empty" role="option" aria-disabled="true">{query.trim()?"Eşleşen kayıt bulunamadı.":emptyMessage}</li>}</ul>
     </div>}
   </div>;
 }

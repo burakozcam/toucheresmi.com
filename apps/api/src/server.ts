@@ -1829,7 +1829,7 @@ app.post(
         id: answerKeyId, publisherId: publisher.id, grade: parsed.data.grade,
         examName: parsed.data.examName.trim(), published: parsed.data.published??false,
         showInEvaluation,
-        ...(evaluation ? {opticalKey:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:showInEvaluation}}} : {}),
+        ...(evaluation ? {opticalKey:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:true}}} : {}),
         ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
         createdByUserId: request.user!.id, files: { create: files },
       } });
@@ -1951,7 +1951,7 @@ app.patch(
               examName: parsed.data.examName.trim(),
               published: parsed.data.published??current.published,
               showInEvaluation,
-              ...(evaluation ? {opticalKey:{upsert:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:showInEvaluation},update:{questions:evaluation as Prisma.InputJsonValue,penalty,active:showInEvaluation}}}} : current.opticalKey ? {opticalKey:{update:{active:false}}} : {}),
+              ...(evaluation ? {opticalKey:{upsert:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:true},update:{questions:evaluation as Prisma.InputJsonValue,penalty,active:true}}}} : current.opticalKey ? {opticalKey:{update:{active:false,questions:[]}}} : {}),
               ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
             },
           });

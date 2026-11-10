@@ -19,6 +19,7 @@ prisma.opticalResult.updateMany=async({where,data})=>{let count=0;for(const r of
 prisma.opticalResult.update=async({where,data})=>{const r=results.find(r=>match(r,where));Object.assign(r,data);return r;};
 prisma.studentResultAccess.findMany=async()=>grants;prisma.studentResultAccess.createMany=async()=>({count:0});
 prisma.opticalTemplate.findMany=async()=>templates;prisma.opticalTemplate.findFirst=async({where})=>templates.find(t=>t.id===where.id)??null;prisma.opticalTemplate.upsert=async({create})=>{const found=templates.find(t=>t.id===create.id);if(found)return found;templates.push(create);return create;};
+prisma.publishedAnswerKey.findMany=async()=>[{id:"publication",examName:key.name,grade:8,publisher:key.publication.publisher,opticalKey:{...key,active:false},published:false,showInEvaluation:false,createdAt:new Date()},{id:"pdf-only",examName:"Sadece PDF Sınavı",grade:8,publisher:{id:"ankara",name:"Ankara Yayınları"},opticalKey:null,createdAt:new Date()}];
 prisma.opticalKey.findMany=async()=>[key];prisma.opticalKey.findFirst=async()=>key;
 prisma.school.findMany=async()=>[school];prisma.school.findFirst=async()=>school;prisma.$transaction=async fn=>fn(prisma);prisma.publisher.findMany=async()=>[{id:'publisher',name:'Nartest'}];prisma.auditLog.create=async()=>({});
 const{app}=require(root+'/apps/api/src/server.ts');
@@ -40,16 +41,30 @@ const timing=await p.locator('.sidebar-brand .brand-light').evaluate(element=>{
 assert.equal(timing.delay,1000);assert.equal(timing.duration,5000);assert.deepEqual(timing.widths,[0,64,0,64]);
 await p.emulateMedia({reducedMotion:'reduce'});
 assert.equal(await p.locator('.sidebar-brand .brand-light').evaluate(e=>e.getAnimations().length),0);
+await p.getByRole('button',{name:'Değerlendirilecek sınav',exact:true}).click();
+await p.getByRole('button',{name:/Ankara Yayınları.*1 sınav/}).click();
+await p.getByRole('button',{name:'Ankara Yayınları > Sadece PDF Sınavı',exact:true}).click();
+await p.getByText(/kitapçık eşleştirmesi henüz okunmamış/).waitFor();
+assert.equal(await p.getByRole('button',{name:'Değerlendir',exact:true}).isDisabled(),true);
+await p.getByRole('button',{name:'Değerlendirilecek sınav',exact:true}).click();
+await p.getByRole('searchbox',{name:'Yayınevi veya sınav ara',exact:true}).fill('Nartest');
+await p.getByRole('button',{name:'Nartest > Nartest Deneme',exact:true}).click();
+await p.screenshot({path:'/tmp/v116-upload-before-file.png',fullPage:true});
 await p.getByRole('button',{name:'FMT Seçiniz',exact:true}).click();
 await p.getByRole('option',{name:/Sistem FMT 7108/}).click();
-await p.getByLabel('Değerlendirilecek sınav',{exact:true}).selectOption('key');
+await p.getByRole('button',{name:'Değerlendirilecek sınav',exact:true}).click();if(await p.getByRole('button',{name:/Nartest.*1 sınav/}).getAttribute('aria-expanded')!=='true')await p.getByRole('button',{name:/Nartest.*1 sınav/}).click();await p.getByRole('button',{name:'Nartest > Nartest Deneme',exact:true}).click();
 assert.equal(templates.length,0);
 // Add branches to the anonymized sample to verify separate class output.
 const content=fs.readFileSync(root+'/tests/fixtures/7108-anonymous.txt','utf8').split(/\r?\n/).map(line=>line?line.slice(0,36)+(line.slice(10,15)==='00001'?'A':'B')+line.slice(37):line).join('\r\n');
-await p.locator('input[type=file]').setInputFiles({name:'sample.txt',mimeType:'text/plain',buffer:Buffer.from(content)});await p.getByRole('button',{name:'4. TXT’yi kontrol et ve önizle',exact:true}).click();await p.getByRole('heading',{name:'Kontrol özeti',exact:true}).waitFor();assert.equal(results.length,0);await p.locator('.optical-confirm input').check();await p.getByRole('button',{name:'Sınavı yükle ve kaydet',exact:true}).click();await p.getByRole('button',{name:'Sınav Değerlendir / Sonuç Al ekranına geç',exact:true}).waitFor();assert.equal(results.length,1);assert.equal(await p.getByLabel('Rapor türü',{exact:true}).count(),0);
+await p.getByLabel('TXT dosyası',{exact:true}).setInputFiles({name:'sample.txt',mimeType:'text/plain',buffer:Buffer.from(content)});await p.screenshot({path:'/tmp/v116-upload-selected.png',fullPage:true});
+await p.getByRole('button',{name:'Aydınlık moda geç',exact:true}).click();await p.screenshot({path:'/tmp/v116-upload-light.png',fullPage:true});
+await p.getByRole('button',{name:'Değerlendirilecek sınav',exact:true}).click();await p.getByRole('button',{name:/Ankara Yayınları.*1 sınav/}).click();await p.screenshot({path:'/tmp/v116-upload-publishers.png',fullPage:true});await p.getByRole('searchbox',{name:'Yayınevi veya sınav ara',exact:true}).press('Escape');
+await p.setViewportSize({width:390,height:844});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await p.screenshot({path:'/tmp/v116-upload-mobile.png',fullPage:true});
+await p.getByRole('button',{name:'Değerlendirilecek sınav',exact:true}).click();await p.getByRole('searchbox',{name:'Yayınevi veya sınav ara',exact:true}).fill('Nartest');await p.getByRole('button',{name:'Nartest > Nartest Deneme',exact:true}).click();
+await p.setViewportSize({width:1440,height:1000});await p.getByRole('button',{name:'Değerlendir',exact:true}).click();await p.getByRole('heading',{name:'Kontrol özeti',exact:true}).waitFor();assert.equal(results.length,0);await p.locator('.optical-confirm input').check();await p.getByRole('button',{name:'Sınavı yükle ve kaydet',exact:true}).click();await p.getByRole('button',{name:'Sınav Değerlendir / Sonuç Al ekranına geç',exact:true}).waitFor();assert.equal(results.length,1);assert.equal(await p.getByLabel('Rapor türü',{exact:true}).count(),0);
 // Stored reports must remain available if the current upload catalog fails.
 let unnecessaryCatalogRequests=0;
-await p.route('**/api/optical/keys?available=true',route=>{unnecessaryCatalogRequests++;return route.fulfill({status:503,json:{error:'Test catalog unavailable'}});});
+await p.route('**/api/optical/evaluation-exams',route=>{unnecessaryCatalogRequests++;return route.fulfill({status:503,json:{error:'Test catalog unavailable'}});});
 await p.route('**/api/optical/evaluation-templates',route=>{unnecessaryCatalogRequests++;return route.fulfill({status:503,json:{error:'Test catalog unavailable'}});});
 await p.getByRole('button',{name:'Sınav Değerlendir / Sonuç Al ekranına geç',exact:true}).click();await p.getByLabel('Rapor türü',{exact:true}).waitFor().catch(async e=>{await p.screenshot({path:'/tmp/workflow-failure.png',fullPage:true});console.log(await p.locator('body').innerText());throw e;});await p.getByLabel('Rapor türü',{exact:true}).selectOption('classes-score');assert.equal(await p.locator('.optical-class-page').count(),2);
 const download=p.waitForEvent('download');await p.getByRole('button',{name:'Sonuçları Excel indir',exact:true}).click();await(await download).saveAs('/tmp/workflow-class-lists.xlsx');
@@ -58,7 +73,7 @@ await p.pdf({path:'/tmp/workflow-classes.pdf',format:'A4',printBackground:true,p
 await p.getByLabel('Rapor türü',{exact:true}).selectOption('individual');assert.equal(await p.locator('.student-report').count(),1);await p.getByLabel('Rapor türü',{exact:true}).selectOption('bulk');assert.equal(await p.locator('.student-report').count(),2);await p.getByLabel('Rapor türü',{exact:true}).selectOption('list-cards');assert.equal(await p.locator('.student-report').count(),3);await p.pdf({path:'/tmp/workflow-list-cards.pdf',format:'A4',printBackground:true,preferCSSPageSize:true});
 await p.getByLabel('Rapor türü',{exact:true}).selectOption('analysis');await p.getByRole('heading',{name:'Soru ve seçenek analizi',exact:true}).waitFor();assert.equal(await p.locator('.optical-analysis-report tbody').first().locator('tr').count(),2);const analysisDownload=p.waitForEvent('download');await p.getByRole('button',{name:'Analizi Excel indir',exact:true}).click();await(await analysisDownload).saveAs('/tmp/workflow-analysis.xlsx');assert.equal(XLSX.read(fs.readFileSync('/tmp/workflow-analysis.xlsx'),{type:'buffer'}).SheetNames.length,5);await p.pdf({path:'/tmp/workflow-analysis.pdf',format:'A4',printBackground:true,preferCSSPageSize:true});await p.screenshot({path:'/tmp/workflow-analysis-desktop.png',fullPage:true});
 assert.equal(unnecessaryCatalogRequests,0);
-await p.unroute('**/api/optical/keys?available=true');await p.unroute('**/api/optical/evaluation-templates');
+await p.unroute('**/api/optical/evaluation-exams');await p.unroute('**/api/optical/evaluation-templates');
 // Reopen the report via the left menu, without an in-memory upload snapshot.
 await p.getByRole('button',{name:/Sınav Yükle$/}).click();
 await p.getByRole('button',{name:/Sınav Değerlendir \/ Sonuç Al$/}).click();
@@ -68,5 +83,37 @@ assert.equal(await p.locator('.student-report').count(),1);
 assert.equal(templates.length,1);assert.equal(results[0].templateId,'system-fmt-7108');
 const restored=results[0].snapshot;assert.equal(restored.data.students.length,2);assert.equal(restored.summary.length,2);
 await p.setViewportSize({width:390,height:844});await p.screenshot({path:'/tmp/workflow-results-mobile.png',fullPage:true});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.deepEqual(errors,[]);
-console.log(JSON.stringify({logoDelayMs:timing.delay,logoRepeatMs:timing.duration,reducedMotion:true,reportIndependentOfCatalog:true,systemFmtWithoutSeed:true,localTxtUpload:true,previewBeforeSave:true,savedResultReopened:true,individualCards:true,bulkCards:true,listAndCards:true,classSheets:workbook.SheetNames,analysis:true,mobileOverflow:false,browserErrors:errors}));
+// A failed answer-key or school request must not discard the FMT response.
+await p.setViewportSize({width:1440,height:1000});
+await p.route('**/api/optical/evaluation-exams',route=>route.fulfill({status:503,json:{error:'Anahtar servisi test hatası'}}));
+await p.route('**/api/schools?active=true',route=>route.fulfill({status:503,json:{error:'Kurum servisi test hatası'}}));
+await p.getByRole('button',{name:/Sınav Yükle$/}).click();
+await p.getByText(/Sınav\/cevap anahtarı listesi yüklenemedi:/).waitFor();
+const fmtButton=p.getByRole('button',{name:'FMT Seçiniz',exact:true});
+assert.equal(await fmtButton.isEnabled(),true);
+await fmtButton.click();await p.getByRole('option',{name:/Sistem FMT 7108/}).click();
+// Choosing an FMT must not erase the persistent catalog error.
+assert.equal(await p.getByText(/Sınav\/cevap anahtarı listesi yüklenemedi:/).count(),1);
+await p.unroute('**/api/optical/evaluation-exams');await p.unroute('**/api/schools?active=true');
+await p.getByRole('button',{name:'Listeleri yeniden yükle',exact:true}).click();
+await p.getByRole('button',{name:'Değerlendirilecek sınav',exact:true}).click();if(await p.getByRole('button',{name:/Nartest.*1 sınav/}).getAttribute('aria-expanded')!=='true')await p.getByRole('button',{name:/Nartest.*1 sınav/}).click();await p.getByRole('button',{name:'Nartest > Nartest Deneme',exact:true}).click();
+assert.equal(await p.getByText(/listesi yüklenemedi:/).count(),0);
+// An older API may return an HTML 404 for the newer catalog endpoint.
+await p.route('**/api/optical/evaluation-templates',route=>route.fulfill({status:404,contentType:'text/html',body:'<html>Cannot GET /api/optical/evaluation-templates</html>'}));
+await p.getByRole('button',{name:/Sınav Değerlendir \/ Sonuç Al$/}).click();
+await p.getByRole('button',{name:/Sınav Yükle$/}).click();
+await fmtButton.click();await p.getByRole('option',{name:/Sistem FMT 7108/}).click();
+await p.unroute('**/api/optical/evaluation-templates');
+// FMT fetch failure is explained, the empty selector opens, and retry restores it.
+await p.route('**/api/optical/evaluation-templates',route=>route.fulfill({status:503,json:{error:'FMT servisi test hatası'}}));
+await p.getByRole('button',{name:/Sınav Değerlendir \/ Sonuç Al$/}).click();
+await p.getByRole('button',{name:/Sınav Yükle$/}).click();
+await p.getByText(/FMT listesi yüklenemedi:/).waitFor();assert.equal(await fmtButton.isEnabled(),true);
+await fmtButton.click();await p.getByRole('option',{name:/Seçilebilir FMT yok/}).waitFor();
+await p.screenshot({path:'/tmp/v116-fmt-load-error.png',fullPage:true});
+await p.unroute('**/api/optical/evaluation-templates');
+await p.getByRole('button',{name:'Listeleri yeniden yükle',exact:true}).click();
+await fmtButton.click();await p.getByRole('option',{name:/Sistem FMT 7108/}).click();
+assert.equal(await p.getByText(/listesi yüklenemedi:/).count(),0);assert.deepEqual(errors,[]);
+console.log(JSON.stringify({publisherGroupedPicker:true,pdfOnlyExamExplained:true,examBeforeFmt:true,hiddenExamEvaluated:true,fmtSurvivesCatalogFailure:true,fmtRetry:true,legacyApiFallback:true,fmtEmptyStateClickable:true,logoDelayMs:timing.delay,logoRepeatMs:timing.duration,reducedMotion:true,reportIndependentOfCatalog:true,systemFmtWithoutSeed:true,localTxtUpload:true,previewBeforeSave:true,savedResultReopened:true,individualCards:true,bulkCards:true,listAndCards:true,classSheets:workbook.SheetNames,analysis:true,mobileOverflow:false,browserErrors:errors}));
 }catch(error){if(testPage){console.error((await testPage.locator('body').innerText()).slice(-9000));await testPage.screenshot({path:'/tmp/v116-upload-failure.png',fullPage:true});}throw error;}finally{await browser.close();server.close();await prisma.$disconnect();}})().catch(e=>{console.error(e);process.exit(1);});

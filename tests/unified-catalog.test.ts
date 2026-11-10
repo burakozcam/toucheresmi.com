@@ -30,7 +30,7 @@ test("birleşik katalog: bayi listesi yayın bayrağından bağımsız, yalnızc
   const original=prisma.opticalKey.findMany;
   try{
     prisma.opticalKey.findMany=(async({where}:any)=>{
-      assert.equal(where.active,true);assert.deepEqual(where.publication,evaluationPublicationWhere);assert.equal(where.publication.published,undefined);
+      assert.equal(where.active,undefined);assert.deepEqual(where.publication,evaluationPublicationWhere);assert.equal(where.publication.showInEvaluation,undefined);assert.equal(where.publication.published,undefined);
       return[{id:"opt",name:"legacy-name",active:true,penalty:3,questions:parseOpticalKeyRows(rows),publicationId:"exam",publication:{examName:"Deneme 1",grade:8,publisher:{id:"pub",name:"Nartest"}}}];
     }) as any;
     const handler=(opticalRouter as any).stack.find((x:any)=>x.route?.path==="/keys"&&x.route.methods.get).route.stack.at(-1).handle;
@@ -44,7 +44,7 @@ test("sınav düzenleme: görünürlükler bağımsız değişir, gönderilmeyen
   const current:any={id:"publication",publisherId:"pub",grade:8,examName:"Deneme",published:true,showInEvaluation:true,files:[{category:"ANSWER_KEY",storagePath:"unused.pdf",originalFileName:"key.pdf"},{category:"LEARNING_OUTCOMES",storagePath:"unused2.pdf",originalFileName:"outcomes.pdf"}],opticalKey:{questions:parseOpticalKeyRows(rows),penalty:4}};
   let updates=0;
   prisma.publishedAnswerKey.findUnique=(async()=>current) as any;
-  prisma.$transaction=(async(fn:any)=>fn({publishedAnswerKey:{update:async({data}:any)=>{updates++;assert.equal(data.opticalKey.upsert.update.penalty,4);const{opticalKey,...rest}=data;Object.assign(current,rest);return current;}}})) as any;
+  prisma.$transaction=(async(fn:any)=>fn({publishedAnswerKey:{update:async({data}:any)=>{updates++;assert.equal(data.opticalKey.upsert.update.penalty,4);assert.equal(data.opticalKey.upsert.update.active,true);const{opticalKey,...rest}=data;Object.assign(current,rest);return current;}}})) as any;
   const handler=(app as any).router.stack.find((x:any)=>x.route?.path==="/api/admin/answer-keys/:id"&&x.route.methods.patch).route.stack.at(-1).handle;
   async function invoke(changes:any){let status=200;await handler({params:{id:"publication"},body:{publisherId:"pub",grade:"8",examName:"Deneme",confirmPublication:"true",...changes},files:{}},{status(n:number){status=n;return this;},json(){}},(e:any)=>{if(e)throw e;});return status;}
   try{

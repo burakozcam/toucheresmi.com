@@ -52,3 +52,7 @@ Node >=20.9 ile `NEXT_PUBLIC_API_URL=https://localhost:4443 npm run build` sonra
 Node >=20.9 ile, `NEXT_PUBLIC_API_URL=https://api.kurumsalsinav.com` kullanan yerel Web sunucusunu 3100 portunda açın. Ardından `node --import tsx tests/e2e/v116-upload.cjs` çalıştırın. Test 4101 portunda kendi HTTPS API’sini açar; Prisma işlemlerini bellek kayıtlarına yönlendirir, canlı DB’ye bağlanmaz. Playwright ve Chromium yolları yukarıdaki değişkenlerle verilebilir.
 
 Bu test, boş FMT deposunda sistem 7108 seçimini, bilgisayardan TXT yüklemeyi, önizleme/onay/kaydı, sol menüden kayıtlı sınavı açmayı, tek/toplu karneyi, liste + karneyi, sınıf Excel’ini, analizi ve mobil taşmayı kontrol eder. Güncel FMT/anahtar katalogları erişilemese bile kayıtlı karne açılmalıdır. Logo animasyonunun 1 saniye başlangıç gecikmesi, 5 saniye döngüsü ve reduced-motion davranışı da denetlenir.
+
+FMT hata senaryoları da test edilir: kurum/anahtar servisi 503 döndüğünde FMT seçimi korunur; FMT servisi 503 döndüğünde açıklama ve yeniden yükleme gösterilir; yeni FMT liste adresinin HTML 404 yanıtında eski `/templates` adresi kullanılır.
+
+Sınav kataloğu ayrıca yayınevi → sınav gruplarıyla, FMT seçilmeden açılır. Yayın görünürlüğü kapalı ve eski `active=false` anahtarlı sınavın değerlendirilmesi, yalnız PDF kaydında eksik eşleştirme açıklaması, açık/koyu tema ve mobil yükleme düzeni doğrulanır.

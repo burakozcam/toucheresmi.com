@@ -12,7 +12,7 @@ import { prisma } from "./db";
 import { requireAuth, requireRole, type AuthenticatedRequest } from "./auth";
 import { decodeOptical, opticalLayoutSchema, opticalQuestionsSchema, parseOptical, opticalSummary } from "./optical-core";
 import { RequestLimiter } from "./rate-limit";
-import { evaluationPublicationWhere, evaluationQuestions } from "./optical-catalog";
+import { evaluationPublicationWhere, evaluationQuestions, evaluationExamChoice } from "./optical-catalog";
 import { hasFmt } from "./fmt-share";
 import { fmtBytes } from "./fmt-download";
 import { findLibraryFmt, libraryFmtBytes } from "./fmt-library";
@@ -122,10 +122,14 @@ opticalRouter.patch("/templates/:id",admin,wrap(async(req,res)=>{
   res.json(await prisma.opticalTemplate.update({where:{id:idParam(req)},data}));
 }));
 opticalRouter.get("/publishers",wrap(async(_req,res)=>{res.json(await prisma.publisher.findMany({select:{id:true,name:true},orderBy:{name:"asc"}}));}));
+opticalRouter.get("/evaluation-exams",wrap(async(_req,res)=>{
+  const exams=await prisma.publishedAnswerKey.findMany({where:evaluationPublicationWhere,include:{publisher:{select:{id:true,name:true}},opticalKey:true},orderBy:[{publisher:{name:"asc"}},{examName:"asc"}]});
+  res.json(exams.map(evaluationExamChoice));
+}));
 opticalRouter.get("/keys",wrap(async(req,res)=>{
   const available=req.user!.role!==Role.SUPER_ADMIN||req.query.available==="true";
-  const keys=await prisma.opticalKey.findMany({where:available?{active:true,publication:evaluationPublicationWhere}:{},include:{publication:{include:{publisher:{select:{id:true,name:true}}}}},orderBy:{createdAt:"desc"}});
-  res.json(keys.filter(key=>{if(!available)return true;try{evaluationQuestions(key.questions);return true;}catch{return false;}}).map(key=>{const questions=evaluationQuestions(key.questions);return{id:key.id,name:key.publication?.examName??key.name,penalty:key.penalty,active:key.active,publicationId:key.publicationId,publisher:key.publication?.publisher??null,grade:key.publication?.grade??null,createdAt:key.createdAt,questionCount:questions.length,lessonCounts:Object.fromEntries([...new Set(questions.map(q=>q.lesson))].map(lesson=>[lesson,questions.filter(q=>q.lesson===lesson).length])),booklets:[...new Set(questions.flatMap(q=>Object.keys(q.positions)))].sort()};}));
+  const keys=await prisma.opticalKey.findMany({where:available?{publication:evaluationPublicationWhere}:{},include:{publication:{include:{publisher:{select:{id:true,name:true}}}}},orderBy:{createdAt:"desc"}});
+  res.json(keys.filter(key=>{try{evaluationQuestions(key.questions);return true;}catch{return false;}}).map(key=>{const questions=evaluationQuestions(key.questions);return{id:key.id,name:key.publication?.examName??key.name,penalty:key.penalty,active:available?true:key.active,publicationId:key.publicationId,publisher:key.publication?.publisher??null,grade:key.publication?.grade??null,createdAt:key.createdAt,questionCount:questions.length,lessonCounts:Object.fromEntries([...new Set(questions.map(q=>q.lesson))].map(lesson=>[lesson,questions.filter(q=>q.lesson===lesson).length])),booklets:[...new Set(questions.flatMap(q=>Object.keys(q.positions)))].sort()};}));
 }));
 opticalRouter.get("/keys/:id",admin,wrap(async(req,res)=>{
   const key=await prisma.opticalKey.findUnique({where:{id:idParam(req)},include:{publication:{select:{examName:true}}}});
@@ -204,7 +208,7 @@ for(const endpoint of ["preview","evaluate"]){
     if(!req.file || !/\.txt$/i.test(req.file.originalname)){res.status(400).json({error:"En fazla 2 MB boyutunda bir TXT dosyası seçin."});return;}
     const school=await prisma.school.findFirst({where:{id:input.schoolId,active:true,...scope(req)},select:{id:true,name:true}});
     if(!school){res.status(403).json({error:"Bu kurum için yükleme yetkiniz yok veya kurum etkin değil."});return;}
-    const [template,key]=await Promise.all([evaluationTemplate(input.templateId),prisma.opticalKey.findFirst({where:{id:input.keyId,active:true,publication:evaluationPublicationWhere},include:{publication:{select:{examName:true,grade:true,publisherId:true}}}})]);
+    const [template,key]=await Promise.all([evaluationTemplate(input.templateId),prisma.opticalKey.findFirst({where:{id:input.keyId,publication:evaluationPublicationWhere},include:{publication:{select:{examName:true,grade:true,publisherId:true}}}})]);
     if(!template || !key){res.status(400).json({error:"Etkin bir FMT ve cevap anahtarı seçin."});return;}
     let data,decoded="";
     try {decoded=decodeOptical(req.file.buffer,input.encoding);data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name);}
@@ -226,7 +230,7 @@ for(const endpoint of ["preview","evaluate"]){
       // Recheck ownership immediately before writing, not just when rendering the selector.
       const allowed=await tx.school.findFirst({where:{id:school.id,active:true,...scope(req)},select:{id:true}});
       if(!allowed)return null;
-      const stillAvailable=await tx.opticalKey.findFirst({where:{id:key.id,active:true,publication:evaluationPublicationWhere}});
+      const stillAvailable=await tx.opticalKey.findFirst({where:{id:key.id,publication:evaluationPublicationWhere}});
       if(!stillAvailable)return null;
       if(keyFingerprint(stillAvailable.questions,stillAvailable.penalty)!==snapshot.keyFingerprint)throw new z.ZodError([{code:"custom",path:[],message:"Cevap anahtarı değişti. Önizlemeyi yenileyin."}]);
       const systemTemplate=systemEvaluationTemplate(input.templateId);
@@ -265,7 +269,8 @@ opticalRouter.get("/results/:id/analysis",wrap(async(req,res)=>{
 }));
 opticalRouter.get("/results/:id/checks",wrap(async(req,res)=>{
   const item=await currentResult(req);if(!item){res.status(404).json({error:"Sonuç bulunamadı veya yetkiniz yok."});return;}
-  const snapshot=item.snapshot as unknown as Snapshot,checks=reviewSnapshot(snapshot),fingerprint=keyFingerprint(item.key.questions,item.key.penalty);
+  const snapshot=item.snapshot as unknown as Snapshot,checks=reviewSnapshot(snapshot);
+  let fingerprint:string;try{fingerprint=keyFingerprint(item.key.questions,item.key.penalty);}catch{checks.blockers.push("Güncel cevap anahtarı eksik veya geçersiz. Cevap Anahtarları bölümünden tamamlayın.");res.json(checks);return;}
   if(item.nextRevision)checks.blockers.push("Bu kaydın daha yeni sürümü var. Son sürümü yayımlayın.");
   if(fingerprint!==(snapshot.keyFingerprint??keyFingerprint(snapshot.data.questions,snapshot.penalty)))checks.blockers.push("Cevap anahtarı değişti. Önce yeni anahtarla tekrar değerlendirin.");
   res.json({...checks,reviewToken:seal("publish",req.user!.id,item.id,fingerprint)});
@@ -276,7 +281,8 @@ opticalRouter.patch("/results/:id/publication",wrap(async(req,res)=>{
   const outcome=await prisma.$transaction(async tx=>{
     const item=await tx.opticalResult.findFirst({where:{id:idParam(req),school:scope(req)},include:{key:true,nextRevision:{select:{id:true}}}});
     if(!item)return "Sonuç bulunamadı veya yayımlama yetkiniz yok.";
-    const snapshot=item.snapshot as unknown as Snapshot,fingerprint=keyFingerprint(item.key.questions,item.key.penalty),checks=reviewSnapshot(snapshot);
+    const snapshot=item.snapshot as unknown as Snapshot,checks=reviewSnapshot(snapshot);
+    let fingerprint:string;try{fingerprint=keyFingerprint(item.key.questions,item.key.penalty);}catch{return "Güncel cevap anahtarı eksik veya geçersiz. Cevap Anahtarları bölümünden tamamlayın.";}
     if(item.nextRevision)return "Daha yeni sürüm var. Son sürümü açın.";
     if(fingerprint!==(snapshot.keyFingerprint??keyFingerprint(snapshot.data.questions,snapshot.penalty)))return "Cevap anahtarı değişti. Tekrar değerlendirin.";
     if(!data.reviewToken||!validSeal(data.reviewToken,"publish",req.user!.id,item.id,fingerprint))return "Yayımlama öncesi kontrol özetini yeniden açıp onaylayın.";
@@ -290,7 +296,7 @@ opticalRouter.patch("/results/:id/publication",wrap(async(req,res)=>{
 for(const mode of ["preview","save"]){opticalRouter.post(`/results/:id/re-evaluate${mode==="preview"?"/preview":""}`,wrap(async(req,res)=>{
   const item=await currentResult(req);if(!item){res.status(404).json({error:"Sonuç bulunamadı veya yetkiniz yok."});return;}
   if(item.nextRevision){res.status(409).json({error:"Daha yeni sürüm var. Son sürüm üzerinden devam edin."});return;}
-  const key=await prisma.opticalKey.findFirst({where:{id:item.keyId,active:true,publication:evaluationPublicationWhere},include:{publication:{select:{grade:true,examName:true}}}});
+  const key=await prisma.opticalKey.findFirst({where:{id:item.keyId,publication:evaluationPublicationWhere},include:{publication:{select:{grade:true,examName:true}}}});
   if(!key){res.status(400).json({error:"Sınavın değerlendirme anahtarı etkin değil veya eksik."});return;}
   let next:Snapshot;try{next=reEvaluate(item.snapshot as unknown as Snapshot,evaluationQuestions(key.questions),key.penalty);next.expectedGrade=key.publication?.grade??next.expectedGrade;next.keyName=key.publication?.examName??key.name;}catch(e){res.status(400).json({error:(e as Error).message});return;}
   const checks=reviewSnapshot(next),changes=scoreChanges(item.snapshot as unknown as Snapshot,next),fingerprint=keyFingerprint(key.questions,key.penalty);
@@ -299,7 +305,7 @@ for(const mode of ["preview","save"]){opticalRouter.post(`/results/:id/re-evalua
   if(!validSeal(input.previewToken,"reevaluate",req.user!.id,item.id,fingerprint)){res.status(409).json({error:"Önizleme eskidi veya cevap anahtarı değişti. Yeniden önizleyin."});return;}
   if(checks.blockers.length){res.status(409).json({error:checks.blockers.join(" ")});return;}
   const saved=await prisma.$transaction(async tx=>{
-    const current=await tx.opticalResult.findFirst({where:{id:item.id,school:scope(req),nextRevision:null}}),latestKey=await tx.opticalKey.findFirst({where:{id:key.id,active:true,publication:evaluationPublicationWhere}});
+    const current=await tx.opticalResult.findFirst({where:{id:item.id,school:scope(req),nextRevision:null}}),latestKey=await tx.opticalKey.findFirst({where:{id:key.id,publication:evaluationPublicationWhere}});
     if(!current||!latestKey||keyFingerprint(latestKey.questions,latestKey.penalty)!==fingerprint)return null;
     const created=await tx.opticalResult.create({data:{schoolId:item.schoolId,keyId:item.keyId,templateId:item.templateId,createdById:req.user!.id,filename:item.filename,seriesId:item.seriesId,revision:item.revision+1,supersedesId:item.id,uploadChecksum:item.uploadChecksum,snapshot:next as unknown as Prisma.InputJsonValue}});
     const grants=await tx.studentResultAccess.findMany({where:{resultId:item.id}});
