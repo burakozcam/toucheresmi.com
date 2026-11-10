@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { parseOptical, layout7108, opticalSummary } from "../apps/api/src/optical-core";
 import { parseOpticalKeyRows } from "../apps/web/lib/optical";
 import rows from "../apps/web/data/nartest-8-optical.json";
+import { canonicalJson } from "../apps/api/src/canonical-json";
 import { compatibleEvaluation } from "../apps/api/lib/evaluation-compatibility";
 
 const txt=fs.readFileSync(new URL("./fixtures/7108-anonymous.txt",import.meta.url),"utf8");
@@ -33,7 +34,7 @@ test("yükleme API: boş FMT deposunda sistem FMT seçilir, önizleme kaydedilir
   const key={id:"key",name:"Deneme",active:true,penalty:3,questions:renamed,publication:{grade:8,examName:"Deneme"}};
   patch(prisma.opticalTemplate,"findMany",async()=>templates);
   patch(prisma.opticalTemplate,"findFirst",async({where}:any)=>templates.find(t=>t.id===where.id)??null);
-  patch(prisma.opticalTemplate,"upsert",async({create}:any)=>{templates.push(create);return create;});
+  patch(prisma.opticalTemplate,"upsert",async({create}:any)=>{const stored=JSON.parse(canonicalJson(create));templates.push(stored);return stored;});
   patch(prisma.school,"findFirst",async({where}:any)=>where.schoolId==="forbidden"||where.id!==school.id?null:school);
   patch(prisma.opticalKey,"findFirst",async({where}:any)=>{assert.equal(where.active,undefined);assert.equal(where.publication.showInEvaluation,undefined);return {...key,active:false};});
   patch(prisma.opticalResult,"findMany",async()=>results);

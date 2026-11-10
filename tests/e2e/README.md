@@ -63,3 +63,14 @@ Sınav kataloğu ayrıca yayınevi → sınav gruplarıyla, FMT seçilmeden aç�
 `node --import tsx tests/e2e/results-workflow.cjs`, 3100 portunda açık Web uygulamasıyla ve 4101 portunda kendi yerel HTTPS API’siyle çalışır. Prisma bellek kayıtlarına yönlendirilir. İki ayrı dosya/yüklemede oturum birleştirme, kurumdan sınav seçme, genel/kurum/sınıf sıraları, PDF/Excel/ZIP, TC gizleme, öğrenci numarası/TC ile yalnız eşleşen karne sorgusu, yönetim yetkisi ve kaldırma/geri alma sınanır. `PLAYWRIGHT_MODULE` ve `CHROMIUM_PATH` yukarıdaki gibi verilebilir. Sonuç dosyaları `/tmp/ks-e2e-*` altında oluşur.
 
 Bu test, kullanıcı numarasını/TC’sini bilen kişinin kimliğini doğrulamaz. Kimlik doğrulamasız sonuç sorgusu kullanıcının açık tercihiyle uygulanmıştır; yalnız eşleşen kayıt döndürülmesi ve yönetim uç noktalarının oturum istemesi test edilir.
+
+
+## Kalıcı TXT arşivi ve PostgreSQL JSONB regresyonu
+
+`txt-archive-postgres.cjs` yalnız `localhost`/`127.0.0.1` üzerinde, adı **ks_qa** olan silinebilir bir test veritabanını kabul eder. Gerçek kullanıcı veritabanı kullanmayın. Boş test DB’sine `DATABASE_URL=... npm run db:migrate:deploy` uygulayın; 3100 portunda doğru API adresiyle derlenmiş Web’i başlatın. Ardından:
+
+```sh
+DATABASE_URL='postgresql://TEST_USER:TEST_PASSWORD@127.0.0.1:TEST_PORT/ks_qa' node --import tsx tests/e2e/txt-archive-postgres.cjs
+```
+
+Test sentetik bayi, kullanıcı, kurum ve sınavlar oluşturur; gerçek Prisma, dosya sistemi ve PostgreSQL JSONB kullanır. 4101 HTTPS API’sini kendisi açıp kapatır. Arşiv dosyaları `/tmp/ks-txt-postgres-*`, görüntüler `/tmp/ks-txt-archive-*` altındadır. Gri/yeşil dosya durumları, yenileme sonrası saklama, seçilen alt küme, farklı sınavlarda tekrar kullanım, ayrı oturumda yeniden değerlendirme, kurum kapsamı, 10 dosya sınırı, şifreli disk dosyaları ve il→ilçe→kurum akışı iki ekranda doğrulanır. `results-workflow.cjs` bellek arşiviyle PDF/Excel/ZIP ve öğrenci sonuçları regresyonunu korur.

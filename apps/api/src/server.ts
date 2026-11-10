@@ -1295,7 +1295,7 @@ app.get(
         };
       const schools = await prisma.school.findMany({
         where: { ...activeFilter, ...ownership },
-        select: {
+        select: request.query.compact==="true" ? {id:true,name:true,city:true,district:true} : {
           id: true,
           name: true,
           code: true,

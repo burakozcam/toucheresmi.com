@@ -52,6 +52,7 @@ enum AnswerKeyFileCategory {
 }
 
 model User {
+  opticalTxtFiles OpticalTxtFile[]
   readerManagerId String?
   readerStudentNo String?
   readerManager User? @relation("ReaderManager", fields: [readerManagerId], references: [id], onDelete: SetNull)
@@ -178,6 +179,8 @@ model OpticalKey {
 }
 
 model OpticalResult {
+  txtUses OpticalTxtUse[]
+  txtFiles OpticalTxtFile[]
   id String @id @default(cuid())
   seriesId String @default(cuid())
   revision Int @default(1)
@@ -636,4 +639,33 @@ model PublisherLogo {
   width Int
   height Int
   updatedAt DateTime @updatedAt
+}
+
+// Private, encrypted TXT archive. Upload and evaluation are independent operations.
+model OpticalTxtFile {
+  uses OpticalTxtUse[]
+  id String @id @default(cuid())
+  name String
+  storedName String @unique
+  size Int
+  checksum String
+  createdById String
+  createdBy User @relation(fields:[createdById],references:[id],onDelete:Restrict)
+  createdAt DateTime @default(now())
+  evaluatedAt DateTime?
+  resultId String?
+  result OpticalResult? @relation(fields:[resultId],references:[id],onDelete:SetNull)
+  deletedAt DateTime?
+  @@index([createdById,deletedAt,createdAt])
+  @@index([resultId])
+}
+
+model OpticalTxtUse {
+  fileId String
+  resultId String
+  createdAt DateTime @default(now())
+  file OpticalTxtFile @relation(fields:[fileId],references:[id],onDelete:Cascade)
+  result OpticalResult @relation(fields:[resultId],references:[id],onDelete:Cascade)
+  @@id([fileId,resultId])
+  @@index([resultId])
 }

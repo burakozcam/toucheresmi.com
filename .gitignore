@@ -9,3 +9,6 @@ uploads/
 
 *.tsbuildinfo
 test-results/
+
+# Private encrypted TXT uploads must not enter Git.
+optical-txt/

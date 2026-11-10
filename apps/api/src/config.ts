@@ -3,6 +3,7 @@ import { z } from "zod";
 
 const environmentSchema = z.object({
   DATABASE_URL: z.string().min(1),
+  TXT_STORAGE_KEY:z.preprocess(v=>v===""?undefined:v,z.string().min(32).optional()),
   JWT_SECRET: z.string().min(32, "JWT_SECRET en az 32 karakter olmalıdır."),
   PORT: z.coerce.number().int().positive().optional(),
   API_PORT: z.coerce.number().int().positive().default(4000),
