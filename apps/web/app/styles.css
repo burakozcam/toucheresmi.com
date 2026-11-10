@@ -1053,10 +1053,10 @@ button, .button { touch-action: manipulation; }
 .searchable-select .publisher-select-popover li.publisher-option-empty { padding: 10px; }
 .searchable-select .publisher-select-trigger:disabled { opacity: .6; cursor: not-allowed; }
 .sidebar-brand { position: relative; }
-.sidebar-brand .brand-mark { animation: sidebar-logo-nudge 10s ease-in-out infinite; transform-origin: center; }
-.sidebar-brand .brand-light { display: inline-block; width: 0; max-width: 64px; overflow: hidden; vertical-align: bottom; white-space: nowrap; animation: sidebar-brand-type 10s steps(9,end) infinite; }
-@keyframes sidebar-brand-type { 0%,68% { width: 0; } 78%,100% { width: 64px; } }
-@keyframes sidebar-logo-nudge { 0%,68%,100% { transform: rotate(0) translateY(0); } 70% { transform: rotate(-5deg) translateY(-1px); } 73% { transform: rotate(4deg) translateY(0); } 76% { transform: rotate(-2deg) translateY(-1px); } 79% { transform: rotate(0) translateY(0); } }
+.sidebar-brand .brand-mark { animation: sidebar-logo-nudge 5s 1s ease-in-out infinite; transform-origin: center; }
+.sidebar-brand .brand-light { display: inline-block; width: 0; max-width: 64px; overflow: hidden; vertical-align: bottom; white-space: nowrap; animation: sidebar-brand-type 5s 1s steps(9,end) infinite; }
+@keyframes sidebar-brand-type { 0% { width: 0; } 20%,96% { width: 64px; } 100% { width: 0; } }
+@keyframes sidebar-logo-nudge { 0%,22%,100% { transform: rotate(0) translateY(0); } 4% { transform: rotate(-5deg) translateY(-1px); } 8% { transform: rotate(4deg) translateY(0); } 12% { transform: rotate(-2deg) translateY(-1px); } 16% { transform: rotate(0) translateY(0); } }
 .profile-avatar,.header-avatar { width: 33px; height: 33px; min-width: 33px; aspect-ratio: 1; overflow: hidden; flex: 0 0 33px; }
 .header-avatar { width: 30px; height: 30px; min-width: 30px; flex-basis: 30px; }
 .welcome-motivation-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; padding: 15px 20px; border-radius: 14px; background: var(--surface); }

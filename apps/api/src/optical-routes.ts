@@ -24,6 +24,8 @@ import { bulkTemplatesInput,templateInput,fmtContentIdentity } from "./fmt-bulk"
 import { previewFmt } from "./fmt-preview";
 import { convertTxt } from "./txt-converter";
 
+import { systemEvaluationTemplates, systemEvaluationTemplate } from "./evaluation-templates";
+
 export const opticalRouter = express.Router();
 opticalRouter.use((_req,res,next)=>{res.setHeader("Cache-Control","private, no-store");next();});
 opticalRouter.use(requireAuth, (req: AuthenticatedRequest,res,next)=>{
@@ -47,6 +49,12 @@ const idParam = (req: AuthenticatedRequest)=>String(req.params.id ?? "");
 
 opticalRouter.get("/templates", wrap(async(req,res)=>{
   res.json(await prisma.opticalTemplate.findMany({where:req.user!.role===Role.SUPER_ADMIN?{}:{active:true},include:{publisher:{select:{id:true,name:true}}},orderBy:{createdAt:"desc"}}));
+}));
+opticalRouter.get("/evaluation-templates", wrap(async(_req,res)=>{
+  const system=systemEvaluationTemplates();
+  const saved=await prisma.opticalTemplate.findMany({where:{OR:[{active:true},{id:{in:system.map(t=>t.id)}}]},include:{publisher:{select:{id:true,name:true}}},orderBy:{createdAt:"desc"}});
+  const ids=new Set(saved.map(t=>t.id));
+  res.json([...saved.filter(t=>t.active),...system.filter(t=>!ids.has(t.id))]);
 }));
 opticalRouter.get("/templates/examples/:code/download",wrap(async(req,res)=>{
  const code=String(req.params.code),entry=findLibraryFmt(code);if(!entry){res.status(404).json({error:"Sistem FMT dosyası bulunamadı."});return;}
@@ -185,13 +193,18 @@ for(const mode of ["preview","download"]){
     res.attachment(filename).type("application/octet-stream").send(result.bytes);
   }));
 }
+async function evaluationTemplate(id:string){
+  const system=systemEvaluationTemplate(id);
+  const saved=await prisma.opticalTemplate.findFirst({where:{id,...(system?{}:{active:true})}});
+  return saved ? (saved.active!==false?saved:null) : system;
+}
 for(const endpoint of ["preview","evaluate"]){
   opticalRouter.post(`/${endpoint}`,uploadLimit,upload.single("file"),wrap(async(req,res)=>{
     const input=z.object({schoolId:z.string().min(1).max(100),templateId:z.string().min(1).max(100),keyId:z.string().min(1).max(100),encoding:z.enum(["auto","utf-8","windows-1254"]).default("auto"),confirmWarnings:z.enum(["true","false"]).optional(),previewToken:z.string().max(3000).optional()}).parse(req.body);
     if(!req.file || !/\.txt$/i.test(req.file.originalname)){res.status(400).json({error:"En fazla 2 MB boyutunda bir TXT dosyası seçin."});return;}
     const school=await prisma.school.findFirst({where:{id:input.schoolId,active:true,...scope(req)},select:{id:true,name:true}});
     if(!school){res.status(403).json({error:"Bu kurum için yükleme yetkiniz yok veya kurum etkin değil."});return;}
-    const [template,key]=await Promise.all([prisma.opticalTemplate.findFirst({where:{id:input.templateId,active:true}}),prisma.opticalKey.findFirst({where:{id:input.keyId,active:true,publication:evaluationPublicationWhere},include:{publication:{select:{examName:true,grade:true,publisherId:true}}}})]);
+    const [template,key]=await Promise.all([evaluationTemplate(input.templateId),prisma.opticalKey.findFirst({where:{id:input.keyId,active:true,publication:evaluationPublicationWhere},include:{publication:{select:{examName:true,grade:true,publisherId:true}}}})]);
     if(!template || !key){res.status(400).json({error:"Etkin bir FMT ve cevap anahtarı seçin."});return;}
     let data,decoded="";
     try {decoded=decodeOptical(req.file.buffer,input.encoding);data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name);}
@@ -216,6 +229,11 @@ for(const endpoint of ["preview","evaluate"]){
       const stillAvailable=await tx.opticalKey.findFirst({where:{id:key.id,active:true,publication:evaluationPublicationWhere}});
       if(!stillAvailable)return null;
       if(keyFingerprint(stillAvailable.questions,stillAvailable.penalty)!==snapshot.keyFingerprint)throw new z.ZodError([{code:"custom",path:[],message:"Cevap anahtarı değişti. Önizlemeyi yenileyin."}]);
+      const systemTemplate=systemEvaluationTemplate(input.templateId);
+      const currentTemplate=systemTemplate
+        ? await tx.opticalTemplate.upsert({where:{id:systemTemplate.id},update:{},create:{...systemTemplate,layout:systemTemplate.layout as Prisma.InputJsonValue}})
+        : await tx.opticalTemplate.findFirst({where:{id:template.id,active:true}});
+      if(!currentTemplate||currentTemplate.active===false||JSON.stringify(currentTemplate.layout)!==JSON.stringify(template.layout))throw new z.ZodError([{code:"custom",path:[],message:"FMT değişti veya pasif yapıldı. Önizlemeyi yenileyin."}]);
       return tx.opticalResult.create({data:{schoolId:school.id,templateId:template.id,keyId:key.id,createdById:req.user!.id,filename:req.file!.originalname.slice(0,200),uploadChecksum,snapshot:snapshot as unknown as Prisma.InputJsonValue}});
     });
     if(!result){res.status(403).json({error:"Kurum erişimi değişti. Listeyi yenileyin."});return;}

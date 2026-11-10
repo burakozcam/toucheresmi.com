@@ -23,3 +23,5 @@ import "./v113.test";
 import "./fmt-library-files.test";
 
 import "./v114.test";
+
+import "./v116-upload.test";

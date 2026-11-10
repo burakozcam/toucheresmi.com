@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { lessonIdentity } from "../lib/evaluation-compatibility";
 
 const field = z.object({ start: z.number().int().min(1).max(4000), length: z.number().int().min(1).max(300), align:z.enum(["left","right"]).optional() });
 export const opticalLayoutSchema = z.object({
@@ -61,7 +62,14 @@ export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "
 
 /** Canonical A-question order; no identity numbers are returned or stored. */
 export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuestions: OpticalQuestion[], school: string): OpticalData {
-  const layout = opticalLayoutSchema.parse(inputLayout), questions = opticalQuestionsSchema.parse(inputQuestions);
+  const questions = opticalQuestionsSchema.parse(inputQuestions);
+  const sourceLayout = opticalLayoutSchema.parse(inputLayout);
+  const questionLessons = [...new Set(questions.map(q => q.lesson))];
+  if (new Set(questionLessons.map(lessonIdentity)).size !== questionLessons.length) throw new Error("Cevap anahtarında aynı derse ait birden fazla ad var. Ders adlarını düzeltin.");
+  // Keep the key's lesson labels in the saved snapshot and report; only map TXT fields.
+  const layout = opticalLayoutSchema.parse({...sourceLayout, lessons: sourceLayout.lessons.map(l => ({...l,
+    name: questionLessons.find(name => lessonIdentity(name) === lessonIdentity(l.name)) ?? l.name,
+  }))});
   if (questions.some(q => !layout.lessons.some(l => l.name === q.lesson))) throw new Error("Cevap anahtarındaki dersler seçilen FMT ile eşleşmiyor.");
   for (const l of layout.lessons) {
     const count = questions.filter(q=>q.lesson===l.name).length;
