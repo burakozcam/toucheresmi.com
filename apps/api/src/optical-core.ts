@@ -51,11 +51,13 @@ export const opticalQuestionsSchema = z.array(opticalQuestionSchema).min(1).max(
   }
 });
 export type OpticalQuestion = z.infer<typeof opticalQuestionSchema>;
-export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[]; studentNo?:string;identityHash?:string;identityEncrypted?:string; separateSession?:boolean };
+export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[]; recordBooklets?:string[]; studentNo?:string;identityHash?:string;identityEncrypted?:string; separateSession?:boolean };
 export type OpticalData = { questions: Array<OpticalQuestion & { column: string }>; students: OpticalStudent[]; warnings: string[]; lineCount: number };
 
 export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "windows-1254" = "auto") {
   if (encoding !== "auto") return new TextDecoder(encoding, { fatal: true }).decode(buffer);
+  if(buffer[0]===0xff&&buffer[1]===0xfe)return new TextDecoder("utf-16le",{fatal:true}).decode(buffer);
+  if(buffer[0]===0xfe&&buffer[1]===0xff)return new TextDecoder("utf-16be",{fatal:true}).decode(buffer);
   try { return new TextDecoder("utf-8", { fatal: true }).decode(buffer); }
   catch { return new TextDecoder("windows-1254", { fatal: true }).decode(buffer); }
 }
@@ -78,7 +80,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   const lines = txt.replace(/^\uFEFF/, "").split(/\r\n|\n|\r/);
   while (lines.at(-1) === "") lines.pop();
   if (!lines.length || lines.length > 2000) throw new Error("TXT 1–2000 kayıt satırı içermelidir.");
-  type Entry = { id: string; name: string; branch: string; grade: string; chains: Map<string,string>; booklets: Record<string,string>; sourceLines: number[];identity?:string };
+  type Entry = { id: string; name: string; branch: string; grade: string; chains: Map<string,string>; booklets: Record<string,string>; sourceLines: number[];recordBooklets:Set<string>;identity?:string };
   const identities=new Map<string,Entry>(),numbers=new Map<string,Entry>();
   const entries = new Map<string,Entry>(), seenLines = new Set<string>();
   const slice = (line: string, f?: {start:number;length:number}) => f ? line.slice(f.start-1, f.start-1+f.length).trim() : "";
@@ -99,10 +101,10 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     const numberKey=`${grade}:${id.replace(/^0+(?=\d)/,"")}`;
     const existing=options.mergeSessions===false?undefined:(identity?identities.get(identity):undefined)??(id?numbers.get(numberKey):undefined);
     if(existing?.identity&&identity&&existing.identity!==identity)throw new Error(`${label}: aynı numara farklı kimliklerde kullanılmış.`);
-    const entry:Entry=existing??{id,name,branch,grade,chains:new Map(),booklets:{},sourceLines:[],identity};
+    const entry:Entry=existing??{id,name,branch,grade,chains:new Map(),booklets:{},sourceLines:[],recordBooklets:new Set<string>(),identity};
     const key=existing?[...entries].find(([,value])=>value===existing)![0]:`row:${index}`;
     if (entry.name !== name || entry.grade !== grade || (entry.branch && branch && entry.branch !== branch)) throw new Error(`${label}: aynı öğrenciye ait oturumların kimlik bilgileri çelişiyor.`);
-    entry.id ||= id; entry.branch ||= branch; entry.sourceLines.push(index+1);
+    entry.id ||= id; entry.branch ||= branch; entry.sourceLines.push(index+1); entry.recordBooklets.add(book);
     for (const lesson of layout.lessons) {
       const count = questions.filter(q=>q.lesson===lesson.name).length;
       const raw = line.slice(lesson.start-1, lesson.start-1+lesson.length).toUpperCase();
@@ -128,7 +130,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     if (missing.length) warnings.push(`${entry.id}: ${missing.join(", ")} alanları tamamen boş; bu dersler boş cevap olarak değerlendirilecek.`);
     const repeated=options.mergeSessions===false&&[...entries.values()].filter(other=>other.grade===entry.grade&&other.id===entry.id).length>1;
     return {id:repeated?`${entry.id}-O${entry.sourceLines[0]}`:entry.id,...(options.mergeSessions===false?{studentNo:entry.id,separateSession:true}:{}),
-      ...(entry.identity&&options.hashIdentity?{identityHash:options.hashIdentity(entry.identity)}:{}),...(entry.identity&&options.encryptIdentity?{identityEncrypted:options.encryptIdentity(entry.identity)}:{}),name:entry.name, school, branch:[entry.grade,entry.branch].filter(Boolean).join("-") || "Belirtilmedi", booklets:entry.booklets, sourceLines:entry.sourceLines,
+      ...(entry.identity&&options.hashIdentity?{identityHash:options.hashIdentity(entry.identity)}:{}),...(entry.identity&&options.encryptIdentity?{identityEncrypted:options.encryptIdentity(entry.identity)}:{}),name:entry.name, school, branch:[entry.grade,entry.branch].filter(Boolean).join("-") || "Belirtilmedi", booklets:entry.booklets, recordBooklets:[...entry.recordBooklets], sourceLines:entry.sourceLines,
       answers:questions.map(q=>{ const chain=entry.chains.get(q.lesson); return chain ? chain[q.positions[entry.booklets[q.lesson]]-1]?.trim() ?? "" : ""; })};
   });
   if (students.length > 500) throw new Error("Bir değerlendirmede en fazla 500 öğrenci desteklenir.");

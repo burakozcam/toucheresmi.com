@@ -1,0 +1,100 @@
+{
+  "realPostgreSQL": true,
+  "captchaSuccessAllowsRealLogin": true,
+  "captchaFailureDeniesLogin": true,
+  "providerVerification": "mocked Google Siteverify",
+  "storage": "isolated /tmp only",
+  "source": "synthetic fixed-width Windows-1254",
+  "records": 5,
+  "students": 4,
+  "expected": {
+    "partialCorrect": 12,
+    "partialWrong": 3,
+    "partialBlank": 3,
+    "weightedMaximum": 33,
+    "partialWeightedNet": 24,
+    "partialNet": 11,
+    "partialScore": 363.6363636363636,
+    "fullScore": 500,
+    "blankScore": 0,
+    "ranks": [
+      2,
+      1,
+      4,
+      2
+    ]
+  },
+  "allExpectedValuesMatched": true,
+  "staleSystemRowPreserved": true,
+  "manual7108Works": true,
+  "inference": "strong",
+  "actualDatabaseResults": 2,
+  "activeResults": 1,
+  "duplicateReplayRejected": true,
+  "explicitReprocessingDeterministic": true,
+  "pdfFiles": [
+    "v120-ogrenci-ozet.pdf",
+    "v120-ogrenci-ayrintili.pdf",
+    "v120-okul-sonuc-listesi.pdf"
+  ],
+  "crossInstitutionExportDenied": true,
+  "unauthenticatedDenied": true,
+  "authenticatedStudentProfessionalPdf": true,
+  "foreignStudentGrantDenied": true,
+  "guestCodeRequired": true,
+  "guestCannotReadPeer": true,
+  "codesVisibleOnlyToOwner": true,
+  "newRevisionRequiresPublicationReview": true,
+  "validationSummary": {
+    "unitTests": {
+      "passed": 150,
+      "failed": 0,
+      "skipped": 0
+    },
+    "productionBuild": "passed: Prisma generate + API TypeScript + Next.js",
+    "nodeVersion": "24.22.1",
+    "real8050PostgresBrowserRegression": "passed",
+    "browserResultsAndConverter": "passed",
+    "browserSearchDelayedResponseKeyboardMobile": "passed",
+    "googleWidgetTokenTransfer": "passed with mocked provider",
+    "turnstileHttpVerification": "passed with mocked provider",
+    "liveCaptchaKeysTested": false,
+    "productionModified": false
+  },
+  "pdfQA": {
+    "pdfQA": [
+      {
+        "file": "output/pdf/v120-ogrenci-ozet.pdf",
+        "pages": 1,
+        "allPagesContainText": true,
+        "withinMargins": true
+      },
+      {
+        "file": "output/pdf/v120-ogrenci-ayrintili.pdf",
+        "pages": 2,
+        "allPagesContainText": true,
+        "withinMargins": true
+      },
+      {
+        "file": "output/pdf/v120-okul-sonuc-listesi.pdf",
+        "pages": 1,
+        "allPagesContainText": true,
+        "withinMargins": true
+      },
+      {
+        "file": "/tmp/ks-v120-stress-list.pdf",
+        "pages": 10,
+        "allPagesContainText": true,
+        "withinMargins": true
+      },
+      {
+        "file": "/tmp/ks-v120-stress-card.pdf",
+        "pages": 6,
+        "allPagesContainText": true,
+        "withinMargins": true
+      }
+    ],
+    "all150StudentRowsPresent": true,
+    "repeatedHeadersVerified": true
+  }
+}

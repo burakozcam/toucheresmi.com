@@ -1,3 +1,15 @@
+## v1.2.0 · 2026-11-12 · yerel kabul adayı
+
+- Sistem 7108 tanımı eski veritabanı yerleşimi tarafından gölgelenmez; geçmiş kayıtlar korunur.
+- Tüm TXT satırları, sabit kod, genişlik ve alan türleriyle FMT tahmini; geçersiz kitapçık değerlendirmeyi durdurur.
+- Gerçek PostgreSQL ve bağımsız beklenen değerlerle yükleme → kayıt → PDF kabul testi.
+- Profesyonel özet/ayrıntılı karne, okul tablosu, gerçek ortalamalar, cevap/kazanım analizi ve önizleme.
+- Öğrenci hesabından yetkili profesyonel PDF; hesapsız sorguda okul/sınav/öğrenci erişim kodu.
+- Belirgin cevap anahtarı araması ve salt okunur listede sunucu araması.
+- Google reCAPTCHA v2 seçeneği, süre/hostname/tekrar kontrolü; anahtarsız varsayılan kapalı.
+- Yeni migration/bağımlılık yok; canlıya dağıtım ve Git push yapılmadı.
+- [Kabul raporu, açık sınırlar ve CAPTCHA kurulum adımları](docs/v1.2.0-kritik-kabul-raporu.md).
+
 ## v1.1.9 · 2026-11-11
 
 - Karne ve liste çıktı aileleri ayrıldı; mevcut tasarımlar ve örneklere dayanan ek PDF seçenekleri.

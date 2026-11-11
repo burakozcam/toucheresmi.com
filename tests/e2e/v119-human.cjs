@@ -11,8 +11,8 @@ for(const path of ['/api/auth/login','/api/auth/register','/api/public-results/l
 assert.equal(providerCalls,0);assert.equal(databaseCalls,0);
 const login={email:'test@example.test',password:'fake-password',role:'STUDENT',humanToken:'test-token'};
 assert.equal((await request(port,'/api/auth/login',login)).status,403);
-answer={success:true,hostname:'other.example.test',action:'login'};assert.equal((await request(port,'/api/auth/login',login)).status,403);
-answer={success:true,hostname:'web.example.test',action:'register'};assert.equal((await request(port,'/api/auth/login',login)).status,403);assert.equal(databaseCalls,0);
-answer={success:true,hostname:'web.example.test',action:'login'};assert.equal((await request(port,'/api/auth/login',login)).status,401);assert.equal(databaseCalls,1);
+login.humanToken='wrong-host-token';answer={success:true,hostname:'other.example.test',action:'login'};assert.equal((await request(port,'/api/auth/login',login)).status,403);
+login.humanToken='wrong-action-token';answer={success:true,hostname:'web.example.test',action:'register'};assert.equal((await request(port,'/api/auth/login',login)).status,403);assert.equal(databaseCalls,0);
+login.humanToken='valid-token';answer={success:true,hostname:'web.example.test',action:'login'};assert.equal((await request(port,'/api/auth/login',login)).status,401);assert.equal(databaseCalls,1);
 console.log(JSON.stringify({directApiCannotBypass:true,loginAndRegistrationAndPublicResultsProtected:true,secretNeverReturned:true,actionAndHostnameChecked:true,onlyVerifiedRequestReachesCredentials:true}));
 }finally{server.close();await prisma.$disconnect();}})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -2,6 +2,10 @@ import "dotenv/config";
 import { z } from "zod";
 
 const environmentSchema = z.object({
+  RECAPTCHA_ENABLED:z.enum(["true","false"]).default("false"),
+  RECAPTCHA_SECRET_KEY:z.string().default(""),
+  RECAPTCHA_SITE_KEY:z.string().default(""),
+  RECAPTCHA_HOSTNAME:z.string().default(""),
   TURNSTILE_ENABLED:z.enum(["true","false"]).default("false"),
   TURNSTILE_SECRET_KEY:z.string().default(""),
   TURNSTILE_SITE_KEY:z.string().default(""),
@@ -21,6 +25,8 @@ const environmentSchema = z.object({
   STORAGE_DIR: z.string().min(1).default("./storage"),
   MAX_UPLOAD_SIZE: z.coerce.number().int().positive().default(10485760),
 }).superRefine((values, context) => {
+  if(values.RECAPTCHA_ENABLED==="true"&&values.TURNSTILE_ENABLED==="true")context.addIssue({code:z.ZodIssueCode.custom,path:["RECAPTCHA_ENABLED"],message:"Yalnızca bir CAPTCHA sağlayıcısını etkinleştirin."});
+  if(values.RECAPTCHA_ENABLED==="true"&&(!values.RECAPTCHA_SECRET_KEY||!values.RECAPTCHA_SITE_KEY||!values.RECAPTCHA_HOSTNAME))context.addIssue({code:z.ZodIssueCode.custom,path:["RECAPTCHA_ENABLED"],message:"reCAPTCHA için sunucu anahtarı, site anahtarı ve hostname birlikte gereklidir."});
   if(values.TURNSTILE_ENABLED==="true"&&(!values.TURNSTILE_SECRET_KEY||!values.TURNSTILE_SITE_KEY||!values.TURNSTILE_HOSTNAME))context.addIssue({code:z.ZodIssueCode.custom,path:["TURNSTILE_ENABLED"],message:"Turnstile etkinleştirilirken sunucu anahtarı, site anahtarı ve hostname birlikte gereklidir."});
   if (Boolean(values.SMTP_USER) !== Boolean(values.SMTP_PASSWORD)) {
     context.addIssue({

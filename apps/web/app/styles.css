@@ -1132,3 +1132,10 @@ button, .button { touch-action: manipulation; }
 .login-page .auth-layout, .login-page .login-card { min-width: 0; }
 .login-page .auth-footer { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 @media (max-width: 680px) { .login-page .auth-header { gap: 12px; } }
+
+.prominent-answer-search { display: grid; gap: 8px; min-width: 0; width: min(100%, 540px); padding: 15px; border: 1px solid #6688b3; border-radius: 12px; background: var(--surface); }
+.prominent-answer-search > span { font-size: 13px; font-weight: 700; color: var(--ink); }
+.prominent-answer-search input { min-width: 0; width: 100%; min-height: 46px; padding: 12px; border: 2px solid #6688b3; border-radius: 8px; background: var(--canvas); color: var(--ink); font-size: 14px; }
+.prominent-answer-search input:focus { outline: 3px solid #7caaed; outline-offset: 2px; }
+.report-pdf-preview { width: 100%; min-height: 75vh; border: 1px solid var(--line); margin-top: 14px; }
+@media(max-width:680px) { .list-header-row:has(.prominent-answer-search) { display: grid; gap: 15px; }.prominent-answer-search { width: 100%; }.answer-filter-panel .prominent-answer-search { grid-column: 1 / -1; } }

@@ -32,7 +32,7 @@ import { isDeleted,safeSnapshot,mergeStudentData } from "./result-data";
 import { inferFmt } from "./fmt-inference";
 import { convertTxt } from "./txt-converter";
 
-import { systemEvaluationTemplates, systemEvaluationTemplate } from "./evaluation-templates";
+import { systemEvaluationTemplates, systemEvaluationTemplate, systemStorageId, sameExecutableLayout, evaluationTemplateChoices } from "./evaluation-templates";
 
 export const opticalRouter = express.Router();
 opticalRouter.use((_req,res,next)=>{res.setHeader("Cache-Control","private, no-store");next();});
@@ -61,9 +61,8 @@ opticalRouter.get("/templates", wrap(async(req,res)=>{
 }));
 opticalRouter.get("/evaluation-templates", wrap(async(_req,res)=>{
   const system=systemEvaluationTemplates();
-  const saved=await prisma.opticalTemplate.findMany({where:{OR:[{active:true},{id:{in:system.map(t=>t.id)}}]},select:{id:true,name:true,layout:true,grade:true,active:true,publisher:{select:{id:true,name:true}}},orderBy:{createdAt:"desc"}});
-  const ids=new Set(saved.map(t=>t.id));
-  res.json([...saved.filter(t=>t.active),...system.filter(t=>!ids.has(t.id)).map(({originalFmt,...metadata})=>metadata)]);
+  const saved=await prisma.opticalTemplate.findMany({where:{OR:[{active:true},{id:{in:system.flatMap(t=>[t.id,systemStorageId(t)])}}]},select:{id:true,name:true,layout:true,grade:true,active:true,publisher:{select:{id:true,name:true}}},orderBy:{createdAt:"desc"}});
+  res.json(evaluationTemplateChoices(saved).map(({originalFmt,...metadata}:any)=>metadata));
 }));
 opticalRouter.get("/templates/examples/:code/download",wrap(async(req,res)=>{
  const code=String(req.params.code),entry=findLibraryFmt(code);if(!entry){res.status(404).json({error:"Sistem FMT dosyası bulunamadı."});return;}
@@ -183,6 +182,7 @@ opticalRouter.patch("/keys/:id",admin,wrap(async(req,res)=>{
 }));
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:2*1024*1024,files:10,fields:12,fieldSize:90000}});
 const uploadLimit=new RequestLimiter(30,10*60_000).middleware();
+const inferenceLimit=new RequestLimiter(90,10*60_000).middleware(req=>(req as AuthenticatedRequest).user!.id);
 opticalRouter.post("/templates/preview",admin,uploadLimit,upload.single("file"),wrap(async(req,res)=>{
   if(!req.file||!/\.txt$/i.test(req.file.originalname)){res.status(400).json({error:"En fazla 2 MB örnek TXT dosyası seçin."});return;}
   const input=z.object({originalFmt:z.string().max(64000).optional(),readerName:z.string().trim().max(120).optional(),layout:z.string().max(12000),encoding:z.enum(["auto","utf-8","windows-1254"]).default("auto")}).parse(req.body);
@@ -190,10 +190,10 @@ opticalRouter.post("/templates/preview",admin,uploadLimit,upload.single("file"),
   try{const report=previewFmt(decodeOptical(req.file.buffer,input.encoding),layout);const coordinates=input.originalFmt?inspectFmtCoordinates(input.originalFmt,layout):null;if(coordinates&&!coordinates.valid){report.canSave=false;report.errors.push(...coordinates.errors);report.errorCount+=coordinates.errors.length;}res.json({...report,coordinates,validationToken:report.canSave&&input.originalFmt&&(input.readerName?.length??0)>=2?fmtProof(req.user!.id,input.originalFmt,layout,input.readerName!,input.encoding):undefined});}catch(e){res.status(400).json({error:(e as Error).message});}
 }));
 async function inferenceTemplates(){
- const saved=await prisma.opticalTemplate.findMany({where:{OR:[{active:true},{id:{in:systemEvaluationTemplates().map(t=>t.id)}}]},select:{id:true,name:true,layout:true,active:true}});
- return [...saved.filter(t=>t.active),...systemEvaluationTemplates().filter(t=>!saved.some(s=>s.id===t.id))];
+ const saved=await prisma.opticalTemplate.findMany({where:{OR:[{active:true},{id:{in:systemEvaluationTemplates().flatMap(t=>[t.id,systemStorageId(t)])}}]},select:{id:true,name:true,layout:true,active:true}});
+ return evaluationTemplateChoices(saved);
 }
-opticalRouter.post("/infer-fmt",uploadLimit,upload.single("file"),wrap(async(req,res)=>{
+opticalRouter.post("/infer-fmt",inferenceLimit,upload.single("file"),wrap(async(req,res)=>{
  const input=z.object({fileIds:z.array(z.string().min(1)).min(1).max(10).optional()}).parse(req.body);
  let files:Express.Multer.File[]=[];
  if(input.fileIds)files=(await readArchivedTxts(req.user!,input.fileIds)).map(item=>item.file);
@@ -223,7 +223,14 @@ for(const mode of ["preview","download"]){
 async function evaluationTemplate(id:string){
   const system=systemEvaluationTemplate(id);
   const saved=await prisma.opticalTemplate.findFirst({where:{id,...(system?{}:{active:true})}});
-  return saved ? (saved.active!==false?saved:null) : system;
+  if(!system)return saved;
+  if(id!==system.id){const base=await prisma.opticalTemplate.findFirst({where:{id:system.id}});if(base?.active===false)return null;}
+  if(saved?.active===false)return null;
+  // Retain the corrupt/old row and every historical foreign key. New evaluations
+  // use a deterministic canonical row instead of mutating the old definition.
+  const storageId=id!==system.id?id:saved&&!sameExecutableLayout(saved.layout,system.layout)?systemStorageId(system):system.id;
+  if(storageId!==id){const stored=await prisma.opticalTemplate.findFirst({where:{id:storageId}});if(stored?.active===false)return null;if(stored&&!sameExecutableLayout(stored.layout,system.layout))throw new Error("Sistem FMT kaydı doğrulanmış yerleşimle çelişiyor. Yönetici kontrolü gerekli.");}
+  return {...system,id:storageId};
 }
 for(const endpoint of ["preview","evaluate"]){
   opticalRouter.post(`/${endpoint}`,uploadLimit,upload.fields([{name:"file",maxCount:1},{name:"files",maxCount:10}]),wrap(async(req,res)=>{
@@ -276,11 +283,11 @@ for(const endpoint of ["preview","evaluate"]){
       if(repeated&&!isDeleted(repeated.snapshot)&&!reprocessing)throw new z.ZodError([{code:"custom",path:[],message:"Bu TXT zaten kaydedildi. Sınav Sonuçları ekranından açın."}]);
       const systemTemplate=systemEvaluationTemplate(input.templateId);
       const currentTemplate=systemTemplate
-        ? await tx.opticalTemplate.upsert({where:{id:systemTemplate.id},update:{},create:{...systemTemplate,layout:systemTemplate.layout as Prisma.InputJsonValue}})
+        ? await tx.opticalTemplate.upsert({where:{id:template.id},update:{},create:{...systemTemplate,id:template.id,layout:systemTemplate.layout as Prisma.InputJsonValue}})
         : await tx.opticalTemplate.findFirst({where:{id:template.id,active:true}});
       if(!currentTemplate||currentTemplate.active===false||canonicalJson(opticalLayoutSchema.parse(currentTemplate.layout))!==canonicalJson(opticalLayoutSchema.parse(template.layout)))throw new z.ZodError([{code:"custom",path:[],message:"FMT değişti veya pasif yapıldı. Önizlemeyi yenileyin."}]);
       if(parent){const current=await tx.opticalResult.findFirst({where:{id:parent.id,nextRevision:null,school:scope(req)}});if(!current||isDeleted(current.snapshot))throw new Error("Oturum kaydı değişti. Dosyayı yeniden değerlendirin.");}
-      const created=await tx.opticalResult.create({data:{schoolId:school.id,templateId:template.id,keyId:key.id,createdById:req.user!.id,filename:files.map(file=>file.originalname).join(" + ").slice(0,200),...(parent?{seriesId:parent.seriesId,revision:parent.revision+1,supersedesId:parent.id,studentPublished:parent.studentPublished}:{}),uploadChecksum,snapshot:snapshot as unknown as Prisma.InputJsonValue}});
+      const created=await tx.opticalResult.create({data:{schoolId:school.id,templateId:template.id,keyId:key.id,createdById:req.user!.id,filename:files.map(file=>file.originalname).join(" + ").slice(0,200),...(parent?{seriesId:parent.seriesId,revision:parent.revision+1,supersedesId:parent.id,studentPublished:false}:{}),uploadChecksum,snapshot:snapshot as unknown as Prisma.InputJsonValue}});
       if(parent){const grants=await tx.studentResultAccess.findMany({where:{resultId:parent.id}});if(grants.length)await tx.studentResultAccess.createMany({data:grants.map(grant=>({userId:grant.userId,resultId:created.id,studentNo:grant.studentNo,studentName:grant.studentName}))});if(parent.studentPublished)await tx.opticalResult.update({where:{id:parent.id},data:{studentPublished:false}});}
       if(input.fileIds){const updated=await tx.opticalTxtFile.updateMany({where:{id:{in:input.fileIds},deletedAt:null,...archiveScope(req.user!)},data:{evaluatedAt:new Date(),resultId:created.id}});if(updated.count!==input.fileIds.length)throw new Error("TXT arşivi değişti. Dosya listesini yenileyin.");await tx.opticalTxtUse.createMany({data:input.fileIds.map(fileId=>({fileId,resultId:created.id})),skipDuplicates:true});}
       return created;
@@ -326,6 +333,7 @@ opticalRouter.patch("/results/:id/publication",wrap(async(req,res)=>{
   const outcome=await prisma.$transaction(async tx=>{
     const item=await tx.opticalResult.findFirst({where:{id:idParam(req),school:scope(req)},include:{key:true,nextRevision:{select:{id:true}}}});
     if(!item)return "Sonuç bulunamadı veya yayımlama yetkiniz yok.";
+    if(isDeleted(item.snapshot))return "Kaldırılmış sonuç yayımlanamaz. Önce yetkili geri alma işlemini tamamlayın.";
     const snapshot=item.snapshot as unknown as Snapshot,checks=reviewSnapshot(snapshot);
     let fingerprint:string;try{fingerprint=keyFingerprint(item.key.questions,item.key.penalty);}catch{return "Güncel cevap anahtarı eksik veya geçersiz. Cevap Anahtarları bölümünden tamamlayın.";}
     if(item.nextRevision)return "Daha yeni sürüm var. Son sürümü açın.";

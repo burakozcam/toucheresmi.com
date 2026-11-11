@@ -1,0 +1,67 @@
+// Acceptance test: new isolated localhost container only; never production or host storage.
+require('./tls.cjs');
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),https=require('node:https'),crypto=require('node:crypto');
+const db=new URL(process.env.DATABASE_URL||'postgresql://invalid');if(db.hostname!=='127.0.0.1'||db.port!=='55432'||db.pathname!=='/ks_qa')throw Error('Only disposable 127.0.0.1:55432/ks_qa is allowed.');
+const run=crypto.randomUUID().slice(0,8);Object.assign(process.env,{JWT_SECRET:'v120-local-acceptance-test-only-32-characters',TXT_STORAGE_KEY:'v120-local-txt-encryption-only-32-characters',STORAGE_DIR:'/tmp/ks-v120-acceptance-'+run,WEB_ORIGIN:'http://127.0.0.1:3100',TURNSTILE_ENABLED:'false',RECAPTCHA_ENABLED:'true',RECAPTCHA_SITE_KEY:'test-site',RECAPTCHA_SECRET_KEY:'test-server-only',RECAPTCHA_HOSTNAME:'web.example.test'});
+const {prisma}=require('../../apps/api/src/db.ts'),{layout7108}=require('../../apps/api/src/optical-core.ts'),{systemStorageId,systemEvaluationTemplates}=require('../../apps/api/src/evaluation-templates.ts'),{oracleBytes,oracleExpected,oracleQuestions}=require('../fixtures/v120-oracle.ts'),{canonicalJson}=require('../../apps/api/src/canonical-json.ts');
+global.fetch=async(url,options)=>{assert.equal(url,'https://www.google.com/recaptcha/api/siteverify');return {ok:true,json:async()=>({success:options.body.get('response')?.startsWith('accept-')??false,hostname:'web.example.test',challenge_ts:new Date().toISOString()})};};
+const {app}=require('../../apps/api/src/server.ts'),jwt=require('jsonwebtoken'),{credentialVersion}=require('../../apps/api/src/auth.ts');
+(async()=>{
+ const dealer=await prisma.dealer.create({data:{name:'Anonim Bayi '+run}}),other=await prisma.dealer.create({data:{name:'Başka Anonim Bayi '+run}});
+ const passwordHash=await require('bcryptjs').hash('local-anonymous-password',10);
+ const makeUser=(id,label)=>prisma.user.create({data:{email:`${label}-${run}@example.test`,firstName:'Anonim',lastName:'Test',passwordHash,role:'DEALER',dealerId:id}});
+ const owner=await makeUser(dealer.id,'owner'),outsider=await makeUser(other.id,'other');
+ const school=await prisma.school.create({data:{dealerId:dealer.id,createdByUserId:owner.id,name:'Anonim Örnek Okul',city:'İstanbul',district:'Kadıköy',duplicateKey:'qa-'+run}});
+ const publisher=await prisma.publisher.create({data:{name:'Anonim Eğitim Yayınları '+run,normalizedName:'anonim-'+run}});
+ const publication=await prisma.publishedAnswerKey.create({data:{publisherId:publisher.id,createdByUserId:owner.id,grade:8,examName:'Bağımsız Beklenen Sonuçlu 7108 Denemesi',published:false,files:{create:{category:'ANSWER_KEY',originalFileName:'anonim-key.pdf',storedFileName:'anonim-'+run+'.pdf',mimeType:'application/pdf',size:1,storagePath:'/tmp/anonim-key-'+run+'.pdf'}},opticalKey:{create:{name:'oracle-'+run,questions:oracleQuestions,penalty:3}}},include:{opticalKey:true}});
+ const wrong=structuredClone(layout7108);wrong.fields.booklet.start=50;wrong.fields.session.start=51;
+ // This is a fresh test database, but reruns may already have the guarded base row.
+ await prisma.opticalTemplate.upsert({where:{id:'system-fmt-7108'},update:{layout:wrong,active:true},create:{id:'system-fmt-7108',name:'Eski Sistem FMT 7108',layout:wrong,originalFmt:'legacy-test',active:true}});
+ const legacy=await prisma.opticalTemplate.findUnique({where:{id:'system-fmt-7108'}}),legacyBefore=canonicalJson(legacy.layout);
+ const server=https.createServer({key:fs.readFileSync('/tmp/optical-qa-key.pem'),cert:fs.readFileSync('/tmp/optical-qa-cert.pem')},app).listen(4101,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+ const request=(method,url,body,token)=>new Promise((resolve,reject)=>{const data=body?JSON.stringify(body):null;const req=https.request({hostname:'127.0.0.1',port:4101,path:url,method,rejectUnauthorized:false,headers:{...(data?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})}},res=>{const chunks=[];res.on('data',b=>chunks.push(b));res.on('end',()=>{const bytes=Buffer.concat(chunks);resolve({status:res.statusCode,bytes,value:res.headers['content-type']?.includes('application/json')?JSON.parse(bytes.toString()):null});});});req.on('error',reject);req.end(data);});
+ const tokenFor=u=>jwt.sign({role:u.role,credentialVersion:credentialVersion(u.passwordHash)},process.env.JWT_SECRET,{subject:u.id,expiresIn:'1h'});
+ try{
+  const deniedLogin=await request('POST','/api/auth/login',{email:owner.email,password:'local-anonymous-password',role:'DEALER',humanToken:'reject-token'});assert.equal(deniedLogin.status,403);
+  const login=await request('POST','/api/auth/login',{email:owner.email,password:'local-anonymous-password',role:'DEALER',humanToken:'accept-login-token'});assert.equal(login.status,200);const token=login.value.token;
+  // Multipart request with original anonymous Windows bytes, avoiding UTF-8 recoding.
+  const boundary='ks-v120-'+run,body=Buffer.concat([Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="files"; filename="anonymous-7108.txt"\r\nContent-Type: text/plain\r\n\r\n`),oracleBytes,Buffer.from(`\r\n--${boundary}--\r\n`)]);
+  const upload=await new Promise((resolve,reject)=>{const req=https.request({hostname:'127.0.0.1',port:4101,path:'/api/optical/txt-files',method:'POST',rejectUnauthorized:false,headers:{Authorization:'Bearer '+token,'Content-Type':'multipart/form-data; boundary='+boundary,'Content-Length':body.length}},res=>{let data='';res.on('data',b=>data+=b);res.on('end',()=>resolve({status:res.statusCode,value:JSON.parse(data)}));});req.on('error',reject);req.end(body);});
+  assert.equal(upload.status,201);const fileId=upload.value[0].id;
+  const stored=await prisma.opticalTxtFile.findUnique({where:{id:fileId}});const archiveBytes=fs.readFileSync(path.join(process.env.STORAGE_DIR,'optical-txt',stored.storedName));assert.ok(archiveBytes.subarray(0,6).equals(Buffer.from('KSTXT1')));assert.ok(!archiveBytes.includes(Buffer.from('TEST 101')));
+  const infer=await request('POST','/api/optical/infer-fmt',{fileIds:[fileId]},token);assert.equal(infer.status,200);assert.equal(infer.value[0].message,'Tahmin edilen FMT: 7108');
+  const base={fileIds:[fileId],schoolId:school.id,keyId:publication.opticalKey.id,templateId:'system-fmt-7108',encoding:'auto',mergeSessions:'true'};
+  const preview=await request('POST','/api/optical/preview',base,token);assert.equal(preview.status,200);assert.equal(preview.value.data.students.length,4);
+  for(const s of preview.value.data.students){const r=preview.value.summary.find(v=>v.id===s.id),expected=oracleExpected[s.id];assert.ok(expected);assert.equal(r.lessons.reduce((a,l)=>a+l.correct,0),expected.correct);assert.equal(r.lessons.reduce((a,l)=>a+l.wrong,0),expected.wrong);assert.equal(r.lessons.reduce((a,l)=>a+l.blank,0),expected.blank);assert.ok(Math.abs(r.net-expected.net)<1e-9);assert.ok(Math.abs(r.score-expected.score)<1e-9);}
+  const saved=await request('POST','/api/optical/evaluate',{...base,previewToken:preview.value.previewToken,confirmWarnings:'true'},token);assert.equal(saved.status,201);
+  const row=await prisma.opticalResult.findUnique({where:{id:saved.value.id}});assert.equal(row.snapshot.data.students.length,4);for(const storedResult of row.snapshot.summary){const expected=oracleExpected[storedResult.id];assert.ok(Math.abs(storedResult.net-expected.net)<1e-9);assert.ok(Math.abs(storedResult.score-expected.score)<1e-9);assert.equal(storedResult.lessons.reduce((a,l)=>a+l.correct,0),expected.correct);assert.equal(storedResult.lessons.reduce((a,l)=>a+l.wrong,0),expected.wrong);assert.equal(storedResult.lessons.reduce((a,l)=>a+l.blank,0),expected.blank);}assert.equal(row.templateId,systemStorageId(systemEvaluationTemplates()[0]));assert.equal(canonicalJson((await prisma.opticalTemplate.findUnique({where:{id:'system-fmt-7108'}})).layout),legacyBefore);
+  const replay=await request('POST','/api/optical/evaluate',{...base,previewToken:preview.value.previewToken,confirmWarnings:'true'},token);assert.equal(replay.status,409);assert.equal(await prisma.opticalResult.count({where:{schoolId:school.id}}),1);
+  const uri=`/api/optical/result-exams/${publication.opticalKey.id}`,view=(await request('GET',uri+'?schoolId='+school.id,null,token)).value;
+  assert.equal(view.data.students.length,4);assert.equal(view.generalCount,4);
+  for(const s of view.data.students){const expected=oracleExpected[s.studentNo];assert.equal(view.rankings[s.id].generalRank,expected.rank);assert.equal(view.rankings[s.id].schoolRank,expected.rank);}
+  const student=view.data.students.find(s=>s.studentNo==='00101');
+  fs.mkdirSync('output/pdf',{recursive:true});
+  for(const [templateId,kind,name]of [['summary-card','cards','v120-ogrenci-ozet'],['detailed-card','cards','v120-ogrenci-ayrintili'],['school-table','school','v120-okul-sonuc-listesi']]){
+   const query=new URLSearchParams({schoolId:school.id,kind,format:'pdf',templateId,...(kind==='cards'?{studentId:student.id}:{})});const pdf=await request('GET',uri+'/export?'+query,null,token);assert.equal(pdf.status,200);assert.equal(pdf.bytes.subarray(0,5).toString(),'%PDF-');fs.writeFileSync('output/pdf/'+name+'.pdf',pdf.bytes);
+  }
+  const forbidden=await request('GET',uri+'/export?'+new URLSearchParams({schoolId:school.id,kind:'school',format:'pdf'}),null,tokenFor(outsider));assert.equal(forbidden.status,403);
+  assert.equal((await request('GET',uri+'?schoolId='+school.id)).status,401);
+  assert.equal((await request('POST','/api/optical/preview',base,tokenFor(outsider))).status,400);
+  const codeResponse=await request('GET',uri+'/access-codes?schoolId='+school.id,null,token);assert.equal(codeResponse.status,200);const ownCode=codeResponse.value.find(s=>s.studentNo==='00101').accessCode;
+  const pubChecks=await request('GET','/api/optical/results/'+saved.value.id+'/checks',null,token);assert.equal(pubChecks.status,200);
+  const pub=await request('PATCH','/api/optical/results/'+saved.value.id+'/publication',{published:true,reviewToken:pubChecks.value.reviewToken,confirmWarnings:true},token);assert.equal(pub.status,200);
+  const lookup={schoolId:school.id,grade:'8',identifier:'00101',humanToken:'accept-lookup-missing'};
+  assert.equal((await request('POST','/api/public-results/lookup',lookup)).status,400);
+  const ownLookup=await request('POST','/api/public-results/lookup',{...lookup,humanToken:'accept-lookup-own',accessCode:ownCode});assert.equal(ownLookup.status,200);assert.equal(ownLookup.value.length,1);
+  assert.equal((await request('POST','/api/public-results/lookup',{...lookup,identifier:'00102',humanToken:'accept-lookup-foreign',accessCode:ownCode})).status,404);
+  assert.equal((await request('GET',uri+'/access-codes?schoolId='+school.id,null,tokenFor(outsider))).status,403);
+  const studentUser=await prisma.user.create({data:{email:'student-'+run+'@example.test',firstName:'Anonim',lastName:'Öğrenci',passwordHash,role:'STUDENT',schoolId:school.id,readerManagerId:owner.id,readerStudentNo:'00101'}});
+  const grant=await prisma.studentResultAccess.create({data:{userId:studentUser.id,resultId:saved.value.id,studentNo:'00101',studentName:'Anonim Test'}});
+  const ownPdf=await request('GET','/api/my-results/'+grant.id+'/pdf?templateId=summary-card',null,tokenFor(studentUser));assert.equal(ownPdf.status,200);assert.equal(ownPdf.bytes.subarray(0,5).toString(),'%PDF-');fs.writeFileSync('/tmp/ks-v120-student-own.pdf',ownPdf.bytes);
+  assert.equal((await request('GET','/api/my-results/foreign/pdf',null,tokenFor(studentUser))).status,404);
+  // Reprocessing is explicit and creates a revision; active result count stays one.
+  const again=await request('POST','/api/optical/preview',base,token);assert.equal(again.status,200);const second=await request('POST','/api/optical/evaluate',{...base,previewToken:again.value.previewToken,confirmWarnings:'true'},token);assert.equal(second.status,201);assert.equal(second.value.studentPublished,false);assert.deepEqual(second.value.summary,saved.value.summary);assert.equal(await prisma.opticalResult.count({where:{schoolId:school.id,nextRevision:null}}),1);
+  const evidence={realPostgreSQL:true,captchaSuccessAllowsRealLogin:true,captchaFailureDeniesLogin:true,providerVerification:'mocked Google Siteverify',storage:'isolated /tmp only',source:'synthetic fixed-width Windows-1254',records:5,students:4,expected:{partialCorrect:12,partialWrong:3,partialBlank:3,weightedMaximum:33,partialWeightedNet:24,partialNet:11,partialScore:4000/11,fullScore:500,blankScore:0,ranks:[2,1,4,2]},allExpectedValuesMatched:true,staleSystemRowPreserved:true,manual7108Works:true,inference:'strong',actualDatabaseResults:2,activeResults:1,duplicateReplayRejected:true,explicitReprocessingDeterministic:true,pdfFiles:['v120-ogrenci-ozet.pdf','v120-ogrenci-ayrintili.pdf','v120-okul-sonuc-listesi.pdf'],crossInstitutionExportDenied:true,unauthenticatedDenied:true,authenticatedStudentProfessionalPdf:true,foreignStudentGrantDenied:true,guestCodeRequired:true,guestCannotReadPeer:true,codesVisibleOnlyToOwner:true,newRevisionRequiresPublicationReview:true};
+  fs.writeFileSync('output/pdf/v120-kabul-kaniti.json',JSON.stringify(evidence,null,2)+'\n');console.log(JSON.stringify(evidence));
+ }finally{await new Promise(r=>server.close(r));await prisma.$disconnect();}
+})().catch(error=>{console.error(error);process.exitCode=1;});

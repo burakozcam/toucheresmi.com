@@ -85,7 +85,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       }
 
       setPublishers(publisherData);
-      setRecords(responseItems);
+      if(!readOnly)setRecords(responseItems); // The abortable search request owns read-only records.
       const firstActivePublisher = publisherData.find((publisher) => publisher.active);
       if (!readOnly && !form.publisherId && firstActivePublisher) {
         setForm((current) => ({ ...current, publisherId: firstActivePublisher.id }));
@@ -100,6 +100,10 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   useEffect(() => {
     void loadData();
   }, [token]);
+
+  useEffect(()=>{if(!readOnly)return;const controller=new AbortController();const timer=setTimeout(()=>{
+    setLoading(true);fetch(`${API_URL}/api/answer-keys?limit=30&search=${encodeURIComponent(query.trim())}`,{signal:controller.signal}).then(async r=>{const value=await r.json();if(!r.ok)throw Error(value.error??"Arama yapılamadı.");setRecords(value.items??[]);}).catch(e=>{if(e.name!=="AbortError")setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
+  },300);return()=>{clearTimeout(timer);controller.abort();};},[readOnly,query]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -232,14 +236,14 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
         {!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><button className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</button></div>}
         <div className="list-header-row">
           <h3>{readOnly ? "Yayımlanan cevap anahtarları" : "Cevap anahtarı kayıtları"}</h3>
-          <label className="search-field compact-search">
-            <span>Arama</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Sınav ara..." />
+          <label className="answer-search prominent-answer-search">
+            <span>⌕ Cevap anahtarlarında ara</span>
+            <input type="search" aria-label="Cevap anahtarlarında ara" maxLength={200} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Aranacak sınavı veya cevap anahtarını yazın..." />
           </label>
         </div>
 
         {loading ? <p className="empty-state">Yükleniyor...</p> : filteredRecords.length === 0 ? (
-          <p className="empty-state">Henüz cevap anahtarı bulunmuyor.</p>
+          <p className="empty-state">{query.trim()?"Aramanızla eşleşen cevap anahtarı bulunamadı.":"Henüz cevap anahtarı bulunmuyor."}</p>
         ) : (
           <div className="public-answer-grid">
             {filteredRecords.map((item) => {

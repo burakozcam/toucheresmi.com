@@ -78,3 +78,11 @@ Test sentetik bayi, kullanıcı, kurum ve sınavlar oluşturur; gerçek Prisma, 
 ## v1.1.9
 
 Üretim build'inden sonra 3100 portunda yerel Web açıkken `node tests/e2e/v119-login.cjs` giriş yerleşimini, rol parametrelerini ve eski öğrenci bağlantısını doğrular. `node --import tsx tests/e2e/v119-human.cjs` kendi geçici localhost portunu açar; Turnstile etkin yapılandırmasında API'nin doğrulamayı atlayamadığını taklit Siteverify ile sınar. `results-workflow.cjs` ayrıca bağımsız PDF şablonları, FMT içerik tahmini ve 7108→8050 indirmeyi test eder. Playwright/Chromium için yukarıdaki ortam değişkenleri geçerlidir. Hepsi anonim veri kullanır; üretim bağlantısı veya dağıtım yapmaz.
+
+## v1.2.0 kabul kanıtı
+
+`v120-postgres.cjs` yalnız `127.0.0.1:55432/ks_qa` veritabanını kabul eder. Boş, geçici PostgreSQL 16 ortamında mevcut migration'lar uygulandıktan sonra `node --import tsx tests/e2e/v120-postgres.cjs` çalışır. Anonim bağımsız sınavın arşiv, manuel/tahminli FMT, A/B, D/Y/B, puan, kayıt, tekrar, yetki ve PDF zincirini doğrular; gerçek üretim bağlantısı kabul etmez. CAPTCHA sağlayıcısı taklit edilir. Üç örnek PDF `output/pdf/` altına yazılır.
+
+3100'de üretim Web build'i açıkken `node tests/e2e/v120-ui.cjs` arama (gecikmeli ilk liste yanıtı dahil), mobil/klavye ve Google widget-token akışını taklit verilerle sınar. Playwright/Chrome yolları yukarıdaki ortam değişkenleriyle verilir.
+
+`node --import tsx tests/e2e/v120-pdf-stress.ts` geçici stres PDF'lerini, ardından `python3 tests/e2e/v120-pdf-qa.py` kenar boşluğu/boş sayfa/başlık/kayıt kontrollerini üretir. Python kontrolü yalnız standart kütüphane ve Poppler kullanır; npm bağımlılığı eklemez. Üretim storage, yedek veya canlı migration işlemi yoktur.

@@ -34,7 +34,7 @@ export async function requireAuth(
 
   let claims: string | jwt.JwtPayload;
   try {
-    claims = jwt.verify(token, env.JWT_SECRET);
+    claims = jwt.verify(token, env.JWT_SECRET, {algorithms:["HS256"]});
   } catch {
     response.status(401).json({ error: "Oturum geçersiz veya süresi dolmuş." });
     return;

@@ -1,4 +1,6 @@
-# Kurumsal Sınav v1.1.9 — Release Candidate
+# Kurumsal Sınav v1.2.0 — Yerel kabul adayı
+
+**v1.2.0:** Sistem 7108 yerleşiminin eski kayıttan etkilenmesi düzeltildi; tüm kayıtlar üzerinden tahmin, bağımsız hesaplı gerçek PostgreSQL kabul testi, profesyonel varsayılan PDF’ler, öğrenciye özel erişim, belirgin arama ve Google reCAPTCHA v2 hazırlığı. Canlı değiştirilmedi. [15 başlıklı kabul raporu ve örnek PDF’ler](docs/v1.2.0-kritik-kabul-raporu.md).
 
 **v1.1.9:** Bağımsız karne/liste şablonları, kademe filtresi, Sonuçlar ekranında öğrenci girişi, FMT tahmini/dönüştürücü ve isteğe bağlı sunucu doğrulamalı Turnstile. Testler, yapılandırma ve 7108 ortam farkı incelemesi [sürüm raporunda](docs/v1.1.9-release.md).
 

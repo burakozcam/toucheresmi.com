@@ -1,3 +1,7 @@
+import {examView} from "./result-routes";
+import {enrichReportView} from "./report-metadata";
+import {reportPdf} from "./result-pdf";
+import {studentNumberKey} from "./result-identity";
 import express from "express";
 import { Prisma, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -95,4 +99,15 @@ readerRouter.get("/my-results/:id",reader,wrap(async(req,res)=>{
   const access=await prisma.studentResultAccess.findFirst({where:{id:id(req),userId:req.user!.id,result:{studentPublished:true}},select:{studentNo:true,result:{select:{createdAt:true,snapshot:true}}}});
   if(!access){res.status(404).json({error:"Sonuç bulunamadı, yayımlanmamış veya hesabınıza bağlı değil."});return;}
   try{res.json({createdAt:access.result.createdAt,...privateResult(access.result.snapshot,access.studentNo)});}catch(e){res.status(400).json({error:(e as Error).message});}
+}));
+
+readerRouter.get("/my-results/:id/pdf",reader,wrap(async(req,res)=>{
+ const templateId=z.enum(["summary-card","detailed-card","classic-card","analysis-card","table-card"]).default("detailed-card").parse(req.query.templateId);
+ const access=await prisma.studentResultAccess.findFirst({where:{id:id(req),userId:req.user!.id,result:{studentPublished:true,nextRevision:null,school:{active:true}}},select:{studentNo:true,result:{select:{schoolId:true,keyId:true,snapshot:true}}}});
+ if(!access){res.status(404).json({error:"Sonuç bulunamadı veya hesabınıza bağlı değil."});return;}
+ let own;try{own=resultStudent(access.result.snapshot,access.studentNo);}catch{res.status(404).json({error:"Sonuç erişilemiyor."});return;}
+ const view=await examView(access.result.schoolId,access.result.keyId,true);if(!view){res.status(404).json({error:"Yayımlanmış sonuç bulunamadı."});return;}
+ const candidates=view.data.students.filter(s=>{const source=own as typeof s;return (source.identityHash?s.identityHash===source.identityHash:studentNumberKey(s.studentNo??s.id)===studentNumberKey(source.id))&&s.name===source.name&&s.branch===source.branch;});
+ if(candidates.length!==1){res.status(400).json({error:"Sonuç bağlantısı tek bir öğrenciyle eşleşmiyor. Kurumunuza başvurun."});return;}
+ res.attachment("ogrenci-karnesi.pdf").type("application/pdf").send(await reportPdf(await enrichReportView(view),{kind:"cards",order:"name",hideIdentity:true,studentId:candidates[0].id,templateId}));
 }));

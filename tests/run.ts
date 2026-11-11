@@ -31,3 +31,5 @@ import "./result-workflow.test";
 import "./txt-archive.test";
 
 import "./v119.test";
+
+import "./v120.test";

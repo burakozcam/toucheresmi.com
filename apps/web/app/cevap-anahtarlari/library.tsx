@@ -137,9 +137,9 @@ export default function PublicAnswerKeysPage({ initialItems, initialPublishers, 
             {[1,2,3,4,5,6,7,8,9,10,11,12].map((value) => <option key={value} value={String(value)}>{value}. Sınıf</option>)}
           </select>
         </label>
-        <label className="search-grow">
-          <span>Arama</span>
-          <input value={search} onChange={(event) => updateFilter(() => setSearch(event.target.value))} placeholder="Sınav adı veya yayınevi" />
+        <label className="search-grow answer-search prominent-answer-search">
+          <span>⌕ Cevap anahtarlarında ara</span>
+          <input type="search" aria-label="Cevap anahtarlarında ara" maxLength={200} value={search} onChange={(event) => updateFilter(() => setSearch(event.target.value))} placeholder="Aranacak sınavı veya cevap anahtarını yazın..." />
         </label>
       </section>
 

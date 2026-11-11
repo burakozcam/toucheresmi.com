@@ -18,7 +18,7 @@ export function mergeStudentData(previous:OpticalData,next:OpticalData,replaceSt
     for(const lesson of Object.keys(incoming.booklets)){if(old.booklets[lesson]&&!replaceStudent?.(incoming))throw new Error(`${incoming.studentNo??incoming.id}: ${lesson} oturumu zaten yüklü. Aynı cevaplar tekrar birleştirilemez.`);
       previous.questions.forEach((q,i)=>{if(q.lesson===lesson)old.answers[i]=incoming.answers[i];});old.booklets[lesson]=incoming.booklets[lesson];}
     if(old.id.startsWith("tc-")&&!incoming.id.startsWith("tc-"))old.id=incoming.id;
-    old.sourceLines=[...old.sourceLines,...incoming.sourceLines.map(line=>line+previous.lineCount)];old.identityHash??=incoming.identityHash;old.identityEncrypted??=incoming.identityEncrypted;
+    old.recordBooklets=[...new Set([...(old.recordBooklets??[]),...(incoming.recordBooklets??[])])];old.sourceLines=[...old.sourceLines,...incoming.sourceLines.map(line=>line+previous.lineCount)];old.identityHash??=incoming.identityHash;old.identityEncrypted??=incoming.identityEncrypted;
   }
   const warnings=students.flatMap(s=>{const missing=[...new Set(previous.questions.map(q=>q.lesson))].filter(l=>!s.booklets[l]);return missing.length?[`${s.id}: ${missing.join(", ")} cevapları boş.`]:[];});
   return {...next,students,lineCount:previous.lineCount+next.lineCount,warnings};

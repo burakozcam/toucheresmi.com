@@ -1,3 +1,4 @@
+import {humanVerificationConfig} from "./captcha-config";
 import { verifyHuman } from "./human-verification";
 import bcrypt from "bcryptjs";
 import cors from "cors";
@@ -40,6 +41,8 @@ app.use(express.json({ limit: "1mb" }));
 const recentContactSubmissions = new Map<string, number>();
 app.use("/api/auth/setup", new RequestLimiter(10, 10 * 60_000).middleware());
 app.use("/api/auth/login", new RequestLimiter(20, 10 * 60_000).middleware());
+const loginAccountLimiter=new RequestLimiter(20,10*60_000);
+const limitLoginAccount:express.RequestHandler=(req,res,next)=>{if(req.method!=="POST"){next();return;}const email=typeof req.body?.email==="string"?req.body.email.trim().toLowerCase():"";if(!email){next();return;}const key=crypto.createHmac("sha256",env.JWT_SECRET).update(email).digest("hex"),limit=loginAccountLimiter.check(key);if(limit.allowed){next();return;}res.setHeader("Retry-After",limit.retryAfter);res.status(429).json({error:"Çok sık deneme yapıldı. Lütfen biraz bekleyip tekrar deneyin."});};
 app.use("/api/account/password", new RequestLimiter(10, 10 * 60_000).middleware());
 app.use("/api/auth/register", new RequestLimiter(8, 30 * 60_000).middleware());
 app.use("/api/applications", new RequestLimiter(8, 30 * 60_000).middleware());
@@ -258,11 +261,11 @@ app.get("/api/health", (_request, response) => {
 });
 
 
-const humanConfig={enabled:env.TURNSTILE_ENABLED==="true",secret:env.TURNSTILE_SECRET_KEY,siteKey:env.TURNSTILE_SITE_KEY,hostname:env.TURNSTILE_HOSTNAME};
-app.get("/api/auth/human-verification",(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({enabled:humanConfig.enabled,siteKey:humanConfig.enabled?humanConfig.siteKey:undefined});});
+const humanConfig=humanVerificationConfig();
+app.get("/api/auth/human-verification",(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({enabled:humanConfig.enabled,siteKey:humanConfig.enabled?humanConfig.siteKey:undefined,...(humanConfig.provider?{provider:humanConfig.provider}:{})});});
 for(const [route,action] of [["login","login"],["register","register"]])app.use(`/api/auth/${route}`,async(req,res,next)=>{
  if(req.method!=="POST"){next();return;}
- if(!await verifyHuman(req.body?.humanToken,action,humanConfig)){res.status(403).json({error:"İnsan doğrulaması başarısız veya süresi doldu. Lütfen yeniden deneyin."});return;}next();
+ if(!await verifyHuman(req.body?.humanToken,action,humanConfig)){res.status(403).json({error:"İnsan doğrulaması başarısız veya süresi doldu. Lütfen yeniden deneyin."});return;}if(action==="login"){limitLoginAccount(req,res,next);return;}next();
 });
 
 app.post("/api/auth/login", async (request, response, next) => {

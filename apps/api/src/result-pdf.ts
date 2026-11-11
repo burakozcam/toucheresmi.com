@@ -1,3 +1,4 @@
+import {professionalReportPdf} from "./result-professional-pdf";
 import { reportTemplate } from "../lib/report-templates";
 import { designedReportPdf } from "./result-designed-pdf";
 import { resultGrade } from "../lib/result-grade";
@@ -12,6 +13,7 @@ const displayNo=(s:OpticalStudent,hide:boolean)=>hide&&/^\d{11}$/.test(s.student
 const n=(value:number)=>new Intl.NumberFormat("tr-TR",{maximumFractionDigits:2}).format(value);
 export function reportPdf(view:ReportView,options:ReportOptions):Promise<Buffer>{
  const template=reportTemplate(options.kind,options.templateId);
+ if(["summary-card","detailed-card","school-table"].includes(template.id))return professionalReportPdf(view,{...options,templateId:template.id});
  if(!template.id.startsWith("classic-"))return designedReportPdf(view,{...options,templateId:template.id});
  return new Promise((resolve,reject)=>{
  const doc=new PDFDocument({size:"A4",margin:36,autoFirstPage:false,info:{Title:view.keyName,Author:"Kurumsal Sınav"}}),chunks:Buffer[]=[];doc.on("data",(chunk:Buffer)=>chunks.push(chunk));doc.on("end",()=>resolve(Buffer.concat(chunks)));doc.on("error",reject);

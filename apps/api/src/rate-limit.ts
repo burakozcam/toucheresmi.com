@@ -1,4 +1,4 @@
-import type { RequestHandler } from "express";
+import type { RequestHandler, Request } from "express";
 
 /** Small, bounded in-memory limiter. Forwarded headers are never trusted here. */
 export class RequestLimiter {
@@ -17,9 +17,9 @@ export class RequestLimiter {
     return { allowed: entry.count <= this.limit, retryAfter: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)) };
   }
 
-  middleware(): RequestHandler {
+  middleware(keyForRequest?:(request:Request)=>string): RequestHandler {
     return (request, response, next) => {
-      const result = this.check(request.ip || request.socket.remoteAddress || "unknown");
+      const result = this.check(keyForRequest?keyForRequest(request):request.ip || request.socket.remoteAddress || "unknown");
       if (result.allowed) { next(); return; }
       response.setHeader("Retry-After", result.retryAfter);
       response.status(429).json({ error: "Çok sık deneme yapıldı. Lütfen biraz bekleyip tekrar deneyin." });
