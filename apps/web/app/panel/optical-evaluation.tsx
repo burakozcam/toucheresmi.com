@@ -6,6 +6,7 @@ import {opticalRequest,OpticalRequestError,jsonBody} from "../../lib/optical-api
 import {useOpticalCatalog} from "../../lib/use-optical-catalog";
 import type {OpticalSnapshot} from "../../lib/optical";
 import {compatibleEvaluation} from "../../../api/lib/evaluation-compatibility";
+import FmtGuess from "./fmt-guess";
 import SearchableSelect from "./searchable-select";
 import ExamPicker from "./exam-picker";
 import SchoolLocationSelect from "./school-location-select";
@@ -39,6 +40,7 @@ export default function OpticalEvaluation({token,onSaved,canCreateSchool=false}:
  <div className="exam-upload-grid txt-archive-grid">
   <section className="exam-upload-card exam-upload-files"><header className="exam-upload-card-header"><span className="exam-upload-icon" aria-hidden="true">⇧</span><div><h2>1. TXT dosyalarını sunucuya yükleyin</h2><p>Önce yükleyin, sonra listedekileri işaretleyin.</p></div></header>
    <label className="exam-txt-dropzone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();if(!uploading&&!evaluating)pick(Array.from(e.dataTransfer.files));}}><input ref={input} type="file" multiple aria-label="TXT dosyası" accept=".txt,text/plain" disabled={uploading||evaluating} onChange={e=>pick(Array.from(e.target.files??[]))}/><span className="exam-txt-drop-icon" aria-hidden="true">⇧</span><strong>{localFiles.length?`${localFiles.length} dosya bilgisayardan seçildi`:"TXT dosyalarını seçin veya buraya bırakın"}</strong><small>Her seferinde 1–10 TXT · Dosya başına en fazla 2 MB</small></label>
+   {localFiles.map((file,i)=><FmtGuess key={`${i}-${file.name}`} token={token} file={file} onSelect={id=>{setTemplateId(id);invalidate();}}/>)}
    {!!localFiles.length&&<div className="txt-local-files"><p>Henüz sunucuya yüklenmedi:</p>{localFiles.map((f,i)=><span key={`${i}-${f.name}`}>{f.name}</span>)}</div>}
    <div className="studio-actions"><button className="button button-navy" disabled={!localFiles.length||uploading||evaluating} onClick={()=>void uploadFiles()}>{uploading?"Sunucuya yükleniyor…":"TXT’leri sunucuya yükle"}</button><button className="button button-quiet" disabled={archiveLoading||uploading||evaluating} onClick={()=>void loadArchive()}>Dosya listesini yenile</button></div>
    {archiveError&&<p className="notice error" role="alert">{archiveError}</p>}
@@ -53,6 +55,7 @@ export default function OpticalEvaluation({token,onSaved,canCreateSchool=false}:
    <div className="exam-upload-field"><span>Sınav</span><ExamPicker exams={catalog.keys} value={keyId} disabled={evaluating} onChange={id=>{setKeyId(id);invalidate();}}/>{catalog.loading.keys&&<small role="status">Sınav listesi yükleniyor…</small>}</div>
    {exam?.evaluationReady===false&&<p className="notice">{exam.evaluationIssue}</p>}
    <div className="exam-upload-field"><span>FMT</span><SearchableSelect label="FMT Seçiniz" value={templateId} disabled={evaluating} options={catalog.templates.map(t=>({id:t.id,label:t.name,detail:[t.grade?`${t.grade}. sınıf`:"",`${t.layout.lineLength} karakter`].filter(Boolean).join(" · ")}))} placeholder="FMT adı veya sınıf ara…" emptyMessage={catalog.loading.templates?"FMT listesi yükleniyor…":"Seçilebilir FMT bulunamadı."} onChange={id=>{setTemplateId(id);invalidate();}}/></div>
+   {selectedIds.length>0&&<FmtGuess token={token} fileIds={selectedIds} onSelect={id=>{setTemplateId(id);invalidate();}}/>}
    {incompatible&&<p className="notice error" role="alert">FMT ile seçilen sınavın sınıfı veya soru dağılımı uyuşmuyor. Uygun FMT’yi seçin.</p>}
    <div className="exam-upload-field"><label htmlFor="session-merge">Oturum birleştirme</label><select id="session-merge" value={mergeSessions} disabled={evaluating} onChange={e=>{setMergeSessions(e.target.value);invalidate();}}><option value="true">Aynı öğrenciye ait sınav verilerini birleştir</option><option value="false">Birleştirme; oturumları ayrı tut</option></select></div>
    <SchoolLocationSelect schools={catalog.schools} value={schoolId} disabled={evaluating} loading={catalog.loading.schools} onChange={id=>{setSchoolId(id);invalidate();}}/>

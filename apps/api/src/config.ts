@@ -2,6 +2,10 @@ import "dotenv/config";
 import { z } from "zod";
 
 const environmentSchema = z.object({
+  TURNSTILE_ENABLED:z.enum(["true","false"]).default("false"),
+  TURNSTILE_SECRET_KEY:z.string().default(""),
+  TURNSTILE_SITE_KEY:z.string().default(""),
+  TURNSTILE_HOSTNAME:z.string().default(""),
   DATABASE_URL: z.string().min(1),
   TXT_STORAGE_KEY:z.preprocess(v=>v===""?undefined:v,z.string().min(32).optional()),
   JWT_SECRET: z.string().min(32, "JWT_SECRET en az 32 karakter olmalıdır."),
@@ -17,6 +21,7 @@ const environmentSchema = z.object({
   STORAGE_DIR: z.string().min(1).default("./storage"),
   MAX_UPLOAD_SIZE: z.coerce.number().int().positive().default(10485760),
 }).superRefine((values, context) => {
+  if(values.TURNSTILE_ENABLED==="true"&&(!values.TURNSTILE_SECRET_KEY||!values.TURNSTILE_SITE_KEY||!values.TURNSTILE_HOSTNAME))context.addIssue({code:z.ZodIssueCode.custom,path:["TURNSTILE_ENABLED"],message:"Turnstile etkinleştirilirken sunucu anahtarı, site anahtarı ve hostname birlikte gereklidir."});
   if (Boolean(values.SMTP_USER) !== Boolean(values.SMTP_PASSWORD)) {
     context.addIssue({
       code: z.ZodIssueCode.custom,

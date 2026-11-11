@@ -1,0 +1,4 @@
+7108      00001ÇAÐRI     ÖRNEK     8 TEST0000001K B                                                                                DDCABCBCDBDDBCDCBCBBBDBADDDBDCDCBABCADCA
+7108      00001ÇAÐRI     ÖRNEK     8 TEST0000001K ABCDCBCADBDAACABDBCDCBCAADBCABD          BAACADCBDB          ACADACBDCD                                                  
+7108000001     ÖÐRENCÝ   ÖRNEK     8 TEST0000002K BCDCBDBACDADBDACBCACBDBACDDAACD          CDBADACACB          CCDACABCCA                                                  
+7108      00002ÖÐRENCÝ   ÖRNEK     8 TEST0000002K B                                                                                DADAB BC BD  CDDB  ADBDACDABDCDCCACCADCA

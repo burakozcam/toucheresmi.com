@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict'),http=require('node:http');
+Object.assign(process.env,{DATABASE_URL:'postgresql://test:test@127.0.0.1:1/test',JWT_SECRET:'human-verification-test-only-at-least-32-characters',TURNSTILE_ENABLED:'true',TURNSTILE_SITE_KEY:'public-test-key',TURNSTILE_SECRET_KEY:'server-only-test-key',TURNSTILE_HOSTNAME:'web.example.test'});
+const {prisma}=require('../../apps/api/src/db.ts');let databaseCalls=0,providerCalls=0,answer={success:false};
+prisma.user.findUnique=async()=>{databaseCalls++;return null;};prisma.auditLog.create=async()=>({});
+global.fetch=async(url,options)=>{providerCalls++;assert.equal(url,'https://challenges.cloudflare.com/turnstile/v0/siteverify');assert.equal(options.body.get('secret'),'server-only-test-key');return {ok:true,json:async()=>answer};};
+const {app}=require('../../apps/api/src/server.ts');
+const request=(port,path,body)=>new Promise((resolve,reject)=>{const req=http.request({hostname:'127.0.0.1',port,path,method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{}},res=>{let value='';res.on('data',b=>value+=b);res.on('end',()=>resolve({status:res.statusCode,value:JSON.parse(value)}));});req.on('error',reject);req.end(body?JSON.stringify(body):undefined);});
+(async()=>{const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const port=server.address().port;
+try{const config=await request(port,'/api/auth/human-verification');assert.deepEqual(config.value,{enabled:true,siteKey:'public-test-key'});assert.ok(!JSON.stringify(config.value).includes('server-only'));
+for(const path of ['/api/auth/login','/api/auth/register','/api/public-results/lookup','/api/public-results/pdf'])assert.equal((await request(port,path,{email:'test@example.test',password:'fake-password',role:'STUDENT'})).status,403);
+assert.equal(providerCalls,0);assert.equal(databaseCalls,0);
+const login={email:'test@example.test',password:'fake-password',role:'STUDENT',humanToken:'test-token'};
+assert.equal((await request(port,'/api/auth/login',login)).status,403);
+answer={success:true,hostname:'other.example.test',action:'login'};assert.equal((await request(port,'/api/auth/login',login)).status,403);
+answer={success:true,hostname:'web.example.test',action:'register'};assert.equal((await request(port,'/api/auth/login',login)).status,403);assert.equal(databaseCalls,0);
+answer={success:true,hostname:'web.example.test',action:'login'};assert.equal((await request(port,'/api/auth/login',login)).status,401);assert.equal(databaseCalls,1);
+console.log(JSON.stringify({directApiCannotBypass:true,loginAndRegistrationAndPublicResultsProtected:true,secretNeverReturned:true,actionAndHostnameChecked:true,onlyVerifiedRequestReachesCredentials:true}));
+}finally{server.close();await prisma.$disconnect();}})().catch(e=>{console.error(e);process.exitCode=1;});

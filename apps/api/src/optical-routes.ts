@@ -29,6 +29,7 @@ import {studentNumberKey} from "./result-identity";
 import { resultRouter } from "./result-routes";
 import { identityHash,encryptIdentity } from "./result-identity";
 import { isDeleted,safeSnapshot,mergeStudentData } from "./result-data";
+import { inferFmt } from "./fmt-inference";
 import { convertTxt } from "./txt-converter";
 
 import { systemEvaluationTemplates, systemEvaluationTemplate } from "./evaluation-templates";
@@ -188,6 +189,20 @@ opticalRouter.post("/templates/preview",admin,uploadLimit,upload.single("file"),
   let layout;try{layout=opticalLayoutSchema.parse(JSON.parse(input.layout));}catch{res.status(400).json({error:"FMT yerleşimi geçersiz. Alan çakışmalarını ve karakter konumlarını düzeltin."});return;}
   try{const report=previewFmt(decodeOptical(req.file.buffer,input.encoding),layout);const coordinates=input.originalFmt?inspectFmtCoordinates(input.originalFmt,layout):null;if(coordinates&&!coordinates.valid){report.canSave=false;report.errors.push(...coordinates.errors);report.errorCount+=coordinates.errors.length;}res.json({...report,coordinates,validationToken:report.canSave&&input.originalFmt&&(input.readerName?.length??0)>=2?fmtProof(req.user!.id,input.originalFmt,layout,input.readerName!,input.encoding):undefined});}catch(e){res.status(400).json({error:(e as Error).message});}
 }));
+async function inferenceTemplates(){
+ const saved=await prisma.opticalTemplate.findMany({where:{OR:[{active:true},{id:{in:systemEvaluationTemplates().map(t=>t.id)}}]},select:{id:true,name:true,layout:true,active:true}});
+ return [...saved.filter(t=>t.active),...systemEvaluationTemplates().filter(t=>!saved.some(s=>s.id===t.id))];
+}
+opticalRouter.post("/infer-fmt",uploadLimit,upload.single("file"),wrap(async(req,res)=>{
+ const input=z.object({fileIds:z.array(z.string().min(1)).min(1).max(10).optional()}).parse(req.body);
+ let files:Express.Multer.File[]=[];
+ if(input.fileIds)files=(await readArchivedTxts(req.user!,input.fileIds)).map(item=>item.file);
+ else if(req.file&&/\.txt$/i.test(req.file.originalname))files=[req.file];
+ if(!files.length){res.status(400).json({error:"Bir TXT dosyası seçin."});return;}
+ const templates=await inferenceTemplates();
+ const reports=files.map(file=>{try{return inferFmt(decodeOptical(file.buffer),templates);}catch{return {confidence:"failed",message:"FMT tahmini başarısız. Lütfen şablonu manuel seçin.",candidates:[]};}});
+ res.json(reports);
+}));
 for(const mode of ["preview","download"]){
   opticalRouter.post(`/convert/${mode}`,uploadLimit,upload.single("file"),wrap(async(req,res)=>{
     res.setHeader("Cache-Control","private, no-store");
@@ -195,7 +210,7 @@ for(const mode of ["preview","download"]){
     if(!req.file||!/\.txt$/i.test(req.file.originalname)){res.status(400).json({error:"En fazla 2 MB boyutunda TXT dosyası yükleyin."});return;}
     let lessonMap:Record<string,string>|undefined;
     try{if(input.lessonMap)lessonMap=z.record(z.string().max(80),z.string().max(80)).parse(JSON.parse(input.lessonMap));}catch{res.status(400).json({error:"Ders eşleştirmeleri geçersiz."});return;}
-    const[source,target]=await Promise.all([prisma.opticalTemplate.findFirst({where:{id:input.sourceId,active:true}}),prisma.opticalTemplate.findFirst({where:{id:input.targetId,active:true}})]);
+    const[source,target]=await Promise.all([evaluationTemplate(input.sourceId),evaluationTemplate(input.targetId)]);
     if(!source||!target){res.status(404).json({error:"Etkin kaynak ve hedef FMT seçin."});return;}
     let result;try{result=convertTxt(decodeOptical(req.file.buffer,input.inputEncoding),opticalLayoutSchema.parse(source.layout),opticalLayoutSchema.parse(target.layout),{lessonMap,lineEnding:input.lineEnding,encoding:input.outputEncoding,allowLoss:input.allowLoss==="true"});}catch(e){res.status(400).json({error:e instanceof Error?e.message:"TXT dönüştürülemedi."});return;}
     if(mode==="preview"){res.json(result.report);return;}
@@ -223,7 +238,11 @@ for(const endpoint of ["preview","evaluate"]){
     if(!template || !key){res.status(400).json({error:"Etkin bir FMT ve cevap anahtarı seçin."});return;}
     let data,decoded="";
     try {decoded=files.map(file=>decodeOptical(file.buffer,input.encoding).replace(/[\r\n]+$/g,"")).join("\n");data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{mergeSessions:input.mergeSessions==="true",hashIdentity:identityHash,encryptIdentity});}
-    catch(error){res.status(400).json({error:error instanceof Error?error.message:"TXT okunamadı."});return;}
+    catch(error){
+      const inference=decoded?inferFmt(decoded,systemEvaluationTemplates()):null,best=inference?.candidates[0];
+      const suggested=inference?.confidence==="strong"&&best&&!best.aliases.includes(template.id)&&canonicalJson(opticalLayoutSchema.parse(template.layout))!==canonicalJson(systemEvaluationTemplate(best.id)?.layout)?best:undefined;
+      res.status(400).json({error:(error instanceof Error?error.message:"TXT okunamadı.")+(suggested?` İçerik ${suggested.name} ile uyumlu görünüyor. Seçili kayıtlı FMT'nin alan konumlarını kontrol edin veya önerilen sistem FMT'sini açıkça seçip yeniden önizleyin.`:""),...(suggested?{fmtSuggestion:{id:suggested.id,name:suggested.name}}:{})});return;
+    }
     const uploadChecksum=checksum(decoded+"\nmerge:"+input.mergeSessions);
     const duplicate=await prisma.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum,supersedesId:null},select:{id:true,snapshot:true}});
     const previousRows=await prisma.opticalResult.findMany({where:{schoolId:school.id,keyId:key.id,nextRevision:null},orderBy:{createdAt:"desc"}});

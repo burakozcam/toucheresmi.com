@@ -74,3 +74,7 @@ DATABASE_URL='postgresql://TEST_USER:TEST_PASSWORD@127.0.0.1:TEST_PORT/ks_qa' no
 ```
 
 Test sentetik bayi, kullanıcı, kurum ve sınavlar oluşturur; gerçek Prisma, dosya sistemi ve PostgreSQL JSONB kullanır. 4101 HTTPS API’sini kendisi açıp kapatır. Arşiv dosyaları `/tmp/ks-txt-postgres-*`, görüntüler `/tmp/ks-txt-archive-*` altındadır. Gri/yeşil dosya durumları, yenileme sonrası saklama, seçilen alt küme, farklı sınavlarda tekrar kullanım, ayrı oturumda yeniden değerlendirme, kurum kapsamı, 10 dosya sınırı, şifreli disk dosyaları ve il→ilçe→kurum akışı iki ekranda doğrulanır. `results-workflow.cjs` bellek arşiviyle PDF/Excel/ZIP ve öğrenci sonuçları regresyonunu korur.
+
+## v1.1.9
+
+Üretim build'inden sonra 3100 portunda yerel Web açıkken `node tests/e2e/v119-login.cjs` giriş yerleşimini, rol parametrelerini ve eski öğrenci bağlantısını doğrular. `node --import tsx tests/e2e/v119-human.cjs` kendi geçici localhost portunu açar; Turnstile etkin yapılandırmasında API'nin doğrulamayı atlayamadığını taklit Siteverify ile sınar. `results-workflow.cjs` ayrıca bağımsız PDF şablonları, FMT içerik tahmini ve 7108→8050 indirmeyi test eder. Playwright/Chromium için yukarıdaki ortam değişkenleri geçerlidir. Hepsi anonim veri kullanır; üretim bağlantısı veya dağıtım yapmaz.

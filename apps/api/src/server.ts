@@ -1,3 +1,4 @@
+import { verifyHuman } from "./human-verification";
 import bcrypt from "bcryptjs";
 import cors from "cors";
 import express from "express";
@@ -254,6 +255,14 @@ app.use(scheduleRouter);
 
 app.get("/api/health", (_request, response) => {
   response.json({ status: "ok" });
+});
+
+
+const humanConfig={enabled:env.TURNSTILE_ENABLED==="true",secret:env.TURNSTILE_SECRET_KEY,siteKey:env.TURNSTILE_SITE_KEY,hostname:env.TURNSTILE_HOSTNAME};
+app.get("/api/auth/human-verification",(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({enabled:humanConfig.enabled,siteKey:humanConfig.enabled?humanConfig.siteKey:undefined});});
+for(const [route,action] of [["login","login"],["register","register"]])app.use(`/api/auth/${route}`,async(req,res,next)=>{
+ if(req.method!=="POST"){next();return;}
+ if(!await verifyHuman(req.body?.humanToken,action,humanConfig)){res.status(403).json({error:"İnsan doğrulaması başarısız veya süresi doldu. Lütfen yeniden deneyin."});return;}next();
 });
 
 app.post("/api/auth/login", async (request, response, next) => {

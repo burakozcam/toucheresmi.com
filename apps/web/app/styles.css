@@ -1123,3 +1123,12 @@ button, .button { touch-action: manipulation; }
 :root[data-theme="dark"] .txt-pending { color:#74d9a1; background:#14854916; }
 @media(max-width:1050px) { .txt-archive-grid { grid-template-columns:1fr; } }
 @media(max-width:520px) { .txt-archive-row { grid-template-columns:18px minmax(0,1fr) 80px; gap:7px; padding:12px 9px; } }
+
+.fmt-guess-warning { background: #fff5cc; color: #634800; border: 1px solid #d9a727; }
+.admin-login-area { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border, #ccd3df); }
+.student-login { margin: 1rem 0 2rem; padding: 1rem; border: 1px solid var(--border, #ccd3df); border-radius: 12px; }
+.student-login summary { cursor: pointer; font-weight: 700; }
+.student-login form { display: grid; gap: 1rem; margin-top: 1rem; }
+.login-page .auth-layout, .login-page .login-card { min-width: 0; }
+.login-page .auth-footer { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+@media (max-width: 680px) { .login-page .auth-header { gap: 12px; } }

@@ -1,0 +1,9 @@
+"use client";
+import {useEffect,useState} from "react";
+import {API_URL} from "../lib/api";
+import HumanVerification from "./human-verification";
+export default function StudentLogin(){
+ const [expanded,setExpanded]=useState(false);useEffect(()=>{if(location.hash==="#ogrenci-girisi")setExpanded(true);},[]);
+ const [error,setError]=useState(""),[busy,setBusy]=useState(false),[humanToken,setHumanToken]=useState(""),[attempt,setAttempt]=useState(0);
+ return <details open={expanded} onToggle={e=>setExpanded(e.currentTarget.open)} id="ogrenci-girisi" className="student-login"><summary>Öğrenci / veli hesabımla giriş yap</summary><p>Kurumunuzun oluşturduğu hesabınızla yalnızca size bağlı sonuçlara erişin.</p><form onSubmit={async e=>{e.preventDefault();setBusy(true);setError("");const f=new FormData(e.currentTarget);try{const r=await fetch(`${API_URL}/api/auth/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:f.get("email"),password:f.get("password"),role:f.get("role"),humanToken})});const data=await r.json();if(!r.ok||!data.token)throw Error(data.error??"Giriş yapılamadı.");sessionStorage.setItem("kurumsal-auth-token",data.token);sessionStorage.setItem("kurumsal-auth-user",JSON.stringify(data.user));location.assign("/sonuclarim");}catch(err){setError((err as Error).message);}finally{setBusy(false);setHumanToken("");setAttempt(n=>n+1);}}}><label>Hesap türü<select name="role"><option value="STUDENT">Öğrenci</option><option value="PARENT">Veli</option></select></label><label>E-posta<input required type="email" name="email" autoComplete="username"/></label><label>Şifre<input required type="password" name="password" autoComplete="current-password"/></label><HumanVerification key={attempt} action="login" onToken={setHumanToken}/><button className="button button-navy" disabled={busy}>Hesabımla giriş yap</button></form>{error&&<p className="notice error" role="alert">{error}</p>}</details>;
+}

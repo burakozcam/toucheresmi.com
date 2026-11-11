@@ -90,7 +90,11 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     for(const literal of layout.literals??[])if(line.slice(literal.start-1,literal.start-1+literal.text.length)!==literal.text)throw new Error(`${label}: FMT sabit alanı eşleşmiyor. Kaynak formatı kontrol edin.`);
     const f = layout.fields, id = slice(line, f.id), identity = slice(line, f.identity), name = [slice(line,f.name),slice(line,f.surname)].filter(Boolean).join(" ").replace(/\s+/g," ");
     const grade = slice(line,f.grade), branch = slice(line,f.branch), book = slice(line,f.booklet).toUpperCase();
-    if (!name || (!id && !identity) || !/^[A-D]$/.test(book)) throw new Error(`${label}: ad soyad, öğrenci kimliği veya kitapçık türü eksik/geçersiz.`);
+    if (/[\x00-\x1f\x7f\ufffd]/.test(line)) throw new Error(`${label}: kontrol karakteri veya çözümlenemeyen karakter var. Kaynak kodlamasını kontrol edin.`);
+    const position=(field:{start:number;length:number})=>`${field.start}-${field.start+field.length-1} (1 tabanlı)`;
+    if (!name) throw new Error(`${label}: ad soyad alanı boş. Ad konumu: ${position(f.name)}; FMT eşleştirmesini kontrol edin.`);
+    if (!id && !identity) throw new Error(`${label}: öğrenci no ve eşleştirme kimliği boş. Öğrenci no konumu: ${position(f.id)}.`);
+    if (!/^[A-D]$/.test(book)) throw new Error(`${label}: kitapçık türü eksik/geçersiz. Beklenen A/B/C/D; konum: ${position(f.booklet)}. FMT/kodlamayı kontrol edin.`);
     if (!questions.every(q=>q.positions[book])) throw new Error(`${label}: ${book} kitapçığı anahtarda tanımlı değil.`);
     const numberKey=`${grade}:${id.replace(/^0+(?=\d)/,"")}`;
     const existing=options.mergeSessions===false?undefined:(identity?identities.get(identity):undefined)??(id?numbers.get(numberKey):undefined);

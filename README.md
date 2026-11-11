@@ -1,4 +1,6 @@
-# Kurumsal Sınav v1.1.8 — Release Candidate
+# Kurumsal Sınav v1.1.9 — Release Candidate
+
+**v1.1.9:** Bağımsız karne/liste şablonları, kademe filtresi, Sonuçlar ekranında öğrenci girişi, FMT tahmini/dönüştürücü ve isteğe bağlı sunucu doğrulamalı Turnstile. Testler, yapılandırma ve 7108 ortam farkı incelemesi [sürüm raporunda](docs/v1.1.9-release.md).
 
 **v1.1.8 RC:** FMT kütüphane ve arama akışı, TXT/FMT/sınav seçimi, panel metinleri, karşılama alanı ve profil görünümü sadeleştirildi. Değerlendirme motoru ve kurum erişim kapsamı korunmuştur. Doğrulama kapsamı [v1.1.8 RC raporunda](docs/v1.1.8-rc-release.md).
 

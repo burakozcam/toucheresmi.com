@@ -1,13 +1,19 @@
+import { reportTemplate } from "../lib/report-templates";
+import { designedReportPdf } from "./result-designed-pdf";
+import { resultGrade } from "../lib/result-grade";
 import path from "node:path";
 import type { OpticalStudent } from "./optical-core";
 import { decryptIdentity } from "./result-identity";
 const PDFDocument=require("pdfkit");
 export type ReportView=any;
-export type ReportOptions={kind:"cards"|"school"|"classes";order:"score"|"name";hideIdentity:boolean;branch?:string;studentId?:string};
-export function selectedStudents(view:ReportView,options:ReportOptions):OpticalStudent[]{return view.data.students.filter((s:OpticalStudent)=>(!options.branch||s.branch===options.branch)&&(!options.studentId||s.id===options.studentId)).sort((a:OpticalStudent,b:OpticalStudent)=>options.order==="name"?a.name.localeCompare(b.name,"tr"):(view.summary.find((r:any)=>r.id===b.id).score-view.summary.find((r:any)=>r.id===a.id).score||a.name.localeCompare(b.name,"tr")));}
+export type ReportOptions={kind:"cards"|"school"|"classes";order:"score"|"name";hideIdentity:boolean;branch?:string;grade?:string;templateId?:string;studentId?:string};
+export function selectedStudents(view:ReportView,options:ReportOptions):OpticalStudent[]{return view.data.students.filter((s:OpticalStudent)=>(!options.grade||resultGrade(s.branch)===options.grade)&&(!options.branch||s.branch===options.branch)&&(!options.studentId||s.id===options.studentId)).sort((a:OpticalStudent,b:OpticalStudent)=>options.order==="name"?a.name.localeCompare(b.name,"tr"):(view.summary.find((r:any)=>r.id===b.id).score-view.summary.find((r:any)=>r.id===a.id).score||a.name.localeCompare(b.name,"tr")));}
 const displayNo=(s:OpticalStudent,hide:boolean)=>hide&&/^\d{11}$/.test(s.studentNo??s.id)?"***********":(s.studentNo??s.id).startsWith("tc-")?"—":s.studentNo??s.id;
 const n=(value:number)=>new Intl.NumberFormat("tr-TR",{maximumFractionDigits:2}).format(value);
-export function reportPdf(view:ReportView,options:ReportOptions):Promise<Buffer>{return new Promise((resolve,reject)=>{
+export function reportPdf(view:ReportView,options:ReportOptions):Promise<Buffer>{
+ const template=reportTemplate(options.kind,options.templateId);
+ if(!template.id.startsWith("classic-"))return designedReportPdf(view,{...options,templateId:template.id});
+ return new Promise((resolve,reject)=>{
  const doc=new PDFDocument({size:"A4",margin:36,autoFirstPage:false,info:{Title:view.keyName,Author:"Kurumsal Sınav"}}),chunks:Buffer[]=[];doc.on("data",(chunk:Buffer)=>chunks.push(chunk));doc.on("end",()=>resolve(Buffer.concat(chunks)));doc.on("error",reject);
  doc.registerFont("R",path.join(__dirname,"../assets/fonts/LiberationSans-Regular.ttf"));doc.registerFont("B",path.join(__dirname,"../assets/fonts/LiberationSans-Bold.ttf"));let y=0,pageTitle="";
  function page(title:string){pageTitle=title;doc.addPage();doc.rect(0,0,596,92).fill("#172b4d");doc.fillColor("#fff").font("B").fontSize(16).text("KURUMSAL SINAV",36,22);doc.font("R").fontSize(11).text(view.keyName,36,50,{width:520,height:30});doc.fillColor("#172b4d").font("B").fontSize(13).text(title,36,110,{width:520});y=110+doc.heightOfString(title,{width:520})+18;}
@@ -30,4 +36,4 @@ export function reportPdf(view:ReportView,options:ReportOptions):Promise<Buffer>
  }
  doc.end();
  });}
-export function reportExcelRows(view:ReportView,options:ReportOptions){return [["Kurum","Sınav","Öğrenci No","Ad Soyad","Sınıf",...(!options.hideIdentity?["TC"]:[]),"Genel Sıra","Genel Katılım","Kurum Sıra","Kurum Katılım","Sınıf Sıra","Sınıf Katılım","Net","Puan",...view.data.questions.filter((q:any,i:number,a:any[])=>a.findIndex(x=>x.lesson===q.lesson)===i).flatMap((q:any)=>[`${q.lesson} D`,`${q.lesson} Y`,`${q.lesson} B`,`${q.lesson} Net`])],...selectedStudents(view,options).map(s=>{const r=view.summary.find((r:any)=>r.id===s.id),rank=view.rankings[s.id];return[view.schoolName,view.keyName,displayNo(s,options.hideIdentity),s.name,s.branch,...(!options.hideIdentity?[decryptIdentity(s.identityEncrypted)]:[]),rank.generalRank,rank.generalCount,rank.schoolRank,rank.schoolCount,rank.classRank,rank.classCount,r.net,r.score,...r.lessons.flatMap((l:any)=>[l.correct,l.wrong,l.blank,l.net])];})];}
+export function reportExcelRows(view:ReportView,options:ReportOptions){reportTemplate(options.kind,options.templateId);return [["Kurum","Sınav","Öğrenci No","Ad Soyad","Sınıf",...(!options.hideIdentity?["TC"]:[]),"Genel Sıra","Genel Katılım","Kurum Sıra","Kurum Katılım","Sınıf Sıra","Sınıf Katılım","Net","Puan",...view.data.questions.filter((q:any,i:number,a:any[])=>a.findIndex(x=>x.lesson===q.lesson)===i).flatMap((q:any)=>[`${q.lesson} D`,`${q.lesson} Y`,`${q.lesson} B`,`${q.lesson} Net`])],...selectedStudents(view,options).map(s=>{const r=view.summary.find((r:any)=>r.id===s.id),rank=view.rankings[s.id];return[view.schoolName,view.keyName,displayNo(s,options.hideIdentity),s.name,s.branch,...(!options.hideIdentity?[decryptIdentity(s.identityEncrypted)]:[]),rank.generalRank,rank.generalCount,rank.schoolRank,rank.schoolCount,rank.classRank,rank.classCount,r.net,r.score,...r.lessons.flatMap((l:any)=>[l.correct,l.wrong,l.blank,l.net])];})];}

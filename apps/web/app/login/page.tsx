@@ -1,4 +1,5 @@
 "use client";
+import HumanVerification from "../human-verification";
 import ReleaseMark from "../release-mark";
 
 import Link from "next/link";
@@ -18,6 +19,8 @@ const loginTypes = [
 type LoginType = (typeof loginTypes)[number]["id"];
 
 export default function LoginPage() {
+  const [humanToken,setHumanToken]=useState("");
+  const [attempt,setAttempt]=useState(0);
   const [selectedType, setSelectedType] = useState<LoginType>("dealer");
   const [registering, setRegistering] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -26,6 +29,9 @@ export default function LoginPage() {
   const homeHref = "/";
 
   useEffect(()=>{
+    const params=new URLSearchParams(location.search);const type=params.get("type")??params.get("role");
+    if(["student","parent","STUDENT","PARENT"].includes(type??"")){location.replace("/sonuclar#ogrenci-girisi");return;}
+    if(type==="admin")setSelectedType("admin");
     const token=sessionStorage.getItem("kurumsal-auth-token");
     if(!token)return;
     const controller=new AbortController();
@@ -49,7 +55,7 @@ export default function LoginPage() {
     setMessage("");
     setSuccess(false);
     setSubmitting(true);
-    if (!loginTypes.find(t=>t.id===selectedType)?.available) { setMessage("Bu giriş yöntemi henüz aktif değil."); setSubmitting(false); return; }
+    if (!loginTypes.find(t=>t.id===selectedType)?.available) { setMessage("Bu giriş yöntemi henüz aktif değil."); setSubmitting(false);setHumanToken("");setAttempt(n=>n+1); return; }
 
     const form = new FormData(event.currentTarget);
     try {
@@ -57,6 +63,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          humanToken,
           email: form.get("email"),
           password: form.get("password"),
           role: selectedType === "admin" ? "SUPER_ADMIN" : selectedType === "student" ? "STUDENT" : selectedType === "parent" ? "PARENT" : "DEALER",
@@ -69,7 +76,7 @@ export default function LoginPage() {
       };
       if (!response.ok || !result.token || !result.user) {
         setMessage(result.error ?? "Giriş yapılamadı. Bilgilerinizi kontrol edip tekrar deneyin.");
-        setSubmitting(false);
+        setSubmitting(false);setHumanToken("");setAttempt(n=>n+1);
         return;
       }
       window.sessionStorage.setItem("kurumsal-auth-token", result.token);
@@ -79,7 +86,7 @@ export default function LoginPage() {
       window.setTimeout(() => window.location.assign(result.user!.role === "STUDENT" || result.user!.role === "PARENT" ? "/sonuclarim" : "/panel"), 650);
     } catch {
       setMessage("Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.");
-      setSubmitting(false);
+      setSubmitting(false);setHumanToken("");setAttempt(n=>n+1);
     }
   }
 
@@ -98,6 +105,7 @@ export default function LoginPage() {
           firstName: form.get("firstName"),
           lastName: form.get("lastName"),
           phone: form.get("phone"),
+          humanToken,
           email: form.get("email"),
           password: form.get("password"),
         }),
@@ -105,7 +113,7 @@ export default function LoginPage() {
       const result = await response.json() as { error?: string; message?: string };
       if (!response.ok) {
         setMessage(result.error ?? "Üyelik talebi gönderilemedi. Bilgilerinizi kontrol edin.");
-        setSubmitting(false);
+        setSubmitting(false);setHumanToken("");setAttempt(n=>n+1);
         return;
       }
       setSuccess(true);
@@ -114,7 +122,7 @@ export default function LoginPage() {
     } catch {
       setMessage("Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.");
     } finally {
-      setSubmitting(false);
+      setSubmitting(false);setHumanToken("");setAttempt(n=>n+1);
     }
   }
 
@@ -138,7 +146,7 @@ export default function LoginPage() {
           <h2>{registering ? "Üyelik talebi oluşturun" : "Hesabınıza giriş yapın"}</h2>
           <p className="login-subtitle">{registering ? "Bilgileriniz yönetici onayına gönderilir." : "Devam etmek için giriş türünüzü seçin."}</p>
           {!registering && <div className="login-types">
-            {loginTypes.map((type) => <button className={`login-type ${selectedType === type.id ? "active" : ""} ${!type.available ? "unavailable" : ""}`} key={type.id} onClick={() => selectType(type.id, type.available)} type="button">
+            {loginTypes.filter(t=>!["admin","student","parent"].includes(t.id)).map((type) => <button className={`login-type ${selectedType === type.id ? "active" : ""} ${!type.available ? "unavailable" : ""}`} key={type.id} onClick={() => selectType(type.id, type.available)} type="button">
               <span className="login-type-icon">{type.icon}</span>
               <span className="login-type-copy"><strong>{type.title}</strong><small>{type.description}</small></span>
               <span className="login-type-arrow">{selectedType === type.id ? "●" : "○"}</span>
@@ -150,16 +158,22 @@ export default function LoginPage() {
             <label>Telefon<div className="input-wrap"><input name="phone" type="tel" autoComplete="tel" minLength={7} maxLength={30} required /></div></label>
             <label>E-posta<div className="input-wrap"><input name="email" type="email" autoComplete="email" maxLength={254} required /></div></label>
             <label>Şifre <small>(en az 12 karakter)</small><div className="input-wrap"><input name="password" type="password" autoComplete="new-password" minLength={12} maxLength={72} required /></div></label>
-            <button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Üyelik talebi gönder"} <span>→</span></button>
-          </form> : selectedType !== "institution" ? <form className="login-form" onSubmit={submitLogin}>
+            <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Üyelik talebi gönder"} <span>→</span></button>
+          </form> : selectedType === "admin" ? null : selectedType !== "institution" ? <form className="login-form" onSubmit={submitLogin}>
             <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>
             <label>Şifre<div className="input-wrap"><span>▣</span><input name="password" type="password" autoComplete="current-password" placeholder="Şifrenizi girin" required /></div></label>
-            <button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span>→</span></button>
+            <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span>→</span></button>
           </form> : <div className="inactive-panel"><span>i</span><p>Bu giriş türü şu anda kullanıma kapalı. Erişim için sistem yöneticisine başvurun.</p></div>}
           {message && <p className={`login-message ${success ? "message-success" : "message-error"}`} role="status">{success ? "✓" : "!"} {message}</p>}
           <p className="field-help">Öğrenci ve veli hesaplarını kurumunuzun bayisi oluşturur; ilk şifrenizi verilen davet bağlantısından belirleyin.</p>
           <p className="login-help">{registering ? "Zaten hesabınız var?" : "Üye olmak mı istiyorsunuz?"} <button type="button" className="auth-switch" onClick={() => { setRegistering(!registering); setMessage(""); setSuccess(false); }}>{registering ? "Giriş yapın" : "Üye ol"}</button></p>
+          <p className="login-help"><Link href="/sonuclar#ogrenci-girisi">Öğrenci ve veli girişi → Sonuçlar</Link></p>
           {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <Link href="/contact#contact-form">Bize ulaşın</Link></p>}
+          <div className="admin-login-area"><button type="button" className="button button-quiet" onClick={()=>{setRegistering(false);selectType("admin",true);}}>⚙ Yönetici Girişi</button><p className="field-help">Yalnızca sistem yöneticileri içindir.</p>{selectedType==="admin"&&!registering&&<form className="login-form" onSubmit={submitLogin}>
+            <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>
+            <label>Şifre<div className="input-wrap"><span>▣</span><input name="password" type="password" autoComplete="current-password" placeholder="Şifrenizi girin" required /></div></label>
+            <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span>→</span></button>
+          </form>}</div>
         </section>
       </section>
       <footer className="auth-footer">© 2026 kurumsalsinav.com · <ReleaseMark/> <span>Ölçün. Değerlendirin. Geliştirin.</span></footer>

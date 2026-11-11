@@ -1,0 +1,21 @@
+const assert=require('node:assert/strict');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined,headless:true,args:['--no-sandbox']});
+try{const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'}),page=await context.newPage(),errors=[],roles=[];page.on('pageerror',e=>errors.push(e.message));
+await context.addInitScript(()=>sessionStorage.setItem('kurumsal-splash-seen','1'));
+await context.route('https://api.kurumsalsinav.com/**',async route=>{const url=new URL(route.request().url());
+ if(url.pathname==='/api/auth/login'){roles.push(route.request().postDataJSON().role);return route.fulfill({status:401,json:{error:'Anonim test: hatalı giriş'}});}
+ if(url.pathname==='/api/auth/human-verification')return route.fulfill({json:{enabled:false}});
+ return route.fulfill({json:[]});});
+await page.goto('http://127.0.0.1:3100/login');
+assert.equal(await page.getByRole('button',{name:/Öğrenci Girişi/}).count(),0);
+const admin=page.getByRole('button',{name:'⚙ Yönetici Girişi',exact:true});await admin.click();
+await page.locator('.admin-login-area input[name="email"]').fill('admin@example.test');await page.locator('.admin-login-area input[name="password"]').fill('anonymous-test-password');
+await page.locator('.admin-login-area').getByRole('button',{name:/^Giriş Yap/}).click();await page.getByText('Anonim test: hatalı giriş',{exact:false}).waitFor();assert.equal(roles.at(-1),'SUPER_ADMIN');
+await page.screenshot({path:'/tmp/ks-login-admin-desktop.png',fullPage:true});
+await page.setViewportSize({width:390,height:844});await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));await page.screenshot({path:'/tmp/ks-login-admin-mobile.png',fullPage:true});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),JSON.stringify(await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll("body *")].filter(e=>e.getBoundingClientRect().right>innerWidth+2).map(e=>({tag:e.tagName,cls:e.className,right:e.getBoundingClientRect().right})).slice(0,15)}))));
+await page.goto('http://127.0.0.1:3100/login?type=student');await page.waitForURL('**/sonuclar#ogrenci-girisi');
+await page.locator('.student-login input[name="email"]').fill('student@example.test');await page.locator('.student-login input[name="password"]').fill('anonymous-test-password');await page.getByRole('button',{name:'Hesabımla giriş yap',exact:true}).click();await page.getByText('Anonim test: hatalı giriş',{exact:true}).waitFor();assert.equal(roles.at(-1),'STUDENT');
+assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await page.screenshot({path:'/tmp/ks-student-login-mobile.png',fullPage:true});
+assert.deepEqual(errors,[]);console.log(JSON.stringify({adminAtBottom:true,legacyStudentRedirect:true,studentLoginInResults:true,rolesPreserved:true,mobileOverflow:false,jsErrors:errors}));
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

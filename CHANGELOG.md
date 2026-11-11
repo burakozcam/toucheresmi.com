@@ -1,3 +1,13 @@
+## v1.1.9 · 2026-11-11
+
+- Karne ve liste çıktı aileleri ayrıldı; mevcut tasarımlar ve örneklere dayanan ek PDF seçenekleri.
+- Sonuçlarda kademe filtresi, yayımlanmış sonuç kapsamı ve belirsiz öğrenci numarası koruması.
+- Öğrenci/veli girişi Sonuçlar'a, yönetici alanı login sayfasının altına taşındı.
+- Açıklanabilir FMT tahmini ve sistem 7108/8050 ile FMT DÖNÜŞTÜRÜCÜ.
+- İsteğe bağlı Turnstile, sunucuda Siteverify/action/hostname kontrolü.
+- 7108 alan bazlı hata açıklamaları ve kodlama/satır sonu regresyonları; gerçek TXT doğrulandı; hata veren kayıtlı yerleşim henüz doğrulanmadı.
+- Yeni migration yok; [v1.1.9 raporu](docs/v1.1.9-release.md).
+
 ## v1.1.8 RC — 11 Kasım 2026 · yerel doğrulama
 
 - Uygulama, Web, API, sağlık bilgisi, footer ve favicon sürümleri 1.1.8 olarak güncellendi.
