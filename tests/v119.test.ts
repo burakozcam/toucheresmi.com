@@ -118,17 +118,18 @@ test("v119 supplied 7108 bytes: anonymous Windows-1254 preserves four records an
  assert.equal(inferFmt(decoded,templates).confidence,"strong");
 });
 
-test("v119 wrong saved 7108 booklet position gives explicit system suggestion, never auto-corrects/evaluates",async()=>{
+test("v119 wrong saved 7108 booklet position is evaluated with an explicit fallback warning",async()=>{
  const {prisma}=await import("../apps/api/src/db"),{opticalRouter}=await import("../apps/api/src/optical-routes");
- const original=[prisma.school.findFirst,prisma.opticalTemplate.findFirst,prisma.opticalKey.findFirst];
+ const original=[prisma.school.findFirst,prisma.opticalTemplate.findFirst,prisma.opticalKey.findFirst,prisma.opticalResult.findFirst,prisma.opticalResult.findMany];
+ prisma.opticalResult.findFirst=(async()=>null) as any;prisma.opticalResult.findMany=(async()=>[]) as any;
  const wrong=structuredClone(layout7108);wrong.fields.booklet.start=50;wrong.fields.session!.start=51;
  prisma.school.findFirst=(async()=>({id:"school",name:"Anonim Kurum"})) as any;
  prisma.opticalTemplate.findFirst=(async()=>({id:"wrong-saved",name:"7108",layout:wrong,active:true})) as any;
  prisma.opticalKey.findFirst=(async()=>({id:"key",questions:q,penalty:3,publication:{grade:8}})) as any;
  try{const route=(opticalRouter as any).stack.find((l:any)=>l.route?.path==="/preview").route.stack.at(-1).handle;let status=200,value:any;
  await route({user:{id:"dealer-user",role:"DEALER",dealerId:"dealer"},body:{schoolId:"school",templateId:"wrong-saved",keyId:"key"},file:{originalname:"input.txt",buffer:fs.readFileSync(new URL("./fixtures/7108-windows1254-anonymous.txt",import.meta.url))}}, {status(n:number){status=n;return this;},json(v:any){value=v;}},(e:any)=>{if(e)throw e;});
- assert.equal(status,400);assert.equal(value.fmtSuggestion.id,"system-fmt-7108");assert.match(value.error,/50-50/);assert.match(value.error,/açıkça seçip/);
- }finally{prisma.school.findFirst=original[0] as any;prisma.opticalTemplate.findFirst=original[1] as any;prisma.opticalKey.findFirst=original[2] as any;}
+ assert.equal(status,200);assert.ok(value.data.warnings.some((w:string)=>w.includes("A kitapçığı varsayıldı")));assert.ok(value.previewToken);
+ }finally{prisma.school.findFirst=original[0] as any;prisma.opticalTemplate.findFirst=original[1] as any;prisma.opticalKey.findFirst=original[2] as any;prisma.opticalResult.findFirst=original[3] as any;prisma.opticalResult.findMany=original[4] as any;}
 });
 
 test("v119 original 7108 FMT analysis and Windows-1254 TXT use identical executable positions",async()=>{

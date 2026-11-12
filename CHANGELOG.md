@@ -1,3 +1,10 @@
+# v1.2.3 · 2026-11-13 · yerel geliştirme
+
+- TXT uzunluk, kimlik ve tekrar sorunları uyarıyla değerlendirilir. Birleşen derslerde daha çok işaretlemeli kayıt kullanılır; eşitlikte ilk kayıt korunur.
+- FMT ve sınav önerileri yüzdeleriyle birlikte gösterilir; ayrı ayrı veya turuncu “İkisini de uygula” düğmesiyle seçim alanlarına uygulanır.
+- TXT arşivinde yükleyen bayi/Admin ve silme düğmesi gösterilir. Silme arşivden kaldırır, kaydedilen sonuçları korur.
+- Değerlendirme bitince uyarıları ve olası etkilerini açıklayan pencere açılır; sonuç ekranına kurum ve sınav seçilmiş olarak geçilir.
+
 # v1.2.2 RC.2 · 2026-11-12 · yerel geliştirme
 
 - TXT değerlendirmesinde FMT/sınav sınıfı ve soru dağılımı farkları yüklemeyi engellemez; eşleştirilemeyen cevaplar boş değerlendirilir, fazla işaretlemeler atlanır ve uyarılar kaydedilir.

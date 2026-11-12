@@ -1234,3 +1234,7 @@ button, .button { touch-action: manipulation; }
 .test-center-report .result-table { min-width:640px; overflow-wrap:normal; font-size:12px; }
 .test-center-report summary { cursor:pointer; font-weight:600; }
 .test-center-report .table-scroll:focus-visible { outline:2px solid var(--blue); outline-offset:3px; }
+
+.txt-archive-row{grid-template-columns:22px minmax(0,1fr) 140px 48px}.txt-suggestion-actions{display:flex;flex-direction:column;gap:8px;margin:12px 0}.txt-apply-both{background:#ff6600;color:#fff;border-color:#ff6600}.txt-apply-both:hover{background:#e65c00}.evaluation-completion{border:0;border-radius:18px;padding:28px;width:min(680px,92vw);max-height:85vh;overflow:auto;box-shadow:0 20px 80px #0004}.evaluation-completion::backdrop{background:#13233b99}.evaluation-completion li{margin-bottom:10px}.txt-suggestions{margin:14px 0}@media(max-width:600px){.txt-archive-row{grid-template-columns:22px minmax(0,1fr) 48px}.txt-archive-row time,.txt-archive-head>span:nth-child(3){display:none}}
+
+.txt-archive-row .txt-uploader{display:inline;margin-left:5px}

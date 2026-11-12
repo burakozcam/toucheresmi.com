@@ -29,7 +29,7 @@ export function matchExamAnswers(txt: string, layout: OpticalLayout, inputQuesti
   const questions = opticalQuestionsSchema.parse(inputQuestions);
   const fields = new Map(layout.lessons.map(lesson => [lessonIdentity(lesson.name), lesson]));
   const students = txt.replace(/^\uFEFF/, "").split(/\r\n|\n|\r/).flatMap(line => {
-    if (line.length !== layout.lineLength || (layout.literals ?? []).some(literal => line.slice(literal.start - 1, literal.start - 1 + literal.text.length) !== literal.text)) return [];
+    if (!line.trim() || (layout.literals ?? []).some(literal => line.slice(literal.start - 1, literal.start - 1 + literal.text.length) !== literal.text)) return [];
     const booklet = line.slice(layout.fields.booklet.start - 1, layout.fields.booklet.start - 1 + layout.fields.booklet.length).trim().toUpperCase();
     if (!/^[A-D]$/.test(booklet)) return [];
     return [{ answers: questions.map(question => {

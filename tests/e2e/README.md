@@ -94,3 +94,7 @@ Test sentetik bayi, kullanıcı, kurum ve sınavlar oluşturur; gerçek Prisma, 
 Production Web build'i yalnız `127.0.0.1:3100` üzerinde açıkken, Node 22.8+ ile `node tests/run-v121-acceptance.cjs` sabit beş kabul betiğini sırayla çalıştırır. Playwright/Chromium için yukarıdaki `PLAYWRIGHT_MODULE` ve `CHROMIUM_PATH` kullanılabilir. Gerçek API/DB yerine test taklitleri kullanılır; production connection URL verilmez. CAPTCHA yapılandırması değiştirilmez ve gerçek sağlayıcı testi yapılmaz. Çıktılar `test-results/`, `/tmp` ve anonim örnek PDF'ler `output/pdf/v121-*.pdf` altındadır.
 
 Bu koşumdan sonra `npm run test:report` aynı kaynak SHA-256 ile eşleşen kabul sonuçlarını birleştirir; eski veya çalıştırılmamış betiklere başarı vermez. `npm run build -w @optik/api` JSON raporu dist varlıklarına kopyalar. Gerçek PostgreSQL staging ve cPanel/Passenger kabulü ayrı kalır. Tam sonuç: `docs/v121-release-report.md`.
+
+## v1.2.3 TXT öneri ve sonuç penceresi
+
+Yerel Web sunucusu `http://127.0.0.1:3100` üzerinde açıkken `node tests/e2e/v123-ui.cjs` çalıştırılır. Tüm API yanıtları sentetiktir; gerçek hesap/veritabanı kullanılmaz. FMT/sınav yüzdeleri, turuncu birlikte uygulama, uyarılı değerlendirme penceresi, il/ilçe/kurum/sınav seçilmiş sonuç ekranı, yükleyen etiketi ve TXT silme doğrulanır. Playwright ve Chromium için yukarıdaki ortam değişkenleri kullanılabilir.

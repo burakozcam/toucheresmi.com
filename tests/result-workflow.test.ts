@@ -12,13 +12,13 @@ const lines=fs.readFileSync(new URL("./fixtures/7108-anonymous.txt",import.meta.
 const questions=parseOpticalKeyRows(rows);
 async function modules(){process.env.DATABASE_URL??="postgresql://test:test@127.0.0.1:1/test";process.env.JWT_SECRET??="result-workflow-test-only-secret-at-least-32-characters";return {...await import("../apps/api/src/result-data"),...await import("../apps/api/src/result-identity"),...await import("../apps/api/src/result-pdf")};}
 const snapshot=(data:any)=>({data,summary:opticalSummary(data,3),penalty:3,schoolName:"Örnek Kurum",keyName:"Örnek Deneme",templateName:"7108",keyFingerprint:keyFingerprint(questions,3)});
-test("iki ayrı dosyadaki oturumlar TC veya numara ile birleşir; tekrar ders ve kimlik çelişkisi engellenir",async()=>{
+test("iki ayrı dosyadaki oturumlar TC veya numara ile birleşir; tekrar ders ve kimlik çelişkisi uyarıyla birleştirilir",async()=>{
  const {identityHash,encryptIdentity,decryptIdentity,resultAccessCode,mergeStudentData,safeSnapshot}=await modules(),options={hashIdentity:identityHash,encryptIdentity};
  const numeric=parseOptical([lines[0],lines[3]].join("\n"),layout7108,questions,"Kurum",options),verbal=parseOptical([lines[1],lines[2]].join("\n"),layout7108,questions,"Kurum",options);
  assert.equal(verbal.students.length,2);const merged=mergeStudentData(verbal,numeric),together=parseOptical(lines.join("\n"),layout7108,questions,"Kurum",options);
- assert.deepEqual(merged.students.map(s=>s.answers),together.students.map(s=>s.answers));assert.equal(merged.students[1].id,"00002");assert.throws(()=>mergeStudentData(merged,numeric),/zaten yüklü/);
+ assert.deepEqual(merged.students.map(s=>s.answers),together.students.map(s=>s.answers));assert.equal(merged.students[1].id,"00002");const repeated=mergeStudentData(merged,numeric);assert.deepEqual(repeated.students.map(s=>s.answers),merged.students.map(s=>s.answers));assert.ok(repeated.warnings.some(w=>w.includes("daha çok işaretlemeli")));
  const separate=parseOptical(lines.join("\n"),layout7108,questions,"Kurum",{...options,mergeSessions:false});assert.equal(separate.students.length,4);assert.equal(new Set(separate.students.map(s=>s.id)).size,4);
- const conflict=structuredClone(numeric);conflict.students[0].identityHash=identityHash("other");assert.throws(()=>mergeStudentData(merged,conflict),/farklı TC/);
+ const conflict=structuredClone(numeric);conflict.students[0].identityHash=identityHash("other");assert.ok(mergeStudentData(merged,conflict).warnings.some(w=>w.includes("farklı TC")));
  assert.ok(!JSON.stringify(safeSnapshot(snapshot(merged))).includes("identityEncrypted"));assert.ok(!JSON.stringify(safeSnapshot(snapshot(merged))).includes("identityHash"));
  assert.equal(decryptIdentity(encryptIdentity("11111111110")),"11111111110");assert.notEqual(resultAccessCode("a","1"),resultAccessCode("a","2"));
  const first=parseOptical(lines[0],layout7108,questions,"Kurum",options),newStudent=parseOptical(lines[3],layout7108,questions,"Kurum",options);assert.deepEqual(mergeStudentData(first,newStudent).students[1].sourceLines,[2]);

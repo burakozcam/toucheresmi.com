@@ -1,4 +1,4 @@
-export const SITE_VERSION = "v1.2.2 RC.2";
+export const SITE_VERSION = "v1.2.3";
 export const SITE_RELEASE_MONTH = "2026-11";
 export const SITE_URL = "https://kurumsalsinav.com";
 export const SITE_NAME = "Kurumsal Sınav";

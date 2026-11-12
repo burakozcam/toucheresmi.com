@@ -204,10 +204,10 @@ opticalRouter.post("/infer-fmt",inferenceLimit,upload.single("file"),wrap(async(
  const reports=files.map(file=>{try{return inferFmt(decodeOptical(file.buffer),templates);}catch{return {confidence:"failed",message:"FMT tahmini başarısız. Lütfen şablonu manuel seçin.",candidates:[]};}});
  res.json(reports);
 }));
-opticalRouter.post("/suggest-exams",inferenceLimit,wrap(async(req,res)=>{
- const input=z.object({fileIds:z.array(z.string().min(1).max(100)).min(1).max(10).refine(ids=>new Set(ids).size===ids.length),templateId:z.string().min(1).max(100)}).parse(req.body);
- let archived:Awaited<ReturnType<typeof readArchivedTxts>>;
- try{archived=await readArchivedTxts(req.user!,input.fileIds);}catch(error){res.status(400).json({error:(error as Error).message});return;}
+opticalRouter.post("/suggest-exams",inferenceLimit,upload.single("file"),wrap(async(req,res)=>{
+ const input=z.object({fileIds:z.array(z.string().min(1).max(100)).min(1).max(10).refine(ids=>new Set(ids).size===ids.length).optional(),templateId:z.string().min(1).max(100)}).parse(req.body);
+ let archived:Array<{file:Express.Multer.File}>;
+ try{archived=input.fileIds?await readArchivedTxts(req.user!,input.fileIds):req.file?[{file:req.file}]:[];if(!archived.length)throw Error("Bir TXT dosyası seçin.");}catch(error){res.status(400).json({error:(error as Error).message});return;}
  const template=await evaluationTemplate(input.templateId);
  if(!template){res.status(404).json({error:"Etkin bir FMT seçin."});return;}
  const decoded=archived.map(item=>decodeOptical(item.file.buffer).replace(/[\r\n]+$/g,"")).join("\n");
