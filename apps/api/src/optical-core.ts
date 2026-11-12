@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {preferFilledRecord} from "./student-merge";
 import { lessonIdentity } from "../lib/evaluation-compatibility";
 
 const field = z.object({ start: z.number().int().min(1).max(4000), length: z.number().int().min(1).max(300), align:z.enum(["left","right"]).optional() });
@@ -51,7 +52,7 @@ export const opticalQuestionsSchema = z.array(opticalQuestionSchema).min(1).max(
   }
 });
 export type OpticalQuestion = z.infer<typeof opticalQuestionSchema>;
-export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[]; recordBooklets?:string[]; studentNo?:string;identityHash?:string;identityEncrypted?:string; separateSession?:boolean };
+export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[]; recordBooklets?:string[]; studentNo?:string;identityHash?:string;identityEncrypted?:string; separateSession?:boolean; identityMarks?:number };
 export type OpticalData = { questions: Array<OpticalQuestion & { column: string }>; students: OpticalStudent[]; warnings: string[]; lineCount: number };
 
 export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "windows-1254" = "auto") {
@@ -88,7 +89,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   const slice = (line: string, f?: {start:number;length:number}) => f ? line.slice(f.start-1, f.start-1+f.length).trim() : "";
   lines.forEach((line, index) => {
     const label = `TXT satır ${index+1}`;
-    if (seenLines.has(line)) { mismatch(`${label}: yinelenen TXT satırı atlandı; öğrenci ikinci kez sayılmadı.`); return; }
+    if (seenLines.has(line)) { warnings.push(`${label}: yinelenen TXT satırı atlandı; öğrenci ikinci kez sayılmadı.`); return; }
     seenLines.add(line);
     if (!line.trim()) { mismatch(`${label}: boş satır atlandı.`); return; }
     if (line.length !== layout.lineLength) mismatch(`${label}: ${layout.lineLength} karakter bekleniyor, ${line.length} bulundu. Mevcut konumlar korundu; eksik alanlar boş değerlendirildi, satır sonundaki fazla alanlar kullanılmadı. FMT farklıysa cevaplar yanlış konumdan okunmuş olabilir.`);
@@ -97,17 +98,20 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     const grade = slice(line,f.grade), branch = slice(line,f.branch); let book = slice(line,f.booklet).toUpperCase();
     if (/[\x00-\x1f\x7f\ufffd]/.test(line)) mismatch(`${label}: kontrol karakteri veya çözümlenemeyen karakter var; okunamayan cevaplar boş sayıldı. Kodlama ad ve cevapları etkilemiş olabilir.`);
     const position=(field:{start:number;length:number})=>`${field.start}-${field.start+field.length-1} (1 tabanlı)`;
-    if (!name) mismatch(`${label}: ad soyad alanı boş. Ad konumu: ${position(f.name)}; FMT eşleştirmesini kontrol edin.`);
+    if (!name && options.mergeSessions===false) mismatch(`${label}: ad soyad alanı boş. Ad konumu: ${position(f.name)}; FMT eşleştirmesini kontrol edin.`);
     if (!id && !identity) { mismatch(`${label}: öğrenci no ve kimlik boş; satıra özel numara verildi, diğer oturumlarla birleştirilemedi.`); id=`satir-${index+1}`; }
     if (!/^[A-D]$/.test(book)) { if(!options.allowMismatch)throw new Error(`${label}: kitapçık türü eksik/geçersiz. Beklenen A/B/C/D; konum: ${position(f.booklet)}.`); mismatch(`${label}: kitapçık eksik/geçersiz; A kitapçığı varsayıldı. Gerçek kitapçık farklıysa sonuçlar hatalı olabilir.`); book="A"; }
     if (!questions.every(q=>q.positions[book])) mismatch(`${label}: ${book} kitapçığı anahtarda tanımlı değil; eşleştirilemeyen cevaplar boş değerlendirilecek.`);
     const numberKey=`${grade}:${id.replace(/^0+(?=\d)/,"")}`;
     const existing=options.mergeSessions===false?undefined:(identity?identities.get(identity):undefined)??(id?numbers.get(numberKey):undefined);
-    if(existing?.identity&&identity&&existing.identity!==identity)mismatch(`${label}: aynı numara farklı kimliklerde kullanılmış; numaraya göre birleştirildi. Farklı öğrenciler birleşmiş olabilir.`);
+    if(existing?.identity&&identity&&existing.identity!==identity)warnings.push(`${label}: aynı numara farklı kimliklerde kullanılmış; numaraya göre birleştirildi. Farklı öğrenciler birleşmiş olabilir.`);
     const entry:Entry=existing??{id,name,branch,grade,chains:new Map(),booklets:{},sourceLines:[],recordBooklets:new Set<string>(),identity,marks:0};
     const key=existing?[...entries].find(([,value])=>value===existing)![0]:`row:${index}`;
     const marks=layout.lessons.reduce((n,l)=>n+(line.slice(l.start-1,l.start-1+l.length).match(/[ABCDE*]/gi)?.length??0),0);
-    if (entry.name !== name || entry.grade !== grade || (entry.branch && branch && entry.branch !== branch)) { mismatch(`${label}: aynı öğrenciye ait oturumların kimlik bilgileri çelişiyor; daha çok işaretlemeli kaydın ad/sınıf bilgileri kullanıldı. Yanlış öğrenci eşleşmesi olabilir.`); if(marks>entry.marks){entry.name=name;entry.grade=grade;entry.branch=branch;} }
+    if (entry.name !== name || entry.grade !== grade || (entry.branch && branch && entry.branch !== branch)) warnings.push(`${label}: aynı öğrenciye ait oturumların kimlik bilgileri çelişiyor; daha dolu kaydın bilgileri kullanıldı.`);
+    const preferIncoming=preferFilledRecord([entry.name,entry.grade,entry.branch,entry.identity??""],[name,grade,branch,identity],entry.marks,marks);
+    if(preferIncoming){entry.name=name||entry.name;entry.grade=grade||entry.grade;entry.branch=branch||entry.branch;entry.identity=identity||entry.identity;}
+    entry.name ||= name; entry.grade ||= grade;
     entry.marks=Math.max(entry.marks,marks);
     entry.id ||= id; entry.branch ||= branch; entry.sourceLines.push(index+1); entry.recordBooklets.add(book);
     for (const lesson of layout.lessons) {
@@ -118,7 +122,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
       const chain = raw.slice(0,count).replace(/[ .-]/g," ");
       if (!chain.trim()) continue;
       if (!questions.filter(q=>q.lesson===lesson.name).every(q=>q.positions[book])) mismatch(`${label}: ${book} kitapçığı anahtarda tanımlı değil; eşleştirilemeyen cevaplar boş değerlendirilecek.`);
-      if (entry.chains.has(lesson.name)) { mismatch(`${label}: ${lesson.name} için ikinci kayıt birleştirildi; daha çok işaretlemeli ders kaydı kullanıldı, eşitlikte ilk kayıt korundu. Çelişen cevaplar neti etkileyebilir.`); if(chain.replace(/ /g,"").length <= entry.chains.get(lesson.name)!.replace(/ /g,"").length) continue; }
+      if (entry.chains.has(lesson.name)) { warnings.push(`${label}: ${lesson.name} için ikinci kayıt birleştirildi; daha çok işaretlemeli ders kaydı kullanıldı, eşitlikte ilk kayıt korundu. Çelişen cevaplar neti etkileyebilir.`); if(chain.replace(/ /g,"").length <= entry.chains.get(lesson.name)!.replace(/ /g,"").length) continue; }
       entry.chains.set(lesson.name,chain); entry.booklets[lesson.name]=book;
     }
     entries.set(key,entry);if(identity){entry.identity??=identity;identities.set(identity,entry);}if(id)numbers.set(numberKey,entry);
@@ -128,6 +132,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     if(options.hashIdentity&&/^\d{11}$/.test(entry.id)){entry.identity??=entry.id;if(entry.identity===entry.id)entry.id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;}
     if(!entry.id&&entry.identity&&options.hashIdentity)entry.id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;
     if (!entry.id) throw new Error(`TXT satır ${entry.sourceLines.join(", ")}: birleştirilen oturumlarda öğrenci numarası bulunamadı.`);
+    if(!entry.name) mismatch(`TXT satır ${entry.sourceLines.join(", ")}: ad soyad alanı boş. FMT eşleştirmesini kontrol edin.`);
     const identifier = `${entry.grade}:${entry.id}`;
     if (options.mergeSessions!==false&&seen.has(identifier)) throw new Error(`Öğrenci numarası ${entry.id} için farklı kimlikler var; yanlış kurum veya tekrar kaydı kontrol edin.`);
     seen.add(identifier);
@@ -135,7 +140,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     if (missing.length) warnings.push(`${entry.id}: ${missing.join(", ")} alanları tamamen boş; bu dersler boş cevap olarak değerlendirilecek.`);
     const repeated=options.mergeSessions===false&&[...entries.values()].filter(other=>other.grade===entry.grade&&other.id===entry.id).length>1;
     return {id:repeated?`${entry.id}-O${entry.sourceLines[0]}`:entry.id,...(options.mergeSessions===false?{studentNo:entry.id,separateSession:true}:{}),
-      ...(entry.identity&&options.hashIdentity?{identityHash:options.hashIdentity(entry.identity)}:{}),...(entry.identity&&options.encryptIdentity?{identityEncrypted:options.encryptIdentity(entry.identity)}:{}),name:entry.name||`Öğrenci ${entry.id}`, school, branch:[entry.grade,entry.branch].filter(Boolean).join("-") || "Belirtilmedi", booklets:entry.booklets, recordBooklets:[...entry.recordBooklets], sourceLines:entry.sourceLines,
+      ...(entry.identity&&options.hashIdentity?{identityHash:options.hashIdentity(entry.identity)}:{}),...(entry.identity&&options.encryptIdentity?{identityEncrypted:options.encryptIdentity(entry.identity)}:{}),name:entry.name||`Öğrenci ${entry.id}`, identityMarks:entry.marks, school, branch:[entry.grade,entry.branch].filter(Boolean).join("-") || "Belirtilmedi", booklets:entry.booklets, recordBooklets:[...entry.recordBooklets], sourceLines:entry.sourceLines,
       answers:questions.map(q=>{ const chain=entry.chains.get(q.lesson); return chain ? chain[q.positions[entry.booklets[q.lesson]]-1]?.trim() ?? "" : ""; })};
   });
   if (students.length > 500) throw new Error("Bir değerlendirmede en fazla 500 öğrenci desteklenir.");

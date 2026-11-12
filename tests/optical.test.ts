@@ -35,11 +35,11 @@ test("7108: bozuk uzunluk, kitapçık, cevap ve ders alanı taşması reddedilir
   assert.throws(()=>parse(replace(1,82,"A")),/soru sayısından sonra/);
   assert.throws(()=>parse(replace(0,51,"C")),/anahtarda tanımlı değil/);
 });
-test("7108: yinelenen kayıt, çelişkili oturum ve numarasız öğrenci durdurulur",()=>{
+test("7108: yinelenen ve çelişkili oturum birleşir; belirsiz numaralar durdurulur",()=>{
   const ls=txt.trimEnd().split(/\r?\n/); // Keep original fixed-width records for duplicate test.
   const first=txt.split(/\r?\n/)[0];
-  assert.throws(()=>parse(txt+first+"\r\n"),/yinelenen/);
-  assert.throws(()=>parse(replace(0,16,"FARKLI    ")),/çelişiyor/);
+  assert.equal(parse(txt+first+"\r\n").students.length,2);
+  assert.equal(parse(replace(0,16,"FARKLI    ")).students.length,2);
   assert.throws(()=>parse(replace(3,11,"00001")),/farklı kimlikler/);
   assert.throws(()=>parse(replace(3,11,"     ")),/numarası bulunamadı/);
   assert.equal(ls.length,4);

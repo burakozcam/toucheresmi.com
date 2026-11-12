@@ -1,3 +1,8 @@
+# v1.2.4 · 2026-11-13 · yerel geliştirme
+
+- FMT ve sınav önerilerine yüzdeye göre kırmızı–sarı–yeşil renklenen animasyonlu dolum eklendi.
+- Aynı öğrencinin tekrar eden TXT satırları yüklemeyi durdurmadan birleştirilir. Derslerde daha çok işaretlemeli kayıt kendi kitapçığıyla kullanılır; kimlik alanlarında daha dolu kayıt tercih edilir, boş alanlar mevcut bilgiyi silmez.
+
 # v1.2.3 · 2026-11-13 · yerel geliştirme
 
 - TXT uzunluk, kimlik ve tekrar sorunları uyarıyla değerlendirilir. Birleşen derslerde daha çok işaretlemeli kayıt kullanılır; eşitlikte ilk kayıt korunur.

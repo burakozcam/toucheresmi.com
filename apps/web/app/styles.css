@@ -1238,3 +1238,17 @@ button, .button { touch-action: manipulation; }
 .txt-archive-row{grid-template-columns:22px minmax(0,1fr) 140px 48px}.txt-suggestion-actions{display:flex;flex-direction:column;gap:8px;margin:12px 0}.txt-apply-both{background:#ff6600;color:#fff;border-color:#ff6600}.txt-apply-both:hover{background:#e65c00}.evaluation-completion{border:0;border-radius:18px;padding:28px;width:min(680px,92vw);max-height:85vh;overflow:auto;box-shadow:0 20px 80px #0004}.evaluation-completion::backdrop{background:#13233b99}.evaluation-completion li{margin-bottom:10px}.txt-suggestions{margin:14px 0}@media(max-width:600px){.txt-archive-row{grid-template-columns:22px minmax(0,1fr) 48px}.txt-archive-row time,.txt-archive-head>span:nth-child(3){display:none}}
 
 .txt-archive-row .txt-uploader{display:inline;margin-left:5px}
+
+/* Recommendation cards fill to the measured match percentage. */
+.match-notice{position:relative;isolation:isolate;overflow:hidden;margin:8px 0;border:1px solid var(--border,#dce3ef);background:var(--surface,#f5f7fb);color:var(--text,#17233c)}
+.match-notice.has-match{border-color:hsl(var(--match-hue) 65% 42% / .45);background:hsl(var(--match-hue) 75% 96%)}
+.match-meter{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.match-meter-fill{display:block;position:relative;width:var(--match-percent);height:100%;background:linear-gradient(110deg,hsl(var(--match-hue) 75% 65% / .4),hsl(var(--match-hue) 75% 48% / .5));transform-origin:left;animation:match-fill-in 1.1s cubic-bezier(.2,.75,.25,1) both}
+.match-meter-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 20%,#fff5 50%,transparent 80%);animation:match-shine 1.8s ease-out both}
+.match-notice-content{position:relative;overflow-wrap:anywhere}
+.match-notice-content strong{display:block;line-height:1.6}.match-notice-content details{margin-top:6px}.match-notice-content p{margin:6px 0 0}
+:root[data-theme="dark"] .match-notice.has-match{background:hsl(var(--match-hue) 25% 13%);color:#f1f5f9}
+:root[data-theme="dark"] .match-meter-fill{opacity:.65}
+@keyframes match-fill-in{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes match-shine{from{opacity:0;transform:translateX(-100%)}35%{opacity:1}to{opacity:0;transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){.match-meter-fill,.match-meter-fill::after{animation:none}.match-meter-fill::after{display:none}}

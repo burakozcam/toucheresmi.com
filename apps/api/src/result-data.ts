@@ -1,3 +1,4 @@
+import {preferFilledRecord} from "./student-merge";
 import { canonicalJson } from "./canonical-json";
 import { opticalQuestionsSchema,opticalSummary,type OpticalData,type OpticalStudent } from "./optical-core";
 import { studentNumberKey } from "./result-identity";
@@ -15,7 +16,15 @@ export function mergeStudentData(previous:OpticalData,next:OpticalData,replaceSt
     if(matches.length>1)throw new Error("Oturum eşleştirmesi belirsiz. Öğrenci numarası ve TC alanlarını kontrol edin.");
     const old=matches[0];if(!old){students.push({...structuredClone(incoming),sourceLines:incoming.sourceLines.map(line=>line+previous.lineCount)});continue;}
     if(old.identityHash&&incoming.identityHash&&old.identityHash!==incoming.identityHash)mergeWarnings.push(`${incoming.studentNo??incoming.id}: aynı numara farklı TC bilgileriyle kullanılmış; numaraya göre birleştirildi. Farklı öğrenciler birleşmiş olabilir.`);
-    if(old.name!==incoming.name||old.branch!==incoming.branch){mergeWarnings.push(`${incoming.studentNo??incoming.id}: oturumlarda ad veya sınıf/şube çelişiyor; daha çok işaretlemeli kaydın bilgileri korundu. Yanlış öğrenci eşleşmesi olabilir.`);if(incoming.answers.filter(Boolean).length>old.answers.filter(Boolean).length){old.name=incoming.name;old.branch=incoming.branch;}}
+    const oldMarks=old.identityMarks??old.answers.filter(Boolean).length,incomingMarks=incoming.identityMarks??incoming.answers.filter(Boolean).length;
+    if(old.name!==incoming.name||old.branch!==incoming.branch)mergeWarnings.push(`${incoming.studentNo??incoming.id}: oturumlarda ad veya sınıf/şube çelişiyor; daha dolu kaydın bilgileri korundu.`);
+    if(preferFilledRecord([old.name,old.branch,old.identityHash??""],[incoming.name,incoming.branch,incoming.identityHash??""],oldMarks,incomingMarks)){
+      old.name=incoming.name||old.name;
+      const [oldGrade,oldBranch]=old.branch.split("-"),[grade,branch]=incoming.branch.split("-");
+      old.branch=incoming.branch==="Belirtilmedi"?old.branch:[grade||oldGrade,branch||oldBranch].filter(Boolean).join("-");
+      old.identityHash=incoming.identityHash??old.identityHash;old.identityEncrypted=incoming.identityEncrypted??old.identityEncrypted;
+    }
+    old.identityMarks=Math.max(oldMarks,incomingMarks);
     for(const lesson of Object.keys(incoming.booklets)){if(old.booklets[lesson]&&!replaceStudent?.(incoming)){mergeWarnings.push(`${incoming.studentNo??incoming.id}: ${lesson} tekrarında daha çok işaretlemeli ders kaydı kullanıldı; eşitlikte ilk kayıt korundu. Çelişen cevaplar neti etkileyebilir.`);const indices=previous.questions.flatMap((q,i)=>q.lesson===lesson?[i]:[]);if(indices.filter(i=>incoming.answers[i]).length<=indices.filter(i=>old.answers[i]).length)continue;}
       previous.questions.forEach((q,i)=>{if(q.lesson===lesson)old.answers[i]=incoming.answers[i];});old.booklets[lesson]=incoming.booklets[lesson];}
     if(old.id.startsWith("tc-")&&!incoming.id.startsWith("tc-"))old.id=incoming.id;

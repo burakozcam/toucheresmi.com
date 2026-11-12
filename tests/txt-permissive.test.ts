@@ -80,3 +80,25 @@ test("v123: sınav önerisi sunucuya yüklemeden yerel TXT ile de alınır",asyn
  assert.equal(value.items[0].id,"key");assert.equal(value.items[0].matchPercent,100);
  }finally{[prisma.opticalTemplate.findFirst,prisma.publishedAnswerKey.findMany]=original as any;}
 });
+
+
+test("v124: birleştirme katı okumada da durmaz; daha dolu kayıt, boş olmayan alanlar ve kitapçık korunur",async()=>{
+ const layout={...layout7108,lessons:[layout7108.lessons[0]]};
+ const qs=Array.from({length:20},(_,i)=>({...questions[0],number:i+1,positions:{A:i+1,B:20-i}}));
+ let sparse=put(put(put(put(original,16,"KISA      "),37,"A"),51,"A"),52,"A"+" ".repeat(19));
+ const dense=put(put(put(put(sparse,16,"UZUN AD   "),37," "),51,"B"),52,"BC"+" ".repeat(18));
+ const parsed=parseOptical(sparse+"\n"+dense+"\n"+dense,layout,qs,"Kurum");
+ assert.equal(parsed.students.length,1);assert.ok(parsed.students[0].name.startsWith("UZUN AD"));
+ assert.equal(parsed.students[0].branch,"8-A");assert.equal(parsed.students[0].booklets.TÜRKÇE,"B");
+ assert.deepEqual(parsed.students[0].answers.slice(-2),["C","B"]);assert.deepEqual(parsed.students[0].sourceLines,[1,2]);
+ const {mergeStudentData}=await import("../apps/api/src/result-data");
+ const first=parseOptical(sparse,layout,qs,"Kurum"),second=parseOptical(dense,layout,qs,"Kurum");
+ const merged=mergeStudentData(first,second);
+ assert.deepEqual(merged.students[0].answers,parsed.students[0].answers);assert.equal(merged.students[0].branch,"8-A");
+ const blankName=put(sparse,16," ".repeat(20));
+ assert.ok(parseOptical(blankName+"\n"+dense,layout,qs,"Kurum").students[0].name.startsWith("UZUN AD"));
+ assert.equal(parseOptical(sparse+"\n"+dense,layout,qs,"Kurum",{mergeSessions:false}).students.length,2);
+ const fullerName=put(sparse,16,"DAHA UZUN ");
+ assert.ok(parseOptical(sparse+"\n"+fullerName,layout,qs,"Kurum").students[0].name.startsWith("DAHA UZUN"));
+ assert.ok(parseOptical(fullerName+"\n"+sparse,layout,qs,"Kurum").students[0].name.startsWith("DAHA UZUN"));
+});
