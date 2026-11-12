@@ -1,4 +1,4 @@
-const {norm,lessonName,weightFor,outcome,locate,basic,validateMapping,sourceRow}=require("./common");
+const {norm,answer,lessonName,weightFor,outcome,locate,basic,validateMapping,sourceRow}=require("./common");
 // Schema verified against the user-provided real export; never infer column meaning from file names.
 module.exports=function parse(sheets){
  const found=locate(sheets,"f");if(!found)throw new Error("F Excel başlıkları tanınmadı. Doğru formatı seçin.");
@@ -8,7 +8,7 @@ module.exports=function parse(sheets){
   const label=`${sheet.name} satır ${i+1}`;let q;
 
       const number=Number(row[1]),lesson=lessonName(row[0]),o=outcome(row[head.indexOf("KAZANIM")]);
-      q={lesson,number,answer:norm(row[2]),weight:weightFor(lesson),positions:{A:number},...o};
+      q={lesson,number,answer:answer(row[2]),weight:weightFor(lesson),positions:{A:number},...o};
       for(const book of ["B","C","D"]){const col=head.findIndex(h=>h.startsWith(book)&&h.includes("ÇAPRAZ"));if(col>=0)q.positions[book]=Number(row[col]);}
 
   q.source=sourceRow("f",sheet,i);try{basic(q,label);}catch(e){issues.push(e.message);}questions.push(q);

@@ -1,6 +1,4 @@
 "use client";
-import PublicationDefinition from "./publication-definition";
-
 import AnswerPdfOptions from "../answer-pdf-options";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
@@ -29,12 +27,12 @@ type AnswerKeyRecord = {
   files: AnswerKeyFile[];
 };
 
-export default function AnswerKeyManagement({ token, readOnly = false }: { token: string; readOnly?: boolean }) {
+export default function AnswerKeyManagement({ token, readOnly = false, initialPublicationId = "", onAddExam }: { token: string; readOnly?: boolean; initialPublicationId?: string; onAddExam?: () => void }) {
   const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [records, setRecords] = useState<AnswerKeyRecord[]>([]);
   const [query, setQuery] = useState("");
   const [view,setView]=useState<"list"|"new">("list"),[entryMethod,setEntryMethod]=useState("file"),[manualReview,setManualReview]=useState<ManualReview|null>(null),[editingQuestions,setEditingQuestions]=useState<string|null>(null);
-  const [targetPublicationId,setTargetPublicationId]=useState("");
+  const [targetPublicationId,setTargetPublicationId]=useState(initialPublicationId);
   const [selectedIds,setSelectedIds]=useState<string[]>([]),[bulkWorking,setBulkWorking]=useState(false);
   const [answerFileKey,setAnswerFileKey]=useState("");
   const [uploadReset,setUploadReset]=useState(0);
@@ -52,6 +50,15 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
     const value = query.trim().toLocaleLowerCase("tr-TR");
     return [...records].filter((entry) => !value || `${entry.examName} ${entry.publisher.name}`.toLocaleLowerCase("tr-TR").includes(value));
   }, [query, records]);
+  const groupedRecords = useMemo(() => {
+    const groups = new Map<string, { publisher: Publisher; records: AnswerKeyRecord[] }>();
+    for (const record of filteredRecords) {
+      const group = groups.get(record.publisherId) ?? { publisher: record.publisher, records: [] };
+      group.records.push(record);
+      groups.set(record.publisherId, group);
+    }
+    return [...groups.values()].sort((a, b) => a.publisher.name.localeCompare(b.publisher.name, "tr"));
+  }, [filteredRecords]);
 
   const loadData = async () => {
     setLoading(true);
@@ -101,6 +108,16 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
   useEffect(() => {
     void loadData();
   }, [token]);
+  useEffect(() => {
+    if (!initialPublicationId) return;
+    setTargetPublicationId(initialPublicationId);
+    setView("new");
+    setBulkMode(false);
+  }, [initialPublicationId]);
+  useEffect(() => {
+    const item = records.find(record => record.id === initialPublicationId);
+    if (item) setForm({ publisherId: item.publisherId, grade: String(item.grade), examName: item.examName, published: item.published, showInEvaluation: item.showInEvaluation, penalty: item.opticalKey?.penalty ?? 3, publishedAt: item.publishedAt.slice(0, 10) });
+  }, [initialPublicationId, records]);
 
   useEffect(()=>{if(!readOnly)return;const controller=new AbortController();const timer=setTimeout(()=>{
     setLoading(true);fetch(`${API_URL}/api/answer-keys?limit=30&search=${encodeURIComponent(query.trim())}`,{signal:controller.signal}).then(async r=>{const value=await r.json();if(!r.ok)throw Error(value.error??"Arama yapılamadı.");setRecords(value.items??[]);}).catch(e=>{if(e.name!=="AbortError")setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
@@ -177,23 +194,18 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
 
   return (
     <section className="management-panel answer-key-panel">
-      <header className="panel-header">
-        <div>
-          <p className="hero-tag">CEVAP ANAHTARLARI</p>
-          <h2>{view==="list"?"Cevap anahtarı kütüphanesi":"Yeni cevap anahtarı / kazanım"}</h2>
-        </div>
-      </header>
+      {view==="new"&&!bulkMode&&<header className="panel-header"><div><h2>Cevap anahtarı ekle</h2><p>Sınavı seçin, anahtar ve varsa kazanım dosyasını yükleyin.</p></div></header>}
 
       {notice && <p className="notice success" role="status">{notice}</p>}
       {error && <p className="notice error" role="alert">{error}</p>}
 
       {!readOnly&&view==="list"&&<LegacyKeyLink token={token} publications={records} onSaved={()=>void loadData()}/>}
-      {!readOnly&&<PublicationDefinition token={token} publishers={publishers} onCreated={()=>void loadData()}/>}
-      {!readOnly&&<div className="answer-add-tabs"><button className={`button ${view==="list"?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("list");setBulkMode(false);}}>Cevap anahtarlarını listele</button><button className={`button ${view==="new"&&!bulkMode?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(false);}}>Yeni cevap anahtarı / kazanım ekle</button><button className="button button-quiet" disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(true);}}>Toplu dosya ekle</button></div>}
+      {!readOnly&&<div className="answer-add-tabs"><button className={`button ${view==="list"?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("list");setBulkMode(false);}}>Kayıtları görüntüle</button><button className={`button ${view==="new"&&!bulkMode?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(false);}}>Cevap anahtarı ekle</button><button className="button button-quiet" disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(true);}}>Toplu dosya ekle</button>{onAddExam&&<button className="button button-quiet" disabled={bulkBusy} onClick={onAddExam}>＋ Sınav ekle</button>}</div>}
       {!readOnly && bulkMode && <BulkAnswerKeys records={records} token={token} publishers={publishers} onComplete={() => void loadData()} onBusyChange={setBulkBusy} />}
       {!readOnly && view==="new" && !bulkMode && (
         <form className="answer-key-form" onSubmit={handleSubmit}>
-          <label>Sınav kaydı<select aria-label="Cevap anahtarının sınav kaydı" value={targetPublicationId} required disabled={submitting} onChange={e=>{const id=e.target.value;setTargetPublicationId(id);const item=records.find(r=>r.id===id);if(item)setForm({publisherId:item.publisherId,grade:String(item.grade),examName:item.examName,published:item.published,showInEvaluation:item.showInEvaluation,penalty:item.opticalKey?.penalty??3,publishedAt:item.publishedAt.slice(0,10)});}}><option value="">Mevcut sınav tanımını seçin</option>{records.map(item=><option key={item.id} value={item.id}>{item.publisher.name} · {item.grade}. Sınıf · {item.examName}</option>)}</select></label>
+          <label>Sınav kaydı<select aria-label="Cevap anahtarının sınav kaydı" value={targetPublicationId} required disabled={submitting} onChange={e=>{const id=e.target.value;setTargetPublicationId(id);const item=records.find(r=>r.id===id);if(item)setForm({publisherId:item.publisherId,grade:String(item.grade),examName:item.examName,published:item.published,showInEvaluation:item.showInEvaluation,penalty:item.opticalKey?.penalty??3,publishedAt:item.publishedAt.slice(0,10)});}}><option value="">Yayınevi ve sınıfa göre sınav seçin</option>{groupedRecords.map(group=><optgroup key={group.publisher.id} label={group.publisher.name}>{[...group.records].sort((a,b)=>a.grade-b.grade||a.examName.localeCompare(b.examName,"tr")).map(item=><option key={item.id} value={item.id}>{item.grade}. Sınıf · {item.examName}</option>)}</optgroup>)}</select></label>
+          {!targetPublicationId&&<p className="field-help">Henüz sınav eklemediyseniz <button className="text-button" type="button" onClick={onAddExam}>Sınav Ekle</button> sayfasında kaydı oluşturun; sonra burada seçip anahtarı yükleyin.</p>}
           {targetPublicationId&&<p className="notice">Mevcut sınav güncellenecek; yeni mükerrer sınav oluşturulmayacak. Önceki sonuç kopyaları korunur.</p>}
           <div className="two-column-fields">
             <label className="publisher-select-field">

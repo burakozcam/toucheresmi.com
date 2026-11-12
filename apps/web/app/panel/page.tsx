@@ -53,7 +53,7 @@ const pages: Record<Section, { title: string; eyebrow: string; description: stri
   exam: { title: "Sınav Değerlendir", eyebrow: "OPTİK DEĞERLENDİRME", description: "TXT dosyanızı FMT ve cevap anahtarıyla değerlendirin; sonuç listesi ve öğrenci karneleri alın.", action: "TXT seç" },
   "data-delete":{title:"Veri Silme",eyebrow:"",description:"TXT değerlendirme kayıtlarını kaldırın veya geri alın.",action:""},
   "test-center": {title:"Test Merkezi",eyebrow:"SALT OKUNUR TEST RAPORU",description:"Gerçek yerel test sonuçları ve çalıştırılmayan kontroller.",action:"Raporu görüntüle"},
-  "exam-records": { title: "Sınav Tanımları", eyebrow: "SINAV YÖNETİMİ", description: "Kurum, yayınevi, ad ve tarih içeren sınav tanımları. TXT değerlendirme geçmişi ve sonuçlar ayrı yönetilir.", action: "Sınav oluştur" },
+  "exam-records": { title: "Sınav Ekle", eyebrow: "SINAV YÖNETİMİ", description: "Yayınevine göre sınav kaydı oluşturun, cevap anahtarını ekleyin ve kayıtları sınıf sınıf yönetin.", action: "Sınav ekle" },
   "optical-keys": { title: "Değerlendirme Anahtarları", eyebrow: "CEVAP ANAHTARLARI", description: "Soru cevapları, kitapçık eşleştirmeleri ve kazanımları değerlendirmeye hazırlayın.", action: "Anahtar ekle" },
   "fmt-upload": { title: "FMT Yönetimi", eyebrow: "", description: "FMT şablonlarını yönetin, ekleyin ve paylaşın.", action: "FMT dosyası seç" },
   "fmt-edit": { title: "FMT Yönetimi", eyebrow: "", description: "FMT şablonlarını yönetin, ekleyin ve paylaşın.", action: "Şablonları görüntüle" },
@@ -71,7 +71,7 @@ const pages: Record<Section, { title: string; eyebrow: string; description: stri
   "pdf-tools": { title: "PDF Düzenleyici", eyebrow: "DOSYA ARAÇLARI", description: "PDF ve Excel dosyalarını tarayıcınızda birleştirin, bölün veya dönüştürün.", action: "Aracı aç" },
   publishers: { title: "Yayınevleri", eyebrow: "YAYINEVİ YÖNETİMİ", description: "Sisteme kayıtlı yayınevlerini görüntüleyin ve yayınevi talebi oluşturun.", action: "Yayınevi ekle" },
   "publisher-requests": { title: "Yayınevi Talepleri", eyebrow: "ONAY SÜRECİ", description: "Yayınevi ekleme taleplerini inceleyip onaylayın veya reddedin.", action: "Talep listesi" },
-  "answer-keys": { title: "Cevap Anahtarları", eyebrow: "DOSYA YÖNETİMİ", description: "Cevap anahtarı ve kazanım dosyalarını yönetin, yayımlayın ve indirilebilir halde tutun.", action: "Yeni dosya ekle" },
+  "answer-keys": { title: "Cevap Anahtarları", eyebrow: "", description: "Sınav cevap anahtarı ve kazanım dosyalarını yönetin.", action: "Yeni dosya ekle" },
   "system-users": { title: "Üyeler", eyebrow: "SİSTEM YÖNETİMİ", description: "Üyelik taleplerini ve kullanıcı hesaplarını yönetin.", action: "Üye kayıtları" },
   "contact-inbox": { title: "Gelen Kutusu", eyebrow: "İLETİŞİM", description: "İletişim formundan gelen mesajları inceleyin ve okundu durumunu yönetin.", action: "Gelen kutusu" },
   "audit-logs": { title: "İşlem Kayıtları", eyebrow: "SİSTEM GÜVENLİĞİ", description: "Yönetici ve kullanıcı işlemlerini tarih ve kullanıcıya göre inceleyin.", action: "İşlem kayıtları" },
@@ -79,7 +79,7 @@ const pages: Record<Section, { title: string; eyebrow: string; description: stri
 };
 
 const groups: { title: string; items: { id: Section; label: string; icon: string }[] }[] = [
-  { title: "SINAV İŞLEMLERİ", items: [{ id: "exam", label: "Sınav Değerlendir", icon: "⇧" }, { id: "results", label: "Sınav Sonuçları", icon: "▥" }, { id: "exam-records", label: "Sınav Tanımları", icon: "▤" },{id:"data-delete",label:"Veri Silme",icon:"⌫"}] },
+  { title: "SINAV İŞLEMLERİ", items: [{ id: "exam", label: "Sınav Değerlendir", icon: "⇧" }, { id: "results", label: "Sınav Sonuçları", icon: "▥" }, { id: "exam-records", label: "Sınav Ekle", icon: "＋" },{id:"data-delete",label:"Veri Silme",icon:"⌫"}] },
   { title: "FMT YÖNETİMİ", items: [{ id:"fmt-share",label:"FMT Paylaş",icon:"↗" }, { id: "fmt-download", label: "FMT İndir", icon: "↓" }, { id: "fmt-upload", label: "FMT Yönetimi", icon: "＋" }] },
   { title: "KURUM YÖNETİMİ", items: [{ id: "school-add", label: "Kurum Yönetimi", icon: "＋" }] },
   { title: "YAYINEVLERİ", items: [{ id: "publishers", label: "Yayınevleri", icon: "▣" }] },
@@ -95,6 +95,7 @@ export default function PanelPage() {
   const router = useRouter();
   const authCheckStarted = useRef(false);
   const [savedOpticalId,setSavedOpticalId]=useState<string>();
+  const [answerKeyTargetId,setAnswerKeyTargetId]=useState("");
   const [section, setSection] = useState<Section>("welcome");
   const [authorized, setAuthorized] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -208,8 +209,8 @@ export default function PanelPage() {
             const items = group.items.filter((item) => !["fmt-upload", "fmt-edit", "fmt-delete", "optical-keys"].includes(item.id) || authUser?.role === "SUPER_ADMIN").filter((item) =>
               !["school-edit", "school-delete"].includes(item.id) || authUser?.role === "SUPER_ADMIN"
             ).filter((item) =>
-              !["school-add", "results", "exam", "exam-records", "data-delete", "students", "fmt-share", "fmt-download", "txt-converter"].includes(item.id) || authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER"
-            );
+              !["school-add", "results", "exam", "data-delete", "students", "fmt-share", "fmt-download", "txt-converter"].includes(item.id) || authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER"
+            ).filter((item) => item.id !== "exam-records" || authUser?.role === "SUPER_ADMIN");
             return items.length > 0 && <div className="nav-group" key={group.title}>
               <p>{group.title}</p>
               {items.map((item) => <button className={`nav-item ${item.id === "answer-keys" ? "nav-item-featured" : ""} ${section === item.id ? "nav-active" : ""}`} key={item.id} onClick={() => { setSection(item.id); setMenuOpen(false); }}><span className="nav-item-icon" aria-hidden="true"><UiIcon name={item.id}/></span>{item.label}{item.id === "contact-inbox" && unreadMessages > 0 && <span className="sidebar-unread-badge">{unreadMessages} yeni</span>}{item.id === "contact-inbox" && unreadMessageError && <span className="sidebar-unread-error" title={unreadMessageError}>!</span>}</button>)}
@@ -236,7 +237,7 @@ export default function PanelPage() {
                 {profileNotice && <p className="profile-notice" role="status">{profileNotice}</p>}
               </div>
             </form>
-          </section> : section === "calendar" ? <Calendar /> : section === "blocks" ? <BlockGame /> : section === "bird" || section === "snake" ? <BreakGame key={section} initialMode={section === "bird" ? "bird" : "snake"} /> : section === "rebuilder" ? <iframe ref={rebuilderFrame} className="tool-frame rebuilder-frame" src="/rebuilder.html" title="Sınav Listesi Düzenleyici" sandbox="allow-scripts allow-downloads allow-popups allow-modals" referrerPolicy="no-referrer" /> : section === "pdf-tools" ? <PdfEditor /> : section === "system-users" && authUser?.role === "SUPER_ADMIN" ? <RegistrationRequests token={authToken} /> : section === "publishers" || section === "publisher-requests" ? <PublisherManagement token={authToken} role={authUser?.role ?? "DEALER"} /> : section === "answer-keys" ? <AnswerKeyManagement token={authToken} readOnly={authUser?.role !== "SUPER_ADMIN"} /> : ["school-add", "school-edit", "school-delete"].includes(section) && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <SchoolManagement token={authToken} role={authUser.role} /> : section === "exam-records" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ExamManagement token={authToken} /> : <section className="dashboard-empty">
+          </section> : section === "calendar" ? <Calendar /> : section === "blocks" ? <BlockGame /> : section === "bird" || section === "snake" ? <BreakGame key={section} initialMode={section === "bird" ? "bird" : "snake"} /> : section === "rebuilder" ? <iframe ref={rebuilderFrame} className="tool-frame rebuilder-frame" src="/rebuilder.html" title="Sınav Listesi Düzenleyici" sandbox="allow-scripts allow-downloads allow-popups allow-modals" referrerPolicy="no-referrer" /> : section === "pdf-tools" ? <PdfEditor /> : section === "system-users" && authUser?.role === "SUPER_ADMIN" ? <RegistrationRequests token={authToken} /> : section === "publishers" || section === "publisher-requests" ? <PublisherManagement token={authToken} role={authUser?.role ?? "DEALER"} /> : section === "answer-keys" ? <AnswerKeyManagement token={authToken} readOnly={authUser?.role !== "SUPER_ADMIN"} initialPublicationId={answerKeyTargetId} onAddExam={() => setSection("exam-records")} /> : ["school-add", "school-edit", "school-delete"].includes(section) && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <SchoolManagement token={authToken} role={authUser.role} /> : section === "exam-records" && authUser?.role === "SUPER_ADMIN" ? <ExamManagement token={authToken} onOpenAnswerKeys={id => { setAnswerKeyTargetId(id); setSection("answer-keys"); }} /> : <section className="dashboard-empty">
             <div className="empty-art"><div className="empty-paper"><span className="empty-paper-mark">K</span><i /><i /><i /><div className="empty-bubbles"><b /><b /><b /><b /></div></div><span className="empty-spark">✳</span><span className="empty-orbit" /></div>
             <h2>{section === "exam" ? "İlk sınavınızı yükleyin" : `${activePage.title} işlemlerine başlayın`}</h2>
             <p>{section === "exam" ? "Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın." : activePage.description}</p>

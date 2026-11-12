@@ -31,6 +31,7 @@ import { identityHash,encryptIdentity } from "./result-identity";
 import { isDeleted,safeSnapshot,mergeStudentData } from "./result-data";
 import { inferFmt } from "./fmt-inference";
 import { convertTxt } from "./txt-converter";
+import { bestAnswerPatternMatch } from "./optical-exam-matching";
 
 import { systemEvaluationTemplates, systemEvaluationTemplate, systemStorageId, sameExecutableLayout, evaluationTemplateChoices } from "./evaluation-templates";
 
@@ -202,6 +203,27 @@ opticalRouter.post("/infer-fmt",inferenceLimit,upload.single("file"),wrap(async(
  const templates=await inferenceTemplates();
  const reports=files.map(file=>{try{return inferFmt(decodeOptical(file.buffer),templates);}catch{return {confidence:"failed",message:"FMT tahmini başarısız. Lütfen şablonu manuel seçin.",candidates:[]};}});
  res.json(reports);
+}));
+opticalRouter.post("/suggest-exams",inferenceLimit,wrap(async(req,res)=>{
+ const input=z.object({fileIds:z.array(z.string().min(1).max(100)).min(1).max(10).refine(ids=>new Set(ids).size===ids.length),templateId:z.string().min(1).max(100)}).parse(req.body);
+ let archived:Awaited<ReturnType<typeof readArchivedTxts>>;
+ try{archived=await readArchivedTxts(req.user!,input.fileIds);}catch(error){res.status(400).json({error:(error as Error).message});return;}
+ const template=await evaluationTemplate(input.templateId);
+ if(!template){res.status(404).json({error:"Etkin bir FMT seçin."});return;}
+ const decoded=archived.map(item=>decodeOptical(item.file.buffer).replace(/[\r\n]+$/g,"")).join("\n");
+ const publications=await prisma.publishedAnswerKey.findMany({where:evaluationPublicationWhere,include:{publisher:{select:{name:true}},opticalKey:true},orderBy:[{publisher:{name:"asc"}},{examName:"asc"}]});
+ const items=[];let incompatibleCount=0,firstIncompatibleReason="";
+ for(const publication of publications){
+  if(!publication.opticalKey)continue;
+  try{
+   const questions=evaluationQuestions(publication.opticalKey.questions);
+   const data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),questions,"");
+   const match=bestAnswerPatternMatch(data.questions,data.students);
+   if(match)items.push({id:publication.opticalKey.id,publicationId:publication.id,name:publication.examName,publisher:publication.publisher.name,grade:publication.grade,...match});
+  }catch(error){if(!(error instanceof Error))throw error;incompatibleCount++;firstIncompatibleReason||=error.message;}
+ }
+ items.sort((a,b)=>b.matchPercent-a.matchPercent||b.compared-a.compared||a.name.localeCompare(b.name,"tr"));
+ res.json({items:items.slice(0,5),incompatibleCount,firstIncompatibleReason});
 }));
 for(const mode of ["preview","download"]){
   opticalRouter.post(`/convert/${mode}`,uploadLimit,upload.single("file"),wrap(async(req,res)=>{

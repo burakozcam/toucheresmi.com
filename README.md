@@ -1,4 +1,6 @@
-# Kurumsal Sınav v1.2.1 RC.1 — Yerel kabul adayı
+# Kurumsal Sınav v1.2.2 RC.1 — Yerel kabul adayı
+
+**v1.2.2 RC:** Sınav ekleme/cevap anahtarı akışı, iptal cevapları, TXT–anahtar eşleşme önerileri ve sadeleştirilmiş karne raporları. [Değişiklik kaydı](CHANGELOG.md). Canlıya dağıtım veya push yapılmadı.
 
 **v1.2.1 RC:** Katsayısız değerlendirme, hesap açmadan kişisel kodla sorgu, belirgin karne türleri, ayrı sınav tanımı/anahtar akışı, avatar düzeltmesi ve salt okunur Test Merkezi. [RC raporu](docs/v121-release-report.md) · [Hosting/taşınabilirlik](docs/v121-hosting-portability.md). ProBook ve CAPTCHA çalışmaları kapsam dışıdır; push/deploy yapılmadı.
 

@@ -1,59 +1,76 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { API_URL } from "../../lib/api";
-import PublisherSelect from "./publisher-select";
 import type { PublisherOption } from "./publisher-select";
 
-type SchoolOption = { id: string; name: string; city: string | null; district: string | null };
+type Publisher = PublisherOption & { active: boolean };
 type Exam = {
   id: string;
-  name: string;
-  examDate: string;
-  school: SchoolOption;
-  publisher: PublisherOption | null;
+  examName: string;
+  grade: number;
+  published: boolean;
+  files: { category: "ANSWER_KEY" | "LEARNING_OUTCOMES" }[];
+  publisher: Publisher;
+  opticalKey?: { active: boolean } | null;
 };
 
-export default function ExamManagement({ token }: { token: string }) {
-  const [schools, setSchools] = useState<SchoolOption[]>([]);
-  const [publishers, setPublishers] = useState<PublisherOption[]>([]);
+export default function ExamManagement({ token, onOpenAnswerKeys }: { token: string; onOpenAnswerKeys: (publicationId: string) => void }) {
+  const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
-  const [schoolId, setSchoolId] = useState("");
   const [publisherId, setPublisherId] = useState("");
-  const [name, setName] = useState("");
-  const [examDate, setExamDate] = useState(new Date().toISOString().slice(0, 10));
+  const [grade, setGrade] = useState("8");
+  const [examName, setExamName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   async function loadData() {
+    setLoading(true);
     setError("");
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [schoolResponse, publisherResponse, examResponse] = await Promise.all([
-        fetch(`${API_URL}/api/schools?active=true`, { headers }),
-        fetch(`${API_URL}/api/publishers`),
-        fetch(`${API_URL}/api/exams`, { headers }),
+      const [publisherResponse, examResponse] = await Promise.all([
+        fetch(`${API_URL}/api/admin/publishers`, { headers }),
+        fetch(`${API_URL}/api/admin/answer-keys`, { headers }),
       ]);
-      const [schoolData, publisherData, examData] = await Promise.all([
-        schoolResponse.json() as Promise<SchoolOption[] | { error?: string }>,
-        publisherResponse.json() as Promise<PublisherOption[] | { error?: string }>,
-        examResponse.json() as Promise<Exam[] | { error?: string }>,
-      ]);
-      if (!schoolResponse.ok || !Array.isArray(schoolData)) throw new Error((schoolData as { error?: string }).error ?? "Kurumlar yüklenemedi.");
-      if (!publisherResponse.ok || !Array.isArray(publisherData)) throw new Error((publisherData as { error?: string }).error ?? "Yayınevleri yüklenemedi.");
-      if (!examResponse.ok || !Array.isArray(examData)) throw new Error((examData as { error?: string }).error ?? "Sınavlar yüklenemedi.");
-      setSchools(schoolData);
+      const [publisherData, examData] = await Promise.all([publisherResponse.json(), examResponse.json()]);
+      if (!publisherResponse.ok || !Array.isArray(publisherData)) throw new Error(publisherData.error ?? "Yayınevleri yüklenemedi.");
+      if (!examResponse.ok || !Array.isArray(examData)) throw new Error(examData.error ?? "Sınav kayıtları yüklenemedi.");
       setPublishers(publisherData);
       setExams(examData);
-      setSchoolId((current) => schoolData.some((school) => school.id === current) ? current : schoolData[0]?.id ?? "");
+      setPublisherId(current => publisherData.some((publisher: Publisher) => publisher.id === current && publisher.active) ? current : publisherData.find((publisher: Publisher) => publisher.active)?.id ?? "");
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Sınav verileri yüklenemedi.");
+      setError(loadError instanceof Error ? loadError.message : "Sınav kayıtları yüklenemedi.");
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => { void loadData(); }, [token]);
+
+  const groupedExams = useMemo(() => {
+    const groups = new Map<string, { publisher: Publisher; grades: Map<number, Exam[]> }>();
+    for (const exam of exams) {
+      let group = groups.get(exam.publisher.id);
+      if (!group) {
+        group = { publisher: exam.publisher, grades: new Map() };
+        groups.set(exam.publisher.id, group);
+      }
+      const gradeExams = group.grades.get(exam.grade) ?? [];
+      gradeExams.push(exam);
+      group.grades.set(exam.grade, gradeExams);
+    }
+    return [...groups.values()].sort((a, b) => a.publisher.name.localeCompare(b.publisher.name, "tr")).map(group => ({
+      ...group,
+      grades: [...group.grades.entries()].sort(([a], [b]) => a - b).map(([gradeValue, rows]) => ({
+        grade: gradeValue,
+        exams: rows.sort((a, b) => a.examName.localeCompare(b.examName, "tr")),
+      })),
+    }));
+  }, [exams]);
 
   async function createExam(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,22 +78,18 @@ export default function ExamManagement({ token }: { token: string }) {
     setNotice("");
     setSubmitting(true);
     try {
-      const response = await fetch(`${API_URL}/api/exams`, {
+      const response = await fetch(`${API_URL}/api/admin/exam-definitions`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ schoolId, publisherId: publisherId || null, name, examDate }),
+        body: JSON.stringify({ publisherId, grade, examName }),
       });
-      const result = await response.json() as { error?: string };
-      if (!response.ok) {
-        setError(result.error ?? "Sınav oluşturulamadı.");
-        return;
-      }
-      setNotice("Sınav kaydı oluşturuldu.");
-      setName("");
-      setPublisherId("");
+      const result = await response.json() as { id?: string; error?: string };
+      if (!response.ok || !result.id) throw new Error(result.error ?? "Sınav kaydı oluşturulamadı.");
+      setExamName("");
+      setNotice("Sınav eklendi. Şimdi cevap anahtarını yükleyebilirsiniz.");
       await loadData();
-    } catch {
-      setError("Sınav kaydedilirken sunucuya ulaşılamadı.");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Sınav kaydı oluşturulamadı.");
     } finally {
       setSubmitting(false);
     }
@@ -84,29 +97,40 @@ export default function ExamManagement({ token }: { token: string }) {
 
   return (
     <section className="management-panel exam-management">
-      <p>Kurum, yayınevi, ad ve tarih içeren bağımsız sınav tanımlarıdır. Bu kayıtlar TXT yüklemesi veya değerlendirme sonucu oluşturmaz. Cevap anahtarlarını Cevap Anahtarları, sonuçları Sınav Sonuçları bölümünden yönetin.</p><header className="panel-header"><div><p className="hero-tag">SINAV YÖNETİMİ</p><h2>Sınav oluştur</h2></div></header>
       {notice && <p className="notice success" role="status">{notice}</p>}
       {error && <p className="notice error" role="alert">{error}</p>}
-      {schools.length === 0 ? <p className="empty-state">Sınav oluşturmak için önce aktif bir kurum ekleyin.</p> : (
-        <form className="exam-form" onSubmit={createExam}>
-          <label>Kurum<select value={schoolId} onChange={(event) => setSchoolId(event.target.value)} required>{schools.map((school) => <option key={school.id} value={school.id}>{school.name}{school.city ? ` — ${school.city}` : ""}{school.district ? ` / ${school.district}` : ""}</option>)}</select></label>
-          <label>Yayınevi (isteğe bağlı)<PublisherSelect publishers={publishers} value={publisherId} onChange={setPublisherId} label="Yayınevi seçin (isteğe bağlı)" /></label>
-          <label>Sınav adı<input value={name} onChange={(event) => setName(event.target.value)} maxLength={180} required /></label>
-          <label>Sınav tarihi<input type="date" value={examDate} onChange={(event) => setExamDate(event.target.value)} required /></label>
-          <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Oluşturuluyor..." : "Sınav oluştur"}</button>
-        </form>
-      )}
+      <form className="exam-form" onSubmit={createExam}>
+        <h2>Yeni sınav</h2>
+        <p>Yayınevi ve sınıfı seçip sınav adını ekleyin. Sonraki adımda bu kayda cevap anahtarı bağlanır.</p>
+        <label>Yayınevi<select value={publisherId} onChange={event => setPublisherId(event.target.value)} required>
+          <option value="">Yayınevi seçin</option>
+          {publishers.filter(publisher => publisher.active).map(publisher => <option key={publisher.id} value={publisher.id}>{publisher.name}</option>)}
+        </select></label>
+        <label>Sınıf<select value={grade} onChange={event => setGrade(event.target.value)} required>{Array.from({ length: 12 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}. Sınıf</option>)}</select></label>
+        <label>Sınav adı<input value={examName} onChange={event => setExamName(event.target.value)} maxLength={180} minLength={2} placeholder="Örn. Türkiye Geneli Deneme 1" required /></label>
+        <button className="button button-navy" type="submit" disabled={submitting || !publisherId}>{submitting ? "Ekleniyor…" : "Sınavı ekle"}</button>
+      </form>
+
       <div className="school-list-panel">
-        <h3>Son sınavlar</h3>
-        {exams.length === 0 ? <p className="empty-state">Henüz sınav kaydı bulunmuyor.</p> : (
-          <div className="exam-list">
-            {exams.map((exam) => <article className="exam-list-item" key={exam.id}>
-              <strong>{exam.name}</strong>
-              <span>{exam.school.name} · {new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(exam.examDate))}</span>
-              <small>{exam.publisher?.name ?? "Yayınevi belirtilmemiş"}</small>
-            </article>)}
-          </div>
-        )}
+        <div className="list-header-row"><h2>Kayıtlı sınavlar</h2><span>{exams.length} sınav</span></div>
+        {loading ? <p role="status">Sınavlar yükleniyor…</p> : !groupedExams.length ? <p className="empty-state">Henüz sınav eklenmedi.</p> : groupedExams.map(group => (
+          <section className="exam-publisher-group" key={group.publisher.id}>
+            <h3>{group.publisher.name} <span>{[...group.grades].reduce((count, item) => count + item.exams.length, 0)}</span></h3>
+            {group.grades.map(({ grade: gradeValue, exams: rows }) => (
+              <div className="exam-grade-group" key={gradeValue}>
+                <h4>{gradeValue}. Sınıf</h4>
+                <div className="exam-list">{rows.map(exam => {
+                  const hasAnswerFile = exam.files.some(file => file.category === "ANSWER_KEY");
+                  return <article className="exam-list-item" key={exam.id}>
+                    <strong>{exam.examName}</strong>
+                    <span>{hasAnswerFile ? "Cevap anahtarı dosyası eklendi" : "Cevap anahtarı bekleniyor"}</span>
+                    <button className="button button-quiet" type="button" onClick={() => onOpenAnswerKeys(exam.id)}>{hasAnswerFile ? "Anahtarı düzenle" : "Cevap anahtarı ekle"}</button>
+                  </article>;
+                })}</div>
+              </div>
+            ))}
+          </section>
+        ))}
       </div>
     </section>
   );

@@ -35,5 +35,6 @@ import "./v119.test";
 import "./v120.test";
 
 import "./v121.test";
+import "./v122.test";
 
 import "./ozdebir.test";

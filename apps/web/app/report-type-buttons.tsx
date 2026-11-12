@@ -1,2 +1,18 @@
 "use client";
-export default function ReportTypeButtons({value,onChange}:{value:string;onChange:(value:string)=>void}){return <div><div role="group" aria-label="Öğrenci karnesi türü" className="report-type-buttons">{[["summary-card","1 Sayfalık Karne"],["two-page-card","2 Sayfalık Karne"],["detailed-card","Kazanımlı Karne"]].map(([id,label])=><button key={id} type="button" aria-pressed={value===id} className={`button ${value===id?"button-navy":"button-quiet"}`} onClick={()=>onChange(id)}>{label}</button>)}</div><p className="field-help">1 sayfa: özet ve ders tablosu. 2 sayfa: genel başarı, cevap ve kazanım analizi. İçerik iki sayfaya sığmazsa indirme açıklamayla durdurulur; tam içerik için çok sayfalı Kazanımlı Karne seçin.</p></div>;}
+
+const reportOptions = [
+  { id: "summary-card", label: "1 sayfa · Özet", detail: "Genel başarı ve ders tablosu" },
+  { id: "two-page-card", label: "2 sayfa · Ayrıntılı", detail: "Başarı, cevap ve kazanım özeti" },
+  { id: "detailed-card", label: "Kazanımlı karne", detail: "Soru ve kazanım ayrıntıları" },
+];
+
+export default function ReportTypeButtons({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return <section className="report-type-choice">
+    <h3>Öğrenci karnesi biçimi</h3>
+    <div role="group" aria-label="Öğrenci karnesi türü" className="report-type-buttons">
+      {reportOptions.map(option => <button key={option.id} type="button" aria-pressed={value === option.id} className={`button ${value === option.id ? "button-navy" : "button-quiet"}`} onClick={() => onChange(option.id)}>
+        <strong>{option.label}</strong><small>{option.detail}</small>
+      </button>)}
+    </div>
+  </section>;
+}

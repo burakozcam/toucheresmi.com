@@ -1,3 +1,11 @@
+# v1.2.2 RC · 2026-11-12 · yerel geliştirme
+
+- Cevap anahtarı ekleme için yöneticiye özel, yayınevi ve sınıfa göre gruplanan Sınav Ekle ekranı; kayıtlı sınavdan doğrudan anahtar ekleme.
+- XLS/Excel içe aktarmada `İ`, `X` ve `İPTAL` iptal cevapları olarak eşlenir; soru düzenleyicide seçenek adı İPTAL olarak görünür.
+- TXT ve FMT seçildiğinde uygun cevap anahtarları, işaretli öğrenci cevap dizilerine göre yüzde benzerlikle önerilir; seçim kullanıcıda kalır.
+- Öğrenci/okul karne türleri ve PDF/Excel işlemleri net adlarla gruplandı; yinelenen karne şablonu seçicileri kaldırıldı.
+- Sürüm numarası v1.2.2 RC.1 olarak güncellendi. Canlıya dağıtım veya push yapılmadı.
+
 ## v1.2.0 · 2026-11-12 · yerel kabul adayı
 
 - Sistem 7108 tanımı eski veritabanı yerleşimi tarafından gölgelenmez; geçmiş kayıtlar korunur.

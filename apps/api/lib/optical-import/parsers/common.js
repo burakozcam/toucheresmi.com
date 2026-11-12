@@ -1,5 +1,6 @@
 // Shared browser/API parser. Input is worksheet data only; no file or network access.
 const norm=v=>String(v??"").trim().toLocaleUpperCase("tr-TR").replace(/\s+/g," ");
+const answer=v=>{const value=norm(v);return ["İ","İPTAL","IPTAL","İPT.","IPT."].includes(value)?"X":value;};
 function lessonName(value){const n=norm(value);if(/İNK|TARİH|TAR\.|SOSYAL/.test(n))return "SOSYAL";if(/^DİN/.test(n))return "DİN";if(/^FEN/.test(n))return "FEN";return n;}
 const weightFor=()=>null; // Source contains no coefficients; never infer them from a lesson name.
 function internalCode(text){let hash=2166136261;for(const c of norm(text)){hash^=c.codePointAt(0);hash=Math.imul(hash,16777619);}return `METİN-${(hash>>>0).toString(16).padStart(8,"0")}`;}
@@ -9,4 +10,4 @@ function basic(q,label){if(!q.lesson||!Number.isInteger(q.number)||q.number<1||q
 function validateMapping(qs){for(const lesson of new Set(qs.map(q=>q.lesson))){const rows=qs.filter(q=>q.lesson===lesson);for(const book of Object.keys(rows[0].positions)){const p=rows.map(q=>q.positions[book]).sort((a,b)=>a-b);if(p.some((n,i)=>n!==i+1))throw new Error(`${lesson} / ${book}: soru eşleştirmesi eksik veya yinelenmiş.`);}}}
 
 function sourceRow(system,sheet,row){return {system,sheet:sheet.name,row:row+1,columns:sheet.rows.find(r=>norm(r[0])==="DERS"||norm(r[0])==="KİTAPÇIK")?.map(v=>String(v??""))??[],values:sheet.rows[row].map(v=>v??null)};}
-module.exports={norm,lessonName,weightFor,outcome,locate,basic,validateMapping,sourceRow};
+module.exports={norm,answer,lessonName,weightFor,outcome,locate,basic,validateMapping,sourceRow};
