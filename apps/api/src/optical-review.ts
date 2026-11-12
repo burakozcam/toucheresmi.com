@@ -16,6 +16,7 @@ export function reviewSnapshot(snapshot:Snapshot){
   }
   const multiple=data.students.reduce((n,s)=>n+s.answers.filter(a=>a==="*").length,0);
   if(multiple)warnings.push(`${multiple} çoklu işaret yanlış cevap olarak hesaplanacak.`);
+  if(data.questions.some(q=>q.weight===null))warnings.push("Katsayı tanımlanmamış: doğru, yanlış, boş ve net hesaplanır; puan ve puan sıralaması hesaplanmaz.");
   const missing=data.questions.filter(q=>!q.outcomeCode||!q.outcomeName).length;
   if(missing)warnings.push(`${missing} soruda kazanım bilgisi eksik.`);
   // A booklet hint is a review aid only; never change a student's recorded booklet.
@@ -44,4 +45,4 @@ export function reEvaluate(snapshot:Snapshot,questions:unknown,penalty:number):S
   const data={...snapshot.data,students,questions:next.map(q=>({...q,column:`${q.lesson} | ${q.number}`}))};
   return {...snapshot,data,penalty,summary:opticalSummary(data,penalty),keyFingerprint:keyFingerprint(next,penalty)};
 }
-export function scoreChanges(before:Snapshot,after:Snapshot){return after.summary.map(r=>{const old=before.summary.find(s=>s.id===r.id)!;return{id:r.id,name:after.data.students.find(s=>s.id===r.id)!.name,beforeNet:old.net,afterNet:r.net,beforeScore:old.score,afterScore:r.score,changed:Math.abs(old.net-r.net)>1e-8||Math.abs(old.score-r.score)>1e-8};});}
+export function scoreChanges(before:Snapshot,after:Snapshot){return after.summary.map(r=>{const old=before.summary.find(s=>s.id===r.id)!;return{id:r.id,name:after.data.students.find(s=>s.id===r.id)!.name,beforeNet:old.net,afterNet:r.net,beforeScore:old.score,afterScore:r.score,changed:Math.abs(old.net-r.net)>1e-8||old.score!==r.score&&(old.score===null||r.score===null||Math.abs(old.score-r.score)>1e-8)};});}

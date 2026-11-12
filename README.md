@@ -1,4 +1,6 @@
-# Kurumsal Sınav v1.2.0 — Yerel kabul adayı
+# Kurumsal Sınav v1.2.1 RC.1 — Yerel kabul adayı
+
+**v1.2.1 RC:** Katsayısız değerlendirme, hesap açmadan kişisel kodla sorgu, belirgin karne türleri, ayrı sınav tanımı/anahtar akışı, avatar düzeltmesi ve salt okunur Test Merkezi. [RC raporu](docs/v121-release-report.md) · [Hosting/taşınabilirlik](docs/v121-hosting-portability.md). ProBook ve CAPTCHA çalışmaları kapsam dışıdır; push/deploy yapılmadı.
 
 **v1.2.0:** Sistem 7108 yerleşiminin eski kayıttan etkilenmesi düzeltildi; tüm kayıtlar üzerinden tahmin, bağımsız hesaplı gerçek PostgreSQL kabul testi, profesyonel varsayılan PDF’ler, öğrenciye özel erişim, belirgin arama ve Google reCAPTCHA v2 hazırlığı. Canlı değiştirilmedi. [15 başlıklı kabul raporu ve örnek PDF’ler](docs/v1.2.0-kritik-kabul-raporu.md).
 

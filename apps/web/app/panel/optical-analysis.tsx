@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { opticalRequest } from "../../lib/optical-api";
 type Question={lesson:string;number:number;answer:string;correct:number;wrong:number;blank:number;success:number;distribution:Record<string,number>;diagnostic:boolean;outcomeCode:string;outcomeName:string};
-type Analysis={studentCount:number;meanNet:number;meanScore:number;classes:Array<{name:string;studentCount:number;meanNet:number;meanScore:number}>;lessons:Array<{lesson:string;meanNet:number;correct:number;wrong:number;blank:number}>;questions:Question[];hardest:Question[];outcomes:Array<{lesson:string;code:string;name:string;questionCount:number;correct:number;wrong:number;blank:number;success:number}>};
-const n=(v:number)=>v.toLocaleString("tr-TR",{maximumFractionDigits:2});
+type Analysis={studentCount:number;meanNet:number|null;meanScore:number|null;classes:Array<{name:string;studentCount:number;meanNet:number|null;meanScore:number|null}>;lessons:Array<{lesson:string;meanNet:number|null;correct:number;wrong:number;blank:number}>;questions:Question[];hardest:Question[];outcomes:Array<{lesson:string;code:string;name:string;questionCount:number;correct:number;wrong:number;blank:number;success:number}>};
+const n=(v:number|null)=>v===null?"Hesaplanmadı":v.toLocaleString("tr-TR",{maximumFractionDigits:2});
 export default function OpticalAnalysis({token,resultId,branch,title,school,ready}:{token:string;resultId:string;branch:string;title:string;school:string;ready:boolean}){
   const [data,setData]=useState<Analysis|null>(null),[error,setError]=useState("");
   useEffect(()=>{let cancelled=false;setData(null);setError("");void opticalRequest(token,`/results/${resultId}/analysis?branch=${encodeURIComponent(branch)}`).then(d=>{if(!cancelled)setData(d);}).catch(e=>{if(!cancelled)setError(e.message);});return()=>{cancelled=true;};},[token,resultId,branch]);

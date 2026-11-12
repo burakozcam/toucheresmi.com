@@ -10,10 +10,10 @@ export type ReportView=any;
 export type ReportOptions={kind:"cards"|"school"|"classes";order:"score"|"name";hideIdentity:boolean;branch?:string;grade?:string;templateId?:string;studentId?:string};
 export function selectedStudents(view:ReportView,options:ReportOptions):OpticalStudent[]{return view.data.students.filter((s:OpticalStudent)=>(!options.grade||resultGrade(s.branch)===options.grade)&&(!options.branch||s.branch===options.branch)&&(!options.studentId||s.id===options.studentId)).sort((a:OpticalStudent,b:OpticalStudent)=>options.order==="name"?a.name.localeCompare(b.name,"tr"):(view.summary.find((r:any)=>r.id===b.id).score-view.summary.find((r:any)=>r.id===a.id).score||a.name.localeCompare(b.name,"tr")));}
 const displayNo=(s:OpticalStudent,hide:boolean)=>hide&&/^\d{11}$/.test(s.studentNo??s.id)?"***********":(s.studentNo??s.id).startsWith("tc-")?"—":s.studentNo??s.id;
-const n=(value:number)=>new Intl.NumberFormat("tr-TR",{maximumFractionDigits:2}).format(value);
+const n=(value:number|null)=>value===null?"Hesaplanmadı":new Intl.NumberFormat("tr-TR",{maximumFractionDigits:2}).format(value);
 export function reportPdf(view:ReportView,options:ReportOptions):Promise<Buffer>{
  const template=reportTemplate(options.kind,options.templateId);
- if(["summary-card","detailed-card","school-table"].includes(template.id))return professionalReportPdf(view,{...options,templateId:template.id});
+ if(["summary-card","two-page-card","detailed-card","school-table"].includes(template.id))return professionalReportPdf(view,{...options,templateId:template.id});
  if(!template.id.startsWith("classic-"))return designedReportPdf(view,{...options,templateId:template.id});
  return new Promise((resolve,reject)=>{
  const doc=new PDFDocument({size:"A4",margin:36,autoFirstPage:false,info:{Title:view.keyName,Author:"Kurumsal Sınav"}}),chunks:Buffer[]=[];doc.on("data",(chunk:Buffer)=>chunks.push(chunk));doc.on("end",()=>resolve(Buffer.concat(chunks)));doc.on("error",reject);
@@ -24,7 +24,7 @@ export function reportPdf(view:ReportView,options:ReportOptions):Promise<Buffer>
  if(options.kind==="cards")for(const student of students){const result=view.summary.find((r:any)=>r.id===student.id),rank=view.rankings[student.id];page(student.name);line(`${view.schoolName} · ${student.branch} · Öğrenci No: ${displayNo(student,options.hideIdentity)}`);
    if(!options.hideIdentity){const identity=decryptIdentity(student.identityEncrypted);if(/^\d{11}$/.test(identity))line(`TC: ${identity}`);}
    line(`Puan: ${n(result.score)} / 500     Toplam net: ${n(result.net)}`,true);
-   line(`Genel katılım: ${rank.generalCount} öğrenci · Genel sıra: ${rank.generalRank}`,true);line(`Kurum sırası: ${rank.schoolRank} / ${rank.schoolCount} · Sınıf sırası: ${rank.classRank} / ${rank.classCount}`);
+   line(`Genel katılım: ${rank.generalCount} öğrenci · Genel sıra: ${rank.generalRank??"—"}`,true);line(`Kurum sırası: ${rank.schoolRank??"—"} / ${rank.schoolCount} · Sınıf sırası: ${rank.classRank??"—"} / ${rank.classCount}`);
    y+=6;line("DERS SONUÇLARI",true);for(const lesson of result.lessons)line(`${lesson.lesson}    Doğru: ${lesson.correct}    Yanlış: ${lesson.wrong}    Boş: ${lesson.blank}    Net: ${n(lesson.net)}`);
    y+=8;line("KAZANIM ANALİZİ",true);const outcomes=new Map<string,{name:string;correct:number;wrong:number;blank:number;count:number}>();
    view.data.questions.forEach((q:any,i:number)=>{if(q.answer==="X"||(!q.outcomeName&&!q.outcomeCode))return;const id=`${q.lesson}:${q.outcomeCode}:${q.outcomeName}`,o=outcomes.get(id)??{name:`${q.lesson} · ${q.outcomeCode??""} ${q.outcomeName??""}`,correct:0,wrong:0,blank:0,count:0};o.count++;if(q.answer==="H"||student.answers[i]===q.answer)o.correct++;else if(!student.answers[i])o.blank++;else o.wrong++;outcomes.set(id,o);});
@@ -33,7 +33,7 @@ export function reportPdf(view:ReportView,options:ReportOptions):Promise<Buffer>
  }else{
   const groups=options.kind==="classes"?[...new Set(students.map(s=>s.branch))].sort():[""];
   for(const group of groups){page(group?`${view.schoolName} · ${group} sınıf listesi`:`${view.schoolName} · Okul puan listesi`);line(`Genel katılım: ${view.generalCount} öğrenci · Kurum katılımı: ${view.data.students.length} öğrenci`);
-   for(const student of students.filter(s=>!group||s.branch===group)){const r=view.summary.find((r:any)=>r.id===student.id),rank=view.rankings[student.id];line(`${student.name} · No ${displayNo(student,options.hideIdentity)} · ${student.branch}`,true);line(`Genel/Kurum/Sınıf: ${rank.generalRank}/${rank.schoolRank}/${rank.classRank} · Puan ${n(r.score)} · Net ${n(r.net)}${!options.hideIdentity&&/^\d{11}$/.test(decryptIdentity(student.identityEncrypted))?` · TC ${decryptIdentity(student.identityEncrypted)}`:""}`);line(r.lessons.map((l:any)=>`${l.lesson}: ${l.correct}D ${l.wrong}Y ${l.blank}B / ${n(l.net)} net`).join(" · "));}
+   for(const student of students.filter(s=>!group||s.branch===group)){const r=view.summary.find((r:any)=>r.id===student.id),rank=view.rankings[student.id];line(`${student.name} · No ${displayNo(student,options.hideIdentity)} · ${student.branch}`,true);line(`Genel/Kurum/Sınıf: ${rank.generalRank??"—"}/${rank.schoolRank??"—"}/${rank.classRank??"—"} · Puan ${n(r.score)} · Net ${n(r.net)}${!options.hideIdentity&&/^\d{11}$/.test(decryptIdentity(student.identityEncrypted))?` · TC ${decryptIdentity(student.identityEncrypted)}`:""}`);line(r.lessons.map((l:any)=>`${l.lesson}: ${l.correct}D ${l.wrong}Y ${l.blank}B / ${n(l.net)} net`).join(" · "));}
   }
  }
  doc.end();

@@ -33,5 +33,12 @@
     "file": "dakika-karekok.fmt",
     "downloadName": "Dakika - Karekök Yayınları Ortaokul Optik.fmt",
     "requiresVerification": true
+  },
+  {
+    "code": "ozdebir-ortaokul-tek-oturum",
+    "name": "Özdebir 5/6/7/8 Ortaokul Tek Oturum",
+    "file": "ozdebir-ortaokul-tek-oturum.bldm",
+    "downloadName": "Özdebir 5-6-7-8 Ortaokul Tek Oturum.bldm",
+    "requiresVerification": false
   }
 ]

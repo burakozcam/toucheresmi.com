@@ -13,10 +13,11 @@
     "db:generate": "npm run db:generate -w @optik/api",
     "db:migrate": "npm run db:migrate -w @optik/api",
     "db:migrate:deploy": "npm run db:migrate:deploy -w @optik/api",
-    "db:seed": "npm run db:seed -w @optik/api"
+    "db:seed": "npm run db:seed -w @optik/api",
+    "test:report": "node tests/build-test-report.cjs"
   },
   "engines": {
     "node": ">=20.9"
   },
-  "version": "1.2.0"
+  "version": "1.2.1-rc.1"
 }

@@ -14,9 +14,9 @@ const snapshot={data,summary:opticalSummary(data,3),penalty:3,schoolName:"Örnek
 test("öğrenci karnesi yalnızca kendi cevaplarını ve toplu sıralamayı içerir; diğer öğrenci kaydı sızmaz",()=>{
   const own=privateResult(snapshot,"00001"),serialized=JSON.stringify(own);
   assert.equal(own.data.students.length,1);assert.equal(own.summary.length,1);assert.equal(own.summary[0].net,78);
-  assert.equal(own.comparison.schoolCount,2);assert.equal(own.comparison.schoolRank,1);assert.equal(own.comparison.branchCount,2);
+  assert.equal(own.comparison.schoolCount,2);assert.equal(own.comparison.schoolRank,null);assert.equal(own.comparison.branchCount,2);
   assert.ok(!serialized.includes("ORNEK IKI"));assert.ok(!serialized.includes('"00002"'));assert.ok(!serialized.includes("sourceLines"));assert.ok(!serialized.includes("warnings"));
-  assert.equal(privateResult(snapshot,"00002").comparison.schoolRank,2);
+  assert.equal(privateResult(snapshot,"00002").comparison.schoolRank,null);
   assert.throws(()=>privateResult(snapshot,"99999"),/tek bir öğrenci/);
   assert.throws(()=>resultStudent({...snapshot,data:{...data,students:[...data.students,data.students[0]]}},"00001"),/tek bir öğrenci/);
 });

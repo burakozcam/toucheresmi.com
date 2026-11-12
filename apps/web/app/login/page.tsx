@@ -1,4 +1,5 @@
 "use client";
+import UiIcon from "../ui-icon";
 import HumanVerification from "../human-verification";
 import ReleaseMark from "../release-mark";
 
@@ -147,7 +148,7 @@ export default function LoginPage() {
           <p className="login-subtitle">{registering ? "Bilgileriniz yönetici onayına gönderilir." : "Devam etmek için giriş türünüzü seçin."}</p>
           {!registering && <div className="login-types">
             {loginTypes.filter(t=>!["admin","student","parent"].includes(t.id)).map((type) => <button className={`login-type ${selectedType === type.id ? "active" : ""} ${!type.available ? "unavailable" : ""}`} key={type.id} onClick={() => selectType(type.id, type.available)} type="button">
-              <span className="login-type-icon">{type.icon}</span>
+              <span className="login-type-icon"><UiIcon name={type.id==="dealer"?"book":type.id==="admin"?"settings":type.id==="institution"?"school":"users"}/></span>
               <span className="login-type-copy"><strong>{type.title}</strong><small>{type.description}</small></span>
               <span className="login-type-arrow">{selectedType === type.id ? "●" : "○"}</span>
             </button>)}

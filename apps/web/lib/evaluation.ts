@@ -1,10 +1,10 @@
-export type Lesson = { name: string; count: number; weight: number };
-export type Question = { lesson: string; number: number; answer: string; weight: number; column: string; outcomeCode?: string; outcomeName?: string };
+export type Lesson = { name: string; count: number; weight: number|null };
+export type Question = { lesson: string; number: number; answer: string; weight: number | null; column: string; outcomeCode?: string; outcomeName?: string };
 export type Candidate = {studentNo?:string; id: string; name: string; school: string; branch: string; answers: string[] };
 export type EvaluationData = { questions: Question[]; students: Candidate[] };
-export type CohortContext = Map<string, { members: Candidate[]; scores: number[]; rates: (number | null)[] }>;
+export type CohortContext = Map<string, { members: Candidate[]; scores: (number|null)[]; rates: (number | null)[] }>;
 export type QuestionState = "correct" | "wrong" | "blank" | "cancelled";
-export type LessonResult = { lesson: string; correct: number; wrong: number; blank: number; cancelled: number; net: number; weighted: number };
+export type LessonResult = { lesson: string; correct: number; wrong: number; blank: number; cancelled: number; net: number; weighted: number | null };
 export const text = (value: unknown) => String(value ?? "").trim();
 const choice = (value: unknown) => text(value).toLocaleUpperCase("tr-TR");
 const positive = (value: unknown) => Number(text(value).replace(",", "."));
@@ -17,7 +17,7 @@ export function parseEvaluation(keyRows: unknown[][], studentRows: unknown[][]):
   if (requiredKey.some((name, i) => text(keyRows[0]?.[i]) !== name)) throw new Error("Cevap Anahtarı başlıkları değiştirilmiş. Yeni bir şablon indirin.");
   const questions: Question[] = [];
   const seen = new Set<string>();
-  const weights = new Map<string, number>();
+  const weights = new Map<string, number|null>();
   const hasOutcomes = text(keyRows[0][4]) === "Kazanım Kodu" && text(keyRows[0][5]) === "Kazanım Adı";
   if ((text(keyRows[0][4]) || text(keyRows[0][5])) && !hasOutcomes) throw new Error("Kazanım sütunları Kazanım Kodu ve Kazanım Adı olarak birlikte bulunmalıdır.");
   keyRows.slice(1).forEach((row, index) => {
@@ -25,11 +25,11 @@ export function parseEvaluation(keyRows: unknown[][], studentRows: unknown[][]):
     const lesson = text(row[0]);
     const number = positive(row[1]);
     const answer = choice(row[2]);
-    const weight = positive(row[3]);
+    const weight = text(row[3]) ? positive(row[3]) : null;
     const label = `Cevap Anahtarı, satır ${index + 2}`;
     if (!lesson || lesson.length > 80 || !Number.isInteger(number) || number < 1 || number > 300) throw new Error(`${label}: ders ve soru numarasını kontrol edin.`);
     if (!/^[ABCDEX]$/.test(answer)) throw new Error(`${label}: doğru cevap A–E, iptal için X olmalıdır.`);
-    if (!Number.isFinite(weight) || weight <= 0 || weight > 100) throw new Error(`${label}: katsayı 0'dan büyük, en fazla 100 olmalıdır.`);
+    if (weight!==null && (!Number.isFinite(weight) || weight <= 0 || weight > 100)) throw new Error(`${label}: katsayı 0'dan büyük, en fazla 100 olmalıdır.`);
     const column = questionColumn(lesson, number);
     if (seen.has(column)) throw new Error(`${label}: ${column} birden fazla kez tanımlanmış.`);
     if (weights.has(lesson) && weights.get(lesson) !== weight) throw new Error(`${label}: aynı dersin katsayıları tutarlı olmalıdır.`);
@@ -83,12 +83,13 @@ export function parseEvaluation(keyRows: unknown[][], studentRows: unknown[][]):
 }
 
 /** A transparent scale for local practice exams, not the official standardized score. */
-export function scaledScore(questions: Question[], student: Candidate, penalty: number, weights: Record<string, number>, scale: 100 | 500) {
-  const maximum = questions.reduce((total, q) => total + (q.answer === "X" ? 0 : weights[q.lesson] ?? q.weight), 0);
-  const total = evaluate(questions, student, penalty, weights).reduce((n, r) => n + r.weighted, 0);
-  return maximum > 0 ? Math.min(scale, Math.max(0, total / maximum * scale)) : 0;
+export function scaledScore(questions: Question[], student: Candidate, penalty: number, weights: Record<string, number|null>, scale: 100 | 500) {
+  if(questions.some(q=>q.answer!=="X"&&(Object.hasOwn(weights,q.lesson)?weights[q.lesson]:q.weight)===null))return null;
+  const maximum = questions.reduce((total, q) => total + (q.answer === "X" ? 0 : ((Object.hasOwn(weights,q.lesson)?weights[q.lesson]:q.weight)??0)), 0);
+  const total = evaluate(questions, student, penalty, weights).reduce((n, r) => n + (r.weighted??0), 0);
+  return maximum > 0 ? Math.min(scale, Math.max(0, total / maximum * scale)) : null;
 }
-export function buildCohortContext(data: EvaluationData, penalty: number, weights: Record<string, number>, scale: 100 | 500): CohortContext {
+export function buildCohortContext(data: EvaluationData, penalty: number, weights: Record<string, number|null>, scale: 100 | 500): CohortContext {
   const groups: CohortContext = new Map();
   for (const student of data.students) {
     const group = groups.get(student.school) ?? { members: [], scores: [], rates: data.questions.map(() => 0) };
@@ -115,7 +116,7 @@ export function questionState(question: Question, answer: string): QuestionState
   return question.answer === "X" ? "cancelled" : question.answer === "H" ? "correct" : !answer ? "blank" : answer === question.answer ? "correct" : "wrong";
 }
 
-export function evaluate(questions: Question[], student: Candidate, penalty: number, overrides: Record<string, number> = {}): LessonResult[] {
+export function evaluate(questions: Question[], student: Candidate, penalty: number, overrides: Record<string, number|null> = {}): LessonResult[] {
   const results = new Map<string, LessonResult>();
   questions.forEach((q, i) => {
     let result = results.get(q.lesson);
@@ -124,7 +125,8 @@ export function evaluate(questions: Question[], student: Candidate, penalty: num
   });
   for (const result of results.values()) {
     result.net = result.correct - (penalty > 0 ? result.wrong / penalty : 0);
-    result.weighted = result.net * (overrides[result.lesson] ?? questions.find((q) => q.lesson === result.lesson)!.weight);
+    const weight=Object.hasOwn(overrides,result.lesson)?overrides[result.lesson]:questions.find((q) => q.lesson === result.lesson)!.weight;
+    result.weighted = weight===null?null:result.net * weight;
   }
   return [...results.values()];
 }

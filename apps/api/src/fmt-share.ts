@@ -35,11 +35,11 @@ fmtShareRouter.post("/api/optical/fmt-shares",requireAuth,manager,limit,wrap(asy
 fmtShareRouter.get("/api/optical/fmt-shares",requireAuth,manager,wrap(async(q,r)=>{
  r.json(await prisma.fmtShare.findMany({where:q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id},select:{id:true,createdAt:true,expiresAt:true,revokedAt:true},orderBy:{createdAt:"desc"},take:100}));
 }));
-async function shareFiles(share:{fileRefs:unknown;template?:{id:string;name:string;active:boolean;originalFmt:string;originalBase64?:string|null}|null}){
+async function shareFiles(share:{fileRefs:unknown;template?:{id:string;name:string;active:boolean;originalFmt:string;originalBase64?:string|null}|null}):Promise<Array<{id:string;name:string;bytes:Buffer;downloadName?:string}>>{
  if(!share.fileRefs)return share.template?.active&&hasFmt(share.template)?[{id:share.template.id,name:share.template.name,bytes:fmtBytes(share.template.originalFmt,share.template.originalBase64)}]:[];
- const refs=share.fileRefs as FileRef[],files:Array<{id:string;name:string;bytes:Buffer}>=[];
+ const refs=share.fileRefs as FileRef[],files:Array<{id:string;name:string;bytes:Buffer;downloadName?:string}>=[];
  for(const ref of refs){
-  if(ref.example){const code=ref.id.startsWith("example:")?ref.id.slice(8):"",entry=findLibraryFmt(code);if(!entry)return [];files.push({id:ref.id,name:entry.name,bytes:libraryFmtBytes(code)});continue;}
+  if(ref.example){const code=ref.id.startsWith("example:")?ref.id.slice(8):"",entry=findLibraryFmt(code);if(!entry)return [];files.push({id:ref.id,name:entry.name,downloadName:entry.downloadName,bytes:libraryFmtBytes(code)});continue;}
   const t=await prisma.opticalTemplate.findFirst({where:{id:ref.id,active:true}});
   if(!t||!hasFmt(t))return [];
   files.push({id:t.id,name:t.name,bytes:fmtBytes(t.originalFmt,t.originalBase64)});
@@ -70,8 +70,8 @@ for(const action of ["view","download"]){fmtShareRouter.post(`/api/public/fmt-sh
  const share=await prisma.fmtShare.findFirst({where:{id:String(q.params.id),tokenHash:shareHash(token),revokedAt:null,expiresAt:{gt:new Date()}},include:{template:true}});
  const files=share?await shareFiles(share):[];
  if(!share||!files.length){r.status(410).json({error:"Paylaşım süresi dolmuş, iptal edilmiş veya bağlantı geçersiz."});return;}
- if(action==="view"){r.json({name:files.map(f=>f.name).join(" + "),files:files.map(({id,name})=>({id,name})),expiresAt:share.expiresAt});return;}
+ if(action==="view"){r.json({name:files.map(f=>f.name).join(" + "),files:files.map(({id,name,downloadName})=>({id,name,...(downloadName?{downloadName}:{})})),expiresAt:share.expiresAt});return;}
  const file=fileId?files.find(f=>f.id===fileId):files.length===1?files[0]:undefined;
  if(!file){r.status(400).json({error:"İndirmek istediğiniz FMT’yi seçin."});return;}
- r.attachment(file.name.replace(/[\\/:*?"<>|\x00-\x1f]/g,"-").replace(/\.fmt$/i,"")+".fmt").type("application/octet-stream").send(file.bytes);
+ r.attachment(file.downloadName??file.name.replace(/[\\/:*?"<>|\x00-\x1f]/g,"-").replace(/\.fmt$/i,"")+".fmt").type("application/octet-stream").send(file.bytes);
 }));}

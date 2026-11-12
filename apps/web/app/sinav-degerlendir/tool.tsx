@@ -4,13 +4,15 @@ import Script from "next/script";
 import { useMemo, useState } from "react";
 import { buildCohortContext, evaluate, parseEvaluation, questionColumn, scaledScore } from "../../lib/evaluation";
 import type { EvaluationData, Lesson } from "../../lib/evaluation";
+import CoefficientHelp from "../panel/coefficient-help";
+import CoefficientChoice from "../panel/coefficient-choice";
 import ReportCard from "./report-card";
 import { EXAM_PRESETS } from "../../config/exam-presets";
 import type { Workbook } from "../../lib/sheetjs";
 
 const presets = Object.fromEntries(Object.entries(EXAM_PRESETS).map(([id, preset]) => [id, preset.lessons]));
-const fmt = (n: number) => new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 }).format(n);
-const sum = (rows: ReturnType<typeof evaluate>, key: "correct" | "wrong" | "blank" | "cancelled" | "net" | "weighted") => rows.reduce((total, r) => total + r[key], 0);
+const fmt = (n: number|null) => n===null?"—":new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 }).format(n);
+const sum = (rows: ReturnType<typeof evaluate>, key: "correct" | "wrong" | "blank" | "cancelled" | "net" | "weighted") => rows.reduce((total, r) => total + (r[key]??0), 0);
 
 export default function EvaluationTool() {
   const [presetId, setPresetId] = useState("custom");
@@ -18,11 +20,12 @@ export default function EvaluationTool() {
   const [showQuestions, setShowQuestions] = useState(false);
   const [scale, setScale] = useState<100 | 500>(100);
   const [printMode, setPrintMode] = useState("color");
-  const [lessons, setLessons] = useState<Lesson[]>(presets.custom.map((l) => ({ ...l })));
+  const [lessons, setLessons] = useState<Lesson[]>(presets.custom.map((l) => ({ ...l,weight:null })));
   const [examName, setExamName] = useState("Deneme Sınavı");
   const [data, setData] = useState<EvaluationData | null>(null);
   const [penalty, setPenalty] = useState(0);
-  const [weights, setWeights] = useState<Record<string, number>>({});
+  const [weights, setWeights] = useState<Record<string, number|null>>({});
+  const [acceptedMissing,setAcceptedMissing]=useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -51,8 +54,8 @@ export default function EvaluationTool() {
     setError("");
     const names = lessons.map((l) => l.name.trim());
     const total = lessons.reduce((n, l) => n + l.count, 0);
-    if (!names.length || names.some((n) => !n || n.length > 80) || new Set(names).size !== names.length || lessons.some((l) => !Number.isInteger(l.count) || l.count < 1 || l.count > 300 || !Number.isFinite(l.weight) || l.weight <= 0 || l.weight > 100) || total > 300) {
-      setError("Ders adları benzersiz olmalı; toplam 1–300 soru ve 0–100 aralığında pozitif katsayı girin."); return;
+    if (!names.length || names.some((n) => !n || n.length > 80) || new Set(names).size !== names.length || lessons.some((l) => !Number.isInteger(l.count) || l.count < 1 || l.count > 300 || (l.weight!==null&&(!Number.isFinite(l.weight) || l.weight <= 0 || l.weight > 100))) || total > 300) {
+      setError("Ders adları benzersiz olmalı; toplam 1–300 soru ve 0–100 aralığında pozitif katsayı girin veya katsayıyı boş bırakın."); return;
     }
     if (!window.XLSX) { setError("Excel aracı yüklenemedi. Sayfayı yenileyin."); return; }
     const book = window.XLSX.utils.book_new();
@@ -101,7 +104,7 @@ export default function EvaluationTool() {
       if ([100, 500].includes(Number(savedScale))) setScale(Number(savedScale) as 100 | 500);
       const savedPenalty = guide.find((row) => row[0] === "Yanlış götürme")?.[1];
       if (savedPenalty !== undefined && [0, 3, 4].includes(Number(savedPenalty))) setPenalty(Number(savedPenalty));
-      setData(parsed); setWeights(Object.fromEntries(parsed.questions.map((q) => [q.lesson, q.weight]))); setBranch("");
+      setAcceptedMissing(false);setData(parsed); setWeights(Object.fromEntries(parsed.questions.map((q) => [q.lesson, q.weight]))); setBranch("");
       const first = parsed.students[0]; setSelected(JSON.stringify([first.id, first.school, first.branch]));
       setFileName(file.name);
     } catch (e) { setError(e instanceof Error ? e.message : "Dosya okunamadı."); }
@@ -110,10 +113,10 @@ export default function EvaluationTool() {
   function downloadResults() {
     if (!window.XLSX || !confirmed) return;
     const book = window.XLSX.utils.book_new();
-    append(book, "Sonuçlar", [["Öğrenci No", "Ad Soyad", "Okul", "Şube", "Doğru", "Yanlış", "Boş", "İptal", "Net", "Katsayılı Net", `Puan / ${scale}`], ...reports.map(({ student: s, results: r }) => [s.id, s.name, s.school, s.branch, ...(["correct", "wrong", "blank", "cancelled", "net", "weighted"] as const).map((key) => Number(sum(r, key).toFixed(4))), Number(scaledScore(data!.questions, s, penalty, weights, scale).toFixed(4))])], [18, 28, 26, 16, 12, 12, 12, 12, 14, 18, 16]);
+    append(book, "Sonuçlar", [["Öğrenci No", "Ad Soyad", "Okul", "Şube", "Doğru", "Yanlış", "Boş", "İptal", "Net", "Katsayılı Net", `Puan / ${scale}`], ...reports.map(({ student: s, results: r }) => [s.id, s.name, s.school, s.branch, ...(["correct", "wrong", "blank", "cancelled", "net", "weighted"] as const).map((key) => key==="weighted"&&r.some(l=>l.weighted===null)?null:Number(sum(r, key).toFixed(4))), scaledScore(data!.questions, s, penalty, weights, scale)])], [18, 28, 26, 16, 12, 12, 12, 12, 14, 18, 16]);
     window.XLSX.writeFile(book, "sinav-sonuclari.xlsx");
   }
-  const settingsValid = Object.values(weights).every((w) => Number.isFinite(w) && w > 0 && w <= 100);
+  const settingsValid = (!Object.values(weights).some(w=>w===null)||acceptedMissing) && Object.values(weights).every((w) => w===null || (Number.isFinite(w) && w > 0 && w <= 100));
 
   return <>
     <Script src="/vendor/xlsx.full.min.js" strategy="afterInteractive" onReady={() => setReady(true)} onError={() => setError("Excel aracı yüklenemedi. Lütfen sayfayı yenileyin.")} />
@@ -123,13 +126,13 @@ export default function EvaluationTool() {
       <section className="studio-card"><p className="hero-tag">01 · EXCEL ŞABLONU</p><h2>Sınavın sana özel.</h2><label>Sınav adı<input value={examName} maxLength={180} onChange={(e) => setExamName(e.target.value)} /></label><label>Başlangıç düzeni<select value={presetId} onChange={(e) => { setPresetId(e.target.value); setLessons(presets[e.target.value].map((l) => ({ ...l }))); setPenalty(EXAM_PRESETS[e.target.value].penalty); setScale(e.target.value === "custom" ? 100 : 500); setConfirmed(false); }}>{Object.entries(EXAM_PRESETS).map(([id, preset]) => <option key={id} value={id}>{preset.title}</option>)}</select></label>
         <p className="field-help">{EXAM_PRESETS[presetId].note} {EXAM_PRESETS[presetId].source && <a href={EXAM_PRESETS[presetId].source} target="_blank" rel="noreferrer">Resmî kılavuz ↗</a>}<br />Dersleri, soru sayılarını ve katsayıları değiştirebilirsiniz.</p><label className="checkbox-row"><input type="checkbox" checked={includeOutcomes} onChange={(e) => setIncludeOutcomes(e.target.checked)} />Şablona kazanım kodu ve kazanım adı ekle</label>
         <label>Şablondaki puan ölçeği<select value={scale} onChange={(e) => setScale(Number(e.target.value) as 100 | 500)}><option value={100}>100 üzerinden</option><option value={500}>500 üzerinden</option></select></label>
-        <div className="lesson-editor"><div className="lesson-editor-head"><span>Ders adı</span><span>Soru</span><span>Katsayı</span><span /></div>{lessons.map((l, i) => <div className="lesson-editor-row" key={i}><input aria-label={`${i + 1}. ders adı`} value={l.name} maxLength={80} onChange={(e) => updateLesson(i, { name: e.target.value })} /><input aria-label={`${l.name} soru sayısı`} type="number" min={1} max={300} value={l.count || ""} onChange={(e) => updateLesson(i, { count: Number(e.target.value) })} /><input aria-label={`${l.name} katsayı`} type="number" min={0.01} max={100} step="any" value={l.weight || ""} onChange={(e) => updateLesson(i, { weight: Number(e.target.value) })} /><button type="button" className="icon-button" aria-label={`${l.name} dersini kaldır`} onClick={() => setLessons(lessons.filter((_, n) => n !== i))}>×</button></div>)}</div>
+        <div className="lesson-editor"><div className="lesson-editor-head"><span>Ders adı</span><span>Soru</span><span>Katsayı</span><span /></div>{lessons.map((l, i) => <div className="lesson-editor-row" key={i}><input aria-label={`${i + 1}. ders adı`} value={l.name} maxLength={80} onChange={(e) => updateLesson(i, { name: e.target.value })} /><input aria-label={`${l.name} soru sayısı`} type="number" min={1} max={300} value={l.count || ""} onChange={(e) => updateLesson(i, { count: Number(e.target.value) })} /><input aria-label={`${l.name} katsayı`} type="number" min={0.01} max={100} step="any" value={l.weight || ""} onChange={(e) => updateLesson(i, { weight: e.target.value===""?null:Number(e.target.value) })} /><button type="button" className="icon-button" aria-label={`${l.name} dersini kaldır`} onClick={() => setLessons(lessons.filter((_, n) => n !== i))}>×</button></div>)}</div>
         <div className="studio-actions"><button className="button button-quiet" onClick={() => setLessons([...lessons, { name: "", count: 10, weight: 1 }])} disabled={lessons.length >= 20}>＋ Ders ekle</button><button className="button button-navy" onClick={downloadTemplate} disabled={!ready}>Şablonu indir ↓</button></div>
       </section>
       <section className="studio-card upload-studio"><p className="hero-tag">02 · DOLDUR VE GERİ YÜKLE</p><h2>Cevaplar hazır mı?</h2><p>Cevap anahtarını ders ders doldur. Öğrenci sayfasında her öğrencinin numarasını, adını, okulunu, şubesini ve cevaplarını yaz.</p><div className="upload-zone"><span className="upload-symbol">↥</span><label>Doldurulmuş Excel dosyasını seç<input type="file" accept=".xlsx" disabled={!ready || busy} onChange={(e) => { void loadFile(e.target.files?.[0]); e.target.value = ""; }} /></label><small>{busy ? "Dosya kontrol ediliyor..." : fileName || "XLSX · en fazla 10 MB / 500 öğrenci"}</small></div><div className="studio-note"><strong>Boş, yanlış, iptal: hepsi ayrı.</strong><p>Boş soru için - yazın; dersin tümü boşsa cevap hücresi boş kalabilir. İptal sorunun doğru cevabına X yazın ve cevap zincirindeki yerini koruyun. Hatalı veya eksik kayıt varsa sonuç üretmeden önce sizi uyarırız.</p></div></section>
     </div>
     {data && <section className="studio-card evaluation-results"><p className="hero-tag">03 · KONTROL VE RAPOR</p><h2>{data.students.length} öğrenci, {data.questions.length} soru. Son kontrol sende.</h2>
-      <div className="report-settings"><label>Yanlış götürme<select value={penalty} onChange={(e) => { setPenalty(Number(e.target.value)); setConfirmed(false); }}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğruyu götürür</option><option value={4}>4 yanlış 1 doğruyu götürür</option></select></label>{Object.entries(weights).map(([name, weight]) => <label key={name}>{name} katsayısı<input type="number" min={0.01} max={100} step="any" value={weight || ""} onChange={(e) => { setWeights({ ...weights, [name]: Number(e.target.value) }); setConfirmed(false); }} /></label>)}</div>
+      <CoefficientHelp/><CoefficientChoice key={JSON.stringify(weights)} missing={Object.values(weights).some(w=>w===null)} onAccept={accepted=>{setAcceptedMissing(accepted);if(!accepted)setConfirmed(false);}} onDefine={()=>document.querySelector<HTMLInputElement>('.report-settings input[type="number"]')?.focus()}/><div className="report-settings"><label>Yanlış götürme<select value={penalty} onChange={(e) => { setPenalty(Number(e.target.value)); setConfirmed(false); }}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğruyu götürür</option><option value={4}>4 yanlış 1 doğruyu götürür</option></select></label>{Object.entries(weights).map(([name, weight]) => <label key={name}>{name} katsayısı<input type="number" min={0.01} max={100} step="any" value={weight || ""} onChange={(e) => { setWeights({ ...weights, [name]: e.target.value===""?null:Number(e.target.value) }); setConfirmed(false); }} /></label>)}</div>
       <p className="field-help">Yüklenen dosyadaki katsayıları kullanıyoruz. Başlangıç önerileri resmî puan hesabı değildir. Net = doğru − yanlış / oran; iptal sorular hariçtir.</p>
       <details className="key-review"><summary>Cevap anahtarını kontrol et</summary><div className="answer-review-grid">{data.questions.map((q) => <span key={q.column}>{q.lesson} {q.number}<b>{q.answer === "X" ? "İPTAL" : q.answer}</b></span>)}</div></details>
       <label className="confirm-evaluation"><input type="checkbox" checked={confirmed} disabled={!settingsValid} onChange={(e) => setConfirmed(e.target.checked)} />Cevap anahtarını, yanlış götürme oranını ve katsayıları kontrol ettim.</label>

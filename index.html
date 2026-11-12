@@ -363,7 +363,7 @@
           <article class="card"><span class="card-icon">▥</span><h3>Detaylı raporlama</h3><p>Öğrenci ve sınıf bazlı analizlerle performansı kolayca değerlendirin.</p></article>
         </div>
       </section>
-      <footer class="footer"><a class="brand" href="#"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><span><a class="link" href="#" onclick="showScreen('contact');return false">İletişim</a> &nbsp;·&nbsp; Ölçün. Değerlendirin. Geliştirin.<span class="version-tag">Versiyon: v1.2.0</span> <a class="version-tag" href="/release-candidate">🔥 Release Candidate</a> <span style="opacity:.55">Kasım 2026</span></span></footer>
+      <footer class="footer"><a class="brand" href="#"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a><span><a class="link" href="#" onclick="showScreen('contact');return false">İletişim</a> &nbsp;·&nbsp; Ölçün. Değerlendirin. Geliştirin.<span class="version-tag">Versiyon: v1.2.1 RC</span> <a class="version-tag" href="/release-candidate">🔥 Release Candidate</a> <span style="opacity:.55">Kasım 2026</span></span></footer>
     </div>
   </main>
 
@@ -387,18 +387,18 @@
         <a class="brand" href="#" onclick="showScreen('panel');return false"><span class="brand-mark">K</span><span>kurumsal<span class="brand-light">sinav.com</span></span></a>
         <button class="profile-button" onclick="setSection(document.querySelector('[data-section=account]'),'Hesap Ayarları')"><span class="avatar" id="sideAvatar">K</span><span><strong id="sideName">Kullanıcı</strong><small>Bayi hesabı</small></span></button>
         <nav>
-          <div class="nav-group"><p>SINAV İŞLEMLERİ</p><button class="nav-item current" onclick="setSection(this,'Sınav Yükle')"><span>⇧</span>Sınav Yükle</button></div>
+          <div class="nav-group"><p>SINAV İŞLEMLERİ</p><button class="nav-item current" onclick="setSection(this,'Sınav Değerlendir')"><span>⇧</span>Sınav Değerlendir</button></div>
           <div class="nav-group"><p>FMT YÖNETİMİ</p><button class="nav-item" onclick="setSection(this,'FMT Yükle')"><span>＋</span>FMT Yükle</button><button class="nav-item" onclick="setSection(this,'FMT Düzenle')"><span>✎</span>FMT Düzenle</button><button class="nav-item" onclick="setSection(this,'FMT Sil')"><span>⌫</span>FMT Sil</button></div>
-          <div class="nav-group"><p>KURUM YÖNETİMİ</p><button class="nav-item" onclick="setSection(this,'Kurum Ekle')"><span>＋</span>Kurum Ekle</button><button class="nav-item" onclick="setSection(this,'Kurum Düzenle')"><span>✎</span>Kurum Düzenle</button><button class="nav-item" onclick="setSection(this,'Kurum Sil')"><span>⌫</span>Kurum Sil</button></div>
+          <div class="nav-group"><p>KURUM YÖNETİMİ</p><button class="nav-item" onclick="setSection(this,'Kurum Yönetimi')"><span>＋</span>Kurum Yönetimi</button><button class="nav-item" onclick="setSection(this,'Kurum Düzenle')"><span>✎</span>Kurum Düzenle</button><button class="nav-item" onclick="setSection(this,'Kurum Sil')"><span>⌫</span>Kurum Sil</button></div>
           <div class="nav-group"><p>ÖĞRENCİLER</p><button class="nav-item" onclick="setSection(this,'Öğrenciler')"><span>♙</span>Öğrenciler</button></div>
           <div class="nav-group"><p>ARAÇLAR</p><button class="nav-item" data-section="calendar" onclick="setSection(this,'Takvim')"><span>▦</span>Takvim</button><button class="nav-item" data-section="break" onclick="setSection(this,'Mola')"><span>☕</span>Mola</button><button class="nav-item" data-section="rebuilder" onclick="setSection(this,'Sınav Listesi Düzenleyici')"><span>▤</span>Sınav Listesi</button><button class="nav-item" data-section="pdf-tools" onclick="setSection(this,'PDF ve Excel Araçları')"><span>▧</span>PDF / Excel</button></div>
           <div class="nav-group"><p>HESAP</p><button class="nav-item" data-section="account" onclick="setSection(this,'Hesap Ayarları')"><span>⚙</span>Hesap Ayarları</button></div>
         </nav>
         <div class="side-bottom"><button class="logout" onclick="showScreen('login')">↪ &nbsp; Güvenli çıkış yap</button></div>
       </aside>
-      <section class="main"><header class="dash-header"><span class="crumb">Yönetim Paneli &nbsp;/&nbsp; <b id="crumbTitle">Sınav Yükle</b></span><div class="dash-actions"><button class="theme" onclick="toggleTheme()"><span id="themeIconPanel">☀</span> Tema</button><button class="user-avatar" id="headerAvatar" aria-label="Hesap ayarları" onclick="setSection(document.querySelector('[data-section=account]'),'Hesap Ayarları')">B</button><button class="header-logout" onclick="logout()">Çıkış Yap ↪</button></div></header>
+      <section class="main"><header class="dash-header"><span class="crumb">Yönetim Paneli &nbsp;/&nbsp; <b id="crumbTitle">Sınav Değerlendir</b></span><div class="dash-actions"><button class="theme" onclick="toggleTheme()"><span id="themeIconPanel">☀</span> Tema</button><button class="user-avatar" id="headerAvatar" aria-label="Hesap ayarları" onclick="setSection(document.querySelector('[data-section=account]'),'Hesap Ayarları')">B</button><button class="header-logout" onclick="logout()">Çıkış Yap ↪</button></div></header>
         <div class="dash-content"><div class="welcome"><b>✦ &nbsp;Hoş geldiniz</b><small>Sınav süreçlerinizi buradan yönetebilirsiniz.</small></div>
-          <div class="dash-title"><div><p class="eyebrow">SINAV YÖNETİMİ</p><h1 id="sectionTitle">Sınav Yükle</h1><p id="sectionDescription">Sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.</p></div><button class="btn" onclick="demoAction()">＋ &nbsp;<span id="actionTitle">Sınav dosyası seç</span></button></div>
+          <div class="dash-title"><div><p class="eyebrow">SINAV YÖNETİMİ</p><h1 id="sectionTitle">Sınav Değerlendir</h1><p id="sectionDescription">Sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.</p></div><button class="btn" onclick="demoAction()">＋ &nbsp;<span id="actionTitle">Sınav dosyası seç</span></button></div>
           <section id="dashboardEmpty" class="empty"><div class="empty-art">▤</div><h2 id="emptyTitle">İlk sınavınızı yükleyin</h2><p id="emptyDescription">Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın.</p><button class="btn" onclick="demoAction()">＋ &nbsp;Başlayın</button></section>
           <section id="calendarPanel" class="calendar-panel">
             <div class="calendar-heading"><h2 id="calendarMonthTitle"></h2><div class="calendar-controls"><button onclick="changeCalendarMonth(-1)" aria-label="Önceki ay">‹</button><button onclick="goCalendarToday()">Bugün</button><button onclick="changeCalendarMonth(1)" aria-label="Sonraki ay">›</button></div></div>
@@ -469,11 +469,11 @@
       });
     });
     const sectionDescriptions = {
-      "Sınav Yükle": "Sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.",
+      "Sınav Değerlendir": "Sınav dosyalarınızı sisteme yükleyerek değerlendirme sürecini başlatın.",
       "FMT Yükle": "Optik verilerinizin okunacağı FMT format şablonunu ekleyin.",
       "FMT Düzenle": "Kayıtlı FMT şablonlarını ve alan eşlemelerini düzenleyin.",
       "FMT Sil": "Kullanılmayan format şablonlarını kontrol edin ve kaldırın.",
-      "Kurum Ekle": "Sisteme yeni bir okul veya kurum kaydı ekleyin.",
+      "Kurum Yönetimi": "Sisteme yeni bir okul veya kurum kaydı ekleyin.",
       "Kurum Düzenle": "Kayıtlı kurum bilgilerini görüntüleyip güncelleyin.",
       "Kurum Sil": "Sisteminizde kayıtlı kurumları yönetin.",
       "Öğrenciler": "Öğrenci kayıtlarını ve sınav katılımlarını görüntüleyin.",
@@ -517,7 +517,7 @@
       document.getElementById("crumbTitle").textContent = title;
       document.getElementById("sectionTitle").textContent = title;
       document.getElementById("sectionDescription").textContent = sectionDescriptions[title] || "Kişisel bilgilerinizi görüntüleyip güncelleyin.";
-      document.getElementById("actionTitle").textContent = title === "Sınav Yükle" ? "Sınav dosyası seç" : title;
+      document.getElementById("actionTitle").textContent = title === "Sınav Değerlendir" ? "Sınav dosyası seç" : title;
       const isAccount = title === "Hesap Ayarları";
       const isCalendar = title === "Takvim";
       const isBreak = title === "Mola";
@@ -532,7 +532,7 @@
       document.getElementById("pdfToolsPanel").classList.toggle("visible", isPdfTools);
       document.querySelector(".dash-title > .btn").style.display = isAccount || isCalendar || isBreak || hasTool ? "none" : "inline-flex";
       if (!isAccount && !isCalendar && !isBreak && !hasTool) {
-        document.getElementById("emptyTitle").textContent = title === "Sınav Yükle" ? "İlk sınavınızı yükleyin" : title + " işlemlerine başlayın";
+        document.getElementById("emptyTitle").textContent = title === "Sınav Değerlendir" ? "İlk sınavınızı yükleyin" : title + " işlemlerine başlayın";
         document.getElementById("emptyDescription").textContent = sectionDescriptions[title];
       }
       if (isCalendar) renderCalendar();

@@ -34,7 +34,7 @@ export const layout8050:OpticalLayout={
 export const opticalQuestionSchema = z.object({
   source:z.object({system:z.enum(["f","o","general"]),sheet:z.string().max(100),row:z.number().int().positive(),columns:z.array(z.string()).max(50),values:z.array(z.union([z.string(),z.number(),z.boolean(),z.null()])).max(50)}).optional(),
   lesson: z.string().trim().min(1).max(80), number: z.number().int().min(1).max(300), answer: z.string().regex(/^[ABCDEHX]$/),
-  weight: z.number().positive().max(100), positions: z.record(z.string().regex(/^[A-D]$/), z.number().int().min(1).max(300)),
+  weight: z.number().positive().max(100).nullable().default(null), positions: z.record(z.string().regex(/^[A-D]$/), z.number().int().min(1).max(300)),
   outcomeCode: z.string().max(80).optional(), outcomeName: z.string().max(1000).optional(),
 });
 export const opticalQuestionsSchema = z.array(opticalQuestionSchema).min(1).max(300).superRefine((qs, ctx) => {
@@ -143,9 +143,9 @@ export function opticalSummary(data: OpticalData, penalty: number) {
       let correct=0,wrong=0,blank=0,cancelled=0;
       data.questions.forEach((q,i)=>{if(q.lesson!==lesson)return; if(q.answer==="X")cancelled++;else if(q.answer==="H" || student.answers[i]===q.answer)correct++;else if(!student.answers[i])blank++;else wrong++;});
       const net=correct-(penalty ? wrong/penalty : 0), weight=data.questions.find(q=>q.lesson===lesson)!.weight;
-      return {lesson,correct,wrong,blank,cancelled,net,weighted:net*weight};
+      return {lesson,correct,wrong,blank,cancelled,net,weighted:weight===null?null:net*weight};
     });
-    const maximum=data.questions.reduce((s,q)=>s+(q.answer==="X"?0:q.weight),0), weighted=lessons.reduce((s,l)=>s+l.weighted,0);
-    return {id:student.id,lessons,net:lessons.reduce((s,l)=>s+l.net,0),score:maximum?Math.max(0,Math.min(500,weighted/maximum*500)):0};
+    const maximum=data.questions.reduce((s,q)=>s+(q.answer==="X"?0:q.weight??0),0), weighted=lessons.reduce((s,l)=>s+(l.weighted??0),0);
+    return {id:student.id,lessons,net:lessons.reduce((s,l)=>s+l.net,0),score:data.questions.some(q=>q.answer!=="X"&&q.weight===null)?null:maximum?Math.max(0,Math.min(500,weighted/maximum*500)):null};
   });
 }

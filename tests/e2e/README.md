@@ -86,3 +86,11 @@ Test sentetik bayi, kullanıcı, kurum ve sınavlar oluşturur; gerçek Prisma, 
 3100'de üretim Web build'i açıkken `node tests/e2e/v120-ui.cjs` arama (gecikmeli ilk liste yanıtı dahil), mobil/klavye ve Google widget-token akışını taklit verilerle sınar. Playwright/Chrome yolları yukarıdaki ortam değişkenleriyle verilir.
 
 `node --import tsx tests/e2e/v120-pdf-stress.ts` geçici stres PDF'lerini, ardından `python3 tests/e2e/v120-pdf-qa.py` kenar boşluğu/boş sayfa/başlık/kayıt kontrollerini üretir. Python kontrolü yalnız standart kütüphane ve Poppler kullanır; npm bağımlılığı eklemez. Üretim storage, yedek veya canlı migration işlemi yoktur.
+
+## v1.2.1 RC
+
+`tests/v121.test.ts` null katsayı, gerçek PDF sayfa/içerik, tanım oluşturma/mükerrer kontrolü, Test Merkezi yetki/rapor ve görünür yayınevi adı regresyonlarını içerir. Kök `npm run test:report` için Node 22.8+ gerekir; sabit yerel Node suite'i sentetik DB URL'si ve özel `/tmp` deposuyla çalışır. Gerçek durumlar API assets raporuna yazılır; Web üzerinden çalıştırma yolu yoktur.
+
+Production Web build'i yalnız `127.0.0.1:3100` üzerinde açıkken, Node 22.8+ ile `node tests/run-v121-acceptance.cjs` sabit beş kabul betiğini sırayla çalıştırır. Playwright/Chromium için yukarıdaki `PLAYWRIGHT_MODULE` ve `CHROMIUM_PATH` kullanılabilir. Gerçek API/DB yerine test taklitleri kullanılır; production connection URL verilmez. CAPTCHA yapılandırması değiştirilmez ve gerçek sağlayıcı testi yapılmaz. Çıktılar `test-results/`, `/tmp` ve anonim örnek PDF'ler `output/pdf/v121-*.pdf` altındadır.
+
+Bu koşumdan sonra `npm run test:report` aynı kaynak SHA-256 ile eşleşen kabul sonuçlarını birleştirir; eski veya çalıştırılmamış betiklere başarı vermez. `npm run build -w @optik/api` JSON raporu dist varlıklarına kopyalar. Gerçek PostgreSQL staging ve cPanel/Passenger kabulü ayrı kalır. Tam sonuç: `docs/v121-release-report.md`.

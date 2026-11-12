@@ -1,6 +1,7 @@
 export const reportTemplates=[
- {id:"summary-card",family:"cards",name:"Profesyonel karne · tek sayfa özet"},
- {id:"detailed-card",family:"cards",name:"Profesyonel karne · cevap ve kazanım ayrıntıları"},
+ {id:"summary-card",family:"cards",name:"1 Sayfalık Karne · özet"},
+ {id:"two-page-card",family:"cards",name:"2 Sayfalık Karne · cevap ve kazanım analizi"},
+ {id:"detailed-card",family:"cards",name:"Kazanımlı Karne · tam ayrıntı, gerektiğinde çok sayfa"},
  {id:"school-table",family:"lists",name:"Profesyonel okul sonuç tablosu"},
  {id:"classic-card",family:"cards",name:"Mevcut kazanımlı karne"},
  {id:"analysis-card",family:"cards",name:"Ders ve kazanım analizi · iki sütun"},

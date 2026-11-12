@@ -50,7 +50,7 @@ test("yükleme API: boş FMT deposunda sistem FMT seçilir, önizleme kaydedilir
     return{status,body:value};
   }
   try{
-    const library=await call("/evaluation-templates");assert.deepEqual(library.body.map((t:any)=>t.id),["system-fmt-7108","system-fmt-8050"]);
+    const library=await call("/evaluation-templates");assert.deepEqual(library.body.map((t:any)=>t.id),["system-fmt-7108","system-fmt-8050","system-fmt-ozdebir-ortaokul-tek-oturum"]);
     const preview=await call("/preview");assert.equal(preview.status,200);assert.equal(results.length,0);assert.equal(templates.length,0);assert.equal(preview.body.data.students.length,2);
     assert.equal((await call("/evaluate")).status,409);
     assert.equal((await call("/evaluate",{...body,schoolId:"forbidden",previewToken:preview.body.previewToken})).status,403);
@@ -60,7 +60,7 @@ test("yükleme API: boş FMT deposunda sistem FMT seçilir, önizleme kaydedilir
     const previousSummary=structuredClone(opened.body.summary);key.questions=[];
     const missingKey=await call("/results/:id/checks");assert.equal(missingKey.status,200);assert.ok(missingKey.body.blockers.some((message:string)=>message.includes("Güncel cevap anahtarı")));
     assert.deepEqual((await call("/results/:id")).body.summary,previousSummary);
-    templates[0].active=false;assert.equal((await call("/evaluation-templates")).body.length,1);assert.equal((await call("/preview")).status,400);
+    templates[0].active=false;assert.deepEqual((await call("/evaluation-templates")).body.map((t:any)=>t.id),["system-fmt-8050","system-fmt-ozdebir-ortaokul-tek-oturum"]);assert.equal((await call("/preview")).status,400);
   }finally{for(const [o,k,v]of originals.reverse())o[k]=v;}
 });
 

@@ -102,7 +102,7 @@ readerRouter.get("/my-results/:id",reader,wrap(async(req,res)=>{
 }));
 
 readerRouter.get("/my-results/:id/pdf",reader,wrap(async(req,res)=>{
- const templateId=z.enum(["summary-card","detailed-card","classic-card","analysis-card","table-card"]).default("detailed-card").parse(req.query.templateId);
+ const templateId=z.enum(["summary-card","two-page-card","detailed-card","classic-card","analysis-card","table-card"]).default("detailed-card").parse(req.query.templateId);
  const access=await prisma.studentResultAccess.findFirst({where:{id:id(req),userId:req.user!.id,result:{studentPublished:true,nextRevision:null,school:{active:true}}},select:{studentNo:true,result:{select:{schoolId:true,keyId:true,snapshot:true}}}});
  if(!access){res.status(404).json({error:"Sonuç bulunamadı veya hesabınıza bağlı değil."});return;}
  let own;try{own=resultStudent(access.result.snapshot,access.studentNo);}catch{res.status(404).json({error:"Sonuç erişilemiyor."});return;}

@@ -1,4 +1,5 @@
 "use client";
+import UiIcon from "./ui-icon";
 
 import { useEffect, useState } from "react";
 
@@ -21,7 +22,7 @@ export default function ThemeToggle() {
 
   return (
     <button className="theme-toggle" data-mode={dark ? "dark" : "light"} onClick={toggleTheme} type="button" aria-label={dark ? "Aydınlık moda geç" : "Karanlık moda geç"}>
-      <span className="theme-icon" aria-hidden="true">{dark ? "☀" : "☾"}</span>
+      <span className="theme-icon" aria-hidden="true"><UiIcon name={dark?"sun":"moon"}/></span>
       <span className="theme-label">{dark ? "Aydınlık" : "Karanlık"}</span>
     </button>
   );

@@ -1,0 +1,32 @@
+/** Small local SVG icons: consistent geometry, no icon font or external dependency. */
+const paths:Record<string,string>={
+ upload:"M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5",
+ download:"M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5",
+ results:"M4 20V11h4v9m3 0V4h4v16m3 0v-6h3v6M2 20h20",
+ document:"M6 3h8l4 4v14H6V3Zm8 0v5h4M9 12h6m-6 4h6",
+ trash:"M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6m4-6v6",
+ share:"M8 11l8-5m-8 7 8 5M8 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm14-8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+ sliders:"M4 6h16M4 12h16M4 18h16M8 3v6m8 0v6m-5 0v6",
+ school:"M3 21V9l9-6 9 6v12H3Zm7 0v-6h4v6M7 10h1m8 0h1M7 13h1m8 0h1M12 7v3m-1-1h2",
+ book:"M12 5c-3-2-6-2-10-1v15c4-1 7-1 10 1m0-15c3-2 6-2 10-1v15c-4-1-7-1-10 1V5Z",
+ key:"M15 5a5 5 0 1 1-3 9L4 22H2v-4l8-8a5 5 0 0 1 5-5Zm2 3h.01M5 17l2 2",
+ users:"M15 21v-3c0-3-2-5-6-5s-6 2-6 5v3m12-11c2-1 2-5 0-6m4 17v-4c0-2-1-3-3-4M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z",
+ convert:"M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4",
+ calendar:"M4 5h16v16H4V5Zm3-3v6m10-6v6M4 10h16M8 14h1m3 0h1m3 0h1M8 18h1m3 0h1",
+ bird:"m3 17 6-5-2-5 5 3 5-5 4 2-5 7-5 1-4 5H3v-3Z",
+ grid:"M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Zm11 0h7v7h-7v-7Z",
+ snake:"M4 19h11a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8h8m0 0 3 2-3 2m-1-3h.01",
+ list:"M8 5h13M8 12h13M8 19h13M3 5h.01M3 12h.01M3 19h.01",
+ pdf:"M6 3h8l4 4v14H6V3Zm8 0v5h4M9 12h6m-6 4h4",
+ check:"M9 12l2 2 5-5M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z",
+ image:"M3 3h18v18H3V3Zm0 14 5-5 4 4 3-3 6 6M9 7h.01",
+ activity:"M2 12h5l3-8 4 16 3-8h5",
+ pencil:"m4 16 12-12 4 4L8 20l-5 1 1-5Zm9-9 4 4",
+ folder:"M3 6h7l2 3h9v12H3V6Z",
+ mail:"M3 5h18v14H3V5Zm0 0 9 8 9-8",
+ settings:"M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1 1-3Zm6 9a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+ sun:"M12 3V1m0 22v-2M3 12H1m22 0h-2M5 5 3 3m18 18-2-2M5 19l-2 2M21 3l-2 2M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z",
+ moon:"M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z",
+};
+const aliases:Record<string,string>={exam:"upload",'exam-records':'document','data-delete':'trash','fmt-share':'share','fmt-download':'download','fmt-upload':'sliders','school-add':'school',publishers:'book','answer-keys':'key',students:'users','txt-converter':'convert','exam-schedule':'calendar',blocks:'grid',rebuilder:'list','pdf-tools':'pdf','system-users':'users','test-center':'check','publisher-logos':'image','system-center':'activity',blog:'pencil',files:'folder','contact-inbox':'mail','audit-logs':'list',account:'settings'};
+export default function UiIcon({name,className=""}:{name:string;className?:string}){return <svg className={`ui-icon ${className}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[aliases[name]??name]??paths.grid}/></svg>;}

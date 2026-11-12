@@ -1,4 +1,5 @@
 "use client";
+import UiIcon from "./ui-icon";
 
 import PublisherLogo from "./publisher-logo";
 import AnswerPdfOptions from "./answer-pdf-options";
@@ -111,9 +112,9 @@ export default function Home() {
       <section className="solutions" id="cozumler">
         <div className="section-heading"><p className="hero-tag">KURUMUNUZ İÇİN TASARLANDI</p><h2>Sınav sürecinin her adımı,<br /><span>kontrolünüz altında.</span></h2></div>
         <div className="solution-cards">
-          <article><span className="solution-icon">▤</span><h3>Optik okuma</h3><p>Optik form verilerinizi hızlıca işleyin, sınav sonuçlarına zahmetsizce ulaşın.</p></article>
-          <article><span className="solution-icon">⌘</span><h3>Esnek sınav yönetimi</h3><p>Sınavlarınızı, cevap anahtarlarınızı ve kurum bilgilerinizi tek yerden yönetin.</p></article>
-          <article><span className="solution-icon">▥</span><h3>Detaylı raporlama</h3><p>Öğrenci ve sınıf bazlı analizlerle performansı kolayca değerlendirin.</p></article>
+          <article><span className="solution-icon"><UiIcon name="document"/></span><h3>Optik okuma</h3><p>Optik form verilerinizi hızlıca işleyin, sınav sonuçlarına zahmetsizce ulaşın.</p></article>
+          <article><span className="solution-icon"><UiIcon name="sliders"/></span><h3>Esnek sınav yönetimi</h3><p>Sınavlarınızı, cevap anahtarlarınızı ve kurum bilgilerinizi tek yerden yönetin.</p></article>
+          <article><span className="solution-icon"><UiIcon name="results"/></span><h3>Detaylı raporlama</h3><p>Öğrenci ve sınıf bazlı analizlerle performansı kolayca değerlendirin.</p></article>
         </div>
       </section>
 

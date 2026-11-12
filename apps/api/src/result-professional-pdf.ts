@@ -35,7 +35,21 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
  function table(headers:string[],fractions:number[],rows:unknown[][],size=8){
   const headerHeight=Math.max(23,...headers.map((v,i)=>height(v,W*fractions[i]-9,size,true)+9));
   if(y+headerHeight+25>bottom)page();drawRow(headers,fractions,true,size);
-  for(const cells of rows){const h=Math.max(20,...cells.map((v,i)=>height(v,W*fractions[i]-9,size)+9));if(y+h>bottom){page();drawRow(headers,fractions,true,size);}drawRow(cells,fractions,false,size);}
+  for(const cells of rows){
+   const h=Math.max(20,...cells.map((v,i)=>height(v,W*fractions[i]-9,size)+9));
+   if(y+h>bottom){page();drawRow(headers,fractions,true,size);}
+   if(h<=bottom-y){drawRow(cells,fractions,false,size);continue;}
+   // Split oversized cells at character boundaries measured with the actual font.
+   // No text is discarded and the font remains readable.
+   const remaining=cells.map(v=>String(v??"—"));
+   while(remaining.some(Boolean)){
+    const available=bottom-y-10;
+    const parts=remaining.map((value,i)=>{let low=0,high=value.length;while(low<high){const mid=Math.ceil((low+high)/2);if(height(value.slice(0,mid),W*fractions[i]-9,size)<=available)low=mid;else high=mid-1;}const part=value.slice(0,low);remaining[i]=value.slice(low);return part;});
+    if(!parts.some(Boolean))throw new Error("Karne tablosu sayfaya sığmıyor; kazanımlı karne içeriğini kontrol edin.");
+    drawRow(parts,fractions,false,size);
+    if(remaining.some(Boolean)){page();drawRow(headers,fractions,true,size);}
+   }
+  }
   y+=10;
  }
  const mean=(members:any[])=>reportBenchmarks([{data:{students:members},summary:view.summary}]).all;
@@ -52,7 +66,7 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
    series.forEach((s,j)=>{const net=s.values[i];if(net===null||net===undefined)return;const value=Math.max(-max,Math.min(max,net)),bh=Math.abs(value)/max*chartH,x=27+i*cw+j*(bar+2);doc.rect(x,value>=0?base-bh:base,bar,bh).fill(s.color);});text(l.lesson,24+i*cw,base+19,cw-3,6.5);
   });y=base+19+labelH+6;legend(series,y);y+=17;
  }
- function scoreChart(s:any,school:any,all:any){if(y+58>bottom)page();section("PUAN KARŞILAŞTIRMASI · 500 ÜZERİNDEN");const series=[{name:"Öğrenci",value:result(s).score,color:colors.blue},{name:"Okul / kurum",value:school.score,color:colors.gold},...(all?.score!=null?[{name:"Genel katılım",value:all.score,color:colors.green}]:[])],cw=W/series.length;
+ function scoreChart(s:any,school:any,all:any){if(result(s).score===null){text("Katsayı tanımlanmadığı için puan ve puan sırası hesaplanmadı.",24,y,W,8);y+=20;return;}if(y+58>bottom)page();section("PUAN KARŞILAŞTIRMASI · 500 ÜZERİNDEN");const series=[{name:"Öğrenci",value:result(s).score,color:colors.blue},{name:"Okul / kurum",value:school.score,color:colors.gold},...(all?.score!=null?[{name:"Genel katılım",value:all.score,color:colors.green}]:[])],cw=W/series.length;
   series.forEach((item,i)=>{text(`${item.name}: ${fmt(item.value)}`,24+i*cw,y,cw-10,7,true);doc.rect(24+i*cw,y+14,cw-12,5).fill(colors.pale);doc.rect(24+i*cw,y+14,(cw-12)*Math.max(0,Math.min(500,item.value??0))/500,5).fill(item.color);});y+=31;
  }
  function outcomes(s:any){const map=new Map<string,any>();view.data.questions.forEach((q:any,i:number)=>{if(q.answer==="X"||(!q.outcomeName&&!q.outcomeCode))return;const key=JSON.stringify([q.lesson,q.outcomeCode,q.outcomeName]);const o=map.get(key)??{lesson:q.lesson,name:q.outcomeName||q.outcomeCode,code:q.outcomeCode,count:0,correct:0,wrong:0,blank:0};o.count++;if(q.answer==="H"||s.answers[i]===q.answer)o.correct++;else if(!s.answers[i])o.blank++;else o.wrong++;map.set(key,o);});return [...map.values()];}
@@ -60,17 +74,18 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
   const r=result(s),rank=view.rankings[s.id],grade=resultGrade(s.branch),classmates=view.data.students.filter((v:any)=>resultGrade(v.branch)===grade),school=mean(view.data.students),classMean=mean(classmates),all=general(grade);
   page("ÖĞRENCİ SONUÇ BELGESİ",`${s.name} · Öğrenci no: ${number(s)} · Sınıf / şube: ${s.branch}`);
   table(["Sınav tarihi","Kaynak kitapçıklar","Puan türü"],[.23,.47,.3],[[metadata.examDate??"Belirtilmedi",Object.entries(s.booklets??{}).map(([l,b])=>`${l}: ${b}`).join(" / ")||s.recordBooklets?.join(" / ")||"Belirtilmedi","Yerel deneme / 500"]],7);
-  table(["PUAN","TOPLAM NET","GENEL SIRA","OKUL / KURUM","KADEME"],[.19,.18,.23,.21,.19],[[fmt(r.score),fmt(r.net),`${rank.generalRank} / ${rank.generalCount}`,`${rank.schoolRank} / ${rank.schoolCount}`,`${rank.classRank} / ${rank.classCount}`]],9);
+  table(["PUAN","TOPLAM NET","GENEL SIRA","OKUL / KURUM","KADEME"],[.19,.18,.23,.21,.19],[[fmt(r.score),fmt(r.net),`${rank.generalRank??"—"} / ${rank.generalCount}`,`${rank.schoolRank??"—"} / ${rank.schoolCount}`,`${rank.classRank??"—"} / ${rank.classCount}`]],9);
   section("DERS BAŞARI TABLOSU");
   const totals={correct:r.lessons.reduce((n:number,l:any)=>n+l.correct,0),wrong:r.lessons.reduce((n:number,l:any)=>n+l.wrong,0),blank:r.lessons.reduce((n:number,l:any)=>n+l.blank,0)};
   const lessonRows=r.lessons.map((l:any)=>{const count=l.correct+l.wrong+l.blank;return [l.lesson,l.cancelled?`${count+l.cancelled} (${l.cancelled} iptal)`:count,l.correct,l.wrong,l.blank,fmt(l.net),fmt(count?100*l.correct/count:0),fmt(classMean.lessons[l.lesson]),fmt(school.lessons[l.lesson]),fmt(all?.lessons?.[l.lesson])];});
   const sumNets=(v:any)=>v?Object.values<number>(v.lessons).reduce((sum,n)=>sum+n,0):null;
   lessonRows.push(["TOPLAM",view.data.questions.length,totals.correct,totals.wrong,totals.blank,fmt(r.net),fmt(100*totals.correct/Math.max(1,totals.correct+totals.wrong+totals.blank)),fmt(sumNets(classMean)),fmt(sumNets(school)),fmt(sumNets(all))]);
   table(["Ders","Soru","D","Y","Boş","Net","Başarı %","Kademe ort.","Okul ort.","Genel ort."],[.22,.07,.055,.055,.06,.09,.09,.12,.12,.12],lessonRows,7.5);
+  if(options.templateId==="summary-card")return;
   lessonChart(r.lessons,[{name:"Öğrenci",color:colors.blue,values:r.lessons.map((l:any)=>l.net)},{name:"Okul / kurum",color:colors.gold,values:r.lessons.map((l:any)=>school.lessons[l.lesson]??null)},...(all?[{name:"Genel katılım",color:colors.green,values:r.lessons.map((l:any)=>all.lessons?.[l.lesson]??null)}]:[])]);
   scoreChart(s,school,all);
   const focus=outcomes(s).sort((a,b)=>a.correct/a.count-b.correct/b.count).slice(0,4);
-  if(focus.length){section("ÖNCELİKLİ KAZANIMLAR · EN DÜŞÜK BAŞARI ORANLARI");table(["Ders / kazanım","Soru","D / Y / B","Başarı %"],[.65,.08,.15,.12],focus.map(o=>[`${o.lesson} · ${String(o.name).length>110?String(o.name).slice(0,107)+"...":o.name}`,o.count,`${o.correct} / ${o.wrong} / ${o.blank}`,fmt(100*o.correct/o.count)]),7);}
+  if(focus.length){section("ÖNCELİKLİ KAZANIMLAR · EN DÜŞÜK BAŞARI ORANLARI");table(["Ders / kazanım","Soru","D / Y / B","Başarı %"],[.65,.08,.15,.12],focus.map(o=>[`${o.lesson} · ${o.name}`,o.count,`${o.correct} / ${o.wrong} / ${o.blank}`,fmt(100*o.correct/o.count)]),7);}
   else{text("Cevap anahtarında kazanım verisi bulunmuyor.",24,y,W,8);y+=16;}
   if(y+18>bottom)page();text("Tam cevap eşleştirmesi ve tüm kazanımlar için ayrıntılı karne seçeneğini kullanın. Negatif netler grafikte sıfırın altında gösterilir.",24,y,W,7,false,colors.muted);
  }
@@ -94,7 +109,10 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
   if(!os.length)text("Bu sınavın cevap anahtarında kazanım verisi yoktur.",24,y,W,8);
   else table(["Ders","Kazanım / konu açıklaması","Soru","D","Y","Boş","Başarı %"],[.14,.5,.065,.065,.065,.065,.1],os.map(o=>[o.lesson,[o.code,o.name].filter((v,i,a)=>v&&a.indexOf(v)===i).join(" · "),o.count,o.correct,o.wrong,o.blank,fmt(100*o.correct/o.count)]),7.5);
  }
- if(!list){for(const s of students){summary(s);if(options.templateId!=="summary-card")details(s);}}
+ if(!list){for(const s of students){const before=pages;summary(s);if(options.templateId!=="summary-card")details(s);
+  const limit=options.templateId==="summary-card"?1:options.templateId==="two-page-card"?2:null;
+  if(limit&&pages-before>limit){doc.end();reject(new Error(`${limit} sayfalık karne sınırı bu sınavın içeriğine yetmiyor. İçeriğin tamamı için Kazanımlı Karne seçin.`));return;}
+ }}
  else {
   const groups=options.kind==="classes"?[...new Set(students.map(s=>s.branch))]:[""];
   for(const group of groups){const members=students.filter(s=>!group||s.branch===group);if(!members.length)continue;const lessons=result(members[0]).lessons;
@@ -102,7 +120,7 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
    for(let offset=0;offset<lessons.length;offset+=6){const selected=lessons.slice(offset,offset+6),fractions=[.035,.065,.15,.055,...selected.map(()=>.405/selected.length),.055,.065,.085,.085],grades=[...new Set(members.map(s=>resultGrade(s.branch)))].join(", ");
     page("OKUL SONUÇ LİSTESİ",`Kademe: ${grades}${group?` · Şube: ${group}`:""} · Seçili katılım: ${members.length} · Genel katılım: ${view.generalCount}`);
     text(`Sınav tarihi: ${metadata.examDate??"Belirtilmedi"} · Puan türü: yerel deneme / 500 · Ders sütunları: D / Y / B / Net`,24,y,W,7);y+=18;
-    table(["Sıra","No","Ad soyad","Sınıf",...selected.map((l:any)=>l.lesson),"Net","Puan","Genel sıra","Okul / kurum"],fractions,members.map((s,i)=>{const r=result(s),rank=view.rankings[s.id];return [i+1,number(s),s.name,s.branch,...selected.map((l:any)=>{const v=r.lessons.find((v:any)=>v.lesson===l.lesson);return `${v.correct}/${v.wrong}/${v.blank}/${fmt(v.net)}`;}),fmt(r.net),fmt(r.score),`${rank.generalRank}/${rank.generalCount}`,`${rank.schoolRank}/${rank.schoolCount}`];}),7);
+    table(["Satır","No","Ad soyad","Sınıf",...selected.map((l:any)=>l.lesson),"Net","Puan","Genel sıra","Okul / kurum"],fractions,members.map((s,i)=>{const r=result(s),rank=view.rankings[s.id];return [i+1,number(s),s.name,s.branch,...selected.map((l:any)=>{const v=r.lessons.find((v:any)=>v.lesson===l.lesson);return `${v.correct}/${v.wrong}/${v.blank}/${fmt(v.net)}`;}),fmt(r.net),fmt(r.score),`${rank.generalRank??"—"}/${rank.generalCount}`,`${rank.schoolRank??"—"}/${rank.schoolCount}`];}),7);
     const school=mean(members);table(["Seçili grup ortalaması",...selected.map((l:any)=>l.lesson),"Net","Puan"],[.25,...selected.map(()=>.5/selected.length),.125,.125],[[`${members.length} öğrenci`,...selected.map((l:any)=>fmt(school.lessons[l.lesson])),fmt(members.reduce((sum,s)=>sum+result(s).net,0)/members.length),fmt(school.score)]],7);
     const overall=grades.includes(",")?undefined:general(grades);
     lessonChart(selected,[{name:"Seçili okul / grup",color:colors.blue,values:selected.map((l:any)=>school.lessons[l.lesson]??null)},...(overall?[{name:"Genel katılım",color:colors.green,values:selected.map((l:any)=>overall.lessons?.[l.lesson]??null)}]:[])]);

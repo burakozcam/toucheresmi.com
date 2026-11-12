@@ -1,3 +1,5 @@
+import {presentPublisherNames} from "../lib/publisher-display";
+import {testCenterRouter} from "./test-center";
 import {humanVerificationConfig} from "./captcha-config";
 import { verifyHuman } from "./human-verification";
 import bcrypt from "bcryptjs";
@@ -37,6 +39,12 @@ app.use("/api/admin/exam-schedule", requireAuth, requireRole(Role.SUPER_ADMIN), 
 app.use("/api/optical/templates/bulk-rows", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use("/api/optical/templates/bulk", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use(express.json({ limit: "1mb" }));
+// JSON presentation alias; does not change Prisma records or storage paths.
+app.use((request,response,next)=>{
+ const json=response.json.bind(response);
+ response.json=((value:unknown)=>json(presentPublisherNames(value,/^\/api\/(?:admin\/)?(?:publishers|publisher-logos)(?:\/|$)/.test(request.path)))) as typeof response.json;
+ next();
+});
 
 const recentContactSubmissions = new Map<string, number>();
 app.use("/api/auth/setup", new RequestLimiter(10, 10 * 60_000).middleware());
@@ -1795,67 +1803,26 @@ app.post("/api/admin/outcome-preview",requireAuth,requireRole(Role.SUPER_ADMIN),
  }catch(error){response.status(400).json({error:error instanceof Error?error.message:"Kazanım dosyası okunamadı."});}finally{if(request.file&&fs.existsSync(request.file.path))fs.unlinkSync(request.file.path);}
 });
 
-app.post(
-  "/api/admin/answer-keys",
-  requireAuth,
-  requireRole(Role.SUPER_ADMIN),
-  upload.fields([{ name: "answerKeyFile", maxCount: 1 }, { name: "learningOutcomesFile", maxCount: 1 }]),
-  async (request: AuthenticatedRequest & { files?: { answerKeyFile?: Express.Multer.File[]; learningOutcomesFile?: Express.Multer.File[] } }, response, next) => {
-    const uploadedFiles = [
-      ...(request.files?.answerKeyFile ?? []),
-      ...(request.files?.learningOutcomesFile ?? []),
-    ];
-    const movedPaths: string[] = [];
-    let committed = false;
-    try {
-      const parsed = answerKeyUploadBodySchema.safeParse(request.body);
-      if (!parsed.success) { response.status(400).json({ error: "Cevap anahtarı bilgilerini kontrol edin." }); return; }
-      if (!uploadedFiles.length) { response.status(400).json({ error: "En az bir dosya yüklemelisiniz." }); return; }
-      for (const file of uploadedFiles) {
-        const extension = path.extname(file.originalname).toLowerCase().slice(1);
-        if (!allowedExtensions.has(extension) || !validateFileSignature(file.path, extension)) {
-          response.status(400).json({ error: `Dosya içeriği doğrulanamadı: ${file.originalname}` }); return;
-        }
-      }
-      const publisher = await prisma.publisher.findFirst({ where: { id: parsed.data.publisherId, active: true }, select: { id: true,name:true } });
-      if (!publisher) { response.status(404).json({ error: "Etkin yayınevi bulunamadı." }); return; }
-      if(((parsed.data.published??false)||parsed.data.showInEvaluation)&&!parsed.data.confirmPublication){response.status(400).json({error:"Önizleme ve yayın seçeneklerini açıkça onaylayın. Hiçbir kayıt yayımlanmadı."});return;}
-      let reviewed;try{reviewed=await reviewImportedQuestions(uploadedFiles,parsed.data,{examName:parsed.data.examName,grade:parsed.data.grade,publisherName:(typeof publisher!=="undefined"?publisher?.name:undefined)});}catch(error){response.status(400).json({error:(error as Error).message});return;}
-      let evaluation;
-      const showInEvaluation=parsed.data.showInEvaluation??false, penalty=parsed.data.penalty??3;
-      try { evaluation = reviewed??prepareEvaluation(uploadedFiles.map(f=>({category:f.fieldname==="answerKeyFile"?"ANSWER_KEY":"LEARNING_OUTCOMES",storagePath:f.path,originalFileName:f.originalname})),showInEvaluation,null,true,parsed.data.evaluationFormat); }
-      catch(error){response.status(400).json({error:error instanceof Error?error.message:"Değerlendirme anahtarı okunamadı."});return;}
-      const answerKeyId = crypto.randomUUID().replace(/-/g, "");
-      const files = uploadedFiles.map((file) => {
-        const storedFileName = `${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`;
-        const storagePath = path.join(storageRoot, storedFileName);
-        fs.renameSync(file.path, storagePath);
-        movedPaths.push(storagePath);
-        return {
-          originalFileName: file.originalname, storedFileName, storagePath,
-          mimeType: file.mimetype, size: file.size,
-          category: file.fieldname === "answerKeyFile" ? AnswerKeyFileCategory.ANSWER_KEY : AnswerKeyFileCategory.LEARNING_OUTCOMES,
-          generated:file.filename?.endsWith(".generated-answer.pdf")??false,
-        };
-      });
-      await prisma.publishedAnswerKey.create({ data: {
-        id: answerKeyId, publisherId: publisher.id, grade: parsed.data.grade,
-        examName: parsed.data.examName.trim(), published: parsed.data.published??false,
-        showInEvaluation,
-        ...(evaluation ? {opticalKey:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:true}}} : {}),
-        ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
-        createdByUserId: request.user!.id, files: { create: files },
-      } });
-      committed = true;
-      response.status(201).json({ message: "Cevap anahtarı kaydedildi.", answerKeyId, files: files.length });
-    } catch (error) { next(error); }
-    finally {
-      for (const filePath of [...uploadedFiles.map((file) => file.path), ...(!committed ? movedPaths : [])]) {
-        try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (error) { console.error("Geçici yükleme temizlenemedi"); }
-      }
-    }
-  },
-);
+// Definition creation is explicit and contains no files or evaluation side effects.
+app.post("/api/admin/exam-definitions",requireAuth,requireRole(Role.SUPER_ADMIN),async(request:AuthenticatedRequest,response,next)=>{
+ const parsed=z.object({publisherId:z.string().min(1),grade:z.coerce.number().int().min(1).max(12),examName:z.string().trim().min(2).max(180)}).safeParse(request.body);
+ if(!parsed.success){response.status(400).json({error:"Yayınevi, sınıf ve sınav adını kontrol edin."});return;}
+ try{
+  const data=parsed.data;
+  if(!await prisma.publisher.findFirst({where:{id:data.publisherId,active:true},select:{id:true}})){response.status(404).json({error:"Etkin yayınevi bulunamadı."});return;}
+  const record=await prisma.$transaction(async tx=>{
+   // Serializes definitions for a publisher/grade across workers without a schema change.
+   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${data.publisherId+":"+data.grade}))`;
+   if(await tx.publishedAnswerKey.findFirst({where:{publisherId:data.publisherId,grade:data.grade,examName:{equals:data.examName,mode:"insensitive"}}}))return null;
+   return tx.publishedAnswerKey.create({data:{...data,published:false,showInEvaluation:false,createdByUserId:request.user!.id}});
+  });
+  if(!record){response.status(409).json({error:"Bu yayınevi ve sınıfta aynı adlı sınav zaten var. Mevcut sınavı seçin."});return;}
+  response.status(201).json({id:record.id});
+ }catch(e){next(e);}
+});
+app.post("/api/admin/answer-keys",requireAuth,requireRole(Role.SUPER_ADMIN),(_request,response)=>{
+ response.status(409).json({error:"Önce yayın sınavını tanımlayın; cevap anahtarını mevcut sınava ekleyin."});
+});
 
 app.patch(
   "/api/admin/answer-keys/:id",
@@ -2027,6 +1994,7 @@ app.delete(
 app.use(answerPdfRouter);
 app.use(publisherLogoRouter);
 app.use(systemRouter);
+app.use(testCenterRouter);
 app.use(contentRouter);
 app.use(fmtShareRouter);
 app.use("/api/optical", opticalRouter);

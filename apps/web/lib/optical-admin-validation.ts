@@ -21,7 +21,7 @@ export function questionProblems(questions:OpticalQuestion[],requireOutcomes=fal
     if(!q.lesson.trim()||q.lesson.length>80)errors.push(`${label}: ders adı gerekli (en fazla 80 karakter).`);
     if(!Number.isInteger(q.number)||q.number<1||q.positions.A!==q.number)errors.push(`${label}: A soru numarası pozitif tam sayı olmalı.`);
     if(!/^[ABCDEHX]$/.test(q.answer))errors.push(`${label}: cevap A–E, H veya X olmalı.`);
-    if(!Number.isFinite(q.weight)||q.weight<=0||q.weight>100)errors.push(`${label}: katsayı 0’dan büyük, en fazla 100 olmalı.`);
+    if(q.weight!==null&&(!Number.isFinite(q.weight)||q.weight<=0||q.weight>100))errors.push(`${label}: katsayı 0’dan büyük, en fazla 100 olmalı.`);
     if((q.outcomeCode?.length??0)>80||(q.outcomeName?.length??0)>1000)errors.push(`${label}: kazanım kodu en fazla 80, metni 1000 karakter olabilir.`);
     if(requireOutcomes&&(!q.outcomeCode?.trim()||!q.outcomeName?.trim()))errors.push(`${label}: kazanım kodu ve metni gerekli.`);
   }

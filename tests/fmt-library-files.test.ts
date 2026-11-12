@@ -47,3 +47,25 @@ test("Dosya paylaşımı bilgisi: yalnızca geçerli anahtar ve zaman penceresin
  async function invoke(t=token){let status=200,data:any;await handler({params:{id:"share"},body:{token:t}},{setHeader(){},status(n:number){status=n;return this;},json(v:any){data=v;return this;}},(e:any)=>{if(e)throw e;});return{status,data};}
  try{assert.deepEqual((await invoke()).data,{name:"Öğrenci cevapları.fmt"});assert.equal((await invoke("b".repeat(43))).status,410);share.startsAt=new Date(Date.now()+30000);assert.equal((await invoke()).status,425);share.startsAt=new Date(0);share.expiresAt=new Date(0);assert.equal((await invoke()).status,410);share.expiresAt=new Date(Date.now()+60000);share.revokedAt=new Date();assert.equal((await invoke()).status,410);}finally{prisma.managedFileShare.findFirst=original;}
 });
+
+test("Özdebir BLDM: özgün baytlar korunur; doğrulanan tek oturum yerleşimi listelenir",async()=>{
+ const code="ozdebir-ortaokul-tek-oturum",entry=findLibraryFmt(code)!;
+ assert.equal(entry.name,"Özdebir 5/6/7/8 Ortaokul Tek Oturum");assert.equal(entry.requiresVerification,false);
+ assert.ok(entry.file.endsWith(".bldm"));assert.ok(entry.downloadName.endsWith(".bldm"));
+ const bytes=libraryFmtBytes(code);assert.equal(bytes.length,574);assert.equal(crypto.createHash("sha256").update(bytes).digest("hex"),"dd3cbc08d0808abfe1dadd6e6e595364d68df1f396c26d160c5e68261623a226");
+ const text=new TextDecoder("windows-1254").decode(bytes);
+ assert.equal(text.split(/\r?\n/).filter(line=>line.includes("=SINIF=")).length,2);
+ assert.equal(text.split(/\r?\n/).filter(line=>line.includes("=KITAPCIK=")).length,2);
+ assert.match(text,/ABCÇDEFGĞ/);
+ const {systemEvaluationTemplates}=await import("../apps/api/src/evaluation-templates");assert.ok(systemEvaluationTemplates().some(t=>t.id==="system-fmt-ozdebir-ortaokul-tek-oturum"&&t.layout.lineLength===171));
+});
+test("Özdebir BLDM indirme API özgün dosyayı .bldm olarak döndürür",async()=>{
+ const {opticalRouter}=await import("../apps/api/src/optical-routes"),handle=(opticalRouter as any).stack.find((v:any)=>v.route?.path==="/templates/examples/:code/download").route.stack.at(-1).handle;
+ let filename="",bytes:Buffer|undefined;await handle({params:{code:"ozdebir-ortaokul-tek-oturum"},user:{role:"DEALER"}},{attachment(v:string){filename=v;return this;},type(){return this;},send(v:Buffer){bytes=v;}},(e:any)=>{if(e)throw e;});
+ assert.equal(filename,"Özdebir 5-6-7-8 Ortaokul Tek Oturum.bldm");assert.deepEqual(bytes,libraryFmtBytes("ozdebir-ortaokul-tek-oturum"));
+});
+test("Özdebir BLDM süreli paylaşımında API ve istemci dosya adını .fmt yapmaz",async()=>{
+ const {fmtShareRouter,shareHash}=await import("../apps/api/src/fmt-share"),{prisma}=await import("../apps/api/src/db"),original=prisma.fmtShare.findFirst,token="b".repeat(43),code="ozdebir-ortaokul-tek-oturum";
+ prisma.fmtShare.findFirst=(async({where}:any)=>where.tokenHash===shareHash(token)?{id:"share",expiresAt:new Date(Date.now()+60000),fileRefs:[{id:`example:${code}`,example:true}]}:null)as any;
+ try{for(const action of ["view","download"]){const handler=(fmtShareRouter as any).stack.find((v:any)=>v.route?.path===`/api/public/fmt-shares/:id/${action}`).route.stack.at(-1).handle;let result:any,name="";await handler({params:{id:"share"},body:{token,fileId:`example:${code}`}},{setHeader(){},json(v:any){result=v;},attachment(v:string){name=v;return this;},type(){return this;},send(v:Buffer){result=v;}},(e:any)=>{if(e)throw e;});if(action==="view")assert.equal(result.files[0].downloadName,findLibraryFmt(code)!.downloadName);else{assert.equal(name,findLibraryFmt(code)!.downloadName);assert.deepEqual(result,libraryFmtBytes(code));}}}finally{prisma.fmtShare.findFirst=original;}
+});

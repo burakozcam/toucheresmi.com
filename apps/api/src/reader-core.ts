@@ -1,5 +1,5 @@
 type Student={id:string;name:string;school:string;branch:string;answers:string[];booklets?:Record<string,string>};
-type Summary={id:string;score:number;net:number;lessons:unknown[]};
+type Summary={id:string;score:number|null;net:number;lessons:unknown[]};
 export type StoredResult={data:{questions:unknown[];students:Student[]};summary:Summary[];penalty:number;schoolName:string;keyName:string;templateName:string};
 export function resultStudent(snapshot:unknown,studentNo:string):Student {
   if((snapshot as any)?.deletedAt)throw new Error("Sonuç kaldırılmış.");
@@ -18,7 +18,7 @@ export function privateResult(snapshot:unknown,studentNo:string) {
   return {data:{questions:s.data.questions,students:[{id:student.id,name:student.name,school:student.school,branch:student.branch,answers:student.answers}]},
     penalty:s.penalty,schoolName:s.schoolName,keyName:s.keyName,templateName:s.templateName,
     summary:[own[0]],booklets:student.booklets??{},
-    comparison:{schoolRank:1+s.summary.filter(v=>v.score>score+1e-8).length,schoolCount:s.summary.length,
-      branchRank:1+s.summary.filter(v=>branchIds.has(v.id)&&v.score>score+1e-8).length,branchCount:branchIds.size,
-      mean:s.summary.reduce((n,v)=>n+v.score,0)/Math.max(1,s.summary.length)}};
+    comparison:{schoolRank:score===null?null:1+s.summary.filter(v=>v.score!==null&&v.score>score+1e-8).length,schoolCount:s.summary.length,
+      branchRank:score===null?null:1+s.summary.filter(v=>branchIds.has(v.id)&&v.score!==null&&v.score>score+1e-8).length,branchCount:branchIds.size,
+      mean:score===null?null:s.summary.reduce((n,v)=>n+(v.score??0),0)/Math.max(1,s.summary.length)}};
 }

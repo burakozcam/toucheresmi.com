@@ -32,7 +32,7 @@ test("soru analizi: dağılımlar, sınıf ortalamaları, kazanım ve H/X istisn
   const s=snapshot();s.data.students[0].branch="8-A";s.data.students[1].branch="8-B";s.data.questions[0].answer="H";s.data.questions[1].answer="X";
   const r=analyzeSnapshot(s);assert.equal(r.studentCount,2);assert.equal(r.classes.length,2);assert.equal(r.questions[0].correct,2);assert.equal(r.questions[1].correct,0);assert.ok(r.hardest.every(q=>!/[HX]/.test(q.answer)));assert.equal(r.outcomes.reduce((n,o)=>n+o.questionCount,0),s.data.questions.filter(q=>!/[HX]/.test(q.answer)).length);
   for(const q of r.questions){assert.equal(Object.values(q.distribution).reduce((a,b)=>a+b,0),2);if(q.diagnostic)assert.equal(q.correct+q.wrong+q.blank,2);}
-  const filtered=analyzeSnapshot(s,"8-B");assert.equal(filtered.studentCount,1);assert.equal(filtered.meanNet,opticalSummary({...s.data,students:[s.data.students[1]]},3)[0].net);assert.equal(analyzeSnapshot(s,"9-Z").meanScore,0);
+  const filtered=analyzeSnapshot(s,"8-B");assert.equal(filtered.studentCount,1);assert.equal(filtered.meanNet,opticalSummary({...s.data,students:[s.data.students[1]]},3)[0].net);assert.equal(analyzeSnapshot(s,"9-Z").meanScore,null);
 });
 test("anahtar ve TXT parmak izi sıralama/kodlama satır sonu farkına dayanıklıdır",()=>{
   const q=questions();assert.equal(keyFingerprint(q,3),keyFingerprint([...q].reverse(),3));assert.notEqual(keyFingerprint(q,3),keyFingerprint(q,4));assert.equal(checksum(txt),checksum(txt.replace(/\r\n/g,"\n")+"\n"));

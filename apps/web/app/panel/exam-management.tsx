@@ -84,7 +84,7 @@ export default function ExamManagement({ token }: { token: string }) {
 
   return (
     <section className="management-panel exam-management">
-      <header className="panel-header"><div><p className="hero-tag">SINAV YÖNETİMİ</p><h2>Sınav oluştur</h2></div></header>
+      <p>Kurum, yayınevi, ad ve tarih içeren bağımsız sınav tanımlarıdır. Bu kayıtlar TXT yüklemesi veya değerlendirme sonucu oluşturmaz. Cevap anahtarlarını Cevap Anahtarları, sonuçları Sınav Sonuçları bölümünden yönetin.</p><header className="panel-header"><div><p className="hero-tag">SINAV YÖNETİMİ</p><h2>Sınav oluştur</h2></div></header>
       {notice && <p className="notice success" role="status">{notice}</p>}
       {error && <p className="notice error" role="alert">{error}</p>}
       {schools.length === 0 ? <p className="empty-state">Sınav oluşturmak için önce aktif bir kurum ekleyin.</p> : (

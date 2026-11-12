@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import type { OpticalChecks, OpticalSnapshot } from "../../lib/optical";
 import { jsonBody, opticalRequest } from "../../lib/optical-api";
 import CheckSummary from "./optical-checks";
-type Change={id:string;name:string;beforeNet:number;afterNet:number;beforeScore:number;afterScore:number;changed:boolean};
+type Change={id:string;name:string;beforeNet:number;afterNet:number;beforeScore:number|null;afterScore:number|null;changed:boolean};
 type Preview={checks:OpticalChecks;changes:Change[];changedCount:number;previewToken:string};
-const n=(v:number)=>v.toLocaleString("tr-TR",{maximumFractionDigits:2});
+const n=(v:number|null)=>v===null?"Hesaplanmadı":v.toLocaleString("tr-TR",{maximumFractionDigits:2});
 export default function OpticalRevisions({token,snapshot,onUpdate}:{token:string;snapshot:OpticalSnapshot;onUpdate:(s:OpticalSnapshot)=>void}){
   const [checks,setChecks]=useState<OpticalChecks|null>(null),[confirmed,setConfirmed]=useState(false),[preview,setPreview]=useState<Preview|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
   const [versions,setVersions]=useState<Array<{id:string;revision:number;seriesId:string;createdAt:string}>>([]);

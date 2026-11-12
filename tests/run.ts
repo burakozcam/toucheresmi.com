@@ -33,3 +33,7 @@ import "./txt-archive.test";
 import "./v119.test";
 
 import "./v120.test";
+
+import "./v121.test";
+
+import "./ozdebir.test";

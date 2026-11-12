@@ -1,4 +1,5 @@
 "use client";
+import PublicationDefinition from "./publication-definition";
 
 import AnswerPdfOptions from "../answer-pdf-options";
 import { useEffect, useMemo, useState } from "react";
@@ -113,6 +114,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       setError("Etkin bir yayınevi seçmelisiniz.");
       return;
     }
+    if(!targetPublicationId){setError("Cevap anahtarı eklenecek sınav tanımını seçin.");return;}
     const formElement = event.currentTarget;
     const formData = new FormData(formElement);
     formData.set("published", String(form.published));
@@ -186,11 +188,12 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
       {error && <p className="notice error" role="alert">{error}</p>}
 
       {!readOnly&&view==="list"&&<LegacyKeyLink token={token} publications={records} onSaved={()=>void loadData()}/>}
+      {!readOnly&&<PublicationDefinition token={token} publishers={publishers} onCreated={()=>void loadData()}/>}
       {!readOnly&&<div className="answer-add-tabs"><button className={`button ${view==="list"?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("list");setBulkMode(false);}}>Cevap anahtarlarını listele</button><button className={`button ${view==="new"&&!bulkMode?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(false);}}>Yeni cevap anahtarı / kazanım ekle</button><button className="button button-quiet" disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(true);}}>Toplu dosya ekle</button></div>}
-      {!readOnly && bulkMode && <BulkAnswerKeys token={token} publishers={publishers} onComplete={() => void loadData()} onBusyChange={setBulkBusy} />}
+      {!readOnly && bulkMode && <BulkAnswerKeys records={records} token={token} publishers={publishers} onComplete={() => void loadData()} onBusyChange={setBulkBusy} />}
       {!readOnly && view==="new" && !bulkMode && (
         <form className="answer-key-form" onSubmit={handleSubmit}>
-          <label>Sınav kaydı<select aria-label="Cevap anahtarının sınav kaydı" value={targetPublicationId} disabled={submitting} onChange={e=>{const id=e.target.value;setTargetPublicationId(id);const item=records.find(r=>r.id===id);if(item)setForm({publisherId:item.publisherId,grade:String(item.grade),examName:item.examName,published:item.published,showInEvaluation:item.showInEvaluation,penalty:item.opticalKey?.penalty??3,publishedAt:item.publishedAt.slice(0,10)});}}><option value="">Yeni sınav kaydı oluştur</option>{records.map(item=><option key={item.id} value={item.id}>{item.publisher.name} · {item.grade}. Sınıf · {item.examName}</option>)}</select></label>
+          <label>Sınav kaydı<select aria-label="Cevap anahtarının sınav kaydı" value={targetPublicationId} required disabled={submitting} onChange={e=>{const id=e.target.value;setTargetPublicationId(id);const item=records.find(r=>r.id===id);if(item)setForm({publisherId:item.publisherId,grade:String(item.grade),examName:item.examName,published:item.published,showInEvaluation:item.showInEvaluation,penalty:item.opticalKey?.penalty??3,publishedAt:item.publishedAt.slice(0,10)});}}><option value="">Mevcut sınav tanımını seçin</option>{records.map(item=><option key={item.id} value={item.id}>{item.publisher.name} · {item.grade}. Sınıf · {item.examName}</option>)}</select></label>
           {targetPublicationId&&<p className="notice">Mevcut sınav güncellenecek; yeni mükerrer sınav oluşturulmayacak. Önceki sonuç kopyaları korunur.</p>}
           <div className="two-column-fields">
             <label className="publisher-select-field">
@@ -218,7 +221,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
             Ana sayfadaki Cevap Anahtarları bölümünde yayımla
           </label>
 
-          <p className="field-help">Cevap anahtarı eklenen her sınav, Sınav Yükle ekranında yayınevinin altında otomatik listelenir.</p>
+          <p className="field-help">Cevap anahtarı eklenen her sınav, Sınav Değerlendir ekranında yayınevinin altında otomatik listelenir.</p>
           <label>Değerlendirme kuralı<select name="penalty" value={form.penalty} onChange={e=>setForm({...form,penalty:Number(e.target.value)})}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
           <p className="field-help">Doğru cevapları içeren kazanım dosyası tek başına yeterlidir; cevap PDF’si onaylanan tablodan oluşturulur. Format seçimi kazanım dosyasının kaynağını belirtir.</p>
           <label>Veri giriş yöntemi<select aria-label="Cevap anahtarı giriş yöntemi" value={entryMethod} onChange={e=>setEntryMethod(e.target.value)}><option value="file">Kazanım dosyasından / hazır PDF</option><option value="manual">Elle soru ve kazanım gir</option></select></label>
@@ -228,7 +231,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
           </div>}
 
 
-          <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Yükleniyor..." : "Cevap anahtarı ekle"}</button>
+          <button className="button button-navy" type="submit" disabled={submitting||!targetPublicationId}>{submitting ? "Yükleniyor..." : "Cevap anahtarı ekle"}</button>
         </form>
       )}
 
@@ -278,7 +281,7 @@ export default function AnswerKeyManagement({ token, readOnly = false }: { token
                       </div>
                       <label>Sınav / deneme adı<input name="examName" value={editing.examName} onChange={(event) => setEditing({ ...editing, examName: event.target.value })} required maxLength={180} /></label>
                       <label className="checkbox-row"><input type="checkbox" name="published" checked={editing.published} onChange={(event) => setEditing({ ...editing, published: event.target.checked })} />Ana sayfadaki Cevap Anahtarları bölümünde yayımla</label>
-                      <p className="field-help">Bu sınav, cevap anahtarıyla birlikte Sınav Yükle ekranında otomatik listelenir.</p>
+                      <p className="field-help">Bu sınav, cevap anahtarıyla birlikte Sınav Değerlendir ekranında otomatik listelenir.</p>
                       <label>Değerlendirme kuralı<select name="penalty" defaultValue={editing.opticalKey?.penalty??3}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
                       <div className="file-upload-grid">
                         <AnswerArchiveFileInput label="Yeni cevap anahtarı dosyası" disabled={submitting} onChange={setAnswerFileKey}/>
