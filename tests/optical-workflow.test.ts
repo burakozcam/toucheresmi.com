@@ -11,7 +11,7 @@ const questions=()=>parseOpticalKeyRows(rows);
 function snapshot():Snapshot{const data=parseOptical(txt,layout7108,questions(),"Kurum");return {data,summary:opticalSummary(data,3),penalty:3,schoolName:"Kurum",keyName:"Deneme",templateName:"7108",expectedGrade:8};}
 test("kontrol özeti: numara tekrarı ve sınıf uyuşmazlığı durdurur; boş ders ve çoklu işaret uyarıdır",()=>{
   const s=snapshot();s.data.students[1].id=s.data.students[0].id;s.data.students[1].branch="6-B";s.data.students[0].answers[0]="*";s.data.warnings.push("Eksik oturum");
-  const r=reviewSnapshot(s);assert.equal(r.studentCount,2);assert.equal(r.questionCount,90);assert.equal(r.multipleMarks,1);assert.ok(r.blockers.some(w=>w.includes("birden fazla")));assert.ok(r.blockers.some(w=>w.includes("6")));assert.ok(r.warnings.includes("Eksik oturum"));
+  const r=reviewSnapshot(s);assert.equal(r.studentCount,2);assert.equal(r.questionCount,90);assert.equal(r.multipleMarks,1);assert.ok(r.blockers.some(w=>w.includes("birden fazla")));assert.ok(r.warnings.some(w=>w.includes("6")));assert.ok(r.warnings.includes("Eksik oturum"));
 });
 test("kontrol özeti: olası yanlış kitapçık yalnızca uyarılır, cevaplar değiştirilmez",()=>{
   const s=snapshot(),student=s.data.students[0];student.booklets.TÜRKÇE="B";

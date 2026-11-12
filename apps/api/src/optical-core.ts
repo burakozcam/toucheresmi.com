@@ -63,8 +63,10 @@ export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "
 }
 
 /** Canonical A-question order; no identity numbers are returned or stored. */
-export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuestions: OpticalQuestion[], school: string, options:{mergeSessions?:boolean;hashIdentity?:(v:string)=>string;encryptIdentity?:(v:string)=>string}={}): OpticalData {
+export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuestions: OpticalQuestion[], school: string, options:{allowMismatch?:boolean;mergeSessions?:boolean;hashIdentity?:(v:string)=>string;encryptIdentity?:(v:string)=>string}={}): OpticalData {
   const questions = opticalQuestionsSchema.parse(inputQuestions);
+  const warnings: string[] = [];
+  const mismatch = (message: string) => { if (!options.allowMismatch) throw new Error(message); warnings.push(message); };
   const sourceLayout = opticalLayoutSchema.parse(inputLayout);
   const questionLessons = [...new Set(questions.map(q => q.lesson))];
   if (new Set(questionLessons.map(lessonIdentity)).size !== questionLessons.length) throw new Error("Cevap anahtarında aynı derse ait birden fazla ad var. Ders adlarını düzeltin.");
@@ -72,10 +74,10 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   const layout = opticalLayoutSchema.parse({...sourceLayout, lessons: sourceLayout.lessons.map(l => ({...l,
     name: questionLessons.find(name => lessonIdentity(name) === lessonIdentity(l.name)) ?? l.name,
   }))});
-  if (questions.some(q => !layout.lessons.some(l => l.name === q.lesson))) throw new Error("Cevap anahtarındaki dersler seçilen FMT ile eşleşmiyor.");
+  if (questions.some(q => !layout.lessons.some(l => l.name === q.lesson))) mismatch("Cevap anahtarındaki bazı dersler FMT ile eşleşmiyor; okunamayan sorular boş değerlendirilecek.");
   for (const l of layout.lessons) {
     const count = questions.filter(q=>q.lesson===l.name).length;
-    if (!count || count > l.length) throw new Error(`${l.name}: soru sayısı FMT alanıyla uyumsuz.`);
+    if (!count || count > l.length) mismatch(`${l.name}: soru sayısı FMT alanıyla uyumsuz; alan dışındaki sorular boş, fazla işaretlemeler değerlendirme dışı bırakılacak.`);
   }
   const lines = txt.replace(/^\uFEFF/, "").split(/\r\n|\n|\r/);
   while (lines.at(-1) === "") lines.pop();
@@ -97,7 +99,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     if (!name) throw new Error(`${label}: ad soyad alanı boş. Ad konumu: ${position(f.name)}; FMT eşleştirmesini kontrol edin.`);
     if (!id && !identity) throw new Error(`${label}: öğrenci no ve eşleştirme kimliği boş. Öğrenci no konumu: ${position(f.id)}.`);
     if (!/^[A-D]$/.test(book)) throw new Error(`${label}: kitapçık türü eksik/geçersiz. Beklenen A/B/C/D; konum: ${position(f.booklet)}. FMT/kodlamayı kontrol edin.`);
-    if (!questions.every(q=>q.positions[book])) throw new Error(`${label}: ${book} kitapçığı anahtarda tanımlı değil.`);
+    if (!questions.every(q=>q.positions[book])) mismatch(`${label}: ${book} kitapçığı anahtarda tanımlı değil; eşleştirilemeyen cevaplar boş değerlendirilecek.`);
     const numberKey=`${grade}:${id.replace(/^0+(?=\d)/,"")}`;
     const existing=options.mergeSessions===false?undefined:(identity?identities.get(identity):undefined)??(id?numbers.get(numberKey):undefined);
     if(existing?.identity&&identity&&existing.identity!==identity)throw new Error(`${label}: aynı numara farklı kimliklerde kullanılmış.`);
@@ -109,16 +111,16 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
       const count = questions.filter(q=>q.lesson===lesson.name).length;
       const raw = line.slice(lesson.start-1, lesson.start-1+lesson.length).toUpperCase();
       if (/[^ABCDE* .-]/.test(raw)) throw new Error(`${label} / ${lesson.name}: cevap alanında geçersiz karakter var.`);
-      if (raw.slice(count).trim().replace(/[-.]/g,"")) throw new Error(`${label} / ${lesson.name}: cevap anahtarındaki soru sayısından sonra işaretleme var.`);
+      if (raw.slice(count).trim().replace(/[-.]/g,"")) mismatch(`${label} / ${lesson.name}: cevap anahtarındaki soru sayısından sonraki işaretlemeler değerlendirme dışı bırakıldı.`);
       const chain = raw.slice(0,count).replace(/[ .-]/g," ");
       if (!chain.trim()) continue;
-      if (!questions.filter(q=>q.lesson===lesson.name).every(q=>q.positions[book])) throw new Error(`${label}: ${book} kitapçığı anahtarda tanımlı değil.`);
+      if (!questions.filter(q=>q.lesson===lesson.name).every(q=>q.positions[book])) mismatch(`${label}: ${book} kitapçığı anahtarda tanımlı değil; eşleştirilemeyen cevaplar boş değerlendirilecek.`);
       if (entry.chains.has(lesson.name)) throw new Error(`${label}: ${lesson.name} için aynı öğrenciye ikinci kayıt var. Yinelenen satırı kaldırın.`);
       entry.chains.set(lesson.name,chain); entry.booklets[lesson.name]=book;
     }
     entries.set(key,entry);if(identity){entry.identity=identity;identities.set(identity,entry);}if(id)numbers.set(numberKey,entry);
   });
-  const warnings: string[] = [], seen = new Set<string>();
+  const seen = new Set<string>();
   const students = [...entries.values()].map(entry => {
     if(options.hashIdentity&&/^\d{11}$/.test(entry.id)){entry.identity??=entry.id;if(entry.identity===entry.id)entry.id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;}
     if(!entry.id&&entry.identity&&options.hashIdentity)entry.id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;
@@ -126,7 +128,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     const identifier = `${entry.grade}:${entry.id}`;
     if (options.mergeSessions!==false&&seen.has(identifier)) throw new Error(`Öğrenci numarası ${entry.id} için farklı kimlikler var; yanlış kurum veya tekrar kaydı kontrol edin.`);
     seen.add(identifier);
-    const missing = layout.lessons.filter(l=>!entry.chains.has(l.name)).map(l=>l.name);
+    const missing = questionLessons.filter(name=>!entry.chains.has(name));
     if (missing.length) warnings.push(`${entry.id}: ${missing.join(", ")} alanları tamamen boş; bu dersler boş cevap olarak değerlendirilecek.`);
     const repeated=options.mergeSessions===false&&[...entries.values()].filter(other=>other.grade===entry.grade&&other.id===entry.id).length>1;
     return {id:repeated?`${entry.id}-O${entry.sourceLines[0]}`:entry.id,...(options.mergeSessions===false?{studentNo:entry.id,separateSession:true}:{}),

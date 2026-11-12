@@ -31,7 +31,7 @@ import { identityHash,encryptIdentity } from "./result-identity";
 import { isDeleted,safeSnapshot,mergeStudentData } from "./result-data";
 import { inferFmt } from "./fmt-inference";
 import { convertTxt } from "./txt-converter";
-import { bestAnswerPatternMatch } from "./optical-exam-matching";
+import { matchExamAnswers } from "./optical-exam-matching";
 
 import { systemEvaluationTemplates, systemEvaluationTemplate, systemStorageId, sameExecutableLayout, evaluationTemplateChoices } from "./evaluation-templates";
 
@@ -217,8 +217,7 @@ opticalRouter.post("/suggest-exams",inferenceLimit,wrap(async(req,res)=>{
   if(!publication.opticalKey)continue;
   try{
    const questions=evaluationQuestions(publication.opticalKey.questions);
-   const data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),questions,"");
-   const match=bestAnswerPatternMatch(data.questions,data.students);
+   const match=matchExamAnswers(decoded,opticalLayoutSchema.parse(template.layout),questions);
    if(match)items.push({id:publication.opticalKey.id,publicationId:publication.id,name:publication.examName,publisher:publication.publisher.name,grade:publication.grade,...match});
   }catch(error){if(!(error instanceof Error))throw error;incompatibleCount++;firstIncompatibleReason||=error.message;}
  }
@@ -266,7 +265,7 @@ for(const endpoint of ["preview","evaluate"]){
     const [template,key]=await Promise.all([evaluationTemplate(input.templateId),prisma.opticalKey.findFirst({where:{id:input.keyId,publication:evaluationPublicationWhere},include:{publication:{select:{examName:true,grade:true,publisherId:true}}}})]);
     if(!template || !key){res.status(400).json({error:"Etkin bir FMT ve cevap anahtarı seçin."});return;}
     let data,decoded="";
-    try {decoded=files.map(file=>decodeOptical(file.buffer,input.encoding).replace(/[\r\n]+$/g,"")).join("\n");data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{mergeSessions:input.mergeSessions==="true",hashIdentity:identityHash,encryptIdentity});}
+    try {decoded=files.map(file=>decodeOptical(file.buffer,input.encoding).replace(/[\r\n]+$/g,"")).join("\n");data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{allowMismatch:true,mergeSessions:input.mergeSessions==="true",hashIdentity:identityHash,encryptIdentity});}
     catch(error){
       const inference=decoded?inferFmt(decoded,systemEvaluationTemplates()):null,best=inference?.candidates[0];
       const suggested=inference?.confidence==="strong"&&best&&!best.aliases.includes(template.id)&&canonicalJson(opticalLayoutSchema.parse(template.layout))!==canonicalJson(systemEvaluationTemplate(best.id)?.layout)?best:undefined;
@@ -277,7 +276,7 @@ for(const endpoint of ["preview","evaluate"]){
     const previousRows=await prisma.opticalResult.findMany({where:{schoolId:school.id,keyId:key.id,nextRevision:null},orderBy:{createdAt:"desc"}});
     const replaceKeys=new Set<string>();
     for(const item of archived.filter(item=>evaluatedContext(item,school.id,key.id))){
-      try{const original=parseOptical(decodeOptical(item.file.buffer,input.encoding),opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{mergeSessions:true,hashIdentity:identityHash});for(const student of original.students){if(student.identityHash)replaceKeys.add(student.identityHash);replaceKeys.add(`${student.branch.split("-")[0]}:${studentNumberKey(student.studentNo??student.id)}`);}}catch(error){res.status(400).json({error:(error as Error).message});return;}
+      try{const original=parseOptical(decodeOptical(item.file.buffer,input.encoding),opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{allowMismatch:true,mergeSessions:true,hashIdentity:identityHash});for(const student of original.students){if(student.identityHash)replaceKeys.add(student.identityHash);replaceKeys.add(`${student.branch.split("-")[0]}:${studentNumberKey(student.studentNo??student.id)}`);}}catch(error){res.status(400).json({error:(error as Error).message});return;}
     }
     const reprocessing=replaceKeys.size>0;
     if(archived.length>1&&input.mergeSessions==="false"){res.status(400).json({error:"Ayrı oturum modunda dosyalar sırayla değerlendirilmelidir."});return;}

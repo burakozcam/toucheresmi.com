@@ -11,7 +11,7 @@ export function reviewSnapshot(snapshot:Snapshot){
   for(const s of data.students){
     if(seen.has(s.id))blockers.push(`${s.id}: öğrenci numarası birden fazla kişide kullanılmış.`);seen.add(s.id);
     const grade=Number(s.branch.split("-")[0]);
-    if(snapshot.expectedGrade&&grade&&grade!==snapshot.expectedGrade)blockers.push(`${s.id}: TXT sınıfı ${grade}, seçilen sınav ${snapshot.expectedGrade}. sınıf.`);
+    if(snapshot.expectedGrade&&grade&&grade!==snapshot.expectedGrade)warnings.push(`${s.id}: TXT sınıfı ${grade}, seçilen sınav ${snapshot.expectedGrade}. sınıf.`);
     if(s.branch==="Belirtilmedi"||!s.branch.includes("-"))warnings.push(`${s.id}: sınıf/şube bilgisi eksik; sınıf listelerini kontrol edin.`);
   }
   const multiple=data.students.reduce((n,s)=>n+s.answers.filter(a=>a==="*").length,0);

@@ -24,14 +24,14 @@ test("FMT ve sınav ders adları eşleşir; soru sayısı ve sınıf denetimleri
   assert.throws(()=>parseOptical(txt,layout7108,questions.map(q=>({...q,lesson:q.lesson==="FEN"?"Biyoloji":q.lesson})),"Kurum"),/eşleşmiyor/);
 });
 
-test("yükleme API: boş FMT deposunda sistem FMT seçilir, önizleme kaydedilir ve sonuç yeniden açılır",async()=>{
+test("yükleme API: boş FMT deposunda sistem FMT seçilir, sınıf/soru dağılımı farkıyla önizleme kaydedilir ve sonuç yeniden açılır",async()=>{
   const {prisma}=await import("../apps/api/src/db");
   const {opticalRouter}=await import("../apps/api/src/optical-routes");
   const originals:Array<[any,string,any]>=[];
   const patch=(obj:any,k:string,v:any)=>{originals.push([obj,k,obj[k]]);obj[k]=v;};
   const templates:any[]=[],results:any[]=[];
   const school={id:"school",name:"Kurum",active:true,dealerId:"dealer"};
-  const key={id:"key",name:"Deneme",active:true,penalty:3,questions:renamed,publication:{grade:8,examName:"Deneme"}};
+  const key={id:"key",name:"Deneme",active:true,penalty:3,questions:renamed.filter(q=>q.number<=10).map(q=>({...q,positions:{A:q.number,B:11-q.number}})),publication:{grade:7,examName:"Deneme"}};
   patch(prisma.opticalTemplate,"findMany",async()=>templates);
   patch(prisma.opticalTemplate,"findFirst",async({where}:any)=>templates.find(t=>t.id===where.id)??null);
   patch(prisma.opticalTemplate,"upsert",async({create}:any)=>{const stored=JSON.parse(canonicalJson(create));templates.push(stored);return stored;});
@@ -51,7 +51,7 @@ test("yükleme API: boş FMT deposunda sistem FMT seçilir, önizleme kaydedilir
   }
   try{
     const library=await call("/evaluation-templates");assert.deepEqual(library.body.map((t:any)=>t.id),["system-fmt-7108","system-fmt-8050","system-fmt-ozdebir-ortaokul-tek-oturum"]);
-    const preview=await call("/preview");assert.equal(preview.status,200);assert.equal(results.length,0);assert.equal(templates.length,0);assert.equal(preview.body.data.students.length,2);
+    const preview=await call("/preview");assert.equal(preview.status,200);assert.equal(results.length,0);assert.equal(templates.length,0);assert.equal(preview.body.data.students.length,2);assert.equal(preview.body.checks.blockers.length,0);assert.ok(preview.body.checks.warnings.some((w:string)=>w.includes("TXT sınıfı")));assert.ok(preview.body.checks.warnings.some((w:string)=>w.includes("sonraki işaretlemeler")));
     assert.equal((await call("/evaluate")).status,409);
     assert.equal((await call("/evaluate",{...body,schoolId:"forbidden",previewToken:preview.body.previewToken})).status,403);
     const saved=await call("/evaluate",{...body,previewToken:preview.body.previewToken});assert.equal(saved.status,201);assert.equal(results.length,1);assert.equal(templates.length,1);

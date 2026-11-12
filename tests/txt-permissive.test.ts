@@ -1,0 +1,31 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import {layout7108, parseOptical, opticalSummary} from "../apps/api/src/optical-core";
+import {matchExamAnswers} from "../apps/api/src/optical-exam-matching";
+import {reviewSnapshot} from "../apps/api/src/optical-review";
+const original=fs.readFileSync(new URL("./fixtures/7108-anonymous.txt",import.meta.url),"utf8").trimEnd().split(/\r?\n/)[0].padEnd(171);
+const questions=Array.from({length:10},(_,i)=>({lesson:"TÜRKÇE",number:i+1,answer:"A",weight:null,positions:{A:i+1,B:10-i}}));
+const put=(txt:string,start:number,value:string)=>txt.slice(0,start-1)+value+txt.slice(start-1+value.length);
+const line=put(put(original,51,"B"),52,"AAAAAAAAAAAAAAAAAAAA");
+test("TXT soru dağılımı farkı uyarıyla değerlendirilir; eşleşmeyen ders ve taşan sorular boş kalır",()=>{
+ assert.throws(()=>parseOptical(line,layout7108,questions,"Kurum"),/uyumsuz/);
+ const data=parseOptical(line,layout7108,questions,"Kurum",{allowMismatch:true});
+ assert.deepEqual(data.students[0].answers,Array(10).fill("A"));
+ assert.ok(data.warnings.some(w=>w.includes("sonraki işaretlemeler")));
+ const extra=[...questions,...Array.from({length:21},(_,i)=>({lesson:"Biyoloji",number:i+1,answer:"A",weight:null,positions:{A:i+1,B:i+1}}))];
+ const unmapped=parseOptical(line,layout7108,extra,"Kurum",{allowMismatch:true});
+ assert.deepEqual(unmapped.students[0].answers.slice(10),Array(21).fill(""));
+ const oversized=Array.from({length:21},(_,i)=>({...questions[0],number:i+1,positions:{A:i+1,B:i+1}}));
+ assert.equal(parseOptical(line,layout7108,oversized,"Kurum",{allowMismatch:true}).students[0].answers[20],"");
+ const checks=reviewSnapshot({data,summary:opticalSummary(data,3),penalty:3,schoolName:"Kurum",templateName:"7108",keyName:"Deneme",expectedGrade:99});
+ assert.equal(checks.blockers.length,0);assert.ok(checks.warnings.some(w=>w.includes("TXT sınıfı")));
+});
+test("sınav önerisi kısa anahtarı, B kitapçığını ve kimliksiz/yinelenen satırları karşılaştırır",()=>{
+ const anonymous=put(put(put(line,11,"     "),16,"                    "),38,"           ");
+ assert.deepEqual(matchExamAnswers(anonymous+"\n"+anonymous,layout7108,questions),{matchPercent:100,matched:10,compared:10});
+ const reverse=questions.map((q,i)=>({...q,answer:"ABCDEABCDE"[i]}));
+ const bLine=put(anonymous,52,"EDCBAEDCBAAAAAAAAAAA");
+ assert.equal(matchExamAnswers(bLine,layout7108,reverse)?.matchPercent,100);
+ assert.equal(matchExamAnswers("wrong format",layout7108,questions),null);
+});

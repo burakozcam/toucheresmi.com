@@ -1,3 +1,10 @@
+# v1.2.2 RC.2 · 2026-11-12 · yerel geliştirme
+
+- TXT değerlendirmesinde FMT/sınav sınıfı ve soru dağılımı farkları yüklemeyi engellemez; eşleştirilemeyen cevaplar boş değerlendirilir, fazla işaretlemeler atlanır ve uyarılar kaydedilir.
+- Sınav önerisi öğrenci kimliği, yinelenen satır ve oturum birleştirme kontrollerinden bağımsız olarak cevap alanlarından hesaplanır; kısa anahtar sonrası işaretlemeler öneriyi engellemez.
+- Din K.ve A.B. ders adı eşleştirmesi eklendi. Web, API, paketler ve önizleme sürümü RC.2 olarak eşitlendi.
+- Canlıya dağıtım veya push yapılmadı.
+
 # v1.2.2 RC · 2026-11-12 · yerel geliştirme
 
 - Cevap anahtarı ekleme için yöneticiye özel, yayınevi ve sınıfa göre gruplanan Sınav Ekle ekranı; kayıtlı sınavdan doğrudan anahtar ekleme.

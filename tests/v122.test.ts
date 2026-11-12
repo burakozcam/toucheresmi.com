@@ -31,5 +31,5 @@ test("sınav önerisi iptal / tümü doğru sorularını karşılaştırmadan en
     { answers: [..."ABCDEABCDD", "", ""] },
   ]);
   assert.deepEqual(match, { matchPercent: 90, matched: 9, compared: 10 });
-  assert.equal(bestAnswerPatternMatch(questions.slice(0, 9), [{ answers: [..."ABCDEABCD"] }]), null);
+  assert.deepEqual(bestAnswerPatternMatch(questions.slice(0, 9), [{ answers: [..."ABCDEABCD"] }]), {matchPercent:100, matched:9, compared:9});
 });
