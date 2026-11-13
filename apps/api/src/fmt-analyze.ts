@@ -1,3 +1,4 @@
+import {verifiedFmtLayout} from "./verified-fmt";
 import type { OpticalLayout } from "./optical-core";
 import { inspectFmtCoordinates } from "./fmt-verification";
 const norm=(s:string)=>s.toLocaleUpperCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Z0-9]/g,"");
@@ -6,7 +7,7 @@ const courses:Record<string,string>={TURKCE:"TÜRKÇE",SOSYAL:"SOSYAL",SOSYALBIL
 export function analyzeFmt(text:string){
  const lines=text.replace(/^\uFEFF/,"").split(/\r\n|\r|\n/).filter(l=>l.trim()),header=lines.shift()?.split("=")??[];
  if(header.length<6||!header.slice(0,3).every(v=>/^\d+$/.test(v)))throw new Error("FMT yapısı desteklenen koordinat sözdiziminde değil. Özgün FMT dosyasını kontrol edin; dosya adına göre alan üretilmedi.");
- const layout={lineLength:0,fields:{},lessons:[],literals:[]} as unknown as OpticalLayout;
+ let layout={lineLength:0,fields:{},lessons:[],literals:[]} as unknown as OpticalLayout;
  const mappings:Array<{sourceName:string;target:string;start:number;length:number;status:string;reason:string}>=[];let offset=1;
  for(const [i,line]of lines.entries()){
   const p=line.split("="),[r1,r2,c1,c2]=p.slice(0,4).map(Number),name=p[8]?.trim(),mode=p[5];
@@ -20,8 +21,14 @@ export function analyzeFmt(text:string){
   mappings.push({sourceName:name,target,start:offset,length,status,reason:"TXT konumu FMT tanım sırasından önerildi; okuyucu çıktısı ile doğrulanmalıdır."});offset+=length;
  }
  layout.lineLength=offset-1;
+ const verified=verifiedFmtLayout(text);
+ if(verified){layout=structuredClone(verified);for(const m of mappings){
+  const literal=layout.literals?.find(l=>l.start===m.start),field=Object.entries(layout.fields).find(([,f])=>f?.start===m.start),lesson=layout.lessons.find(l=>l.start===m.start);
+  m.target=literal?"literal":field?`field:${field[0]}`:lesson?`lesson:${lesson.name}`:"ignore";
+  m.status="Doğrulandı";m.reason="Sağlanan Özdebir FMT içeriği ve gerçek TXT alan konumlarıyla eşleşen kayıt düzeni.";
+ }}
  const issues:string[]=[];for(const key of ["id","name","booklet"]){if(!layout.fields[key as keyof typeof layout.fields]){issues.push(`${key==="id"?"Öğrenci numarası":key==="name"?"Ad soyad":"Kitapçık"} eşleştirmesi gerekli.`);(layout.fields as Record<string,unknown>)[key]={start:0,length:1};}}
  if(!layout.lessons.length)issues.push("En az bir ders cevap alanını eşleştirin.");
  const coordinates=inspectFmtCoordinates(text,layout);issues.push(...coordinates.errors);
- return {layout,mappings,issues:[...new Set(issues)],warnings:["Optik form koordinatları ile TXT karakter konumları farklıdır. Öneriler, dosyanın alan tanım sırası ve kapasitesinden hesaplanır; gerçek TXT testi ve okuyucu kontrolü gereklidir."],coordinates};
+ return {layout,mappings,issues:[...new Set(issues)],warnings:[...(verified?["Bu Özdebir düzeninde 1/2/9 kayıt türüdür. Eski FMT ders etiketleri doğrulanmış oturum derslerine eşlendi; başka yayınevlerine uygulanmaz."]:[]),"Optik form koordinatları ile TXT karakter konumları farklıdır. Öneriler, dosyanın alan tanım sırası ve kapasitesinden hesaplanır; gerçek TXT testi ve okuyucu kontrolü gereklidir."],coordinates};
 }

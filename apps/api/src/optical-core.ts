@@ -1,5 +1,5 @@
 import { z } from "zod";
-import {preferFilledRecord} from "./student-merge";
+import {readerFamily,recordLayout} from "./optical-readers";
 import { lessonIdentity } from "../lib/evaluation-compatibility";
 
 const field = z.object({ start: z.number().int().min(1).max(4000), length: z.number().int().min(1).max(300), align:z.enum(["left","right"]).optional() });
@@ -52,8 +52,8 @@ export const opticalQuestionsSchema = z.array(opticalQuestionSchema).min(1).max(
   }
 });
 export type OpticalQuestion = z.infer<typeof opticalQuestionSchema>;
-export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[]; recordBooklets?:string[]; studentNo?:string;identityHash?:string;identityEncrypted?:string; separateSession?:boolean; identityMarks?:number };
-export type OpticalData = { questions: Array<OpticalQuestion & { column: string }>; students: OpticalStudent[]; warnings: string[]; lineCount: number };
+export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[]; recordBooklets?:string[]; studentNo?:string;identityHash?:string;identityEncrypted?:string; separateSession?:boolean; identityMarks?:number; schoolCode?:string; missingLessons?:string[]; sessions?:Record<string,{lessons:string[];marks:number;sourceLine:number}> };
+export type OpticalData = { questions: Array<OpticalQuestion & { column: string }>; students: OpticalStudent[]; warnings: string[]; lineCount: number; diagnostics?:{rejectedLines:Array<{line:number;reason:string}>;duplicateRecords:number;missingVerbal:number;missingNumeric:number}; status?:"completed"|"completed_with_warnings"|"failed" };
 
 export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "windows-1254" = "auto") {
   if (encoding !== "auto") return new TextDecoder(encoding, { fatal: true }).decode(buffer);
@@ -64,7 +64,7 @@ export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "
 }
 
 /** Canonical A-question order; no identity numbers are returned or stored. */
-export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuestions: OpticalQuestion[], school: string, options:{allowMismatch?:boolean;mergeSessions?:boolean;hashIdentity?:(v:string)=>string;encryptIdentity?:(v:string)=>string}={}): OpticalData {
+export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuestions: OpticalQuestion[], school: string, options:{missingBooklet?:"A"|"B"|"C"|"D";allowMismatch?:boolean;mergeSessions?:boolean;hashIdentity?:(v:string)=>string;encryptIdentity?:(v:string)=>string}={}): OpticalData {
   const questions = opticalQuestionsSchema.parse(inputQuestions);
   const warnings: string[] = [];
   const mismatch = (message: string) => { if (!options.allowMismatch) throw new Error(message); warnings.push(message); };
@@ -75,7 +75,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   const layout = opticalLayoutSchema.parse({...sourceLayout, lessons: sourceLayout.lessons.map(l => ({...l,
     name: questionLessons.find(name => lessonIdentity(name) === lessonIdentity(l.name)) ?? l.name,
   }))});
-  if (questions.some(q => !layout.lessons.some(l => l.name === q.lesson))) mismatch("Cevap anahtarındaki bazı dersler FMT ile eşleşmiyor; okunamayan sorular boş değerlendirilecek.");
+  if (!readerFamily(sourceLayout)&&questions.some(q => !layout.lessons.some(l => l.name === q.lesson))) mismatch("Cevap anahtarındaki bazı dersler FMT ile eşleşmiyor; okunamayan sorular boş değerlendirilecek.");
   for (const l of layout.lessons) {
     const count = questions.filter(q=>q.lesson===l.name).length;
     if (!count || count > l.length) mismatch(`${l.name}: soru sayısı FMT alanıyla uyumsuz; alan dışındaki sorular boş, fazla işaretlemeler değerlendirme dışı bırakılacak.`);
@@ -83,79 +83,106 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   const lines = txt.replace(/^\uFEFF/, "").split(/\r\n|\n|\r/);
   while (lines.at(-1) === "") lines.pop();
   if (!lines.length || lines.length > 2000) throw new Error("TXT 1–2000 kayıt satırı içermelidir.");
-  type Entry = { id: string; name: string; branch: string; grade: string; chains: Map<string,string>; booklets: Record<string,string>; sourceLines: number[];recordBooklets:Set<string>;identity?:string; marks:number };
-  const identities=new Map<string,Entry>(),numbers=new Map<string,Entry>();
-  const entries = new Map<string,Entry>(), seenLines = new Set<string>();
-  const slice = (line: string, f?: {start:number;length:number}) => f ? line.slice(f.start-1, f.start-1+f.length).trim() : "";
-  lines.forEach((line, index) => {
-    const label = `TXT satır ${index+1}`;
-    if (seenLines.has(line)) { warnings.push(`${label}: yinelenen TXT satırı atlandı; öğrenci ikinci kez sayılmadı.`); return; }
-    seenLines.add(line);
-    if (!line.trim()) { mismatch(`${label}: boş satır atlandı.`); return; }
-    if (line.length !== layout.lineLength) mismatch(`${label}: ${layout.lineLength} karakter bekleniyor, ${line.length} bulundu. Mevcut konumlar korundu; eksik alanlar boş değerlendirildi, satır sonundaki fazla alanlar kullanılmadı. FMT farklıysa cevaplar yanlış konumdan okunmuş olabilir.`);
-    for(const literal of layout.literals??[])if(line.slice(literal.start-1,literal.start-1+literal.text.length)!==literal.text)mismatch(`${label}: FMT sabit alanı eşleşmiyor; seçili alan konumlarıyla okundu. Yanlış FMT cevapları kaydırabilir.`);
-    const f = layout.fields; let id = slice(line, f.id), identity = slice(line, f.identity), name = [slice(line,f.name),slice(line,f.surname)].filter(Boolean).join(" ").replace(/\s+/g," ");
-    const grade = slice(line,f.grade), branch = slice(line,f.branch); let book = slice(line,f.booklet).toUpperCase();
-    if (/[\x00-\x1f\x7f\ufffd]/.test(line)) mismatch(`${label}: kontrol karakteri veya çözümlenemeyen karakter var; okunamayan cevaplar boş sayıldı. Kodlama ad ve cevapları etkilemiş olabilir.`);
-    const position=(field:{start:number;length:number})=>`${field.start}-${field.start+field.length-1} (1 tabanlı)`;
-    if (!name && options.mergeSessions===false) mismatch(`${label}: ad soyad alanı boş. Ad konumu: ${position(f.name)}; FMT eşleştirmesini kontrol edin.`);
-    if (!id && !identity) { mismatch(`${label}: öğrenci no ve kimlik boş; satıra özel numara verildi, diğer oturumlarla birleştirilemedi.`); id=`satir-${index+1}`; }
-    if (!/^[A-D]$/.test(book)) { if(!options.allowMismatch)throw new Error(`${label}: kitapçık türü eksik/geçersiz. Beklenen A/B/C/D; konum: ${position(f.booklet)}.`); mismatch(`${label}: kitapçık eksik/geçersiz; A kitapçığı varsayıldı. Gerçek kitapçık farklıysa sonuçlar hatalı olabilir.`); book="A"; }
-    if (!questions.every(q=>q.positions[book])) mismatch(`${label}: ${book} kitapçığı anahtarda tanımlı değil; eşleştirilemeyen cevaplar boş değerlendirilecek.`);
-    const numberKey=`${grade}:${id.replace(/^0+(?=\d)/,"")}`;
-    const existing=options.mergeSessions===false?undefined:(identity?identities.get(identity):undefined)??(id?numbers.get(numberKey):undefined);
-    if(existing?.identity&&identity&&existing.identity!==identity)warnings.push(`${label}: aynı numara farklı kimliklerde kullanılmış; numaraya göre birleştirildi. Farklı öğrenciler birleşmiş olabilir.`);
-    const entry:Entry=existing??{id,name,branch,grade,chains:new Map(),booklets:{},sourceLines:[],recordBooklets:new Set<string>(),identity,marks:0};
-    const key=existing?[...entries].find(([,value])=>value===existing)![0]:`row:${index}`;
-    const marks=layout.lessons.reduce((n,l)=>n+(line.slice(l.start-1,l.start-1+l.length).match(/[ABCDE*]/gi)?.length??0),0);
-    if (entry.name !== name || entry.grade !== grade || (entry.branch && branch && entry.branch !== branch)) warnings.push(`${label}: aynı öğrenciye ait oturumların kimlik bilgileri çelişiyor; daha dolu kaydın bilgileri kullanıldı.`);
-    const preferIncoming=preferFilledRecord([entry.name,entry.grade,entry.branch,entry.identity??""],[name,grade,branch,identity],entry.marks,marks);
-    if(preferIncoming){entry.name=name||entry.name;entry.grade=grade||entry.grade;entry.branch=branch||entry.branch;entry.identity=identity||entry.identity;}
-    entry.name ||= name; entry.grade ||= grade;
-    entry.marks=Math.max(entry.marks,marks);
-    entry.id ||= id; entry.branch ||= branch; entry.sourceLines.push(index+1); entry.recordBooklets.add(book);
-    for (const lesson of layout.lessons) {
-      const count = questions.filter(q=>q.lesson===lesson.name).length;
-      let raw = line.slice(lesson.start-1, lesson.start-1+lesson.length).toUpperCase();
-      if (/[^ABCDE* .-]/.test(raw)) { mismatch(`${label} / ${lesson.name}: cevap alanında geçersiz karakterler boş sayıldı; doğru/yanlış/net değişebilir.`); raw=raw.replace(/[^ABCDE* .-]/g," "); }
-      if (raw.slice(count).trim().replace(/[-.]/g,"")) mismatch(`${label} / ${lesson.name}: cevap anahtarındaki soru sayısından sonraki işaretlemeler değerlendirme dışı bırakıldı.`);
-      const chain = raw.slice(0,count).replace(/[ .-]/g," ");
-      if (!chain.trim()) continue;
-      if (!questions.filter(q=>q.lesson===lesson.name).every(q=>q.positions[book])) mismatch(`${label}: ${book} kitapçığı anahtarda tanımlı değil; eşleştirilemeyen cevaplar boş değerlendirilecek.`);
-      if (entry.chains.has(lesson.name)) { warnings.push(`${label}: ${lesson.name} için ikinci kayıt birleştirildi; daha çok işaretlemeli ders kaydı kullanıldı, eşitlikte ilk kayıt korundu. Çelişen cevaplar neti etkileyebilir.`); if(chain.replace(/ /g,"").length <= entry.chains.get(lesson.name)!.replace(/ /g,"").length) continue; }
-      entry.chains.set(lesson.name,chain); entry.booklets[lesson.name]=book;
+  type RecordEntry={lessons:string[];chains:Map<string,string>;book:string;marks:number;sourceLine:number};
+  type Entry={id:string;name:string;branch:string;grade:string;identity:string;schoolCode:string;sourceLines:number[];records:Map<string,RecordEntry>};
+  const entries:Entry[]=[],seenLines=new Set<string>();
+  const diagnostics={rejectedLines:[] as Array<{line:number;reason:string}>,duplicateRecords:0,missingVerbal:0,missingNumeric:0};
+  const slice=(line:string,f?:{start:number;length:number})=>f?line.slice(f.start-1,f.start-1+f.length).trim():"";
+  const normalized=(v:string)=>v.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g," ");
+  const family=readerFamily(sourceLayout);
+  const reject=(index:number,reason:string)=>{const message=`TXT satır ${index+1}: ${reason}`;if(!options.allowMismatch)throw Error(message);warnings.push(message);diagnostics.rejectedLines.push({line:index+1,reason});};
+  lines.forEach((line,index)=>{
+    const label=`TXT satır ${index+1}`;
+    if(!line.trim()){reject(index,"boş satır atlandı.");return;}
+    if(seenLines.has(line)){diagnostics.duplicateRecords++;warnings.push(`${label}: yinelenen TXT satırı atlandı; öğrenci ikinci kez sayılmadı.`);return;}seenLines.add(line);
+    const variant=recordLayout(sourceLayout,line);
+    if(family&&!variant){reject(index,"doğrulanmış kayıt türü bulunamadı; satır atlandı.");return;}
+    const rowLayout=variant?.layout??sourceLayout;
+    const lessons=rowLayout.lessons.map(l=>({...l,name:questionLessons.find(name=>lessonIdentity(name)===lessonIdentity(l.name))??l.name}));
+    if(line.length!==rowLayout.lineLength)mismatch(`${label}: ${rowLayout.lineLength} karakter bekleniyor, ${line.length} bulundu. Mevcut konumlar korundu; yalnız tamamı mevcut cevap alanları okundu. Eksik alanlar değerlendirilmedi; yanlış konumdan okuma yapılmadı.`);
+    if((rowLayout.literals??[]).some(l=>line.slice(l.start-1,l.start-1+l.text.length)!==l.text)){reject(index,"FMT sabit alanı eşleşmiyor; satır atlandı.");return;}
+    const f=rowLayout.fields;
+    if([f.name,f.surname,f.booklet].some(v=>v&&v.start+v.length-1>line.length)){reject(index,"kimlik / kitapçık alanları eksik; satır atlandı.");return;}
+    if(/[\x00-\x1f\x7f\ufffd]/.test(line)){reject(index,"kontrol karakteri veya çözümlenemeyen karakter var; kodlamayı kontrol edin.");return;}
+    let id=slice(line,f.id),identity=slice(line,f.identity);
+    // Empty/placeholder identity fields cannot establish a match.
+    if(/^(0+|\*+|-+)$/.test(identity))identity="";
+    const name=[slice(line,f.name),slice(line,f.surname)].filter(Boolean).join(" ").replace(/\s+/g," "),grade=slice(line,f.grade),branch=slice(line,f.branch),schoolCode=slice(line,f.schoolCode);
+    if(!id&&!identity){reject(index,"öğrenci no ve kimlik boş; güvenilir eşleştirme yapılamadı.");return;}
+    if(f.grade&&grade&&!/^\d{1,2}$/.test(grade)){reject(index,"sınıf alanı geçersiz; FMT konumlarını kontrol edin.");return;}
+    let book=slice(line,f.booklet).toUpperCase();
+    if(!book&&options.missingBooklet){book=options.missingBooklet;warnings.push(`${label}: boş kitapçık için kullanıcı tarafından ${book} kitapçığı belirtildi.`);}
+    if(!/^[A-D]$/.test(book)||questions.some(q=>lessons.some(l=>l.name===q.lesson)&&!q.positions[book])){reject(index,`kitapçık türü eksik/geçersiz veya anahtarda tanımlı değil; konum: ${f.booklet.start}-${f.booklet.start+f.booklet.length-1}.`);return;}
+    const chains=new Map<string,string>();
+    for(const l of lessons){
+      const count=questions.filter(q=>q.lesson===l.name).length;if(!count)continue;
+      if(line.length<l.start+l.length-1){warnings.push(`${label} / ${l.name}: cevap alanı eksik; ders değerlendirilmedi.`);continue;}
+      let raw=line.slice(l.start-1,l.start-1+l.length).toUpperCase();
+      if(/[^ABCDE* .-]/.test(raw)){mismatch(`${label} / ${l.name}: cevap alanında geçersiz karakterler boş sayıldı.`);raw=raw.replace(/[^ABCDE* .-]/g," ");}
+      if(raw.slice(count).replace(/[ .-]/g,"").length)mismatch(`${label} / ${l.name}: cevap anahtarındaki soru sayısından sonraki işaretlemeler değerlendirme dışı bırakıldı.`);
+      chains.set(l.name,raw.slice(0,count).replace(/[.-]/g," "));
     }
-    entries.set(key,entry);if(identity){entry.identity??=identity;identities.set(identity,entry);}if(id)numbers.set(numberKey,entry);
+    if(!chains.size){reject(index,"güvenilir biçimde okunabilen ders alanı yok.");return;}
+    // Explicit family sessions retain blank-but-present fields. Legacy layouts without a
+    // session marker keep complementary marked lesson groups for backwards compatibility.
+    if(!variant)for(const [lesson,chain]of chains)if(!chain.trim())chains.delete(lesson);
+    if(!chains.size&&!variant){for(const l of lessons)if(questions.some(q=>q.lesson===l.name)&&line.length>=l.start+l.length-1)chains.set(l.name,"");}
+    const marks=[...chains.values()].reduce((n,v)=>n+(v.match(/[ABCDE*]/g)?.length??0),0);
+    const session=variant?.session||(slice(line,f.session)?`session:${slice(line,f.session)}`:[...chains.keys()].sort().join("|"));
+    const candidates=options.mergeSessions===false?[]:entries.filter(e=>{
+      if(e.schoolCode&&schoolCode&&e.schoolCode!==schoolCode)return false;
+      if(e.identity&&identity&&e.identity!==identity)return false;
+      if(e.grade&&grade&&e.grade!==grade)return false;
+      if(e.identity&&identity&&e.identity===identity)return true;
+      return !!id&&e.id.replace(/^0+(?=\d)/,"")===id.replace(/^0+(?=\d)/,"")&&
+       (!e.name||!name||normalized(e.name)===normalized(name))&&(!e.branch||!branch||e.branch===branch);
+    });
+    let entry=candidates.length===1?candidates[0]:undefined;
+    if(!entry&&entries.some(e=>id&&e.id.replace(/^0+(?=\d)/,"")===id.replace(/^0+(?=\d)/,"")))warnings.push(`${label}: aynı numarada kimlik bilgileri çelişiyor veya eşleştirme belirsiz; kayıtlar ayrı tutuldu.`);
+    if(!entry){entry={id,name,branch,grade,identity,schoolCode,sourceLines:[],records:new Map()};entries.push(entry);}
+    if(entry.name&&name&&normalized(entry.name)!==normalized(name))warnings.push(`${label}: güvenilir kimlik eşleşti ancak ad bilgileri çelişiyor; ilk ad korundu.`);
+    entry.name||=name;entry.grade||=grade;entry.branch||=branch;entry.identity||=identity;entry.id||=id;entry.schoolCode||=schoolCode;entry.sourceLines.push(index+1);
+    const old=entry.records.get(session);
+    if(old){diagnostics.duplicateRecords++;warnings.push(`${label}: aynı oturum tekrar okundu; en fazla geçerli işaretlemesi bulunan kayıt bütünüyle seçildi, eşitlikte ilk kayıt korundu.`);if(marks<=old.marks)return;}
+    entry.records.set(session,{lessons:[...chains.keys()],chains,book,marks,sourceLine:index+1});
   });
-  const seen = new Set<string>();
-  const students = [...entries.values()].map(entry => {
-    if(options.hashIdentity&&/^\d{11}$/.test(entry.id)){entry.identity??=entry.id;if(entry.identity===entry.id)entry.id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;}
-    if(!entry.id&&entry.identity&&options.hashIdentity)entry.id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;
-    if (!entry.id) throw new Error(`TXT satır ${entry.sourceLines.join(", ")}: birleştirilen oturumlarda öğrenci numarası bulunamadı.`);
-    if(!entry.name) mismatch(`TXT satır ${entry.sourceLines.join(", ")}: ad soyad alanı boş. FMT eşleştirmesini kontrol edin.`);
-    const identifier = `${entry.grade}:${entry.id}`;
-    if (options.mergeSessions!==false&&seen.has(identifier)) throw new Error(`Öğrenci numarası ${entry.id} için farklı kimlikler var; yanlış kurum veya tekrar kaydı kontrol edin.`);
-    seen.add(identifier);
-    const missing = questionLessons.filter(name=>!entry.chains.has(name));
-    if (missing.length) warnings.push(`${entry.id}: ${missing.join(", ")} alanları tamamen boş; bu dersler boş cevap olarak değerlendirilecek.`);
-    const repeated=options.mergeSessions===false&&[...entries.values()].filter(other=>other.grade===entry.grade&&other.id===entry.id).length>1;
-    return {id:repeated?`${entry.id}-O${entry.sourceLines[0]}`:entry.id,...(options.mergeSessions===false?{studentNo:entry.id,separateSession:true}:{}),
-      ...(entry.identity&&options.hashIdentity?{identityHash:options.hashIdentity(entry.identity)}:{}),...(entry.identity&&options.encryptIdentity?{identityEncrypted:options.encryptIdentity(entry.identity)}:{}),name:entry.name||`Öğrenci ${entry.id}`, identityMarks:entry.marks, school, branch:[entry.grade,entry.branch].filter(Boolean).join("-") || "Belirtilmedi", booklets:entry.booklets, recordBooklets:[...entry.recordBooklets], sourceLines:entry.sourceLines,
-      answers:questions.map(q=>{ const chain=entry.chains.get(q.lesson); return chain ? chain[q.positions[entry.booklets[q.lesson]]-1]?.trim() ?? "" : ""; })};
+  const students:OpticalStudent[]=entries.flatMap((entry,index)=>{
+    if(!entry.name){reject(entry.sourceLines[0]-1,"ad soyad alanı boş. FMT eşleştirmesini kontrol edin.");return [];}
+    const chains=new Map<string,string>(),booklets:Record<string,string>={},sessions:NonNullable<OpticalStudent["sessions"]>={};
+    // A full single-optic record is a whole-record alternative to a split pair.
+    let records=[...entry.records.entries()];
+    if(entry.records.has("single")&&(entry.records.has("verbal")||entry.records.has("numeric"))){
+      const split=records.filter(([k])=>k!=="single"),single=entry.records.get("single")!;
+      records=single.marks>=split.reduce((n,[,r])=>n+r.marks,0)?[["single",single]]:split;
+      warnings.push(`${entry.id}: tek optik ve ayrı oturumlar birlikte bulundu; en dolu bütün okuma seçildi.`);
+    }
+    for(const [session,r]of records){sessions[session]={lessons:r.lessons,marks:r.marks,sourceLine:r.sourceLine};for(const [lesson,chain]of r.chains){chains.set(lesson,chain);booklets[lesson]=r.book;}}
+    const missingLessons=questionLessons.filter(l=>!chains.has(l));
+    if(missingLessons.length)warnings.push(`${entry.id}: eksik oturum / okunamayan dersler: ${missingLessons.join(", ")}; net ve puan hesaplanmadı.`);
+    if(family){if(!records.some(([k])=>k==="single"||k==="verbal"))diagnostics.missingVerbal++;if(!records.some(([k])=>k==="single"||k==="numeric"))diagnostics.missingNumeric++;}
+    let id=entry.id;if(!id&&entry.identity&&options.hashIdentity)id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;
+    if(!id){reject(entry.sourceLines[0]-1,"birleştirilen oturumlarda öğrenci numarası bulunamadı.");return [];}
+    if(options.hashIdentity&&/^\d{11}$/.test(id)){entry.identity||=id;id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;}
+    const repeated=entries.filter(e=>e.grade===entry.grade&&e.id===entry.id).length>1;
+    return [{id:repeated?`${id}-O${entry.sourceLines[0]}`:id,...(repeated||options.mergeSessions===false?{studentNo:entry.id}:{}),...(options.mergeSessions===false?{separateSession:true}:{}),
+      ...(entry.identity&&options.hashIdentity?{identityHash:options.hashIdentity(entry.identity)}:{}),...(entry.identity&&options.encryptIdentity?{identityEncrypted:options.encryptIdentity(entry.identity)}:{}),
+      name:entry.name,school,schoolCode:entry.schoolCode,branch:[entry.grade,entry.branch].filter(Boolean).join("-")||"Belirtilmedi",booklets,recordBooklets:[...new Set(records.map(([,r])=>r.book))],sourceLines:entry.sourceLines,
+      sessions,missingLessons,identityMarks:records.reduce((n,[,r])=>n+r.marks,0),answers:questions.map(q=>chains.get(q.lesson)?.[q.positions[booklets[q.lesson]]-1]?.trim()??"")}];
   });
-  if (students.length > 500) throw new Error("Bir değerlendirmede en fazla 500 öğrenci desteklenir.");
-  return {questions:questions.map(q=>({...q,column:`${q.lesson} | ${q.number}`})),students,warnings,lineCount:lines.length};
+  if(students.length>500)throw Error("Bir değerlendirmede en fazla 500 öğrenci desteklenir.");
+  return {questions:questions.map(q=>({...q,column:`${q.lesson} | ${q.number}`})),students,warnings,lineCount:lines.length,diagnostics,status:!students.length?"failed":warnings.length?"completed_with_warnings":"completed"};
 }
 
 export function opticalSummary(data: OpticalData, penalty: number) {
   return data.students.map(student => {
     const lessons = [...new Set(data.questions.map(q=>q.lesson))].map(lesson=> {
+      const missing=student.missingLessons?.includes(lesson)??false;
       let correct=0,wrong=0,blank=0,cancelled=0;
-      data.questions.forEach((q,i)=>{if(q.lesson!==lesson)return; if(q.answer==="X")cancelled++;else if(q.answer==="H" || student.answers[i]===q.answer)correct++;else if(!student.answers[i])blank++;else wrong++;});
+      data.questions.forEach((q,i)=>{if(q.lesson!==lesson||missing)return; if(q.answer==="X")cancelled++;else if(q.answer==="H" || student.answers[i]===q.answer)correct++;else if(!student.answers[i])blank++;else wrong++;});
       const net=correct-(penalty ? wrong/penalty : 0), weight=data.questions.find(q=>q.lesson===lesson)!.weight;
-      return {lesson,correct,wrong,blank,cancelled,net,weighted:weight===null?null:net*weight};
+      return {lesson,correct,wrong,blank,cancelled,net:missing?null:net,weighted:missing||weight===null?null:net*weight,...(missing?{missing:true}:{})};
     });
     const maximum=data.questions.reduce((s,q)=>s+(q.answer==="X"?0:q.weight??0),0), weighted=lessons.reduce((s,l)=>s+(l.weighted??0),0);
-    return {id:student.id,lessons,net:lessons.reduce((s,l)=>s+l.net,0),score:data.questions.some(q=>q.answer!=="X"&&q.weight===null)?null:maximum?Math.max(0,Math.min(500,weighted/maximum*500)):null};
+    return {id:student.id,lessons,net:lessons.reduce((s,l)=>s+(l.net??0),0),score:student.missingLessons?.length?null:data.questions.some(q=>q.answer!=="X"&&q.weight===null)?null:maximum?Math.max(0,Math.min(500,weighted/maximum*500)):null};
   });
 }

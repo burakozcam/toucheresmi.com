@@ -1,0 +1,38 @@
+[
+  {
+    "source": "8. SINIF ESKİŞEHİR ÖZDEBİR 26 EKİM.txt",
+    "sha256": "ed5433f6f1b1133406b64db90805411d86891de2e9a7c4ed4c788f77f18eb683",
+    "fixture": "split-anonymous.txt",
+    "records": 209,
+    "lengths": [
+      91,
+      131
+    ],
+    "changes": "Student/institution identifiers and names replaced; choices rotated A→C B→D C→A D→B. All field positions, blanks, session/booklet/grade retained."
+  },
+  {
+    "source": "ÖZDEBİR TEK OPTİK (1).txt",
+    "sha256": "4a973b09785fd7cdfabd25415aaf0e1ae4e82a1d8ee6fcba0201912cd919f466",
+    "fixture": "single-anonymous.txt",
+    "records": 1,
+    "lengths": [
+      171
+    ],
+    "changes": "Student/institution identifiers and names replaced; choices rotated A→C B→D C→A D→B. All field positions, blanks, session/booklet/grade retained."
+  },
+  {
+    "source": "özdebir 5 6 7  tek oturum gpt .fmt (geçersiz kodlama)",
+    "fixture": "single.fmt",
+    "sha256": "5811673f86301719ff3e3f68354f141e689e411a5c005cff03d11b9cfea20089"
+  },
+  {
+    "source": "özdebir sözel optik ( sayısal kısıımları görmüyor ).fmt (geçersiz kodlama)",
+    "fixture": "verbal.fmt",
+    "sha256": "4634b04d82973d51fc0466777874b120bde61868905a2bd7bc269ed16664da72"
+  },
+  {
+    "source": "özdebir sayısal optik ( sözel kısımları görmüyor).fmt (geçersiz kodlama)",
+    "fixture": "numeric.fmt",
+    "sha256": "0833e695a0ae904abaadf44f1fd2a83cd53f94c72cf22562e9e7d94e7047fb3b"
+  }
+]

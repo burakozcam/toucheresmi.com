@@ -50,7 +50,7 @@ test("Dosya paylaşımı bilgisi: yalnızca geçerli anahtar ve zaman penceresin
 
 test("Özdebir BLDM: özgün baytlar korunur; doğrulanan tek oturum yerleşimi listelenir",async()=>{
  const code="ozdebir-ortaokul-tek-oturum",entry=findLibraryFmt(code)!;
- assert.equal(entry.name,"Özdebir 5/6/7/8 Ortaokul Tek Oturum");assert.equal(entry.requiresVerification,false);
+ assert.equal(entry.name,"Özdebir Tek Oturum");assert.equal(entry.requiresVerification,false);
  assert.ok(entry.file.endsWith(".bldm"));assert.ok(entry.downloadName.endsWith(".bldm"));
  const bytes=libraryFmtBytes(code);assert.equal(bytes.length,574);assert.equal(crypto.createHash("sha256").update(bytes).digest("hex"),"dd3cbc08d0808abfe1dadd6e6e595364d68df1f396c26d160c5e68261623a226");
  const text=new TextDecoder("windows-1254").decode(bytes);

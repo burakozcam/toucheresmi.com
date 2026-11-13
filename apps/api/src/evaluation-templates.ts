@@ -1,4 +1,4 @@
-import {layoutOzdebirSingle} from "./ozdebir-layout";
+import {layoutOzdebirSingle,layoutOzdebirVerbal,layoutOzdebirNumeric} from "./ozdebir-layout";
 import crypto from "node:crypto";
 import { canonicalJson } from "./canonical-json";
 import { decodeOptical, layout7108, layout8050, opticalLayoutSchema } from "./optical-core";
@@ -6,8 +6,8 @@ import { libraryFmtBytes } from "./fmt-library";
 
 // Executable system definitions are code-owned. A saved row is not a new reader specification.
 export function systemEvaluationTemplates() {
-  return ([["7108", layout7108], ["8050", layout8050], ["ozdebir-ortaokul-tek-oturum",layoutOzdebirSingle]] as const).map(([code, layout]) => ({
-    id: `system-fmt-${code}`, name: code==="ozdebir-ortaokul-tek-oturum"?"Özdebir 5/6/7/8 Ortaokul Tek Oturum":`Sistem FMT ${code}`, active: true,
+  return ([["7108", layout7108], ["8050", layout8050], ["ozdebir-ortaokul-tek-oturum",layoutOzdebirSingle], ["ozdebir-ortaokul-sozel",layoutOzdebirVerbal], ["ozdebir-ortaokul-sayisal",layoutOzdebirNumeric]] as const).map(([code, layout]) => ({
+    id: `system-fmt-${code}`, name: code==="ozdebir-ortaokul-tek-oturum"?"Özdebir Tek Oturum":code==="ozdebir-ortaokul-sozel"?"Özdebir Sözel":code==="ozdebir-ortaokul-sayisal"?"Özdebir Sayısal":`Sistem FMT ${code}`, active: true,
     layout: structuredClone(layout), originalFmt: decodeOptical(libraryFmtBytes(code)),
     grade: null, publisherId: null,
   }));

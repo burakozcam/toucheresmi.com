@@ -40,3 +40,7 @@ import "./v122.test";
 import "./ozdebir.test";
 
 import "./txt-permissive.test";
+
+import "./v125.test";
+
+import "./v125-pdf.test";

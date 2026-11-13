@@ -1,3 +1,17 @@
+# v1.2.5 · 2026-11-14 · yerel geliştirme
+
+- Özdebir Sözel, Özdebir Sayısal ve Özdebir Tek Oturum ayrı sistem seçimleri olarak sunulur. Sözel/sayısal özgün FMT dosyaları indirme ve paylaşım kütüphanesine eklendi; mevcut tek oturum BLDM dosyası korundu.
+
+- Gerçek iki TXT ve üç SEKONIC FMT ile Özdebir 1/2/9 düzenleri doğrulandı: 131/91/171 karakter. Eskişehir dosyasında 209 kayıt → 105 öğrenci; 104 çift oturum, 1 eksik sayısal.
+- Kimlik/kurum çelişkileri ayrı tutulur; aynı oturumun en çok geçerli işaretlemeli kaydı kendi kitapçığı ve boşlarıyla bütünüyle seçilir. Bozuk satırlar güvenilir öğrencileri durdurmaz.
+- Eksik ders neti/katsayılı neti `null`; mevcut dersler değerlendirilir, eksik oturumda tam sınav puanı üretilmez. Ekran, PDF ve Excel aynı eksiklik bilgisini kullanır.
+- Yanlış FMT'de yapısal olarak tekil ve daha güvenilir alternatif denenir; konum kaydırma/doldurma yok. Sonuçlar tamamlandı, uyarılarla tamamlandı ve değerlendirilemedi olarak ayrılır.
+- SEKONIC `S` alanları ve sabit değerler desteklendi; sağlanan FMT'lerin tam içerik imzasına özel doğru alan/oturum eşleştirmesi eklendi.
+- Boş kitapçık otomatik A yapılmaz; kullanıcı boş kitapçıklar için açık seçim yapabilir. Tek optik gerçek örneğinde bu seçim gereklidir.
+- Karne öğrenci cevabı hücresinde renk ve sembol kullanılır; tekrarlayan Durum satırı kaldırıldı. Renkler korunarak vektör desenler, belirgin sınırlar ve grafik değerleri eklendi; 1 sayfalık özet de ders grafiği içerir.
+- Menü 14 px/600, grup başlıkları 12 px, belirgin aktif seçim; mobil taşma kontrolü. Sonuç penceresi gerçek sayıları gösterir, sonuç ekranına kurum/sınav seçili geçer.
+- Migration ve yeni bağımlılık yok. Veritabanı/kayıt/ham TXT değiştirilmedi. Test kapsamı ve sınırlar: [v1.2.5 raporu](docs/v125-release-report.md).
+
 # v1.2.4 · 2026-11-13 · yerel geliştirme
 
 - FMT ve sınav önerilerine yüzdeye göre kırmızı–sarı–yeşil renklenen animasyonlu dolum eklendi.

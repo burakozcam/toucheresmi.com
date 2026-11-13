@@ -128,7 +128,7 @@ test("v119 wrong saved 7108 booklet position is evaluated with an explicit fallb
  prisma.opticalKey.findFirst=(async()=>({id:"key",questions:q,penalty:3,publication:{grade:8}})) as any;
  try{const route=(opticalRouter as any).stack.find((l:any)=>l.route?.path==="/preview").route.stack.at(-1).handle;let status=200,value:any;
  await route({user:{id:"dealer-user",role:"DEALER",dealerId:"dealer"},body:{schoolId:"school",templateId:"wrong-saved",keyId:"key"},file:{originalname:"input.txt",buffer:fs.readFileSync(new URL("./fixtures/7108-windows1254-anonymous.txt",import.meta.url))}}, {status(n:number){status=n;return this;},json(v:any){value=v;}},(e:any)=>{if(e)throw e;});
- assert.equal(status,200);assert.ok(value.data.warnings.some((w:string)=>w.includes("A kitapçığı varsayıldı")));assert.ok(value.previewToken);
+ assert.equal(status,200);assert.ok(value.data.warnings.some((w:string)=>w.includes("Seçilen FMT yerine")));assert.ok(value.previewToken);
  }finally{prisma.school.findFirst=original[0] as any;prisma.opticalTemplate.findFirst=original[1] as any;prisma.opticalKey.findFirst=original[2] as any;prisma.opticalResult.findFirst=original[3] as any;prisma.opticalResult.findMany=original[4] as any;}
 });
 

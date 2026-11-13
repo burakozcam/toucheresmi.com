@@ -1,6 +1,6 @@
-# Kurumsal Sınav v1.2.4 — Yerel kabul adayı
+# Kurumsal Sınav v1.2.5 — Yerel geliştirme
 
-**v1.2.4:** Yüzdeye göre animasyonlu eşleşme dolumu ve aynı öğrencinin TXT kayıtlarını daha dolu veriyi esas alarak birleştirme. [Değişiklik kaydı](CHANGELOG.md). Canlıya dağıtım veya push yapılmadı.
+**v1.2.5:** Özdebir tek optik / sözel + sayısal kayıt düzenleri, güvenilir öğrenci eşleştirme, bütün oturum üzerinden tekrar seçimi ve eksik oturumları sıfır saymayan değerlendirme. Karne cevapları sadeleştirildi, renkli grafiklere PDF içinde basılan desenler ve menüye 14 px okunaklı yazılar eklendi. [Doğrulama ve dağıtım notları](docs/v125-release-report.md) · [Değişiklik kaydı](CHANGELOG.md). Yeni migration yok; canlıya aktarım yapılmadı.
 
 **v1.2.1 RC:** Katsayısız değerlendirme, hesap açmadan kişisel kodla sorgu, belirgin karne türleri, ayrı sınav tanımı/anahtar akışı, avatar düzeltmesi ve salt okunur Test Merkezi. [RC raporu](docs/v121-release-report.md) · [Hosting/taşınabilirlik](docs/v121-hosting-portability.md). ProBook ve CAPTCHA çalışmaları kapsam dışıdır; push/deploy yapılmadı.
 

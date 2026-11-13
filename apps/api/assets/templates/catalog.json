@@ -36,9 +36,23 @@
   },
   {
     "code": "ozdebir-ortaokul-tek-oturum",
-    "name": "Özdebir 5/6/7/8 Ortaokul Tek Oturum",
+    "name": "Özdebir Tek Oturum",
     "file": "ozdebir-ortaokul-tek-oturum.bldm",
     "downloadName": "Özdebir 5-6-7-8 Ortaokul Tek Oturum.bldm",
+    "requiresVerification": false
+  },
+  {
+    "code": "ozdebir-ortaokul-sozel",
+    "name": "Özdebir Sözel",
+    "file": "ozdebir-ortaokul-sozel.fmt",
+    "downloadName": "Özdebir Sözel.fmt",
+    "requiresVerification": false
+  },
+  {
+    "code": "ozdebir-ortaokul-sayisal",
+    "name": "Özdebir Sayısal",
+    "file": "ozdebir-ortaokul-sayisal.fmt",
+    "downloadName": "Özdebir Sayısal.fmt",
     "requiresVerification": false
   }
 ]

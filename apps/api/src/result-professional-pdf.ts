@@ -1,3 +1,4 @@
+import {patternedBar} from "./pdf-patterns";
 import {decryptIdentity} from "./result-identity";
 import path from "node:path";
 import {selectedStudents,type ReportOptions} from "./result-pdf";
@@ -55,7 +56,7 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
  const mean=(members:any[])=>reportBenchmarks([{data:{students:members},summary:view.summary}]).all;
  const scoreMean=(members:any[])=>mean(members).score;
  const general=(grade:string)=>view.benchmarks?.grades?.[grade];
- function legend(items:{name:string;color:string}[],top:number){let x=24;for(const item of items){doc.rect(x,top+2,6,6).fill(item.color);text(item.name,x+10,top,W/items.length-12,7);x+=W/items.length;}}
+ function legend(items:{name:string;color:string}[],top:number){let x=24;for(const [i,item] of items.entries()){patternedBar(doc,x,top+2,7,7,item.color,i);text(item.name,x+10,top,W/items.length-12,7);x+=W/items.length;}}
  function lessonChart(lessons:any[],series:{name:string;color:string;values:(number|null)[]}[]){
   if(lessons.length>8){for(let i=0;i<lessons.length;i+=8)lessonChart(lessons.slice(i,i+8),series.map(s=>({...s,values:s.values.slice(i,i+8)})));return;}
   const cw=W/Math.max(1,lessons.length),labelH=Math.max(9,...lessons.map(l=>height(l.lesson,cw-3,6.5))),h=110+labelH;
@@ -63,13 +64,13 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
   const commonMax=Math.max(1,...lessons.map(l=>view.data.questions.filter((q:any)=>q.lesson===l.lesson&&q.answer!=="X").length));
   doc.moveTo(24,base).lineTo(24+W,base).strokeColor(colors.line).stroke();
   lessons.forEach((l,i)=>{const max=commonMax;const bar=Math.min(13,(cw-12)/series.length);
-   series.forEach((s,j)=>{const net=s.values[i];if(net===null||net===undefined)return;const value=Math.max(-max,Math.min(max,net)),bh=Math.abs(value)/max*chartH,x=27+i*cw+j*(bar+2);doc.rect(x,value>=0?base-bh:base,bar,bh).fill(s.color);});text(l.lesson,24+i*cw,base+19,cw-3,6.5);
+   series.forEach((s,j)=>{const net=s.values[i];if(net===null||net===undefined)return;const value=Math.max(-max,Math.min(max,net)),bh=Math.abs(value)/max*chartH,x=27+i*cw+j*(bar+2);patternedBar(doc,x,value>=0?base-bh:base,bar,bh,s.color,j);text(fmt(net),x-2,value>=0?base-bh-9:base+bh+1,bar+5,5.5);});text(l.lesson,24+i*cw,base+19,cw-3,6.5);
   });y=base+19+labelH+6;legend(series,y);y+=17;
  }
- function scoreChart(s:any,school:any,all:any){if(result(s).score===null){text("Katsayı tanımlanmadığı için puan ve puan sırası hesaplanmadı.",24,y,W,8);y+=20;return;}if(y+58>bottom)page();section("PUAN KARŞILAŞTIRMASI · 500 ÜZERİNDEN");const series=[{name:"Öğrenci",value:result(s).score,color:colors.blue},{name:"Okul / kurum",value:school.score,color:colors.gold},...(all?.score!=null?[{name:"Genel katılım",value:all.score,color:colors.green}]:[])],cw=W/series.length;
-  series.forEach((item,i)=>{text(`${item.name}: ${fmt(item.value)}`,24+i*cw,y,cw-10,7,true);doc.rect(24+i*cw,y+14,cw-12,5).fill(colors.pale);doc.rect(24+i*cw,y+14,(cw-12)*Math.max(0,Math.min(500,item.value??0))/500,5).fill(item.color);});y+=31;
+ function scoreChart(s:any,school:any,all:any){if(result(s).score===null){text(s.missingLessons?.length?"Eksik oturum nedeniyle puan ve puan sırası hesaplanmadı.":"Katsayı tanımlanmadığı için puan ve puan sırası hesaplanmadı.",24,y,W,8);y+=20;return;}if(y+58>bottom)page();section("PUAN KARŞILAŞTIRMASI · 500 ÜZERİNDEN");const series=[{name:"Öğrenci",value:result(s).score,color:colors.blue},{name:"Okul / kurum",value:school.score,color:colors.gold},...(all?.score!=null?[{name:"Genel katılım",value:all.score,color:colors.green}]:[])],cw=W/series.length;
+  series.forEach((item,i)=>{text(`${item.name}: ${fmt(item.value)}`,24+i*cw,y,cw-10,7,true);doc.rect(24+i*cw,y+14,cw-12,5).fill(colors.pale);patternedBar(doc,24+i*cw,y+14,(cw-12)*Math.max(0,Math.min(500,item.value??0))/500,5,item.color,i);});y+=31;
  }
- function outcomes(s:any){const map=new Map<string,any>();view.data.questions.forEach((q:any,i:number)=>{if(q.answer==="X"||(!q.outcomeName&&!q.outcomeCode))return;const key=JSON.stringify([q.lesson,q.outcomeCode,q.outcomeName]);const o=map.get(key)??{lesson:q.lesson,name:q.outcomeName||q.outcomeCode,code:q.outcomeCode,count:0,correct:0,wrong:0,blank:0};o.count++;if(q.answer==="H"||s.answers[i]===q.answer)o.correct++;else if(!s.answers[i])o.blank++;else o.wrong++;map.set(key,o);});return [...map.values()];}
+ function outcomes(s:any){const map=new Map<string,any>();view.data.questions.forEach((q:any,i:number)=>{if(s.missingLessons?.includes(q.lesson)||q.answer==="X"||(!q.outcomeName&&!q.outcomeCode))return;const key=JSON.stringify([q.lesson,q.outcomeCode,q.outcomeName]);const o=map.get(key)??{lesson:q.lesson,name:q.outcomeName||q.outcomeCode,code:q.outcomeCode,count:0,correct:0,wrong:0,blank:0};o.count++;if(q.answer==="H"||s.answers[i]===q.answer)o.correct++;else if(!s.answers[i])o.blank++;else o.wrong++;map.set(key,o);});return [...map.values()];}
  function summary(s:any){
   const r=result(s),rank=view.rankings[s.id],grade=resultGrade(s.branch),classmates=view.data.students.filter((v:any)=>resultGrade(v.branch)===grade),school=mean(view.data.students),classMean=mean(classmates),all=general(grade);
   page("ÖĞRENCİ SONUÇ BELGESİ",`${s.name} · Öğrenci no: ${number(s)} · Sınıf / şube: ${s.branch}`);
@@ -77,12 +78,13 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
   table(["PUAN","TOPLAM NET","GENEL SIRA","OKUL / KURUM","KADEME"],[.19,.18,.23,.21,.19],[[fmt(r.score),fmt(r.net),`${rank.generalRank??"—"} / ${rank.generalCount}`,`${rank.schoolRank??"—"} / ${rank.schoolCount}`,`${rank.classRank??"—"} / ${rank.classCount}`]],9);
   section("DERS BAŞARI TABLOSU");
   const totals={correct:r.lessons.reduce((n:number,l:any)=>n+l.correct,0),wrong:r.lessons.reduce((n:number,l:any)=>n+l.wrong,0),blank:r.lessons.reduce((n:number,l:any)=>n+l.blank,0)};
-  const lessonRows=r.lessons.map((l:any)=>{const count=l.correct+l.wrong+l.blank;return [l.lesson,l.cancelled?`${count+l.cancelled} (${l.cancelled} iptal)`:count,l.correct,l.wrong,l.blank,fmt(l.net),fmt(count?100*l.correct/count:0),fmt(classMean.lessons[l.lesson]),fmt(school.lessons[l.lesson]),fmt(all?.lessons?.[l.lesson])];});
+  const lessonRows=r.lessons.map((l:any)=>{if(l.missing)return [l.lesson,"Oturum yok","—","—","—","—","—",fmt(classMean.lessons[l.lesson]),fmt(school.lessons[l.lesson]),fmt(all?.lessons?.[l.lesson])];const count=l.correct+l.wrong+l.blank;return [l.lesson,l.cancelled?`${count+l.cancelled} (${l.cancelled} iptal)`:count,l.correct,l.wrong,l.blank,fmt(l.net),fmt(count?100*l.correct/count:0),fmt(classMean.lessons[l.lesson]),fmt(school.lessons[l.lesson]),fmt(all?.lessons?.[l.lesson])];});
   const sumNets=(v:any)=>v?Object.values<number>(v.lessons).reduce((sum,n)=>sum+n,0):null;
   lessonRows.push(["TOPLAM",view.data.questions.length,totals.correct,totals.wrong,totals.blank,fmt(r.net),fmt(100*totals.correct/Math.max(1,totals.correct+totals.wrong+totals.blank)),fmt(sumNets(classMean)),fmt(sumNets(school)),fmt(sumNets(all))]);
   table(["Ders","Soru","D","Y","Boş","Net","Başarı %","Kademe ort.","Okul ort.","Genel ort."],[.22,.07,.055,.055,.06,.09,.09,.12,.12,.12],lessonRows,7.5);
-  if(options.templateId==="summary-card")return;
   lessonChart(r.lessons,[{name:"Öğrenci",color:colors.blue,values:r.lessons.map((l:any)=>l.net)},{name:"Okul / kurum",color:colors.gold,values:r.lessons.map((l:any)=>school.lessons[l.lesson]??null)},...(all?[{name:"Genel katılım",color:colors.green,values:r.lessons.map((l:any)=>all.lessons?.[l.lesson]??null)}]:[])]);
+  if(s.missingLessons?.length){text(`Eksik oturum / okunamayan dersler: ${s.missingLessons.join(", ")}. Toplam net yalnız mevcut derslerdir; puan hesaplanmadı.`,24,y,W,7);y+=25;}
+  if(options.templateId==="summary-card")return;
   scoreChart(s,school,all);
   const focus=outcomes(s).sort((a,b)=>a.correct/a.count-b.correct/b.count).slice(0,4);
   if(focus.length){section("ÖNCELİKLİ KAZANIMLAR · EN DÜŞÜK BAŞARI ORANLARI");table(["Ders / kazanım","Soru","D / Y / B","Başarı %"],[.65,.08,.15,.12],focus.map(o=>[`${o.lesson} · ${o.name}`,o.count,`${o.correct} / ${o.wrong} / ${o.blank}`,fmt(100*o.correct/o.count)]),7);}
@@ -101,9 +103,10 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
   for(let index=0;index<blocks.length;index+=2){if(y+72>bottom)page();const top=y;
    for(let col=0;col<2;col++){const block=blocks[index+col];if(!block)break;const {lesson,qs}=block,left=24+col*(blockWidth+12),book=s.booklets?.[lesson]??(s.recordBooklets?.length===1?s.recordBooklets[0]:"-");
     text(`${lesson} · Kitapçık: ${book}`,left,top,blockWidth,8,true,colors.blue);
-    const labelW=45,cw=(blockWidth-labelW)/qs.length,labels=["Soru","Öğrenci","Anahtar","Durum"];
-    for(let row=0;row<4;row++){const rowY=top+17+row*13;doc.rect(left,rowY,labelW,13).fill(colors.ink);text(labels[row],left+3,rowY+2,labelW-5,6.5,true,"#ffffff");qs.forEach((q:any,i:number)=>{const a=s.answers[q.index]||"-",state=q.answer==="X"?"X":q.answer==="H"?"H":a==="-"?"B":a===q.answer?"D":"Y",value=[q.number,a,q.answer,state][row],fill=row===3?(state==="D"||state==="H"?"#ddf0e7":state==="Y"?"#f9e4e8":colors.pale):"#ffffff";doc.rect(left+labelW+i*cw,rowY,cw,13).fillAndStroke(fill,colors.line);text(value,left+labelW+i*cw+2,rowY+2,cw-3,6.5);});}
-   }y=top+72;
+    if(s.missingLessons?.includes(lesson)){text("Oturum yok / ders okunamadı — değerlendirilmedi.",left,top+20,blockWidth,7);continue;}
+    const labelW=45,cw=(blockWidth-labelW)/qs.length,labels=["Soru","Öğrenci","Anahtar"];
+    for(let row=0;row<3;row++){const rowY=top+17+row*13;doc.rect(left,rowY,labelW,13).fill(colors.ink);text(labels[row],left+3,rowY+2,labelW-5,6.5,true,"#ffffff");qs.forEach((q:any,i:number)=>{const a=s.answers[q.index]||"-",state=q.answer==="X"?"X":q.answer==="H"?"H":a==="-"?"B":a===q.answer?"D":"Y",value=[q.number,a,q.answer][row],fill=row===1?(state==="D"||state==="H"?"#ddf0e7":state==="Y"?"#f9e4e8":colors.pale):"#ffffff";doc.rect(left+labelW+i*cw,rowY,cw,13).fillAndStroke(fill,colors.line);text(value,left+labelW+i*cw+1,rowY+2,cw-2,6.5);if(row===1){const mx=left+labelW+(i+1)*cw-4,my=rowY+9;doc.save().lineWidth(.65).strokeColor(state==="Y"?colors.red:colors.green);if(state==="D"||state==="H")doc.moveTo(mx-1,my-1).lineTo(mx,my).lineTo(mx+2,my-3).stroke();else if(state==="Y")doc.moveTo(mx-1,my-3).lineTo(mx+2,my).moveTo(mx+2,my-3).lineTo(mx-1,my).stroke();doc.restore();}});}
+   }y=top+62;
   }
   section("KAZANIM BAŞARI TABLOSU");const os=outcomes(s);
   if(!os.length)text("Bu sınavın cevap anahtarında kazanım verisi yoktur.",24,y,W,8);
@@ -120,7 +123,7 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
    for(let offset=0;offset<lessons.length;offset+=6){const selected=lessons.slice(offset,offset+6),fractions=[.035,.065,.15,.055,...selected.map(()=>.405/selected.length),.055,.065,.085,.085],grades=[...new Set(members.map(s=>resultGrade(s.branch)))].join(", ");
     page("OKUL SONUÇ LİSTESİ",`Kademe: ${grades}${group?` · Şube: ${group}`:""} · Seçili katılım: ${members.length} · Genel katılım: ${view.generalCount}`);
     text(`Sınav tarihi: ${metadata.examDate??"Belirtilmedi"} · Puan türü: yerel deneme / 500 · Ders sütunları: D / Y / B / Net`,24,y,W,7);y+=18;
-    table(["Satır","No","Ad soyad","Sınıf",...selected.map((l:any)=>l.lesson),"Net","Puan","Genel sıra","Okul / kurum"],fractions,members.map((s,i)=>{const r=result(s),rank=view.rankings[s.id];return [i+1,number(s),s.name,s.branch,...selected.map((l:any)=>{const v=r.lessons.find((v:any)=>v.lesson===l.lesson);return `${v.correct}/${v.wrong}/${v.blank}/${fmt(v.net)}`;}),fmt(r.net),fmt(r.score),`${rank.generalRank??"—"}/${rank.generalCount}`,`${rank.schoolRank??"—"}/${rank.schoolCount}`];}),7);
+    table(["Satır","No","Ad soyad","Sınıf",...selected.map((l:any)=>l.lesson),"Net","Puan","Genel sıra","Okul / kurum"],fractions,members.map((s,i)=>{const r=result(s),rank=view.rankings[s.id];return [i+1,number(s),s.name,s.branch,...selected.map((l:any)=>{const v=r.lessons.find((v:any)=>v.lesson===l.lesson);return v.missing?"Oturum yok":`${v.correct}/${v.wrong}/${v.blank}/${fmt(v.net)}`;}),fmt(r.net),fmt(r.score),`${rank.generalRank??"—"}/${rank.generalCount}`,`${rank.schoolRank??"—"}/${rank.schoolCount}`];}),7);
     const school=mean(members);table(["Seçili grup ortalaması",...selected.map((l:any)=>l.lesson),"Net","Puan"],[.25,...selected.map(()=>.5/selected.length),.125,.125],[[`${members.length} öğrenci`,...selected.map((l:any)=>fmt(school.lessons[l.lesson])),fmt(members.reduce((sum,s)=>sum+result(s).net,0)/members.length),fmt(school.score)]],7);
     const overall=grades.includes(",")?undefined:general(grades);
     lessonChart(selected,[{name:"Seçili okul / grup",color:colors.blue,values:selected.map((l:any)=>school.lessons[l.lesson]??null)},...(overall?[{name:"Genel katılım",color:colors.green,values:selected.map((l:any)=>overall.lessons?.[l.lesson]??null)}]:[])]);

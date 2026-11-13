@@ -1,3 +1,4 @@
+import {evaluationReader} from "./evaluation-reader";
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
@@ -255,7 +256,7 @@ async function evaluationTemplate(id:string){
 }
 for(const endpoint of ["preview","evaluate"]){
   opticalRouter.post(`/${endpoint}`,uploadLimit,upload.fields([{name:"file",maxCount:1},{name:"files",maxCount:10}]),wrap(async(req,res)=>{
-    const input=z.object({fileIds:z.array(z.string().min(1).max(100)).min(1).max(10).refine(ids=>new Set(ids).size===ids.length,"Aynı TXT iki kez seçilemez.").optional(),mergeSessions:z.enum(["true","false"]).default("true"),schoolId:z.string().min(1).max(100),templateId:z.string().min(1).max(100),keyId:z.string().min(1).max(100),encoding:z.enum(["auto","utf-8","windows-1254"]).default("auto"),confirmWarnings:z.enum(["true","false"]).optional(),previewToken:z.string().max(3000).optional()}).parse(req.body);
+    const input=z.object({fileIds:z.array(z.string().min(1).max(100)).min(1).max(10).refine(ids=>new Set(ids).size===ids.length,"Aynı TXT iki kez seçilemez.").optional(),missingBooklet:z.enum(["A","B","C","D"]).optional(),mergeSessions:z.enum(["true","false"]).default("true"),schoolId:z.string().min(1).max(100),templateId:z.string().min(1).max(100),keyId:z.string().min(1).max(100),encoding:z.enum(["auto","utf-8","windows-1254"]).default("auto"),confirmWarnings:z.enum(["true","false"]).optional(),previewToken:z.string().max(3000).optional()}).parse(req.body);
     let archived:Awaited<ReturnType<typeof readArchivedTxts>>=[];
     if(input.fileIds){try{archived=await readArchivedTxts(req.user!,input.fileIds);}catch(error){if(error instanceof Prisma.PrismaClientKnownRequestError&&["P2021","P2022"].includes(error.code)){res.status(503).json({error:"TXT arşivi migration’ı henüz uygulanmamış: 20261111010000_optical_txt_archive."});return;}res.status(400).json({error:(error as Error).message});return;}}
     const files=archived.length?archived.map(item=>item.file):req.file?[req.file]:Object.values(req.files??{}).flat() as Express.Multer.File[];
@@ -265,18 +266,23 @@ for(const endpoint of ["preview","evaluate"]){
     const [template,key]=await Promise.all([evaluationTemplate(input.templateId),prisma.opticalKey.findFirst({where:{id:input.keyId,publication:evaluationPublicationWhere},include:{publication:{select:{examName:true,grade:true,publisherId:true}}}})]);
     if(!template || !key){res.status(400).json({error:"Etkin bir FMT ve cevap anahtarı seçin."});return;}
     let data,decoded="";
-    try {decoded=files.map(file=>decodeOptical(file.buffer,input.encoding).replace(/[\r\n]+$/g,"")).join("\n");data=parseOptical(decoded,opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{allowMismatch:true,mergeSessions:input.mergeSessions==="true",hashIdentity:identityHash,encryptIdentity});}
+    try {decoded=files.map(file=>decodeOptical(file.buffer,input.encoding).replace(/[\r\n]+$/g,"")).join("\n");let reader=evaluationReader(decoded,opticalLayoutSchema.parse(template.layout),systemEvaluationTemplates(),input.missingBooklet),libraryWarning="";
+      if(reader.matched<decoded.split(/\r\n|\r|\n/).filter(l=>l.trim()).length){try{
+        const alternatives=await prisma.opticalTemplate.findMany({where:{active:true},select:{id:true,name:true,active:true,layout:true}});
+        reader=evaluationReader(decoded,opticalLayoutSchema.parse(template.layout),evaluationTemplateChoices(alternatives),input.missingBooklet);
+      }catch{libraryWarning="Kayıtlı alternatif FMT listesi alınamadı; seçili ve doğrulanmış sistem düzenleri denendi.";}}
+      data=parseOptical(decoded,reader.layout,evaluationQuestions(key.questions),school.name,{missingBooklet:input.missingBooklet,allowMismatch:true,mergeSessions:input.mergeSessions==="true",hashIdentity:identityHash,encryptIdentity});if(reader.warning||libraryWarning){data.warnings.unshift(...[reader.warning,libraryWarning].filter((w):w is string=>!!w));data.status="completed_with_warnings";}if(!data.students.length){res.status(422).json({error:"Değerlendirilemedi: güvenilir biçimde değerlendirilebilecek kayıt yok. "+data.warnings.slice(0,5).join(" "),status:"failed",diagnostics:data.diagnostics,warnings:data.warnings});return;}}
     catch(error){
       const inference=decoded?inferFmt(decoded,systemEvaluationTemplates()):null,best=inference?.candidates[0];
       const suggested=inference?.confidence==="strong"&&best&&!best.aliases.includes(template.id)&&canonicalJson(opticalLayoutSchema.parse(template.layout))!==canonicalJson(systemEvaluationTemplate(best.id)?.layout)?best:undefined;
-      res.status(400).json({error:(error instanceof Error?error.message:"TXT okunamadı.")+(suggested?` İçerik ${suggested.name} ile uyumlu görünüyor. Seçili kayıtlı FMT'nin alan konumlarını kontrol edin veya önerilen sistem FMT'sini açıkça seçip yeniden önizleyin.`:""),...(suggested?{fmtSuggestion:{id:suggested.id,name:suggested.name}}:{})});return;
+      res.status(400).json({status:"failed",error:(error instanceof Error?error.message:"TXT okunamadı.")+(suggested?` İçerik ${suggested.name} ile uyumlu görünüyor. Seçili kayıtlı FMT'nin alan konumlarını kontrol edin veya önerilen sistem FMT'sini açıkça seçip yeniden önizleyin.`:""),...(suggested?{fmtSuggestion:{id:suggested.id,name:suggested.name}}:{})});return;
     }
-    const uploadChecksum=checksum(decoded+"\nmerge:"+input.mergeSessions);
+    const uploadChecksum=checksum(decoded+"\nmerge:"+input.mergeSessions+"\nbook:"+(input.missingBooklet??""));
     const duplicate=await prisma.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum,supersedesId:null},select:{id:true,snapshot:true}});
     const previousRows=await prisma.opticalResult.findMany({where:{schoolId:school.id,keyId:key.id,nextRevision:null},orderBy:{createdAt:"desc"}});
     const replaceKeys=new Set<string>();
     for(const item of archived.filter(item=>evaluatedContext(item,school.id,key.id))){
-      try{const original=parseOptical(decodeOptical(item.file.buffer,input.encoding),opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{allowMismatch:true,mergeSessions:true,hashIdentity:identityHash});for(const student of original.students){if(student.identityHash)replaceKeys.add(student.identityHash);replaceKeys.add(`${student.branch.split("-")[0]}:${studentNumberKey(student.studentNo??student.id)}`);}}catch(error){res.status(400).json({error:(error as Error).message});return;}
+      try{const original=parseOptical(decodeOptical(item.file.buffer,input.encoding),opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{missingBooklet:input.missingBooklet,allowMismatch:true,mergeSessions:true,hashIdentity:identityHash});for(const student of original.students){if(student.identityHash)replaceKeys.add(student.identityHash);replaceKeys.add(`${student.branch.split("-")[0]}:${studentNumberKey(student.studentNo??student.id)}`);}}catch(error){res.status(400).json({error:(error as Error).message});return;}
     }
     const reprocessing=replaceKeys.size>0;
     if(archived.length>1&&input.mergeSessions==="false"){res.status(400).json({error:"Ayrı oturum modunda dosyalar sırayla değerlendirilmelidir."});return;}
@@ -314,7 +320,7 @@ for(const endpoint of ["preview","evaluate"]){
       return created;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
     if(!result){res.status(403).json({error:"Kurum erişimi değişti. Listeyi yenileyin."});return;}
-    res.status(201).json({id:result.id,createdAt:result.createdAt,studentPublished:result.studentPublished,revision:result.revision,seriesId:result.seriesId,checks,schoolId:school.id,keyId:key.id,...safeSnapshot(snapshot)});
+    res.status(201).json({id:result.id,createdAt:result.createdAt,studentPublished:result.studentPublished,revision:result.revision,seriesId:result.seriesId,checks,evaluationStatus:checks.warnings.length?"completed_with_warnings":"completed",schoolId:school.id,keyId:key.id,...safeSnapshot(snapshot)});
   }));
 }
 opticalRouter.get("/results",wrap(async(req,res)=>{

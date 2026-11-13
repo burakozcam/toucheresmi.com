@@ -1252,3 +1252,16 @@ button, .button { touch-action: manipulation; }
 @keyframes match-fill-in{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes match-shine{from{opacity:0;transform:translateX(-100%)}35%{opacity:1}to{opacity:0;transform:translateX(100%)}}
 @media(prefers-reduced-motion:reduce){.match-meter-fill,.match-meter-fill::after{animation:none}.match-meter-fill::after{display:none}}
+
+/* v1.2.5: preserve color and add print-safe visual distinctions. */
+.sidebar { font-family: Manrope, "Segoe UI", Arial, sans-serif; }
+.sidebar .nav-item { font-size: 14px; font-weight: 600; line-height: 1.5; letter-spacing: .01em; color: var(--ink); padding-top: 10px; padding-bottom: 10px; }
+.sidebar .nav-item.nav-active { font-weight: 750; background: var(--blue-soft); color: var(--blue); box-shadow: inset 3px 0 0 currentColor; }
+.sidebar .nav-group > p { font-size: 12px; font-weight: 700; line-height: 1.6; color: var(--ink); }
+.sidebar-profile strong { font-size: 13px; line-height: 1.5; }
+.sidebar-profile small { font-size: 12px; line-height: 1.5; color: var(--ink); }
+.report-bar-track > span { background-color: #2e65c5; background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(18,35,55,.65) 4px 5px); border: 1px solid #263849; }
+.cohort-bar > span { background-color: #a5bfdc; background-image: radial-gradient(#263849 .7px, transparent .8px); background-size: 4px 4px; }
+.report-bar-track { height: 11px; border: 1px solid #91a2b5; }
+.evaluation-completion { max-height: 85vh; overflow-y: auto; }
+@media print { .student-report,.report-bar-track,.report-bar-track > span { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }

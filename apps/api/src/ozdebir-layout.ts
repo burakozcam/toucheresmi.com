@@ -8,3 +8,10 @@ export const layoutOzdebirSingle:OpticalLayout={
  lessons:["TÜRKÇE","MATEMATİK","FEN","SOSYAL","İNGİLİZCE","DİN"].map((name,i)=>({name,start:52+i*20,length:20})),
  literals:[{start:1,text:"9"}],
 };
+/** Supplied SEKONIC files share a 51-character header. FMT output labels FEN/SOSYAL
+ * are legacy labels: physical columns and the real 1/2 TXT establish the LGS order.
+ * These are publisher-specific record variants, not global 1/2/9 semantics. */
+export const layoutOzdebirVerbal:OpticalLayout={...layoutOzdebirSingle,lineLength:131,
+ lessons:["TÜRKÇE","SOSYAL","İNGİLİZCE","DİN"].map((name,i)=>({name,start:52+i*20,length:20})),literals:[{start:1,text:"1"}]};
+export const layoutOzdebirNumeric:OpticalLayout={...layoutOzdebirSingle,lineLength:91,
+ lessons:["MATEMATİK","FEN"].map((name,i)=>({name,start:52+i*20,length:20})),literals:[{start:1,text:"2"}]};

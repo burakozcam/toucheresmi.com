@@ -1,3 +1,5 @@
+> **14 Kasım 2026, v1.2.5 güncellemesi:** Bu belgenin aşağıdaki bölümleri önceki sürümün tarihsel notlarıdır. Artık sözel/sayısal aile düzenleri de destekleniyor; sınama verileri gerçek dosyalardan anonimleştirilerek türetildi. Geçerli oturum konumları, kitapçık davranışı ve test sınırları için [v1.2.5 raporunu](v125-release-report.md) esas alın.
+
 # Özdebir 5/6/7/8 Ortaokul Tek Oturum — TXT ile doğrulanan yerleşim
 
 12 Kasım 2026. Kullanıcının onayladığı görünen ad yukarıdadır. İlk aşamada özgün BLDM kütüphaneye alınmıştı; kullanıcının sonraki oturum açıklaması ve iki TXT örneğiyle **tek oturum için yürütülebilir sistem tanımı** eklendi. Kaynaklar salt okunur incelendi; kişisel öğrenci kayıtları/cevapları repoya, test fixture'larına veya bu rapora kopyalanmadı. Otomatik testler tamamen sentetiktir. Push, dağıtım veya üretim DB işlemi yapılmadı.

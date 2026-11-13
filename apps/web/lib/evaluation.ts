@@ -1,10 +1,10 @@
 export type Lesson = { name: string; count: number; weight: number|null };
 export type Question = { lesson: string; number: number; answer: string; weight: number | null; column: string; outcomeCode?: string; outcomeName?: string };
-export type Candidate = {studentNo?:string; id: string; name: string; school: string; branch: string; answers: string[] };
+export type Candidate = {studentNo?:string; id: string; missingLessons?:string[]; name: string; school: string; branch: string; answers: string[] };
 export type EvaluationData = { questions: Question[]; students: Candidate[] };
 export type CohortContext = Map<string, { members: Candidate[]; scores: (number|null)[]; rates: (number | null)[] }>;
 export type QuestionState = "correct" | "wrong" | "blank" | "cancelled";
-export type LessonResult = { lesson: string; correct: number; wrong: number; blank: number; cancelled: number; net: number; weighted: number | null };
+export type LessonResult = { lesson: string; correct: number; wrong: number; blank: number; cancelled: number; missing?:boolean; net: number|null; weighted: number | null };
 export const text = (value: unknown) => String(value ?? "").trim();
 const choice = (value: unknown) => text(value).toLocaleUpperCase("tr-TR");
 const positive = (value: unknown) => Number(text(value).replace(",", "."));
@@ -84,6 +84,7 @@ export function parseEvaluation(keyRows: unknown[][], studentRows: unknown[][]):
 
 /** A transparent scale for local practice exams, not the official standardized score. */
 export function scaledScore(questions: Question[], student: Candidate, penalty: number, weights: Record<string, number|null>, scale: 100 | 500) {
+  if(student.missingLessons?.length)return null;
   if(questions.some(q=>q.answer!=="X"&&(Object.hasOwn(weights,q.lesson)?weights[q.lesson]:q.weight)===null))return null;
   const maximum = questions.reduce((total, q) => total + (q.answer === "X" ? 0 : ((Object.hasOwn(weights,q.lesson)?weights[q.lesson]:q.weight)??0)), 0);
   const total = evaluate(questions, student, penalty, weights).reduce((n, r) => n + (r.weighted??0), 0);
@@ -104,11 +105,12 @@ export function questionCohort(data: EvaluationData, student: Candidate, context
   const school = data.students.filter((s) => s.school === student.school);
   const cohort = school.filter((s) => s.id !== student.id || s.branch !== student.branch);
   return data.questions.map((q, index) => {
-    const cached = context?.get(student.school);
+    const members=cohort.filter(s=>!s.missingLessons?.includes(q.lesson));
+    const cached = undefined;
     const own = questionState(q, student.answers[index]) === "correct" ? 1 : 0;
-    const correct = cached ? Math.max(0, Math.round((cached.rates[index] ?? 0) / 100 * school.length) - own) : cohort.filter((s) => questionState(q, s.answers[index]) === "correct").length;
-    const rate = q.answer === "X" || !cohort.length ? null : correct / cohort.length * 100;
-    return { count: cohort.length, correct, rate, difference: rate === null ? null : (questionState(q, student.answers[index]) === "correct" ? 100 : 0) - rate };
+    const correct = members.filter((s) => questionState(q, s.answers[index]) === "correct").length;
+    const rate = q.answer === "X" || !members.length || student.missingLessons?.includes(q.lesson) ? null : correct / members.length * 100;
+    return { count: members.length, correct, rate, difference: rate === null ? null : (questionState(q, student.answers[index]) === "correct" ? 100 : 0) - rate };
   });
 }
 
@@ -121,9 +123,10 @@ export function evaluate(questions: Question[], student: Candidate, penalty: num
   questions.forEach((q, i) => {
     let result = results.get(q.lesson);
     if (!result) { result = { lesson: q.lesson, correct: 0, wrong: 0, blank: 0, cancelled: 0, net: 0, weighted: 0 }; results.set(q.lesson, result); }
-    result[questionState(q, student.answers[i])] += 1;
+    if(student.missingLessons?.includes(q.lesson))result.missing=true;else result[questionState(q, student.answers[i])] += 1;
   });
   for (const result of results.values()) {
+    if(result.missing){result.net=null;result.weighted=null;continue;}
     result.net = result.correct - (penalty > 0 ? result.wrong / penalty : 0);
     const weight=Object.hasOwn(overrides,result.lesson)?overrides[result.lesson]:questions.find((q) => q.lesson === result.lesson)!.weight;
     result.weighted = weight===null?null:result.net * weight;
