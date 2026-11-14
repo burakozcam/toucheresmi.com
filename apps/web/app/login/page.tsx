@@ -1,4 +1,5 @@
 "use client";
+import PasswordField from "../password-field";
 import UiIcon from "../ui-icon";
 import HumanVerification from "../human-verification";
 import ReleaseMark from "../release-mark";
@@ -158,7 +159,7 @@ export default function LoginPage() {
             <label>Soyad<div className="input-wrap"><input name="lastName" autoComplete="family-name" maxLength={80} required /></div></label>
             <label>Telefon<div className="input-wrap"><input name="phone" type="tel" autoComplete="tel" minLength={7} maxLength={30} required /></div></label>
             <label>E-posta<div className="input-wrap"><input name="email" type="email" autoComplete="email" maxLength={254} required /></div></label>
-            <label>Şifre <small>(en az 12 karakter)</small><div className="input-wrap"><input name="password" type="password" autoComplete="new-password" minLength={12} maxLength={72} required /></div></label>
+            <label>Şifre <small>(en az 15 karakter)</small><PasswordField name="password" newPassword/></label>
             <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Üyelik talebi gönder"} <span>→</span></button>
           </form> : selectedType === "admin" ? null : selectedType !== "institution" ? <form className="login-form" onSubmit={submitLogin}>
             <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>

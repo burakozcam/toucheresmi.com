@@ -1,3 +1,5 @@
+> **15 Kasım 2026, v1.2.6 düzeltmesi:** Aşağıdaki tüm konum/kitapçık notları tarihsel belgedir. Gerçek örneklerin yeniden incelenmesiyle tek optik Din 92, Fen 112, Sosyal 132, İngilizce 152 olarak düzeltildi; boş kitapçık uyarıyla A kabul edilir. Güncel düzen ve gerçek 427 karne karşılaştırması için [v1.2.6 raporunu](v126-release-report.md) esas alın.
+
 > **14 Kasım 2026, v1.2.5 güncellemesi:** Bu belgenin aşağıdaki bölümleri önceki sürümün tarihsel notlarıdır. Artık sözel/sayısal aile düzenleri de destekleniyor; sınama verileri gerçek dosyalardan anonimleştirilerek türetildi. Geçerli oturum konumları, kitapçık davranışı ve test sınırları için [v1.2.5 raporunu](v125-release-report.md) esas alın.
 
 # Özdebir 5/6/7/8 Ortaokul Tek Oturum — TXT ile doğrulanan yerleşim

@@ -1,6 +1,6 @@
 // Shared browser/API parser. Input is worksheet data only; no file or network access.
 const norm=v=>String(v??"").trim().toLocaleUpperCase("tr-TR").replace(/\s+/g," ");
-const answer=v=>{const value=norm(v);return ["İ","İPTAL","IPTAL","İPT.","IPT."].includes(value)?"X":value;};
+const answer=v=>{const value=norm(v);if(value==="T")return "H";return ["İ","İPTAL","IPTAL","İPT.","IPT."].includes(value)?"X":value;};
 function lessonName(value){const n=norm(value);if(/İNK|TARİH|TAR\.|SOSYAL/.test(n))return "SOSYAL";if(/^DİN/.test(n))return "DİN";if(/^FEN/.test(n))return "FEN";return n;}
 const weightFor=()=>null; // Source contains no coefficients; never infer them from a lesson name.
 function internalCode(text){let hash=2166136261;for(const c of norm(text)){hash^=c.codePointAt(0);hash=Math.imul(hash,16777619);}return `METİN-${(hash>>>0).toString(16).padStart(8,"0")}`;}

@@ -21,8 +21,8 @@ test("v125 gerçek dosyadan anonimleştirilmiş 209 kayıt: 105 öğrenci, 104 �
  const summary=opticalSummary(d,3).find(r=>r.id===missing.id)!;assert.equal(summary.score,null);assert.deepEqual(summary.lessons.filter(l=>l.missing).map(l=>l.net),[null,null]);
  for(const s of d.students){assert.deepEqual(evaluate(d.questions,s,3),opticalSummary(d,3).find(r=>r.id===s.id)!.lessons);assert.equal(scaledScore(d.questions,s,3,{},500),opticalSummary(d,3).find(r=>r.id===s.id)!.score);}
 });
-test("v125 gerçek tek optik: boş kitapçık uydurulmaz; açık kitapçık seçimiyle altı ders sabit konumundan okunur",()=>{
- const text=read("single-anonymous.txt");assert.equal(parse(text).status,"failed");
+test("v125 gerçek tek optik: boş kitapçık varsayılan A; açık seçimle altı ders sabit konumundan okunur",()=>{
+ const text=read("single-anonymous.txt");assert.equal(parse(text).students[0].booklets.TÜRKÇE,"A");
  const d=parse(text,{missingBooklet:"A"});assert.equal(d.students.length,1);assert.equal(Object.keys(d.students[0].booklets).length,6);
  for(const l of layout.lessons){const count=qs.filter(q=>q.lesson===l.name).length;assert.deepEqual(d.questions.flatMap((q,i)=>q.lesson===l.name?[d.students[0].answers[i]]:[]),text.slice(l.start-1,l.start-1+count).split("").map(c=>c.trim()));}
  assert.ok(d.warnings.some(w=>w.includes("kullanıcı tarafından A")));

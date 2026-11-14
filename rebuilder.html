@@ -14,7 +14,10 @@
     .glass { border-color: var(--brand-line); background: rgba(255,255,255,.88); backdrop-filter: blur(14px); }
     .table-scroll { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
     input, select, button { font: inherit; }
-    .field { width: 100%; border: 1px solid #dbe2ea; border-radius: .65rem; background: #fff; padding: .6rem .75rem; color: #172033; outline: none; }
+    .roster-decoration{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:-1}
+    #toast{max-width:calc(100vw - 32px);white-space:normal;overflow-wrap:anywhere}
+    main article{min-width:0;max-width:100%}
+    .field { min-width:0; width: 100%; border: 1px solid #dbe2ea; border-radius: .65rem; background: #fff; padding: .6rem .75rem; color: #172033; outline: none; }
     .field:focus { border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(65,110,175,.15); }
     .cell-input { width: 100%; min-width: 90px; border: 1px solid transparent; border-radius: .45rem; background: transparent; padding: .4rem .5rem; }
     .cell-input:hover, .cell-input:focus { border-color: #dbe2ea; background: #fff; outline: none; }
@@ -63,7 +66,7 @@
   </style>
 </head>
 <body class="min-h-screen bg-[#f5f7fb] text-slate-800">
-  <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+  <div class="roster-decoration pointer-events-none fixed inset-0 -z-10 overflow-hidden">
     <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl"></div>
     <div class="absolute -left-32 top-[28rem] h-96 w-96 rounded-full bg-cyan-100/40 blur-3xl"></div>
   </div>
@@ -419,11 +422,11 @@
         ...students.map((student) => student.campus),
         ...rooms.map((room) => room.campus)
       ].map((value) => {
-        const campus = String(value || "").trim();
+        const campus = String(value || "").trim().replace(/\s+/g," ");
         return [normalize(campus), campus];
       }).filter(([key, campus]) => key && campus)).values()];
       const resolveCampusName = (value) => {
-        const campus = String(value || "").trim();
+        const campus = String(value || "").trim().replace(/\s+/g," ");
         return campusNames().find((name) => normalize(name) === normalize(campus)) || campus;
       };
       const studentExamName = (student) => student.alternativeExam
@@ -780,7 +783,7 @@
           "ogrencino", "okulno", "studentno", "studentnumber", "schoolno", "numara",
           "tc", "tcno", "tckimlik", "tckimlikno", "kimlik", "kimlikno", "ad", "adi", "isim", "ogrenciadi",
           "soyad", "soyadi", "surname", "adsoyad", "adisoyadi", "isimsoyisim", "ogrenciadisoyadi", "sinif", "sinifi", "sinifseviyesi", "sinifsube", "sube",
-          "kampus", "kampusadi", "okul", "okuladi", "seans", "sinavseansi", "sinavturu", "sinavtur", "tarih", "oturum", "grade", "level", "studentno", "studentnumber", "identitynumber"
+          "kampus", "kampusu", "kampusadi", "kampusbilgisi", "yerleske", "campus", "campusname", "okul", "okuladi", "seans", "sinavseansi", "sinavturu", "sinavtur", "tarih", "oturum", "grade", "level", "studentno", "studentnumber", "identitynumber"
         ]);
         let bestIndex = -1;
         let bestScore = 0;
@@ -877,7 +880,7 @@
               || (key === "lastName" && ["soyad", "soyadi", "surname", "lastname"].includes(normalized))
             || (key === "fullName" && ["adsoyad", "adisoyadi", "isimsoyisim", "ogrenciadisoyadi", "fullname", "studentname"].includes(normalized))
             || (key === "grade" && ["sinif", "sinifi", "sinifseviyesi", "seviyesi", "grade", "level", "sinifsube", "sube"].includes(normalized))
-            || (key === "campus" && ["kampus", "kampusu", "kampusadi", "campus", "campusi", "school", "schoolname", "okul", "okuladi", "kurum", "kurumadi"].includes(normalized))
+            || (key === "campus" && ["kampus", "kampusu", "kampusadi", "kampusbilgisi", "kampusismi", "yerleske", "yerleskeadi", "campusname", "campus", "campusi", "school", "schoolname", "okul", "okuladi", "kurum", "kurumadi"].includes(normalized))
             || (key === "session" && ["seans", "sinavseansi", "session", "timeslot"].includes(normalized));
           });
           const match = headerMatch;
@@ -917,34 +920,44 @@
         };
         const dataRows = sourceRows.map((row, index) => ({ row, index })).slice(firstDataRow)
           .filter(({ row }) => row.some((value) => String(value ?? "").trim() !== ""));
-        const imported = dataRows.map(({ row, index: rowIndex }) => {
+        const importedCampuses=new Map(campusNames().map(name=>[normalize(name),name]));
+        let invalidRows = 0;
+        const imported = dataRows.flatMap(({ row, index: rowIndex }) => {
           const firstName = get(row, "firstName", rowIndex);
           const lastName = get(row, "lastName", rowIndex);
           const fullName = get(row, "fullName", rowIndex);
           const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
-          return {
+          if(!firstName&&!lastName&&!fullName){invalidRows++;return [];}
+          const rawCampus=get(row,"campus",rowIndex).replace(/\s+/g," ");
+          const campus=importedCampuses.get(normalize(rawCampus))||rawCampus;
+          if(campus)importedCampuses.set(normalize(campus),campus);
+          return [{
             id: nextId++, selected: false, order: "", studentNo: get(row, "studentNo", rowIndex), tcNo: get(row, "tcNo", rowIndex),
             firstName: firstName || nameParts.slice(0, -1).join(" "),
             lastName: lastName || nameParts.slice(-1)[0] || "",
-            grade: get(row, "grade", rowIndex), campus: get(row, "campus", rowIndex),
+            grade: get(row, "grade", rowIndex), campus,
             session: activeSessions().includes(get(row, "session", rowIndex)) ? get(row, "session", rowIndex) : activeSessions()[0] || "",
             date: $("#examDate").value,
             alternativeExam: false,
             examSession: "SÖZEL OTURUM", room: "", seat: null,
             roomId: null, fixedRoomId: null, avoidIds: [], sameIds: []
-          };
+          }];
         });
         if (!imported.length) {
           showUploadMessage("Eşleştirme sonucunda aktarılacak öğrenci bulunamadı.", true);
           return;
         }
-        students = imported;
+        if(students.length){
+          // Import adds valid rows; existing roster and seating are never silently replaced.
+          students.push(...imported);
+        }else students = imported;
         numericCreated = false;
         renderTable();
         renderStudentSelects();
         const duplicateRows = findDuplicateStudents(imported);
         const missingStudentNumbers = imported.filter((student) => !student.studentNo).length;
         const details = [
+          invalidRows ? `${invalidRows} adsız/hatalı satır atlandı; geçerli satırlar işlendi.` : "",
           duplicateRows.length ? `${duplicateRows.length} yinelenen öğrenci kaydı tespit edildi; dağıtımdan önce düzeltin.` : "",
           missingStudentNumbers ? `${missingStudentNumbers} öğrencinin numarası boş; aktarım tablosunda kontrol edin.` : ""
         ].filter(Boolean);
@@ -1384,15 +1397,10 @@
         showToast(`${session.name} seansı ${session.enabled ? "etkinleştirildi" : "kapatıldı; öğrenci atamaları temizlendi"}.${copiesDiscarded ? " Sayısal oturumu yeniden onaylayın." : ""}`);
       });
       $("#roomForm").addEventListener("submit", addRoom);
-      $("#addRoomBtn").addEventListener("click", async () => {
-        const name = await askUser("Yeni derslik adı", ""); if (name === null) return;
-        const capacity = await askUser("Kapasite (pozitif tam sayı)", "20"); if (capacity === null) return;
-        const campuses = campusNames();
-        const campus = campuses.length > 1 ? await askUser("Kampüs adı", "") : campuses[0] || "";
-        if (campus === null) return;
-        $("#roomName").value = name; $("#roomCapacity").value = capacity; $("#roomCampus").value = campus;
-        $("#roomFloor").value = "";
-        addRoom({ preventDefault() {} });
+      $("#addRoomBtn").addEventListener("click", () => {
+        $("#roomForm").scrollIntoView({ behavior: "smooth", block: "center" });
+        $("#roomName").focus({ preventScroll: true });
+        showToast("Derslik adını ve kapasitesini girip Ekle düğmesine basın.");
       });
       $("#roomList").addEventListener("click", async (event) => {
         const button = event.target.closest("[data-remove-room], [data-edit-room], [data-move-room]");

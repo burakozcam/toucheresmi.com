@@ -4,7 +4,7 @@ import {canonicalJson} from "./canonical-json";
 /** Switch only with unique structural evidence, never from answer-key success rates. */
 export function evaluationReader(text:string,selected:OpticalLayout,templates:Array<{name:string;layout:unknown}>,missingBooklet?:string){
  const lines=text.replace(/^\uFEFF/,"").split(/\r\n|\n|\r/).filter(l=>l.trim());
- const count=(layout:OpticalLayout)=>lines.filter(line=>{const family=readerFamily(layout),r=recordLayout(layout,line);return (!family||r)&&reliableRecord(line,r?.layout??layout,missingBooklet);}).length;
+ const count=(layout:OpticalLayout)=>lines.filter(line=>{const family=readerFamily(layout),r=recordLayout(layout,line);return (!family||r)&&reliableRecord(line,r?.layout??layout,missingBooklet??(family?"A":undefined));}).length;
  const selectedCount=count(selected),groups=new Map<string,{layout:OpticalLayout;name:string;count:number}>();
  for(const t of templates){const parsed=opticalLayoutSchema.safeParse(t.layout);if(!parsed.success)continue;const layout=parsed.data,key=readerFamily(layout)?.id??canonicalJson(layout);if(!groups.has(key))groups.set(key,{layout,name:t.name,count:count(layout)});}
  const ranked=[...groups.values()].sort((a,b)=>b.count-a.count),best=ranked[0];

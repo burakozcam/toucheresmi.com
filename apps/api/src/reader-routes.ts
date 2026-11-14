@@ -1,3 +1,4 @@
+import {encryptShareToken} from "./share-security";
 import {examView} from "./result-routes";
 import {enrichReportView} from "./report-metadata";
 import {reportPdf} from "./result-pdf";
@@ -53,7 +54,8 @@ readerRouter.post("/reader-accounts",manager,inviteLimiter,wrap(async(req,res)=>
   const invite=await invitation();
   const account=await prisma.$transaction(async tx=>{
     const current=await tx.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:schoolScope(req)},select:{schoolId:true}});if(!current)return null;
-    return tx.user.create({data:{email:data.email.toLowerCase(),firstName:data.firstName,lastName:data.lastName,role:data.role,schoolId:current.schoolId,readerManagerId:req.user!.id,readerStudentNo:data.role==="STUDENT"?data.studentNo:null,passwordHash:invite.passwordHash,setupTokenHash:invite.setupTokenHash,setupExpiresAt:invite.setupExpiresAt,mustChangePassword:true,studentResultAccess:{create:{resultId:data.resultId,studentNo:data.studentNo,studentName:student.name}}},select:accountSelect});
+    const created=await tx.user.create({data:{email:data.email.toLowerCase(),firstName:data.firstName,lastName:data.lastName,role:data.role,schoolId:current.schoolId,readerManagerId:req.user!.id,readerStudentNo:data.role==="STUDENT"?data.studentNo:null,passwordHash:invite.passwordHash,setupTokenHash:invite.setupTokenHash,setupExpiresAt:invite.setupExpiresAt,mustChangePassword:true,studentResultAccess:{create:{resultId:data.resultId,studentNo:data.studentNo,studentName:student.name}}},select:accountSelect});
+    await tx.fmtShare.create({data:{category:"MEMBERSHIP",targetId:created.id,name:`${data.firstName} ${data.lastName}`,createdById:req.user!.id,tokenHash:invite.setupTokenHash,tokenEncrypted:encryptShareToken(invite.token),expiresAt:invite.setupExpiresAt}});return created;
   });
   if(!account){res.status(403).json({error:"Kurum erişimi değişti. Sayfayı yenileyin."});return;}
   inviteResponse(res,account,invite,201);
@@ -81,7 +83,9 @@ readerRouter.delete("/reader-access/:id",manager,wrap(async(req,res)=>{
 }));
 readerRouter.post("/reader-accounts/:id/invitation",manager,inviteLimiter,wrap(async(req,res)=>{
   const invite=await invitation();
-  const result=await prisma.user.updateMany({where:{id:id(req),...accountScope(req)},data:{active:true,passwordHash:invite.passwordHash,setupTokenHash:invite.setupTokenHash,setupExpiresAt:invite.setupExpiresAt,mustChangePassword:true}});
+  const result=await prisma.$transaction(async tx=>{const updated=await tx.user.updateMany({where:{id:id(req),...accountScope(req)},data:{active:true,passwordHash:invite.passwordHash,setupTokenHash:invite.setupTokenHash,setupExpiresAt:invite.setupExpiresAt,mustChangePassword:true}});
+    if(updated.count){await tx.fmtShare.updateMany({where:{category:"MEMBERSHIP",targetId:id(req),usedAt:null,revokedAt:null},data:{revokedAt:new Date()}});await tx.fmtShare.create({data:{category:"MEMBERSHIP",targetId:id(req),name:"Öğrenci / veli hesap daveti",createdById:req.user!.id,tokenHash:invite.setupTokenHash,tokenEncrypted:encryptShareToken(invite.token),expiresAt:invite.setupExpiresAt}});}return updated;
+  });
   if(!result.count){res.status(404).json({error:"Hesap bulunamadı veya yetkiniz yok."});return;}
   const account=await prisma.user.findUnique({where:{id:id(req)},select:accountSelect});inviteResponse(res,account,invite);
 }));

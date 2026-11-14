@@ -15,7 +15,8 @@ export function reviewSnapshot(snapshot:Snapshot){
     if(s.branch==="Belirtilmedi"||!s.branch.includes("-"))warnings.push(`${s.id}: sınıf/şube bilgisi eksik; sınıf listelerini kontrol edin.`);
   }
   const multiple=data.students.reduce((n,s)=>n+s.answers.filter(a=>a==="*").length,0);
-  if(multiple)warnings.push(`${multiple} çoklu işaret yanlış cevap olarak hesaplanacak.`);
+  const blankMultiple=data.students.reduce((n,s)=>n+s.answers.filter((a,i)=>a==="*"&&data.questions[i].multipleMark==="blank").length,0);
+  if(multiple)warnings.push(`${multiple} çoklu / okunamayan işaret: ${blankMultiple} boş, ${multiple-blankMultiple} yanlış olarak sınav profiline göre değerlendirilecek.`);
   if(data.questions.some(q=>q.weight===null))warnings.push("Katsayı tanımlanmamış: doğru, yanlış, boş ve net hesaplanır; puan ve puan sıralaması hesaplanmaz.");
   const missing=data.questions.filter(q=>!q.outcomeCode||!q.outcomeName).length;
   if(missing)warnings.push(`${missing} soruda kazanım bilgisi eksik.`);

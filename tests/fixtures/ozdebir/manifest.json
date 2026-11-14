@@ -34,5 +34,12 @@
     "source": "özdebir sayısal optik ( sözel kısımları görmüyor).fmt (geçersiz kodlama)",
     "fixture": "numeric.fmt",
     "sha256": "0833e695a0ae904abaadf44f1fd2a83cd53f94c72cf22562e9e7d94e7047fb3b"
+  },
+  {
+    "source": "O8126 reference report, 427 pages",
+    "sha256": "e6d18434104cf83a45c5dddfc292944ec1201560a5dd7b5bdc9e3a37fc0806a9",
+    "fixture": "o8126-reference-anonymous.json",
+    "records": 427,
+    "changes": "Only page ordinal, D/W counts, score, and answer-grid character slots retained. All names, institutions, national identifiers, student numbers and report headers excluded. Choices rotated A→C B→D C→A D→B, matching existing anonymous TXT fixtures. No PDF embedded. T and * preserved."
   }
 ]

@@ -1265,3 +1265,16 @@ button, .button { touch-action: manipulation; }
 .report-bar-track { height: 11px; border: 1px solid #91a2b5; }
 .evaluation-completion { max-height: 85vh; overflow-y: auto; }
 @media print { .student-report,.report-bar-track,.report-bar-track > span { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+
+/* v1.2.6: share controls occupy a readable row inside wrapping action bars. */
+.fmt-library-card .studio-actions>.fmt-share-controls{flex:1 1 100%;width:100%}
+.fmt-share-panel{overflow-wrap:normal;word-break:normal;width:100%;text-align:left}
+.fmt-share-panel .optical-record{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.fmt-share-panel .optical-record>span{flex:1 1 200px;white-space:normal}
+.fmt-share-panel button{white-space:normal;word-break:normal}
+.fmt-share-panel label,.share-link-card label{min-width:0}
+.share-link-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+.share-link-card{min-width:0;padding:20px;border:1px solid var(--line);border-radius:12px}
+.share-link-card p{overflow-wrap:anywhere}.share-link-card input{width:100%;min-width:0}
+.share-link-card .studio-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.share-link-card .studio-actions>*{max-width:100%}

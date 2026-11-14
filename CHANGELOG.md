@@ -1,3 +1,14 @@
+## v1.2.6 — 2026-11-15
+
+- Özdebir sözel ve tek optik ders sıraları/İNG takma adları düzeltildi; boş kitapçık uyarıyla A, yapısal alternatif kayıt düzeni ve bütün oturum birleştirme geliştirildi.
+- Sonuç toplamada ayrı yüklemelerin birbirinin oturumlarını silmesi düzeltildi. Eksik oturumlar null kalır; mevcut snapshot ve TXT arşivi korunur.
+- Başlangıç puanı + ham net × katsayı modeli, sınava özel profil ve admin tarafından yönetilen yeni sınav varsayılanları eklendi. Gerçek 427 O8126 karnesi anonim regresyonlara dönüştürüldü; T/herkese doğru ve profile özel * kuralı doğrulandı. Altı hedef puan eşleşir; beş karnede 0,001 fark açıkça raporlandı.
+- FMT/PDF/üyelik için ortak bağlantı yönetimi; korumalı süreli/süresiz PDF erişimi, iptal, sayaç ve şifreli yönetici kopyalama eklendi. Eski hash-only token'lar geri üretilemez.
+- Yeni parola oluşturma scrypt/yaygın parola kontrolü/15 karakter; eski bcrypt girişleri korunur. Tek kullanımlık davet sonrası güvenli otomatik oturum, onay akışını atlamadan eklendi.
+- Kampüsün aynı Excel içinde harf/boşluk farklılığıyla ayrılması ve mobil derslik formu taşması düzeltildi. Hatalı satırlar atlanır; mevcut liste silinmez.
+- Ortak PDF metin normalizasyonu ve cihazda bölgesel WASM OCR, güvenli önizleme/düzeltme eklendi. Gerçek Limit PDF bulunamadığından o belgeye özel kabul açık tutuldu.
+- Node 22 test raporlayıcısı ve Webpack build-worker uyumluluğu düzeltildi. Additive migration ve dağıtım gereksinimleri `docs/v126-release-report.md` içindedir; canlı işlem yapılmadı.
+
 # v1.2.5 · 2026-11-14 · yerel geliştirme
 
 - Özdebir Sözel, Özdebir Sayısal ve Özdebir Tek Oturum ayrı sistem seçimleri olarak sunulur. Sözel/sayısal özgün FMT dosyaları indirme ve paylaşım kütüphanesine eklendi; mevcut tek oturum BLDM dosyası korundu.

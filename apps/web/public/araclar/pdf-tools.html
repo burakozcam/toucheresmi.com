@@ -7,6 +7,9 @@
   <meta name="description" content="PDF birleştirin, bölün, PNG'ye dönüştürün; görsellerden PDF oluşturun, Excel ve PDF dosyalarını tarayıcınızda dönüştürün.">
   <meta name="theme-color" content="#111c30">
   <script src="pdf-text-selection.js"></script>
+  <script src="pdf-text-recovery.js"></script>
+  <script src="/vendor/ocr/tesseract.min.js"></script>
+  <script src="pdf-region-ocr.js"></script>
   <script>if (window.parent !== window) document.documentElement.classList.add("embedded-tool");</script>
   <script>tailwind = { config: { corePlugins: { preflight: false }, darkMode: "class" } };</script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -130,7 +133,7 @@
         "image-image": { title: "Görsel formatı dönüştürme", description: "PNG, JPG/JPEG ve WebP görsellerini birbirine dönüştür.", action: "Görselleri dönüştür ve indir", accept: "image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp", multiple: true, minFiles: 1, drop: "Görselleri buraya bırak", hint: "PNG, JPG, JPEG, WebP · en fazla 100 MB / dosya", icon: "⇄" },
         "excel-pdf": { title: "Excel dosyasını PDF'e dönüştür", description: "Çalışma kitabındaki sayfaları tablo düzeninde PDF olarak indir.", action: "PDF oluştur ve indir", accept: ".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv", multiple: false, minFiles: 1, drop: "Excel dosyanı buraya bırak", hint: "veya cihazından seç · XLSX, XLS, CSV · en fazla 100 MB", icon: "▦", note: "Her çalışma sayfası ayrı bir PDF bölümüne aktarılır. Yazdırma önizlemesi için yatay A4 sayfa kullanılır." },
         "pdf-excel": { title: "PDF dosyasını Excel'e dönüştür", description: "PDF içindeki seçilebilir metinleri sayfa ve satır düzeninde Excel çalışma kitabına aktar.", action: "Excel dosyasını indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "Excel'e dönüştürülecek PDF'yi buraya bırak", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Metin tabanlı PDF'ler desteklenir. Taranmış belgelerde OCR yapılmaz; tablo sütunları ve biçim birebir korunamayabilir." },
-        "split-text": { title: "PDF'i seçtiğin metne göre böl", description: "Önizlemede öğrenci numarası, isim veya başka bir alanı fareyle seç. Aynı konumdaki değerleri tüm sayfalarda bulup her değer için ayrı PDF hazırla.", action: "PDF'leri ZIP olarak indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "Öğrenci kayıtlarının bulunduğu PDF'yi yükle", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Metin tabanlı PDF gerekir. Her sayfada aynı konumdaki metin okunur; aynı değerli sayfalar aynı PDF'te gruplanır. Tarama görüntülerinde OCR yapılmaz." }
+        "split-text": { title: "PDF'i seçtiğin metne göre böl", description: "Önizlemede öğrenci numarası, isim veya başka bir alanı fareyle seç. Aynı konumdaki değerleri tüm sayfalarda bulup her değer için ayrı PDF hazırla.", action: "PDF'leri ZIP olarak indir", accept: "application/pdf,.pdf", multiple: false, minFiles: 1, drop: "Öğrenci kayıtlarının bulunduğu PDF'yi yükle", hint: "veya cihazından seç · PDF · en fazla 100 MB", icon: "↑", note: "Seçilen konum her sayfada okunur. Bozuk metin veya taranmış alanlar cihazınızda OCR ile okunur; sonuçlar indirmeden önce düzeltilebilir." }
       };
       var tabButtons = Array.from(document.querySelectorAll(".pdf-tool-tab"));
       var panel = document.getElementById("tool-panel");
@@ -244,11 +247,12 @@
         }
         textSplitPreview.hidden = tool !== "split-text";
         if (tool === "split-text") {
-          textSplitPreview.innerHTML = '<div class="pdf-note mb-3 px-4 py-3">Önizlemede ayırmak istediğin alanı fareyle sürükleyerek seç. En iyi sonuç için her sayfada aynı yerde bulunan yalnızca öğrenci numarası veya isim gibi değişken değeri seç.</div><div class="selection-controls mb-3 flex items-center justify-between gap-3"><button type="button" class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800" id="text-page-prev" disabled>← Önceki sayfa</button><span class="text-xs text-slate-400" id="text-page-count">PDF yüklenince önizleme açılır</span><button type="button" class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800" id="text-page-next" disabled>Sonraki sayfa →</button></div><div class="pdf-text-preview"><div class="pdf-text-page mx-auto" id="text-page-canvas-wrap" hidden><canvas id="text-page-canvas"></canvas><div class="pdf-text-layer" id="text-page-layer"></div></div><div class="grid min-h-48 place-content-center text-center text-sm text-slate-500" id="text-page-empty">PDF yükledikten sonra ilk sayfa burada görüntülenir.</div></div><p id="text-selection-status" class="mt-3 text-xs text-slate-400" aria-live="polite">PDF içinden bir metin seç.</p>';
+          textSplitPreview.innerHTML = '<div class="selection-controls"><label><input type="checkbox" id="numeric-region" checked> Öğrenci numarası (yalnız rakam)</label> <label><input type="checkbox" id="force-region-ocr"> Her sayfada OCR</label> <label><input type="checkbox" id="draw-region"> Metin yerine kutu çizerek alan seç</label></div><div class="pdf-note mb-3 px-4 py-3">Önizlemede ayırmak istediğin alanı fareyle sürükleyerek seç. En iyi sonuç için her sayfada aynı yerde bulunan yalnızca öğrenci numarası veya isim gibi değişken değeri seç.</div><div class="selection-controls mb-3 flex items-center justify-between gap-3"><button type="button" class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800" id="text-page-prev" disabled>← Önceki sayfa</button><span class="text-xs text-slate-400" id="text-page-count">PDF yüklenince önizleme açılır</span><button type="button" class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800" id="text-page-next" disabled>Sonraki sayfa →</button></div><div class="pdf-text-preview"><div class="pdf-text-page mx-auto" id="text-page-canvas-wrap" hidden><canvas id="text-page-canvas"></canvas><div class="pdf-text-layer" id="text-page-layer"></div></div><div class="grid min-h-48 place-content-center text-center text-sm text-slate-500" id="text-page-empty">PDF yükledikten sonra ilk sayfa burada görüntülenir.</div></div><p id="text-selection-status" class="mt-3 text-xs text-slate-400" aria-live="polite">PDF içinden bir metin seç.</p>';
           document.getElementById("text-page-prev").addEventListener("click", function () { renderSplitTextPage(splitTextPageNumber - 1); });
           document.getElementById("text-page-next").addEventListener("click", function () { renderSplitTextPage(splitTextPageNumber + 1); });
           document.getElementById("text-page-layer").addEventListener("mouseup", function () { setTimeout(captureSplitTextSelection, 0); });
           document.getElementById("text-page-layer").addEventListener("keyup", captureSplitTextSelection);
+          PdfRegionOcr.bindRegion(document.getElementById("text-page-layer"),()=>document.getElementById("draw-region").checked,anchor=>{splitTextAnchor=anchor;document.getElementById("text-selection-status").textContent="Bölge seçildi; aynı koordinatlar tüm sayfalarda kullanılacak.";renderFiles();});
         }
       }
 
@@ -290,7 +294,7 @@
         document.getElementById("text-page-empty").textContent = "PDF yükleniyor…";
         try {
           if (!window.pdfjsLib) throw new Error("PDF önizleme kütüphanesi yüklenemedi.");
-          var loadedDocument = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+          var loadedDocument = await pdfjsLib.getDocument({ isEvalSupported: false, data: await file.arrayBuffer() }).promise;
           if (activeTool !== "split-text" || selectedFiles[0] !== file || renderId !== splitTextRenderId) return;
           splitTextDocument = loadedDocument;
           splitTextPageNumber = 1;
@@ -364,7 +368,7 @@
       }
 
       function captureSplitTextSelection() {
-        if (activeTool !== "split-text") return;
+        if (activeTool !== "split-text" || document.getElementById("draw-region")?.checked) return;
         var layer = document.getElementById("text-page-layer");
         var selection = window.getSelection();
         if (!selection || !selection.rangeCount || !selection.toString().trim() || !layer.contains(selection.anchorNode)) return;
@@ -411,13 +415,24 @@
           var viewport = page.getViewport({ scale: 1 });
           var textContent = await page.getTextContent();
           var value = (await extractTextAtAnchor(textContent.items, viewport, splitTextAnchor, textContent.styles)).trim();
+          var numeric=document.getElementById("numeric-region").checked;
+          var result=PdfTextRecovery.inspect(value,numeric);
+          if(result.needsOcr||document.getElementById("force-region-ocr").checked){result=await PdfRegionOcr.read(page,splitTextAnchor,numeric);}
+          value=result.text;
           if (!value) {
             unmatchedPages.push(pageNumber - 1);
             continue;
           }
-          pageValues.push({ value: value, page: pageNumber - 1 });
+          pageValues.push({ value: value, page: pageNumber - 1,confidence:result.confidence });
         }
-        if (!pageValues.length) throw new Error("Seçtiğin konumda sayfalarda okunabilir metin bulunamadı.");
+
+        // Every page remains reviewable, including failed reads. Never invent identifiers.
+        unmatchedPages.forEach(function(page){pageValues.push({page:page,value:"",confidence:0});});
+        pageValues.sort(function(a,b){return a.page-b.page;});
+        pageValues=await PdfRegionOcr.review(pageValues);
+        unmatchedPages=pageValues.filter(function(r){return !r.value.trim();}).map(function(r){return r.page;});
+        pageValues=pageValues.filter(function(r){return r.value.trim();});
+        if(!pageValues.length)throw new Error("Dışarı aktarılacak öğrenci numarası bulunamadı.");
         var groups = new Map();
         pageValues.forEach(function (record) {
           var value = record.value.replace(/^[^:\n]{1,80}:\s*/, "").trim();
@@ -535,7 +550,7 @@
 
       async function pdfToPng() {
         var file = selectedFiles[0];
-        var documentPdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+        var documentPdf = await pdfjsLib.getDocument({ isEvalSupported: false, data: await file.arrayBuffer() }).promise;
         var scale = Number(document.getElementById("render-scale").value);
         var zip = new JSZip();
         var format = document.getElementById("output-image-format").value;
@@ -675,13 +690,13 @@
 
       async function pdfToExcel() {
         var file = selectedFiles[0];
-        var documentPdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+        var documentPdf = await pdfjsLib.getDocument({ isEvalSupported: false, data: await file.arrayBuffer() }).promise;
         var workbook = XLSX.utils.book_new();
         for (var pageNumber = 1; pageNumber <= documentPdf.numPages; pageNumber += 1) {
           setStatus("PDF sayfa " + pageNumber + " / " + documentPdf.numPages + " okunuyor…");
           var page = await documentPdf.getPage(pageNumber);
           var content = await page.getTextContent();
-          var rows = pdfTextRows(content.items);
+          var rows = pdfTextRows(content.items.map(function(item){return Object.assign({},item,{str:PdfTextRecovery.normalize(item.str)});}));
           if (!rows.length) rows = [["Bu sayfada seçilebilir metin bulunamadı"]];
           var sheet = XLSX.utils.aoa_to_sheet(rows);
           sheet["!cols"] = Array.from({ length: Math.max.apply(null, rows.map(function (row) { return row.length; })) }, function (_, index) {

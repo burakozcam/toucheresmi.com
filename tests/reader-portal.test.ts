@@ -61,7 +61,7 @@ test("bayi yalnızca kendi yönettiği hesaba ve kendi kurumundaki sonuca bağla
 test("veli hesabı yalnızca seçili öğrenciye bağlanır, davet özeti saklanır ve geçici parola gösterilmez",async()=>{
   const r=await router(),{prisma}=await import("../apps/api/src/db"),originalFind=prisma.opticalResult.findFirst,originalTx=prisma.$transaction;let created:any;
   prisma.opticalResult.findFirst=(async({where}:any)=>{assert.equal(where.school.dealerId,"dealer-1");return{snapshot};}) as any;
-  prisma.$transaction=(async(fn:any)=>fn({opticalResult:{findFirst:async()=>({schoolId:"school"})},user:{create:async({data}:any)=>{created=data;return{id:"parent",role:data.role};}}})) as any;
+  prisma.$transaction=(async(fn:any)=>fn({fmtShare:{create:async()=>({})},opticalResult:{findFirst:async()=>({schoolId:"school"})},user:{create:async({data}:any)=>{created=data;return{id:"parent",role:data.role};}}})) as any;
   try{
     const result=await invoke(r,"/reader-accounts",{user:{id:"dealer-user",role:"DEALER",dealerId:"dealer-1"},body:{resultId:"result",studentNo:"00001",role:"PARENT",email:"VELI@example.test",firstName:"Örnek",lastName:"Veli"}},"post");
     assert.equal(result.status,201);assert.equal(created.readerManagerId,"dealer-user");assert.equal(created.email,"veli@example.test");assert.equal(created.role,"PARENT");assert.equal(created.studentResultAccess.create.studentNo,"00001");

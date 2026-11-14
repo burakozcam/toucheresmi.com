@@ -533,12 +533,21 @@ model FmtShare {
   templateId String?
   fileRefs Json?
   createdById String
-  expiresAt DateTime
+  expiresAt DateTime?
   revokedAt DateTime?
   createdAt DateTime @default(now())
   template OpticalTemplate? @relation(fields:[templateId],references:[id],onDelete:Cascade)
   @@index([createdById,createdAt])
   @@index([expiresAt])
+  usedAt DateTime?
+  category String @default("FMT")
+  targetId String?
+  name String?
+  tokenEncrypted String?
+  views Int @default(0)
+  downloads Int @default(0)
+  lastAccessAt DateTime?
+
 }
 
 model SystemEvent {
@@ -668,4 +677,17 @@ model OpticalTxtUse {
   result OpticalResult @relation(fields:[resultId],references:[id],onDelete:Cascade)
   @@id([fileId,resultId])
   @@index([resultId])
+}
+
+model ScoreProfile {
+  id String @id @default(cuid())
+  name String
+  publisher String
+  grade Int
+  base Float
+  weights Json
+  multipleMark String @default("wrong")
+  active Boolean @default(true)
+  updatedAt DateTime @updatedAt
+  @@index([publisher,grade,active])
 }

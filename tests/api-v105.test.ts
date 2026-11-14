@@ -42,7 +42,10 @@ test("takvim API 2.500 satırı 100'lü gruplarla kaydeder, geçersiz ve tekrarl
 test("hesap daveti özeti saklanır, token tek kullanımlıktır ve süresi dolunca reddedilir", async () => {
   process.env.STORAGE_DIR = "/tmp/kurumsal-v105-test-storage";
   const { app } = await import("../apps/api/src/server"); const { prisma } = await import("../apps/api/src/db");
-  const create = prisma.user.create, updateMany = prisma.user.updateMany; let account: any;
+  const create = prisma.user.create, updateMany = prisma.user.updateMany,findUnique=prisma.user.findUnique,transaction=prisma.$transaction,shareCreate=prisma.fmtShare.create,shareUpdate=prisma.fmtShare.updateMany; let account: any;
+  prisma.$transaction=(async(fn:any)=>fn(prisma))as any;
+  prisma.user.findUnique=(async({where}:any)=>account?.setupTokenHash===where.setupTokenHash?{...account}:null)as any;
+  prisma.fmtShare.create=(async()=>({}))as any;prisma.fmtShare.updateMany=(async()=>({count:1}))as any;
   prisma.user.create = (async ({data}:any) => { account={id:"new",active:true,...data}; return {id:account.id,email:data.email,phone:data.phone}; }) as any;
   prisma.user.updateMany = (async ({where,data}:any) => { if(account.setupTokenHash!==where.setupTokenHash || !account.setupExpiresAt || account.setupExpiresAt<=where.setupExpiresAt.gt || !account.active || !account.mustChangePassword) return {count:0}; Object.assign(account,data); return {count:1}; }) as any;
   try {
@@ -51,12 +54,12 @@ test("hesap daveti özeti saklanır, token tek kullanımlıktır ve süresi dolu
     const token = created.data.setupUrl.split("#")[1]; assert.equal(account.setupTokenHash,crypto.createHash("sha256").update(token).digest("hex")); assert.ok(!JSON.stringify(account).includes(token));
     const setup=handler(app,"/api/auth/setup","post");
     const password="Strong-new-password-123";
-    assert.equal((await invoke(setup,{token,password})).status,200); assert.equal(account.setupTokenHash,null); assert.equal(account.mustChangePassword,false); assert.ok(await bcrypt.compare(password,account.passwordHash));
+    const completed=await invoke(setup,{token,password});assert.equal(completed.status,200);assert.ok(completed.data.token); assert.equal(account.setupTokenHash,null); assert.equal(account.mustChangePassword,false); assert.ok(await (await import("../apps/api/src/passwords")).verifyPassword(password,account.passwordHash));
     assert.equal((await invoke(setup,{token,password})).status,400);
     account.setupTokenHash=crypto.createHash("sha256").update(token).digest("hex"); account.setupExpiresAt=new Date(Date.now()-1000); account.mustChangePassword=true;
     assert.equal((await invoke(setup,{token,password})).status,400);
     assert.equal((await invoke(setup,{token:"bad",password})).status,400);
-  } finally { prisma.user.create=create; prisma.user.updateMany=updateMany; }
+  } finally { prisma.user.create=create; prisma.user.updateMany=updateMany;prisma.user.findUnique=findUnique;prisma.$transaction=transaction;prisma.fmtShare.create=shareCreate;prisma.fmtShare.updateMany=shareUpdate; }
 });
 test("takvim ve eşleştirme yönetim uçları kimliksiz ve bayi erişimini reddeder", async () => {
   const { scheduleRouter } = await import("../apps/api/src/schedule");

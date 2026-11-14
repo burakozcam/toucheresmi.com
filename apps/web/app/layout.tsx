@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: "Kurumsal Sınav | Optik Okuma ve Sınav Yönetimi",
     description: "Optik okuma, sınav değerlendirme ve raporlama süreçleri için kurumsal platform.",
   },
-  icons: { icon: [{ url: "/favicon.svg?v=1.2.5", type: "image/svg+xml" }] },
+  icons: { icon: [{ url: "/favicon.svg?v=1.2.6", type: "image/svg+xml" }] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

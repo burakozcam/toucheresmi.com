@@ -44,3 +44,7 @@ import "./txt-permissive.test";
 import "./v125.test";
 
 import "./v125-pdf.test";
+
+import "./v126.test";
+
+import "./v126-shares.test";

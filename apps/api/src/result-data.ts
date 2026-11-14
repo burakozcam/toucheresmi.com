@@ -1,3 +1,5 @@
+import {decryptIdentity} from "./result-identity";
+import {validNationalIdentity} from "./optical-core";
 import {preferFilledRecord} from "./student-merge";
 import { canonicalJson } from "./canonical-json";
 import { opticalQuestionsSchema,opticalSummary,type OpticalData,type OpticalStudent } from "./optical-core";
@@ -10,7 +12,11 @@ export const snapshotFingerprint=(s:ResultSnapshot)=>s.keyFingerprint??keyFinger
 /** Matching requires compatible institution and reliable identity fields. */
 export function compatibleStudent(a:OpticalStudent,b:OpticalStudent){
  if(a.school!==b.school||(a.schoolCode&&b.schoolCode&&a.schoolCode!==b.schoolCode))return false;
- if(a.identityHash&&b.identityHash)return a.identityHash===b.identityHash;
+ if(a.identityHash&&b.identityHash){
+  if(a.identityHash===b.identityHash)return true;
+  const first=decryptIdentity(a.identityEncrypted),second=decryptIdentity(b.identityEncrypted),norm=(v:string)=>v.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g," ");
+  return !!first&&!!second&&first.length===11&&second.length===11&&[...first].filter((v,i)=>v!==second[i]).length===1&&!(validNationalIdentity(first)&&validNationalIdentity(second))&&!!a.schoolCode&&a.schoolCode===b.schoolCode&&number(a)===number(b)&&!!a.name&&norm(a.name)===norm(b.name)&&a.branch===b.branch;
+ }
  const norm=(v:string)=>v.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g," ");
  return number(a)===number(b)&&(!a.name||!b.name||norm(a.name)===norm(b.name))&&
   (a.branch===b.branch||a.branch==="Belirtilmedi"||b.branch==="Belirtilmedi"||!a.branch.includes("-")||!b.branch.includes("-"));
@@ -56,11 +62,13 @@ export function mergeStudentData(previous:OpticalData,next:OpticalData,replaceSt
 }
 export function aggregateResults(rows:Array<{id:string;schoolId:string;snapshot:unknown;createdAt:Date}>){
   const active=rows.filter(r=>!isDeleted(r.snapshot)).sort((a,b)=>+new Date(a.createdAt)-+new Date(b.createdAt));if(!active.length)return null;
-  const latest=active.at(-1)!,base=latest.snapshot as ResultSnapshot,students=new Map<string,OpticalStudent>();
-  for(const row of active){const s=row.snapshot as ResultSnapshot;if(snapshotFingerprint(s)!==snapshotFingerprint(base))throw new Error("Aynı sınavın yüklemeleri farklı cevap anahtarları kullanıyor. Önce güncel anahtarla tekrar değerlendirin.");
-    for(const student of s.data.students){const k=student.separateSession?`${row.id}:${student.id}`:student.identityHash??number(student);const matches=student.separateSession?[]:[...students].filter(([,old])=>!old.separateSession&&compatibleStudent(old,student));
-      if(matches.length===1)students.delete(matches[0][0]);students.set(`${k}:${row.id}:${student.id}`,structuredClone(student));}}
-  const data={...base.data,students:[...students.values()].map((s,i)=>({...s,studentNo:(s.studentNo??s.id).startsWith("tc-")?"—":s.studentNo??s.id,id:`r${i+1}`}))};
+  const latest=active.at(-1)!,base=latest.snapshot as ResultSnapshot;
+  let data:OpticalData|undefined;
+  for(const row of active){const snapshot=row.snapshot as ResultSnapshot;
+    if(snapshotFingerprint(snapshot)!==snapshotFingerprint(base))throw new Error("Aynı sınavın yüklemeleri farklı cevap anahtarları kullanıyor. Önce güncel anahtarla tekrar değerlendirin.");
+    data=data?mergeStudentData(data,snapshot.data):structuredClone(snapshot.data);
+  }
+  data={...data!,students:data!.students.map((s,i)=>({...s,studentNo:(s.studentNo??s.id).startsWith("tc-")?"—":s.studentNo??s.id,id:`r${i+1}`}))};
   return {...base,keyFingerprint:snapshotFingerprint(base),data,summary:opticalSummary(data,base.penalty),sourceResultIds:active.map(r=>r.id),schoolId:latest.schoolId};
 }
 export function safeSnapshot<T extends {data:OpticalData}>(snapshot:T){return {...snapshot,data:{...snapshot.data,students:snapshot.data.students.map(({identityHash,identityEncrypted,...student})=>({...student,...(/^\d{11}$/.test(student.studentNo??student.id)?{studentNo:"***********"}:{}),hasIdentity:!!identityEncrypted}))}};}

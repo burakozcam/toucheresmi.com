@@ -1,8 +1,10 @@
+import {encryptShareToken} from "./share-security";
+import {hashPassword,verifyPassword,newPasswordSchema} from "./passwords";
+import {configuredNewExamProfile} from "./scoring-profile";
 import {presentPublisherNames} from "../lib/publisher-display";
 import {testCenterRouter} from "./test-center";
 import {humanVerificationConfig} from "./captcha-config";
 import { verifyHuman } from "./human-verification";
-import bcrypt from "bcryptjs";
 import cors from "cors";
 import express from "express";
 import jwt from "jsonwebtoken";
@@ -289,7 +291,7 @@ app.post("/api/auth/login", async (request, response, next) => {
       where: { email: parsed.data.email.toLowerCase() },
     });
     const passwordMatches = user
-      ? await bcrypt.compare(parsed.data.password, user.passwordHash)
+      ? await verifyPassword(parsed.data.password, user.passwordHash)
       : false;
 
     if (!user || !user.active || user.role !== parsed.data.role || !passwordMatches) {
@@ -362,11 +364,12 @@ app.post("/api/admin/users", requireAuth, requireRole(Role.SUPER_ADMIN), async (
   if (!parsed.success) { response.status(400).json({ error: "Kullanıcı bilgilerini kontrol edin." }); return; }
   try {
     const temporaryPassword = crypto.randomBytes(18).toString("base64url");
-    const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+    const passwordHash = await hashPassword(temporaryPassword);
     const setupToken = crypto.randomBytes(32).toString("base64url");
     const setupTokenHash = crypto.createHash("sha256").update(setupToken).digest("hex");
     const setupExpiresAt = new Date(Date.now() + 30 * 60_000);
-    const user = await prisma.user.create({ data: { setupTokenHash, setupExpiresAt, ...parsed.data, email: parsed.data.email.toLowerCase(), phone: parsed.data.phone || null, passwordHash, role: Role.DEALER, mustChangePassword: true }, select: profileSelect });
+    const user = await prisma.$transaction(async tx=>{const created = await tx.user.create({ data: { setupTokenHash, setupExpiresAt, ...parsed.data, email: parsed.data.email.toLowerCase(), phone: parsed.data.phone || null, passwordHash, role: Role.DEALER, mustChangePassword: true }, select: profileSelect });
+    await tx.fmtShare.create({data:{category:"MEMBERSHIP",targetId:created.id,name:`${created.firstName} ${created.lastName}`,createdById:(request as AuthenticatedRequest).user!.id,tokenHash:setupTokenHash,tokenEncrypted:encryptShareToken(setupToken),expiresAt:setupExpiresAt}});return created;});
     response.setHeader("Cache-Control", "no-store");
     response.status(201).json({ user, setupUrl: `${env.WEB_ORIGIN}/hesap-kur#${setupToken}`, expiresAt: setupExpiresAt, message: "30 dakika geçerli tek kullanımlık şifre belirleme bağlantısı oluşturuldu." });
   } catch (error) {
@@ -376,28 +379,35 @@ app.post("/api/admin/users", requireAuth, requireRole(Role.SUPER_ADMIN), async (
 });
 app.post("/api/auth/setup", async (request, response, next) => {
   response.setHeader("Cache-Control", "no-store");
-  const parsed = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), password: z.string().min(12).max(128).refine((v) => Buffer.byteLength(v, "utf8") <= 72) }).safeParse(request.body);
-  if (!parsed.success) { response.status(400).json({ error: "Bağlantı veya şifre geçersiz. Şifre en az 12 karakter ve en fazla 72 bayt olmalıdır." }); return; }
+  const parsed = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), password: newPasswordSchema }).safeParse(request.body);
+  if (!parsed.success) { response.status(400).json({ error: "Bağlantı veya şifre geçersiz. Şifre en az 15 karakter olmalı ve yaygın bir şifre olmamalıdır." }); return; }
   try {
     const setupTokenHash = crypto.createHash("sha256").update(parsed.data.token).digest("hex");
-    const passwordHash = await bcrypt.hash(parsed.data.password, 12);
-    const result = await prisma.user.updateMany({ where: { setupTokenHash, setupExpiresAt: { gt: new Date() }, active: true, mustChangePassword: true }, data: { passwordHash, mustChangePassword: false, setupTokenHash: null, setupExpiresAt: null } });
-    if (!result.count) { response.status(400).json({ error: "Bağlantının süresi dolmuş veya daha önce kullanılmış. Yöneticinizle iletişim kurun." }); return; }
-    response.json({ message: "Şifreniz belirlendi. Giriş yapabilirsiniz." });
+    const passwordHash = await hashPassword(parsed.data.password);
+    const user=await prisma.$transaction(async tx=>{
+      const candidate=await tx.user.findUnique({where:{setupTokenHash}});
+      if(!candidate||!candidate.active||!candidate.mustChangePassword||!candidate.setupExpiresAt||candidate.setupExpiresAt<=new Date())return null;
+      const result=await tx.user.updateMany({where:{id:candidate.id,setupTokenHash,setupExpiresAt:{gt:new Date()},active:true,mustChangePassword:true},data:{passwordHash,mustChangePassword:false,setupTokenHash:null,setupExpiresAt:null}});
+      if(result.count)await tx.fmtShare.updateMany({where:{category:"MEMBERSHIP",targetId:candidate.id,tokenHash:setupTokenHash,usedAt:null},data:{usedAt:new Date()}});
+      return result.count?candidate:null;
+    });
+    if(!user){response.status(400).json({error:"Bağlantının süresi dolmuş veya daha önce kullanılmış."});return;}
+    const token=jwt.sign({role:user.role,dealerId:user.dealerId,schoolId:user.schoolId,credentialVersion:credentialVersion(passwordHash)},env.JWT_SECRET,{subject:user.id,expiresIn:"8h"});
+    response.json({message:"Şifreniz belirlendi.",token,user:{id:user.id,email:user.email,firstName:user.firstName,lastName:user.lastName,role:user.role}});
   } catch (error) { next(error); }
 });
 const ownPasswordSchema = z.object({
   currentPassword: z.string().min(1).max(128),
-  newPassword: z.string().min(12).max(128).refine((value) => Buffer.byteLength(value, "utf8") <= 72),
+  newPassword: newPasswordSchema,
 });
 app.patch("/api/account/password", requireAuth, async (request: AuthenticatedRequest, response, next) => {
   const parsed = ownPasswordSchema.safeParse(request.body);
-  if (!parsed.success) { response.status(400).json({ error: "Yeni şifre en az 12 karakter, en fazla 72 UTF-8 bayt olmalıdır." }); return; }
+  if (!parsed.success) { response.status(400).json({ error: "Yeni şifre 15–128 karakter olmalı; yaygın bir parola olmamalıdır." }); return; }
   try {
     const current = await prisma.user.findUniqueOrThrow({ where: { id: request.user!.id } });
-    if (!await bcrypt.compare(parsed.data.currentPassword, current.passwordHash)) { response.status(400).json({ error: "Geçerli / geçici şifre hatalı." }); return; }
-    if (await bcrypt.compare(parsed.data.newPassword, current.passwordHash)) { response.status(400).json({ error: "Yeni şifre önceki şifreden farklı olmalıdır." }); return; }
-    const passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
+    if (!await verifyPassword(parsed.data.currentPassword, current.passwordHash)) { response.status(400).json({ error: "Geçerli / geçici şifre hatalı." }); return; }
+    if (await verifyPassword(parsed.data.newPassword, current.passwordHash)) { response.status(400).json({ error: "Yeni şifre önceki şifreden farklı olmalıdır." }); return; }
+    const passwordHash = await hashPassword(parsed.data.newPassword);
     const result = await prisma.user.updateMany({ where: { id: current.id, passwordHash: current.passwordHash, active: true }, data: { passwordHash, mustChangePassword: false, setupTokenHash: null, setupExpiresAt: null } });
     if (!result.count) { response.status(409).json({ error: "Hesap değişti. Yeniden giriş yapın." }); return; }
     const token = jwt.sign({ role: current.role, dealerId: current.dealerId, schoolId: current.schoolId, credentialVersion: credentialVersion(passwordHash) }, env.JWT_SECRET, { subject: current.id, expiresIn: "8h" });
@@ -411,13 +421,13 @@ const registrationSchema = z.object({
   lastName: z.string().trim().min(2).max(80),
   phone: z.string().trim().min(7).max(30),
   email: z.string().trim().email().max(254),
-  password: z.string().min(12).max(128).refine((password) => Buffer.byteLength(password, "utf8") <= 72),
+  password: newPasswordSchema,
 });
 
 app.post("/api/auth/register", async (request, response, next) => {
   const parsed = registrationSchema.safeParse(request.body);
   if (!parsed.success) {
-    response.status(400).json({ error: "Kayıt bilgilerini kontrol edin. Şifre en az 12 karakter ve en fazla 72 bayt olmalıdır." });
+    response.status(400).json({ error: "Kayıt bilgilerini kontrol edin. Şifre en az 15 karakter olmalı ve yaygın bir şifre olmamalıdır." });
     return;
   }
 
@@ -430,7 +440,7 @@ app.post("/api/auth/register", async (request, response, next) => {
     }
 
     const { password, ...registrationData } = parsed.data;
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await hashPassword(password);
     const registration = await prisma.registrationRequest.create({
       data: {
         ...registrationData,
@@ -818,8 +828,7 @@ app.delete(
 );
 
 const passwordResetSchema = z.object({
-  password: z.string().min(12).max(128)
-    .refine((password) => Buffer.byteLength(password, "utf8") <= 72),
+  password: newPasswordSchema,
 });
 
 app.patch(
@@ -834,7 +843,7 @@ app.patch(
       return;
     }
     try {
-      const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+      const passwordHash = await hashPassword(parsed.data.password);
       const result = await prisma.user.updateMany({
         where: { id: userId, role: { not: Role.SUPER_ADMIN } },
         data: { passwordHash, setupTokenHash: null, setupExpiresAt: null },
@@ -1894,6 +1903,7 @@ app.patch(
       const showInEvaluation=parsed.data.showInEvaluation??current.showInEvaluation, penalty=parsed.data.penalty??current.opticalKey?.penalty??3;
       try { evaluation=reviewed??prepareEvaluation(effectiveFiles,showInEvaluation,current.opticalKey?.questions,uploadedFiles.length>0,parsed.data.evaluationFormat); }
       catch(error){response.status(400).json({error:error instanceof Error?error.message:"Değerlendirme anahtarı okunamadı."});return;}
+      if(evaluation&&!current.opticalKey)evaluation=await configuredNewExamProfile(evaluation,pdfPublisherName??"",parsed.data.grade);
       const replacementFiles = uploadedFiles.map((file) => {
         const extension = path.extname(file.originalname).toLowerCase().replace(".", "");
         const targetDirectory = path.join(storageRoot, "answer-keys", answerKeyId);

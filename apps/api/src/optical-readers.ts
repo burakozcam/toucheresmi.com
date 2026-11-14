@@ -8,7 +8,14 @@ export const readerFamilies=[{id:"ozdebir-middle",records:[
  {session:"numeric",label:"sayısal",layout:layoutOzdebirNumeric},
 ]}];
 export function readerFamily(layout:OpticalLayout){const key=canonicalJson(layout);return readerFamilies.find(f=>f.records.some(r=>canonicalJson(r.layout)===key));}
-export function recordLayout(layout:OpticalLayout,line:string){const family=readerFamily(layout);return family?family.records.find(r=>(r.layout.literals??[]).every(l=>line.slice(l.start-1,l.start-1+l.text.length)===l.text)):undefined;}
+export function recordLayout(layout:OpticalLayout,line:string){
+ const family=readerFamily(layout);if(!family)return undefined;
+ const marked=family.records.find(r=>(r.layout.literals??[]).every(l=>line.slice(l.start-1,l.start-1+l.text.length)===l.text));
+ if(marked?.layout.lineLength===line.length)return marked;
+ const byWidth=family.records.filter(r=>r.layout.lineLength===line.length&&reliableRecord(line,{...r.layout,literals:[]},"A"));
+ if(byWidth.length===1)return {...byWidth[0],layout:{...byWidth[0].layout,literals:[]},warning:"Oturum belirteci satır uzunluğu ile çelişiyor; başlık ve cevap alanları doğrulanan kayıt düzeni kullanıldı."};
+ return marked;
+}
 export function reliableRecord(line:string,layout:OpticalLayout,missingBooklet?:string){
  const read=(f?:{start:number;length:number})=>f?line.slice(f.start-1,f.start-1+f.length).trim():"";
  const f=layout.fields;

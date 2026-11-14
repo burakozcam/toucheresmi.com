@@ -1,5 +1,5 @@
 export type Lesson = { name: string; count: number; weight: number|null };
-export type Question = { lesson: string; number: number; answer: string; weight: number | null; column: string; outcomeCode?: string; outcomeName?: string };
+export type Question = { multipleMark?:"wrong"|"blank";scoreBase?:number; lesson: string; number: number; answer: string; weight: number | null; column: string; outcomeCode?: string; outcomeName?: string };
 export type Candidate = {studentNo?:string; id: string; missingLessons?:string[]; name: string; school: string; branch: string; answers: string[] };
 export type EvaluationData = { questions: Question[]; students: Candidate[] };
 export type CohortContext = Map<string, { members: Candidate[]; scores: (number|null)[]; rates: (number | null)[] }>;
@@ -88,7 +88,7 @@ export function scaledScore(questions: Question[], student: Candidate, penalty: 
   if(questions.some(q=>q.answer!=="X"&&(Object.hasOwn(weights,q.lesson)?weights[q.lesson]:q.weight)===null))return null;
   const maximum = questions.reduce((total, q) => total + (q.answer === "X" ? 0 : ((Object.hasOwn(weights,q.lesson)?weights[q.lesson]:q.weight)??0)), 0);
   const total = evaluate(questions, student, penalty, weights).reduce((n, r) => n + (r.weighted??0), 0);
-  return maximum > 0 ? Math.min(scale, Math.max(0, total / maximum * scale)) : null;
+  return questions[0]?.scoreBase!==undefined?questions[0].scoreBase+total:maximum > 0 ? Math.min(scale, Math.max(0, total / maximum * scale)) : null;
 }
 export function buildCohortContext(data: EvaluationData, penalty: number, weights: Record<string, number|null>, scale: 100 | 500): CohortContext {
   const groups: CohortContext = new Map();
@@ -115,7 +115,7 @@ export function questionCohort(data: EvaluationData, student: Candidate, context
 }
 
 export function questionState(question: Question, answer: string): QuestionState {
-  return question.answer === "X" ? "cancelled" : question.answer === "H" ? "correct" : !answer ? "blank" : answer === question.answer ? "correct" : "wrong";
+  return question.answer === "X" ? "cancelled" : question.answer === "H" ? "correct" : !answer || answer==="*"&&question.multipleMark==="blank" ? "blank" : answer === question.answer ? "correct" : "wrong";
 }
 
 export function evaluate(questions: Question[], student: Candidate, penalty: number, overrides: Record<string, number|null> = {}): LessonResult[] {

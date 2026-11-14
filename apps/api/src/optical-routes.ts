@@ -1,3 +1,6 @@
+import builtinScoreProfile from "../lib/ozdebir-profile.json";
+import {lessonIdentity} from "../lib/evaluation-compatibility";
+import {configuredNewExamProfile} from "./scoring-profile";
 import {evaluationReader} from "./evaluation-reader";
 import express from "express";
 import fs from "node:fs";
@@ -150,6 +153,7 @@ opticalRouter.post("/keys",admin,wrap(async(req,res)=>{
   const data=z.object({name:z.string().trim().min(2).max(180),penalty:z.union([z.literal(0),z.literal(3),z.literal(4)]),confirmImport:z.literal(true),questions:opticalQuestionsSchema,publicationId:z.string().min(1).optional()}).parse(req.body);
   if(data.publicationId&&!await prisma.publishedAnswerKey.findUnique({where:{id:data.publicationId}})){res.status(400).json({error:"Arşivdeki sınav bulunamadı."});return;}
   if(data.publicationId){try{evaluationQuestions(data.questions);}catch(e){res.status(400).json({error:(e as Error).message});return;}}
+  if(data.publicationId){const publication=await prisma.publishedAnswerKey.findUnique({where:{id:data.publicationId},include:{publisher:true}});if(publication)data.questions=await configuredNewExamProfile(data.questions,publication.publisher.name,publication.grade);}
   const {confirmImport,...keyData}=data;
   res.status(201).json(await prisma.opticalKey.create({data:{...keyData,questions:data.questions as Prisma.InputJsonValue}}));
 }));
@@ -395,3 +399,18 @@ for(const mode of ["preview","save"]){opticalRouter.post(`/results/:id/re-evalua
   if(!saved){res.status(409).json({error:"Sonuç veya anahtar değişti. Önizlemeyi yenileyin."});return;}
   res.status(201).json({id:saved.id,revision:saved.revision,seriesId:saved.seriesId,isLatest:true,createdAt:saved.createdAt,studentPublished:false,...next,checks});
 }));}
+
+opticalRouter.get("/score-profiles",admin,wrap(async(_req,res)=>{
+ const saved=await prisma.scoreProfile.findMany({orderBy:{updatedAt:"desc"}});
+ res.json([builtinScoreProfile,...saved]);
+}));
+opticalRouter.post("/score-profiles",admin,wrap(async(req,res)=>{
+ const input=z.object({id:z.string().min(1).max(100).optional(),name:z.string().trim().min(2).max(120),multipleMark:z.enum(["wrong","blank"]).default("wrong"),base:z.number().finite().min(0).max(500),weights:z.record(z.number().finite().positive().max(100))}).parse(req.body);
+ const expected=Object.keys(builtinScoreProfile.weights).sort().join(),weights=Object.fromEntries(Object.entries(input.weights).map(([k,v])=>[lessonIdentity(k),v]));
+ if(Object.keys(weights).sort().join()!==expected){res.status(400).json({error:"Altı LGS dersinin katsayılarını tanımlayın."});return;}
+ const result=await prisma.$transaction(async tx=>{
+  await tx.scoreProfile.updateMany({where:{publisher:"OZDEBIR",grade:8,active:true},data:{active:false}});
+  const data={name:input.name,base:input.base,multipleMark:input.multipleMark,weights,publisher:"OZDEBIR",grade:8,active:true};
+  return input.id&&input.id!==builtinScoreProfile.id?tx.scoreProfile.update({where:{id:input.id},data}):tx.scoreProfile.create({data});
+ });res.status(201).json(result);
+}));

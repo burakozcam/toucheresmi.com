@@ -1,6 +1,10 @@
-# Kurumsal Sınav v1.2.5 — Yerel geliştirme
+# Kurumsal Sınav v1.2.6 — Yerel geliştirme
 
-**v1.2.5:** Özdebir tek optik / sözel + sayısal kayıt düzenleri, güvenilir öğrenci eşleştirme, bütün oturum üzerinden tekrar seçimi ve eksik oturumları sıfır saymayan değerlendirme. Karne cevapları sadeleştirildi, renkli grafiklere PDF içinde basılan desenler ve menüye 14 px okunaklı yazılar eklendi. [Doğrulama ve dağıtım notları](docs/v125-release-report.md) · [Değişiklik kaydı](CHANGELOG.md). Yeni migration yok; canlıya aktarım yapılmadı.
+**v1.2.6:** Özdebir sözel/tek optik ders konumları, ayrı yüklemelerde oturum birleştirme, başlangıç puanlı sınav profilleri ve gerçek O8126 karne regresyonları. Ortak paylaşım yönetimi, korumalı PDF bağlantıları, davet sonrası oturum, yeni parola politikası, kampüs aktarımı ve yerel tarayıcı OCR eklendi.
+
+[Detaylı sürüm ve kabul raporu](docs/v126-release-report.md) · [Değişiklik kaydı](CHANGELOG.md). **Yeni additive Prisma migration gerekir; canlıya uygulanmadı.** Gerçek Limit PDF kabulü bekliyor. O8126'da altı hedef puan eşleşir; verilen katsayıların beş karnedeki 0,001 gösterim farkı raporda açıklanır.
+
+Node.js 22 üzerinde `npm ci`, `npm run db:generate`, `npm test`, `npm run test:report` ve `NEXT_PUBLIC_API_URL=https://GERCEK-API-ADRESI npm run build` kullanın. Web prebuild yerel OCR varlıklarını üretir; `public/vendor/ocr/` dağıtıma dahil edilmelidir. Canlı DB için migration yalnız yetkili yayın adımında çalıştırılır. Root/Tesseract sistem kurulumu gerekmez.
 
 **v1.2.1 RC:** Katsayısız değerlendirme, hesap açmadan kişisel kodla sorgu, belirgin karne türleri, ayrı sınav tanımı/anahtar akışı, avatar düzeltmesi ve salt okunur Test Merkezi. [RC raporu](docs/v121-release-report.md) · [Hosting/taşınabilirlik](docs/v121-hosting-portability.md). ProBook ve CAPTCHA çalışmaları kapsam dışıdır; push/deploy yapılmadı.
 

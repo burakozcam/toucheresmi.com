@@ -34,11 +34,14 @@ export const layout8050:OpticalLayout={
 };
 export const opticalQuestionSchema = z.object({
   source:z.object({system:z.enum(["f","o","general"]),sheet:z.string().max(100),row:z.number().int().positive(),columns:z.array(z.string()).max(50),values:z.array(z.union([z.string(),z.number(),z.boolean(),z.null()])).max(50)}).optional(),
-  lesson: z.string().trim().min(1).max(80), number: z.number().int().min(1).max(300), answer: z.string().regex(/^[ABCDEHX]$/),
+  lesson: z.string().trim().min(1).max(80), number: z.number().int().min(1).max(300), answer: z.string().regex(/^[ABCDEHXT]$/).transform(v=>v==="T"?"H":v),
+  multipleMark:z.enum(["wrong","blank"]).optional(),
+  scoreBase:z.number().finite().min(0).max(500).optional(),
   weight: z.number().positive().max(100).nullable().default(null), positions: z.record(z.string().regex(/^[A-D]$/), z.number().int().min(1).max(300)),
   outcomeCode: z.string().max(80).optional(), outcomeName: z.string().max(1000).optional(),
 });
 export const opticalQuestionsSchema = z.array(opticalQuestionSchema).min(1).max(300).superRefine((qs, ctx) => {
+  if(qs.some(q=>q.scoreBase!==qs[0].scoreBase))ctx.addIssue({code:"custom",message:"Başlangıç puanı tüm sorularda tutarlı olmalıdır."});
   const lessons = [...new Set(qs.map(q => q.lesson))];
   const books = Object.keys(qs[0]?.positions ?? {}).sort().join("");
   if (!books.includes("A")) ctx.addIssue({ code: "custom", message: "A kitapçığı soru eşleştirmeleri gereklidir." });
@@ -97,6 +100,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     if(seenLines.has(line)){diagnostics.duplicateRecords++;warnings.push(`${label}: yinelenen TXT satırı atlandı; öğrenci ikinci kez sayılmadı.`);return;}seenLines.add(line);
     const variant=recordLayout(sourceLayout,line);
     if(family&&!variant){reject(index,"doğrulanmış kayıt türü bulunamadı; satır atlandı.");return;}
+    if(variant&&"warning" in variant)warnings.push(`${label}: ${variant.warning}`);
     const rowLayout=variant?.layout??sourceLayout;
     const lessons=rowLayout.lessons.map(l=>({...l,name:questionLessons.find(name=>lessonIdentity(name)===lessonIdentity(l.name))??l.name}));
     if(line.length!==rowLayout.lineLength)mismatch(`${label}: ${rowLayout.lineLength} karakter bekleniyor, ${line.length} bulundu. Mevcut konumlar korundu; yalnız tamamı mevcut cevap alanları okundu. Eksik alanlar değerlendirilmedi; yanlış konumdan okuma yapılmadı.`);
@@ -107,11 +111,12 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     let id=slice(line,f.id),identity=slice(line,f.identity);
     // Empty/placeholder identity fields cannot establish a match.
     if(/^(0+|\*+|-+)$/.test(identity))identity="";
+    if(family&&identity&&!/^\d{11}$/.test(identity)){warnings.push(`${label}: kimlik alanı geçersiz; eşleştirmede öğrenci no, ad ve kurum bilgileri kullanılacak.`);identity="";}
     const name=[slice(line,f.name),slice(line,f.surname)].filter(Boolean).join(" ").replace(/\s+/g," "),grade=slice(line,f.grade),branch=slice(line,f.branch),schoolCode=slice(line,f.schoolCode);
     if(!id&&!identity){reject(index,"öğrenci no ve kimlik boş; güvenilir eşleştirme yapılamadı.");return;}
     if(f.grade&&grade&&!/^\d{1,2}$/.test(grade)){reject(index,"sınıf alanı geçersiz; FMT konumlarını kontrol edin.");return;}
     let book=slice(line,f.booklet).toUpperCase();
-    if(!book&&options.missingBooklet){book=options.missingBooklet;warnings.push(`${label}: boş kitapçık için kullanıcı tarafından ${book} kitapçığı belirtildi.`);}
+    if(!book&&(options.missingBooklet||family)){book=options.missingBooklet??"A";warnings.push(`${label}: boş kitapçık için ${options.missingBooklet?"kullanıcı tarafından ":"varsayılan "}${book} kitapçığı kabul edildi; sonucu etkileyebilir.`);}
     if(!/^[A-D]$/.test(book)||questions.some(q=>lessons.some(l=>l.name===q.lesson)&&!q.positions[book])){reject(index,`kitapçık türü eksik/geçersiz veya anahtarda tanımlı değil; konum: ${f.booklet.start}-${f.booklet.start+f.booklet.length-1}.`);return;}
     const chains=new Map<string,string>();
     for(const l of lessons){
@@ -127,20 +132,27 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     // session marker keep complementary marked lesson groups for backwards compatibility.
     if(!variant)for(const [lesson,chain]of chains)if(!chain.trim())chains.delete(lesson);
     if(!chains.size&&!variant){for(const l of lessons)if(questions.some(q=>q.lesson===l.name)&&line.length>=l.start+l.length-1)chains.set(l.name,"");}
-    const marks=[...chains.values()].reduce((n,v)=>n+(v.match(/[ABCDE*]/g)?.length??0),0);
+    const marks=[...chains.values()].reduce((n,v)=>n+(v.match(/[ABCDE]/g)?.length??0),0);
     const session=variant?.session||(slice(line,f.session)?`session:${slice(line,f.session)}`:[...chains.keys()].sort().join("|"));
     const candidates=options.mergeSessions===false?[]:entries.filter(e=>{
       if(e.schoolCode&&schoolCode&&e.schoolCode!==schoolCode)return false;
-      if(e.identity&&identity&&e.identity!==identity)return false;
+      if(e.identity&&identity&&e.identity!==identity){
+        const sameHeader=!!id&&e.id.replace(/^0+(?=\d)/,"")===id.replace(/^0+(?=\d)/,"")&&!!name&&!!e.name&&normalized(e.name)===normalized(name)&&!!schoolCode&&schoolCode===e.schoolCode&&!!branch&&branch===e.branch&&!!grade&&grade===e.grade;
+        const differs=Array.from(identity).filter((c,i)=>c!==e.identity[i]).length;
+        if(!sameHeader||differs!==1||validNationalIdentity(identity)&&validNationalIdentity(e.identity))return false;
+        return true;
+      }
       if(e.grade&&grade&&e.grade!==grade)return false;
       if(e.identity&&identity&&e.identity===identity)return true;
       return !!id&&e.id.replace(/^0+(?=\d)/,"")===id.replace(/^0+(?=\d)/,"")&&
-       (!e.name||!name||normalized(e.name)===normalized(name))&&(!e.branch||!branch||e.branch===branch);
+       (!!e.name&&!!name&&normalized(e.name)===normalized(name))&&(!e.branch||!branch||e.branch===branch);
     });
     let entry=candidates.length===1?candidates[0]:undefined;
     if(!entry&&entries.some(e=>id&&e.id.replace(/^0+(?=\d)/,"")===id.replace(/^0+(?=\d)/,"")))warnings.push(`${label}: aynı numarada kimlik bilgileri çelişiyor veya eşleştirme belirsiz; kayıtlar ayrı tutuldu.`);
     if(!entry){entry={id,name,branch,grade,identity,schoolCode,sourceLines:[],records:new Map()};entries.push(entry);}
+    if(entry.identity&&identity&&entry.identity!==identity)warnings.push(`${label}: kimlikte tek karakterlik olası okuma hatası; kurum, numara, sınıf/şube ve ad eşleşmesiyle oturumlar birleştirildi. Kontrol edin.`);
     if(entry.name&&name&&normalized(entry.name)!==normalized(name))warnings.push(`${label}: güvenilir kimlik eşleşti ancak ad bilgileri çelişiyor; ilk ad korundu.`);
+    if(identity&&validNationalIdentity(identity)&&!validNationalIdentity(entry.identity))entry.identity=identity;
     entry.name||=name;entry.grade||=grade;entry.branch||=branch;entry.identity||=identity;entry.id||=id;entry.schoolCode||=schoolCode;entry.sourceLines.push(index+1);
     const old=entry.records.get(session);
     if(old){diagnostics.duplicateRecords++;warnings.push(`${label}: aynı oturum tekrar okundu; en fazla geçerli işaretlemesi bulunan kayıt bütünüyle seçildi, eşitlikte ilk kayıt korundu.`);if(marks<=old.marks)return;}
@@ -178,11 +190,13 @@ export function opticalSummary(data: OpticalData, penalty: number) {
     const lessons = [...new Set(data.questions.map(q=>q.lesson))].map(lesson=> {
       const missing=student.missingLessons?.includes(lesson)??false;
       let correct=0,wrong=0,blank=0,cancelled=0;
-      data.questions.forEach((q,i)=>{if(q.lesson!==lesson||missing)return; if(q.answer==="X")cancelled++;else if(q.answer==="H" || student.answers[i]===q.answer)correct++;else if(!student.answers[i])blank++;else wrong++;});
+      data.questions.forEach((q,i)=>{if(q.lesson!==lesson||missing)return; if(q.answer==="X")cancelled++;else if(q.answer==="H" || student.answers[i]===q.answer)correct++;else if(!student.answers[i]||student.answers[i]==="*"&&q.multipleMark==="blank")blank++;else wrong++;});
       const net=correct-(penalty ? wrong/penalty : 0), weight=data.questions.find(q=>q.lesson===lesson)!.weight;
       return {lesson,correct,wrong,blank,cancelled,net:missing?null:net,weighted:missing||weight===null?null:net*weight,...(missing?{missing:true}:{})};
     });
     const maximum=data.questions.reduce((s,q)=>s+(q.answer==="X"?0:q.weight??0),0), weighted=lessons.reduce((s,l)=>s+(l.weighted??0),0);
-    return {id:student.id,lessons,net:lessons.reduce((s,l)=>s+(l.net??0),0),score:student.missingLessons?.length?null:data.questions.some(q=>q.answer!=="X"&&q.weight===null)?null:maximum?Math.max(0,Math.min(500,weighted/maximum*500)):null};
+    return {id:student.id,lessons,net:lessons.reduce((s,l)=>s+(l.net??0),0),score:student.missingLessons?.length?null:data.questions.some(q=>q.answer!=="X"&&q.weight===null)?null:data.questions[0]?.scoreBase!==undefined?data.questions[0].scoreBase+weighted:maximum?Math.max(0,Math.min(500,weighted/maximum*500)):null};
   });
 }
+
+export function validNationalIdentity(value:string){if(!/^[1-9]\d{10}$/.test(value))return false;const d=[...value].map(Number);return ((d[0]+d[2]+d[4]+d[6]+d[8])*7-(d[1]+d[3]+d[5]+d[7]))%10===d[9]&&d.slice(0,10).reduce((a,b)=>a+b,0)%10===d[10];}

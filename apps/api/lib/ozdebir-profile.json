@@ -1,0 +1,18 @@
+{
+  "id": "ozdebir-o8126-derived",
+  "name": "Özdebir O8126 · karne incelemesinden türetilmiş",
+  "publisher": "ÖZDEBİR",
+  "grade": 8,
+  "base": 203.05256,
+  "verified": true,
+  "weights": {
+    "TURKCE": 4.112247,
+    "MATEMATIK": 4.450104,
+    "FEN": 3.776382,
+    "SOSYAL": 1.829886,
+    "DIN": 1.768433,
+    "INGILIZCE": 1.418961
+  },
+  "multipleMark": "blank",
+  "verification": "427 O8126 cards: maximum coefficient residual 0.000526; 422/427 scores agree after rounding to 3 decimals. Derived, not universal official coefficients."
+}
