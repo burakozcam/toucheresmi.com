@@ -8,6 +8,8 @@ base=os.environ.get('KS_WEB_URL','http://localhost:3100')
 assert base in ['http://localhost:3100','http://127.0.0.1:3100']
 seed=json.loads(Path('/tmp/v128-evidence/seed.json').read_text());out=Path('/tmp/v128-evidence');out.mkdir(exist_ok=True)
 errors=[];checks=[];overflow=[];run_id=str(int(time.time()))
+widths=[int(w) for w in os.environ.get('V128_UI_WIDTHS','320,375,390,768,1024,1280,1920').split(',')]
+assert widths and all(w in [320,375,390,768,1024,1280,1920] for w in widths)
 def check_width(page,label):
  page.wait_for_timeout(80)
  dims=page.evaluate('({view:innerWidth,scroll:document.documentElement.scrollWidth})')
@@ -54,7 +56,7 @@ with sync_playwright() as p:
  # Cookie preferences: close on both actions, persist over route changes/refresh, reopen.
  for choice in ['Tümünü Kabul Et','Yalnızca Gerekli Olanlar']:
   c=context(browser,320,consent=None);page=c.new_page();page.on('pageerror',lambda e:errors.append(str(e)));page.goto(base+'/contact');notice=page.get_by_role('complementary',name='Çerez tercihleri');notice.wait_for();notice.get_by_role('button',name=choice,exact=True).click();expect(notice).not_to_be_visible();page.reload();expect(page.get_by_role('complementary',name='Çerez tercihleri')).not_to_be_visible();page.goto(base+'/login');expect(page.get_by_role('complementary',name='Çerez tercihleri')).not_to_be_visible();page.get_by_role('button',name='Çerez Tercihleri',exact=True).first.click();expect(page.get_by_role('complementary',name='Çerez tercihleri')).to_be_visible();check_width(page,'cookie-'+('accept' if choice.startswith('Tüm') else 'necessary'));checks.append('cookie persistence '+choice);c.close()
- for width in [320,375,390,768,1024,1280,1920]:
+ for width in widths:
   print('WIDTH',width,flush=True)
   c=context(browser,width,theme='light' if width in [375,1280] else 'dark');page=c.new_page();page.on('pageerror',lambda e:errors.append(str(e)));page.on('dialog',lambda d:d.accept())
   for route,label in [('/','home'),('/login','login'),('/cevap-anahtarlari','catalogue'),('/pdf-duzenleyici','pdf-tools'),('/contact','contact'),('/hesap-kur#not-a-real-invite','setup')]:
@@ -100,5 +102,5 @@ with sync_playwright() as p:
  print('BROWSER ERRORS',errors,'OVERFLOW',overflow,flush=True)
  assert not errors,errors
  assert not overflow,json.dumps(overflow,ensure_ascii=False)
- result={'checks':checks,'widths':[320,375,390,768,1024,1280,1920],'javascriptErrors':errors,'overflow':overflow}
- (out/'browser.json').write_text(json.dumps(result,ensure_ascii=False,indent=2));print(json.dumps(result,ensure_ascii=False,indent=2));browser.close()
+ result={'checks':checks,'widths':widths,'javascriptErrors':errors,'overflow':overflow}
+ (out/('browser.json' if len(widths)==7 else 'browser-'+'-'.join(map(str,widths))+'.json')).write_text(json.dumps(result,ensure_ascii=False,indent=2));print(json.dumps(result,ensure_ascii=False,indent=2));browser.close()

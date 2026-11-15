@@ -1,3 +1,11 @@
+# v1.2.9 · 2026-11-15 · yerel geliştirme
+
+- Cevap anahtarı yüklemede zorunlu mevcut sınav seçimi ve API'nin koşulsuz 409 cevabı kaldırıldı. Excel ve elle giriş aynı onaylı kayıt akışını kullanır; yeni sınav aynı transaction'da oluşturulur, aynı adlı boş sınav korunur. Mevcut anahtarın otomatik üzerine yazılması ve eşzamanlı mükerrer kayıt engellenir.
+- Excel/Calc HTML ve TSV panosu hücrelere dağıtılır; tırnaklı satır sonları, sekmeler, Türkçe ve boş sütunlar korunur. 300 soruya kadar satır büyütme, Ctrl/Cmd geri alma/yineleme ve sınır aşımında bütünüyle ret eklendi. Çok satırlı metinler textarea ile düzenlenir.
+- Ana sayfa için bağımlılık eklemeyen SVG kitapçık/tarama/değerlendirme/karne döngüsü, hafif parallax, durdurma/oynatma, ekran dışındayken durma ve azaltılmış hareket görünümü eklendi. Yerel index önizlemesi de güncellendi.
+- Optik değerlendirme düğmesinin eksik seçimleri açıkça gösterilir. 7108 ve Özdebir için gerçek admin→bayi→TXT→değerlendirme→Excel/PDF kabulü eklendi; mevcut optik hesaplama motoru değiştirilmedi.
+- Testler, gerçek hata nedenleri ve dağıtım sınırları: `docs/v129-release-report.md`. Yeni migration yoktur; canlı DB işlemi veya dağıtım yapılmadı.
+
 # v1.2.8 · 2026-11-15 · yerel geliştirme
 
 - 7108 kapasitesi sınav soru sayısından ayrıldı; yayınevi/sınıf bağı kaldırıldı. Boş kitapçık A, boş cevap boş kalır. Kimliği eksik fakat adı bulunan satırlar numara uydurulmadan korunur; tekli/çift oturum birleştirmesi mevcut boş alanları silmez.

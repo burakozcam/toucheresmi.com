@@ -133,7 +133,6 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
       setError("Etkin bir yayınevi seçmelisiniz.");
       return;
     }
-    if(!targetPublicationId){setError("Cevap anahtarı eklenecek sınav tanımını seçin.");return;}
     const formElement = event.currentTarget;
     const formData = new FormData(formElement);
     formData.set("published", String(form.published));
@@ -196,7 +195,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
 
   return (
     <section className="management-panel answer-key-panel">
-      {view==="new"&&!bulkMode&&<header className="panel-header"><div><h2>Cevap anahtarı ekle</h2><p>Sınavı seçin, anahtar ve varsa kazanım dosyasını yükleyin.</p></div></header>}
+      {view==="new"&&!bulkMode&&<header className="panel-header"><div><h2>Cevap anahtarı ekle</h2><p>Sınav bilgilerini girip anahtarı yükleyin; sınav kaydı otomatik oluşturulur.</p></div></header>}
 
       {notice && <p className="notice success" role="status">{notice}</p>}
       {error && <p className="notice error" role="alert">{error}</p>}
@@ -206,8 +205,8 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
       {!readOnly && bulkMode && <BulkAnswerKeys records={records} token={token} publishers={publishers} onComplete={() => void loadData()} onBusyChange={setBulkBusy} />}
       {!readOnly && view==="new" && !bulkMode && (
         <form className="answer-key-form" onSubmit={handleSubmit}>
-          <label>Sınav kaydı<select aria-label="Cevap anahtarının sınav kaydı" value={targetPublicationId} required disabled={submitting} onChange={e=>{const id=e.target.value;setTargetPublicationId(id);const item=records.find(r=>r.id===id);if(item)setForm({publisherId:item.publisherId,grade:String(item.grade),examName:item.examName,published:item.published,showInEvaluation:item.showInEvaluation,penalty:item.opticalKey?.penalty??3,publishedAt:item.publishedAt.slice(0,10)});}}><option value="">Yayınevi ve sınıfa göre sınav seçin</option>{groupedRecords.map(group=><optgroup key={group.publisher.id} label={group.publisher.name}>{[...group.records].sort((a,b)=>a.grade-b.grade||a.examName.localeCompare(b.examName,"tr")).map(item=><option key={item.id} value={item.id}>{item.grade}. Sınıf · {item.examName}</option>)}</optgroup>)}</select></label>
-          {!targetPublicationId&&<p className="field-help">Henüz sınav eklemediyseniz <button className="text-button" type="button" onClick={onAddExam}>Sınav Ekle</button> sayfasında kaydı oluşturun; sonra burada seçip anahtarı yükleyin.</p>}
+          <label>Mevcut sınava ekle (isteğe bağlı)<select aria-label="Cevap anahtarının sınav kaydı" value={targetPublicationId} disabled={submitting} onChange={e=>{const id=e.target.value;setTargetPublicationId(id);const item=records.find(r=>r.id===id);if(item)setForm({publisherId:item.publisherId,grade:String(item.grade),examName:item.examName,published:item.published,showInEvaluation:item.showInEvaluation,penalty:item.opticalKey?.penalty??3,publishedAt:item.publishedAt.slice(0,10)});}}><option value="">Yeni sınav kaydı oluştur</option>{groupedRecords.map(group=><optgroup key={group.publisher.id} label={group.publisher.name}>{[...group.records].sort((a,b)=>a.grade-b.grade||a.examName.localeCompare(b.examName,"tr")).map(item=><option key={item.id} value={item.id}>{item.grade}. Sınıf · {item.examName}</option>)}</optgroup>)}</select></label>
+          {!targetPublicationId&&<p className="field-help">Önceden sınav eklemeniz gerekmez. Yayınevi, sınıf ve sınav adını girin; kaydettiğinizde sınav ve anahtar birlikte oluşturulur. Aynı adlı boş sınav kaydı varsa korunarak kullanılır.</p>}
           {targetPublicationId&&<p className="notice">Mevcut sınav güncellenecek; yeni mükerrer sınav oluşturulmayacak. Önceki sonuç kopyaları korunur.</p>}
           <div className="two-column-fields">
             <label className="publisher-select-field">
@@ -245,7 +244,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
           </div>}
 
 
-          <button className="button button-navy" type="submit" disabled={submitting||!targetPublicationId}>{submitting ? "Yükleniyor..." : "Cevap anahtarı ekle"}</button>
+          <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Yükleniyor..." : "Cevap anahtarı ekle"}</button>
         </form>
       )}
 

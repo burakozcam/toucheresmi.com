@@ -1,6 +1,6 @@
-# Kurumsal Sınav v1.2.8 — Yerel geliştirme
+# Kurumsal Sınav v1.2.9 — Yerel geliştirme
 
-7108/FMT/BLDM değerlendirmesi, revizyonlu öğrenci veri düzenleyicisi, toplu sınav girişi, kapak yönetimi ve kitaplık kataloğu güncellendi. Şifre göz düğmesi, v2/v3 CAPTCHA, kalıcı çerez tercihleri ve panel içi derslik aracı düzeltildi. Ayrıntılar ve kabul sınırları: [v1.2.8 yayın raporu](docs/v128-release-report.md). Yeni additive migration hazırlanmıştır; canlıya aktarım veya canlı migration yapılmadı.
+Cevap anahtarı eklerken önceden sınav oluşturma zorunluluğu kaldırıldı; sınav ve anahtar birlikte kaydedilir. Excel/Calc çok hücreli yapıştırma, geri alma ve çok satırlı kazanım metinleri düzeltildi. Ana sayfa kitapçık → tarama → değerlendirme → karne animasyonuyla yenilendi. [v1.2.9 yayın raporu](docs/v129-release-report.md) gerçek tarayıcı akışlarını ve kabul sınırlarını açıklar. Yeni migration yoktur; canlıya aktarım veya canlı DB işlemi yapılmadı.
 
 ## Windows 11 ve Linux: kısa kurulum
 
@@ -31,6 +31,10 @@ API: `NODE_ENV=production`, `RECAPTCHA_ENABLED=true`, `RECAPTCHA_SECRET_KEY`, `W
 Varsayılan `RECAPTCHA_VERSION=v3`; token yalnız gönderimde üretilir. v2 checkbox için API’de `RECAPTCHA_VERSION=v2` ve ayrı `RECAPTCHA_V2_SECRET_KEY`, Web build sırasında `NEXT_PUBLIC_RECAPTCHA_V2_SITE_KEY` ayarlayın. Opsiyonel API public fallback `RECAPTCHA_V2_SITE_KEY` değeridir. v2 anahtarları v3 anahtarlarıyla değiştirilemez. Dar ekranlarda gerçek Google compact widget kullanılır. Giriş, kayıt/kurum başvurusu, iletişim, sonuç sorgusu ve özel kodla PDF alma sunucuda doğrulanır. Davetle hesap kurma, hesap şifresi değiştirme ve yetkili yönetici şifre sıfırlaması da backend CAPTCHA doğrulamasından geçer. Güvenlik metni güncellendi; hukuki işletim kararları [yayın raporunda](docs/v127-release-report.md) ayrıca belirtilir. Gerçek Google anahtarıyla canlı kabul testi yapılmadı.
 
 Search Console: `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`. GA4: `NEXT_PUBLIC_GA4_ID`, hesapta otomatik ölçümleri kapattıktan sonra `NEXT_PUBLIC_GA4_APPROVED=true` ve kullanıcı analitik izni gerekir. Varsayılan durumda Google analitiği çalışmaz. GTM için `NEXT_PUBLIC_GTM_ID`, denetimden sonra `NEXT_PUBLIC_GTM_APPROVED=true` ve aynı analitik izni gerekir. GTM etkinse doğrudan GA4 yüklenmez. Container yalnız temizlenmiş `ks_public_page_view` olayını kullanmalı; DOM/form/otomatik history etiketleri açılmamalıdır. Search Console/GTM hesapları kurulmuş veya doğrulanmış sayılmaz.
+
+## v1.2.9 doğrulama
+
+Node 22/npm 10 ile `npm test` ve `npm run build` çalıştırın. [Yerel kabul rehberi](tests/e2e/README.md#v129-uçtan-uca-sınav-ve-pano-kabulü) gerçek PostgreSQL/API, admin ve bayi girişleri, Calc panosu, 7108/Özdebir değerlendirmesi ve Excel/PDF çıktılarının doğrulamasını açıklar. Microsoft Excel uygulaması ve gerçek Google anahtarlarıyla test bu Linux ortamındaki kabul kapsamına dahil değildir.
 
 ## v1.2.8 doğrulama
 

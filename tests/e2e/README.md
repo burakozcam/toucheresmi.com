@@ -128,3 +128,32 @@ python3 tests/e2e/v128-covers.py
 API/Prisma, PostgreSQL, dosya arşivi, yeniden hesaplama, iframe ve tarayıcı işlemleri gerçektir. Google siteverify/JavaScript kontrollü taklittir; gerçek Google v2 challenge kabulünün yerine geçmez. İsteğe bağlı `V128_SOURCE_TXT` ve `V128_SOURCE_XLSX`, integration komutuna özgün yerel kaynakların yollarını verir; bu dosyalar Git'e veya rapora kopyalanmaz. Varsayılan koşum anonim fixture kullanır.
 
 `/tmp/v128-evidence/seed.json` yalnız yerel test hesap/token bilgilerini içerir ve paylaşılmaz. Aynı dizindeki `integration.json`, `security.json`, `browser.json`, `covers-browser.json` sayısal sonuçları ve anonim ekran görüntüleri kabul kanıtıdır. Koşum sonunda yerel API/Web süreçlerini kapatın. Test derlemesini canlıya taşımayın.
+
+## v1.2.9 uçtan uca sınav ve pano kabulü
+
+Yukarıdaki v1.2.8 geçici PostgreSQL kurulumu (`127.0.0.1:55438/ks_v128`) ve `V128_KEEP_SERVER=true` API koşumu kullanılır; her koşum yeni anonim kullanıcı/kurum oluşturur. Üretim Web'i test API'siyle derleyip 3100 portunda açın. Node 22/npm 10 ve Python Playwright/Chromium gerekir. Yeni migration yoktur.
+
+```sh
+node tests/e2e/v129-fixtures.cjs
+DATABASE_URL='postgresql://TEST_USER:TEST_PASSWORD@127.0.0.1:55438/ks_v128' node tests/e2e/v129-authoring.cjs
+```
+
+Gerçek Calc pano testi için ayrı, geçici kullanıcı profiliyle LibreOffice'i başlatın; kendi açık ofis oturumunuzu kullanmayın:
+
+```sh
+libreoffice -env:UserInstallation=file:///tmp/v129-libreoffice --headless --accept='socket,host=127.0.0.1,port=20129;urp;StarOffice.ComponentContext' --norestore --nodefault --nofirststartwizard
+```
+
+Başka terminalde UNO modülü bulunan Python ile `python3 tests/e2e/v129-calc-clipboard.py` çalıştırın. Script 5×5, 90×1, 90×8 ve çok satırlı hücre seçimlerinin gerçek HTML/plain-text transferlerini anonim verilerle `/tmp/v129-evidence/calc-clipboard.json` dosyasına yazar.
+
+```sh
+python3 tests/e2e/v129-workflow.py
+node tests/e2e/v129-exports.cjs
+python3 tests/e2e/v129-hero.py
+```
+
+Workflow gerçek admin/bayi giriş formlarını kullanır; hazır token ile girişi atlamaz. Excel/elle giriş, 90 soruluk toplu kayıt, gerçek tarayıcı panosu ve Ctrl+V/Ctrl+Z/Cmd+Z işleyicisi, 7108/Özdebir değerlendirmesi ve indirme düğmeleri doğrulanır. `v129-exports.cjs` 199 öğrencinin XLSX verilerini snapshot'larla karşılaştırır; eksik oturum hücreleri boş kalmalıdır. PDF metni `pdftotext`, sayfaları `pdftoppm` ile kontrol edin. Hero testi yedi genişlik/iki tema ve hareket tercihlerini sınar; FPS ölçümü yalnız tanısaldır.
+
+`v128-ui.py`, `v128-covers.py` ve `v128-security.cjs` bu sürümde de regresyon olarak çalıştırılır. Uzun UI koşumları kaynak sınırlı ortamda `V128_UI_WIDTHS=320,375,390` ve `V128_UI_WIDTHS=768,1024,1280,1920` gruplarıyla yürütülebilir; varsayılan yine yedi genişliktir. Grupların JSON sonuçlarını ayrı saklayın. Microsoft Excel uygulamasından kopyalama, macOS yerel Cmd+V ve gerçek Google doğrulaması bu yerel koşumlarla doğrulanmış sayılmaz.
+
+Kabul çıktıları `/tmp/v129-evidence/` altındadır; seed/token dosyalarını paylaşmayın. Bu test derlemesi gerçek HTTPS API/public anahtarlarla yeniden build alınmadan canlıya taşınmaz.

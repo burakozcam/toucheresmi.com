@@ -1841,12 +1841,7 @@ app.post("/api/admin/exam-definitions",requireAuth,requireRole(Role.SUPER_ADMIN)
   response.status(201).json({id:record.id});
  }catch(e){next(e);}
 });
-app.post("/api/admin/answer-keys",requireAuth,requireRole(Role.SUPER_ADMIN),(_request,response)=>{
- response.status(409).json({error:"Önce yayın sınavını tanımlayın; cevap anahtarını mevcut sınava ekleyin."});
-});
-
-app.patch(
-  "/api/admin/answer-keys/:id",
+const saveAnswerKey: express.RequestHandler[] = [
   requireAuth,
   requireRole(Role.SUPER_ADMIN),
   upload.fields([{ name: "answerKeyFile", maxCount: 1 }, { name: "learningOutcomesFile", maxCount: 1 }]),
@@ -1855,7 +1850,8 @@ app.patch(
     response,
     next,
   ) => {
-    const answerKeyId = getRouteParamId(request.params.id);
+    const automatic = request.method === "POST";
+    let answerKeyId = automatic ? "" : getRouteParamId(request.params.id);
     const parsed = answerKeyUploadBodySchema.safeParse(request.body);
     const uploadedFiles = [
       ...(request.files?.answerKeyFile ?? []),
@@ -1868,22 +1864,32 @@ app.patch(
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
       }
     };
-    if (!answerKeyId || !parsed.success) {
+    if ((!automatic && !answerKeyId) || !parsed.success) {
       removeTemporaryUploads();
       response.status(400).json({ error: "Cevap anahtarı bilgileri geçersiz." });
       return;
     }
 
+    if(uploadedFiles.length&&!parsed.data.confirmPublication){removeTemporaryUploads();response.status(400).json({error:"Dosyaları ve önizlemeyi incelediğinizi açıkça onaylayın."});return;}
     try {
-      const current = await prisma.publishedAnswerKey.findUnique({
-        where: { id: answerKeyId },
-        include: { files: true, opticalKey: true,publisher:true },
-      });
-      if (!current) {
+      const include = { files: true, opticalKey: true, publisher: true } as const;
+      const existing = automatic
+        ? await prisma.publishedAnswerKey.findFirst({where:{publisherId:parsed.data.publisherId,grade:parsed.data.grade,examName:{equals:parsed.data.examName,mode:"insensitive"}},include})
+        : await prisma.publishedAnswerKey.findUnique({where:{id:answerKeyId},include});
+      if (!automatic && !existing) {
         removeTemporaryUploads();
         response.status(404).json({ error: "Cevap anahtarı bulunamadı." });
         return;
       }
+      if(automatic && existing && (existing.opticalKey || existing.files.length)){
+        response.status(409).json({error:"Bu sınavda cevap anahtarı veya dosya zaten var. Mevcut sınavı seçerek güncelleyin.",publicationId:existing.id});return;
+      }
+      const publisher=automatic?await prisma.publisher.findFirst({where:{id:parsed.data.publisherId,active:true}}):existing?.publisher;
+      if(automatic&&!publisher){response.status(400).json({error:"Etkin yayınevi seçin."});return;}
+      const isNew=!existing;
+      answerKeyId=existing?.id??("exam"+crypto.randomBytes(16).toString("hex"));
+      const current=existing??{id:answerKeyId,publisherId:publisher!.id,publisher,grade:parsed.data.grade,examName:parsed.data.examName,files:[],opticalKey:null,published:false,showInEvaluation:false};
+      if(automatic&&!uploadedFiles.length){response.status(400).json({error:"Cevap anahtarı veya kazanım dosyası seçin."});return;}
       let pdfPublisherName=current.publisher?.name;
       if (parsed.data.publisherId !== current.publisherId) {
         const activePublisher = await prisma.publisher.findFirst({
@@ -1945,9 +1951,12 @@ app.patch(
       const previousFiles = current.files.filter((file) => replacedCategories.includes(file.category));
       try {
         const updated = await prisma.$transaction(async (transaction) => {
-          const record = await transaction.publishedAnswerKey.update({
-            where: { id: answerKeyId },
-            data: {
+          await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${parsed.data.publisherId+":"+parsed.data.grade}))`;
+          const duplicate=await transaction.publishedAnswerKey.findFirst({where:{publisherId:parsed.data.publisherId,grade:parsed.data.grade,examName:{equals:parsed.data.examName,mode:"insensitive"},id:{not:answerKeyId}},select:{id:true}});
+          if(duplicate)throw Object.assign(new Error("Aynı yayınevi ve sınıfta bu sınav zaten var. Mevcut sınavı seçin."),{status:409});
+          // A second automatic request must never replace a key saved after its initial lookup.
+          if(automatic&&!isNew){const latest=await transaction.publishedAnswerKey.findUnique({where:{id:answerKeyId},include:{opticalKey:true,files:true}});if(latest?.opticalKey||latest?.files.length)throw Object.assign(new Error("Sınava başka bir işlemde anahtar eklendi. Mevcut sınavı seçerek güncelleyin."),{status:409});}
+          const data = {
               publisherId: parsed.data.publisherId,
               grade: parsed.data.grade,
               examName: parsed.data.examName.trim(),
@@ -1955,8 +1964,10 @@ app.patch(
               showInEvaluation,
               ...(evaluation ? {opticalKey:{upsert:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:true},update:{questions:evaluation as Prisma.InputJsonValue,penalty,active:true}}}} : current.opticalKey ? {opticalKey:{update:{active:false,questions:[]}}} : {}),
               ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
-            },
-          });
+            };
+          const record = isNew
+            ? await transaction.publishedAnswerKey.create({data:{...data,id:answerKeyId,createdByUserId:request.user!.id,opticalKey:evaluation?{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:true}}:undefined}})
+            : await transaction.publishedAnswerKey.update({where:{id:answerKeyId},data});
           if (replacedCategories.length > 0) {
             await transaction.answerKeyFile.deleteMany({
               where: { answerKeyId, category: { in: replacedCategories } },
@@ -1970,12 +1981,13 @@ app.patch(
           try { if (fs.existsSync(file.storagePath)) fs.unlinkSync(file.storagePath); }
           catch (error) { console.error("Eski dosya temizlenemedi"); }
         }
-        response.json({ message: "Cevap anahtarı güncellendi.", answerKey: updated });
+        response.status(isNew?201:200).json({ message:isNew?"Sınav ve cevap anahtarı kaydedildi.":"Mevcut sınavın cevap anahtarı güncellendi.", answerKey: updated });
       } catch (error) {
         throw error;
       }
     } catch (error) {
-      next(error);
+      if((error as {status?:number}).status===409)response.status(409).json({error:(error as Error).message});
+      else next(error);
     } finally {
       for (const filePath of [...uploadedFiles.map((file) => file.path), ...(!replacementCommitted ? movedUploads : [])]) {
         try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); }
@@ -1983,7 +1995,9 @@ app.patch(
       }
     }
   },
-);
+];
+app.post("/api/admin/answer-keys",...saveAnswerKey);
+app.patch("/api/admin/answer-keys/:id",...saveAnswerKey);
 
 app.delete(
   "/api/admin/answer-keys/:id",

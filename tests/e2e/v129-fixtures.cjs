@@ -1,0 +1,8 @@
+// Anonymous workbook and synthetic Ozdebir records; no user attachments or credentials.
+const fs=require('node:fs'),x=require('xlsx'),path=require('node:path');
+const directory='/tmp/v129-evidence';fs.mkdirSync(directory,{recursive:true});const questions=require('../fixtures/7108-v128/ankara-key.json');
+const rows=[['DERS','A SORU NO','B SORU NO','C SORU NO','D SORU NO','DOĞRU CEVAP','KATSAYI','KAZANIM KODU','KAZANIM METNİ'],...questions.map(q=>[q.lesson,q.number,q.positions.B??'',q.positions.C??'',q.positions.D??'',q.answer,1.25,'T.İ.7','Türkçe: çıkarım yapar; ölçer.'])];
+const book=x.utils.book_new();x.utils.book_append_sheet(book,x.utils.aoa_to_sheet(rows),'Anahtar');x.writeFile(book,path.join(directory,'anonymous-key.xlsx'));fs.writeFileSync(path.join(directory,'source-questions.json'),JSON.stringify(questions));
+const starts={'TÜRKÇE':52,'MATEMATİK':72,'DİN':92,'FEN':112,'SOSYAL':132,'İNGİLİZCE':152};
+const records=['A','B',' '].map((booklet,index)=>{const chars=Array(171).fill(' '),put=(start,length,value)=>chars.splice(start-1,length,...String(value).padEnd(length).slice(0,length));put(1,1,'9');put(2,8,'00000001');put(10,5,'00'+(101+index));put(15,11,'00000000'+(101+index));put(26,1,'8');put(27,1,'A');put(28,1,booklet);put(29,1,'E');put(30,22,'ANONIM OZDEBIR '+(index+1));questions.forEach((q,i)=>put(starts[q.lesson]+q.positions[booklet.trim()||'A']-1,1,index===1&&i===0?(q.answer==='A'?'B':'A'):index===1&&i===1?' ':q.answer));return chars.join('');});
+fs.writeFileSync(path.join(directory,'ozdebir-anonymous.txt'),records.join('\r\n'));module.exports={directory,questions};
