@@ -12,10 +12,19 @@ export default function VisitorTracker(){
   if(!pathname||document.querySelector("[data-page-not-found]"))return;
   const page=analyticsPage(pathname,location.search,location.hash);if(!page)return;
   try{const month=new Date().toISOString().slice(0,7),key="ks-visitor-month";let record=JSON.parse(localStorage.getItem(key)??"null");if(record?.month!==month){record={month,id:crypto.randomUUID()};localStorage.setItem(key,JSON.stringify(record));}void fetch(`${API_URL}/api/analytics/page`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({page,visitor:record.id}),keepalive:true}).catch(()=>{});}catch{}
+  const gtm=process.env.NEXT_PUBLIC_GTM_ID?.trim();
+  if(process.env.NEXT_PUBLIC_GTM_APPROVED==="true"&&gtm&&/^GTM-[A-Z0-9]+$/.test(gtm)){
+   // Approved containers may listen only to this sanitized event, never form/DOM triggers.
+   window.dataLayer??=[];if(!window.gtag)window.gtag=function(){window.dataLayer!.push(arguments);};
+   window.gtag("consent","update",{analytics_storage:"granted",ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied"});
+   window.dataLayer??=[];if(!document.getElementById('ks-gtm')){window.dataLayer.push({'gtm.start':Date.now(),event:'gtm.js'});const script=document.createElement('script');script.id='ks-gtm';script.async=true;script.src=`https://www.googletagmanager.com/gtm.js?id=${gtm}`;document.head.appendChild(script);}
+   window.dataLayer.push({event:'ks_public_page_view',page_path:page,page_location:`${location.origin}${page}`,page_referrer:''});return;
+  }
   const id=process.env.NEXT_PUBLIC_GA4_ID?.trim();if(process.env.NEXT_PUBLIC_GA4_APPROVED!=="true"||!id||!/^G-[A-Z0-9]+$/.test(id))return;
   (window as any)[`ga-disable-${id}`]=false;
   // Manual pageviews. Account-side Enhanced Measurement must be disabled before GA4_APPROVED.
-  if(!window.gtag){window.dataLayer=[];window.gtag=function(){window.dataLayer!.push(arguments);};window.gtag("consent","default",{analytics_storage:"granted",ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied"});window.gtag("js",new Date());window.gtag("config",id,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false,ignore_referrer:true,client_storage:"none",page_location:`${location.origin}${page}`,page_referrer:"",page_title:"Kurumsal Sınav"});const script=document.createElement("script");script.id="ks-ga4";script.async=true;script.src=`https://www.googletagmanager.com/gtag/js?id=${id}`;document.head.appendChild(script);}
+  if(!window.gtag){window.dataLayer??=[];window.gtag=function(){window.dataLayer!.push(arguments);};window.gtag("consent","default",{analytics_storage:"granted",ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied"});window.gtag("js",new Date());window.gtag("config",id,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false,ignore_referrer:true,client_storage:"none",page_location:`${location.origin}${page}`,page_referrer:"",page_title:"Kurumsal Sınav"});const script=document.createElement("script");script.id="ks-ga4";script.async=true;script.src=`https://www.googletagmanager.com/gtag/js?id=${id}`;document.head.appendChild(script);}
+  window.gtag("consent","update",{analytics_storage:"granted",ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied"});
   window.gtag("event","page_view",{send_to:id,page_location:`${location.origin}${page}`,page_referrer:"",page_title:"Kurumsal Sınav"});
  },[pathname,consent]);return null;
 }

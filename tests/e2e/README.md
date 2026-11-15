@@ -98,3 +98,33 @@ Bu koşumdan sonra `npm run test:report` aynı kaynak SHA-256 ile eşleşen kabu
 ## v1.2.3 TXT öneri ve sonuç penceresi
 
 Yerel Web sunucusu `http://127.0.0.1:3100` üzerinde açıkken `node tests/e2e/v123-ui.cjs` çalıştırılır. Tüm API yanıtları sentetiktir; gerçek hesap/veritabanı kullanılmaz. FMT/sınav yüzdeleri, turuncu birlikte uygulama, uyarılı değerlendirme penceresi, il/ilçe/kurum/sınav seçilmiş sonuç ekranı, yükleyen etiketi ve TXT silme doğrulanır. Playwright ve Chromium için yukarıdaki ortam değişkenleri kullanılabilir.
+
+## v1.2.8 gerçek PostgreSQL ve tarayıcı kabulü
+
+Node 22/npm 10, Python Playwright ve Chromium gerekir. Yalnız `127.0.0.1:55438/ks_v128` adresindeki **geçici test** PostgreSQL 16 veritabanını kullanın; v128 betikleri başka adresleri reddeder. Bu veritabanında mevcut migration'ları uygulayın. Bağlantıyı `DATABASE_URL` ortam değişkenine aktarın; üretim bağlantısı veya gerçek Google anahtarları vermeyin.
+
+```sh
+npm run db:generate
+npm run db:migrate:deploy
+mkdir -p /tmp/v128-evidence
+V128_KEEP_SERVER=true node --import tsx tests/e2e/v128-integration.cjs
+```
+
+Son komut yerel API'yi 4000 portunda açık bırakır. Ayrı terminalde Web'i oluşturup `apps/web` dizininden başlatın:
+
+```sh
+NEXT_PUBLIC_API_URL=http://127.0.0.1:4000 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=mock-google-public npm run build
+NEXT_PUBLIC_API_URL=http://127.0.0.1:4000 npm run start -w @optik/web -- -p 3100
+```
+
+Bağlantı değişkenini aynı geçici DB'ye ayarladığınız başka terminalde:
+
+```sh
+node --import tsx tests/e2e/v128-security.cjs
+python3 tests/e2e/v128-ui.py
+python3 tests/e2e/v128-covers.py
+```
+
+API/Prisma, PostgreSQL, dosya arşivi, yeniden hesaplama, iframe ve tarayıcı işlemleri gerçektir. Google siteverify/JavaScript kontrollü taklittir; gerçek Google v2 challenge kabulünün yerine geçmez. İsteğe bağlı `V128_SOURCE_TXT` ve `V128_SOURCE_XLSX`, integration komutuna özgün yerel kaynakların yollarını verir; bu dosyalar Git'e veya rapora kopyalanmaz. Varsayılan koşum anonim fixture kullanır.
+
+`/tmp/v128-evidence/seed.json` yalnız yerel test hesap/token bilgilerini içerir ve paylaşılmaz. Aynı dizindeki `integration.json`, `security.json`, `browser.json`, `covers-browser.json` sayısal sonuçları ve anonim ekran görüntüleri kabul kanıtıdır. Koşum sonunda yerel API/Web süreçlerini kapatın. Test derlemesini canlıya taşımayın.

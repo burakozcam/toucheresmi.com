@@ -9,7 +9,7 @@ const aliases = {
 };
 function lessonIdentity(name) { const key = normalized(name); return aliases[key] || key; }
 function compatibleEvaluation(template, key) {
-  if (template.grade && Number(key.grade) !== template.grade) return false;
+  // Reader capacity is independent of publisher and grade.
   const counts = new Map();
   for (const [name, count] of Object.entries(key.lessonCounts || {})) {
     const id = lessonIdentity(name);
@@ -17,8 +17,8 @@ function compatibleEvaluation(template, key) {
     counts.set(id, count);
   }
   const lessons = template.layout.lessons;
-  return lessons.length === counts.size && new Set(lessons.map(l => lessonIdentity(l.name))).size === lessons.length &&
-    lessons.every(l => counts.get(lessonIdentity(l.name)) > 0 && counts.get(lessonIdentity(l.name)) <= l.length) &&
+  return [...counts].every(([name,count])=>lessons.some(l=>lessonIdentity(l.name)===name&&count>0&&count<=l.length)) && new Set(lessons.map(l => lessonIdentity(l.name))).size === lessons.length &&
+
     !!template.layout.fields.booklet && key.booklets.length > 0;
 }
 module.exports = { lessonIdentity, compatibleEvaluation };

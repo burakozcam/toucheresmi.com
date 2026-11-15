@@ -1,0 +1,1082 @@
+[
+  {
+    "lesson": "TÜRKÇE",
+    "number": 1,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 1,
+      "B": 20
+    },
+    "outcomeCode": "8.3.2.1",
+    "outcomeName": "Bağlamdan yararlanarak bilmediği kelime ve kelime gruplarının anlamını tahmin eder."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 2,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 2,
+      "B": 19
+    },
+    "outcomeCode": "8.3.3.14",
+    "outcomeName": "Okudukları ile ilgili çıkarımlarda bulunur."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 3,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 3,
+      "B": 18
+    },
+    "outcomeCode": "8.3.3.14",
+    "outcomeName": "Okudukları ile ilgili çıkarımlarda bulunur."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 4,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 4,
+      "B": 17
+    },
+    "outcomeCode": "8.3.2.1",
+    "outcomeName": "Bağlamdan yararlanarak bilmediği kelime ve kelime gruplarının anlamını tahmin eder."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 5,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 5,
+      "B": 16
+    },
+    "outcomeCode": "8.3.2.2",
+    "outcomeName": "Deyim, atasözü ve özdeyişlerin metne katkısını belirler."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 6,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 6,
+      "B": 15
+    },
+    "outcomeCode": "8.4.1.16",
+    "outcomeName": "Yazdıklarını düzenler."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 7,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 7,
+      "B": 14
+    },
+    "outcomeCode": "8.3.2.5",
+    "outcomeName": "Fiilimsilerin cümledeki işlevlerini kavrar."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 8,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 8,
+      "B": 13
+    },
+    "outcomeCode": "8.3.3.11",
+    "outcomeName": "Metinde ele alınan sorunlara farklı çözümler üretir."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 9,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 9,
+      "B": 12
+    },
+    "outcomeCode": "8.3.3.1",
+    "outcomeName": "Görsel ve başlıktan hareketle okuyacağı metnin konusunu tahmin eder."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 10,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 10,
+      "B": 11
+    },
+    "outcomeCode": "8.3.3.14",
+    "outcomeName": "Okudukları ile ilgili çıkarımlarda bulunur."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 11,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 11,
+      "B": 10
+    },
+    "outcomeCode": "8.3.3.14",
+    "outcomeName": "Okudukları ile ilgili çıkarımlarda bulunur."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 12,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 12,
+      "B": 9
+    },
+    "outcomeCode": "8.3.3.7",
+    "outcomeName": "Metindeki yardımcı fikirleri belirler."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 13,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 13,
+      "B": 8
+    },
+    "outcomeCode": "8.3.3.3",
+    "outcomeName": "Metinle ilgili soruları cevaplar."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 14,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 14,
+      "B": 7
+    },
+    "outcomeCode": "8.3.3.15",
+    "outcomeName": "Metin türlerini ayırt eder."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 15,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 15,
+      "B": 6
+    },
+    "outcomeCode": "8.3.3.14",
+    "outcomeName": "Okudukları ile ilgili çıkarımlarda bulunur."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 16,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 16,
+      "B": 5
+    },
+    "outcomeCode": "8.3.2.5",
+    "outcomeName": "Fiilimsilerin cümledeki işlevlerini kavrar."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 17,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 17,
+      "B": 4
+    },
+    "outcomeCode": "8.3.3.24",
+    "outcomeName": "Metindeki iş ve işlem basamaklarını kavrar."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 18,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 18,
+      "B": 3
+    },
+    "outcomeCode": "8.3.3.24",
+    "outcomeName": "Metindeki iş ve işlem basamaklarını kavrar."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 19,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 19,
+      "B": 2
+    },
+    "outcomeCode": "8.3.3.1",
+    "outcomeName": "Görsel ve başlıktan hareketle okuyacağı metnin konusunu tahmin eder."
+  },
+  {
+    "lesson": "TÜRKÇE",
+    "number": 20,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 20,
+      "B": 1
+    },
+    "outcomeCode": "8.4.1.16",
+    "outcomeName": "Yazdıklarını düzenler."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 1,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 1,
+      "B": 10
+    },
+    "outcomeCode": "8.1.1.3",
+    "outcomeName": "Gençlik döneminde Mustafa Kemal'in fikir hayatını etkileyen önemli kişileri ve olayları kavrar."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 2,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 2,
+      "B": 9
+    },
+    "outcomeCode": "8.1.1.4",
+    "outcomeName": "Mustafa Kemal'in askerlik hayatı ile ilgili olayları ve olguları onun kişilik özellikleri ile ilişkilendirir."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 3,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 3,
+      "B": 8
+    },
+    "outcomeCode": "8.1.1.4",
+    "outcomeName": "Mustafa Kemal'in askerlik hayatı ile ilgili olayları ve olguları onun kişilik özellikleri ile ilişkilendirir."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 4,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 4,
+      "B": 7
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Avrupa'daki gelişmelerin yansımaları bağlamında Osmanlı Devleti'nin yirminci yüzyılın başlarındaki siyasi ve sosyal durumunu kavrar."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 5,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 5,
+      "B": 6
+    },
+    "outcomeCode": "8.1.1.2",
+    "outcomeName": "Mustafa Kemal'in çocukluk ve öğrenim hayatından hareketle onun kişilik özelliklerinin oluşumu hakkında çıkarımlarda bulunur."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 6,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 6,
+      "B": 5
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Avrupa'daki gelişmelerin yansımaları bağlamında Osmanlı Devleti'nin yirminci yüzyılın başlarındaki siyasi ve sosyal durumunu kavrar."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 7,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 7,
+      "B": 4
+    },
+    "outcomeCode": "8.1.1.3",
+    "outcomeName": "Gençlik döneminde Mustafa Kemal'in fikir hayatını etkileyen önemli kişileri ve olayları kavrar."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 8,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 8,
+      "B": 3
+    },
+    "outcomeCode": "8.1.1.4",
+    "outcomeName": "Mustafa Kemal'in askerlik hayatı ile ilgili olayları ve olguları onun kişilik özellikleri ile ilişkilendirir."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 9,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 9,
+      "B": 2
+    },
+    "outcomeCode": "8.1.1.2",
+    "outcomeName": "Mustafa Kemal'in çocukluk ve öğrenim hayatından hareketle onun kişilik özelliklerinin oluşumu hakkında çıkarımlarda bulunur."
+  },
+  {
+    "lesson": "SOSYAL",
+    "number": 10,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 10,
+      "B": 1
+    },
+    "outcomeCode": "8.1.1.4",
+    "outcomeName": "Mustafa Kemal'in askerlik hayatı ile ilgili olayları ve olguları onun kişilik özellikleri ile ilişkilendirir."
+  },
+  {
+    "lesson": "DİN",
+    "number": 1,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 1,
+      "B": 10
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  },
+  {
+    "lesson": "DİN",
+    "number": 2,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 2,
+      "B": 9
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  },
+  {
+    "lesson": "DİN",
+    "number": 3,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 3,
+      "B": 8
+    },
+    "outcomeCode": "8.1.1.2",
+    "outcomeName": "İnsanın ilmi, iradesi, sorumluluğu ile kader arasında ilişki kurar."
+  },
+  {
+    "lesson": "DİN",
+    "number": 4,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 4,
+      "B": 7
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  },
+  {
+    "lesson": "DİN",
+    "number": 5,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 5,
+      "B": 6
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  },
+  {
+    "lesson": "DİN",
+    "number": 6,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 6,
+      "B": 5
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  },
+  {
+    "lesson": "DİN",
+    "number": 7,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 7,
+      "B": 4
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  },
+  {
+    "lesson": "DİN",
+    "number": 8,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 8,
+      "B": 3
+    },
+    "outcomeCode": "8.1.1.2",
+    "outcomeName": "İnsanın ilmi, iradesi, sorumluluğu ile kader arasında ilişki kurar."
+  },
+  {
+    "lesson": "DİN",
+    "number": 9,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 9,
+      "B": 2
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  },
+  {
+    "lesson": "DİN",
+    "number": 10,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 10,
+      "B": 1
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Kader ve kaza inancını ayet ve hadislerle açıklar."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 1,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 1,
+      "B": 10
+    },
+    "outcomeCode": "8.1.4.1",
+    "outcomeName": "Students will be able to understand short and simple texts about friendship."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 2,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 2,
+      "B": 9
+    },
+    "outcomeCode": "8.1.4.2",
+    "outcomeName": "Students will be able to understand short and simple invitation letters, cards and e-mails."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 3,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 3,
+      "B": 8
+    },
+    "outcomeCode": "8.1.3.1",
+    "outcomeName": "Students will be able to structure a talk to make simple inquiries, give explanations and reasons."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 4,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 4,
+      "B": 7
+    },
+    "outcomeCode": "8.1.4.1",
+    "outcomeName": "Students will be able to understand short and simple texts about friendship."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 5,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 5,
+      "B": 6
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Students will be able to understand the specific information in short conversations on everyday topics, such as accepting and refusing an offer/invitation, apologizing and making simple inquiries."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 6,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 6,
+      "B": 5
+    },
+    "outcomeCode": "8.1.4.2",
+    "outcomeName": "Students will be able to understand short and simple invitation letters, cards and e-mails."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 7,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 7,
+      "B": 4
+    },
+    "outcomeCode": "8.1.4.2",
+    "outcomeName": "Students will be able to understand short and simple invitation letters, cards and e-mails."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 8,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 8,
+      "B": 3
+    },
+    "outcomeCode": "8.1.4.2",
+    "outcomeName": "Students will be able to understand short and simple invitation letters, cards and e-mails."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 9,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 9,
+      "B": 2
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Students will be able to understand the specific information in short conversations on everyday topics, such as accepting and refusing an offer/invitation, apologizing and making simple inquiries."
+  },
+  {
+    "lesson": "İNGİLİZCE",
+    "number": 10,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 10,
+      "B": 1
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Students will be able to understand the specific information in short conversations on everyday topics, such as accepting and refusing an offer/invitation, apologizing and making simple inquiries."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 1,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 1,
+      "B": 20
+    },
+    "outcomeCode": "8.1.1.2",
+    "outcomeName": "İki doğal sayının en büyük ortak bölenini (EBOB) ve en küçük ortak katını (EKOK) hesaplar, ilgili problemleri çözer."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 2,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 2,
+      "B": 19
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Verilen pozitif tam sayıların pozitif tam sayı çarpanlarını bulur, pozitif tam sayıların pozitif tam sayı çarpanlarını üslü ifadelerin çarpımı şeklinde yazar."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 3,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 3,
+      "B": 18
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Verilen pozitif tam sayıların pozitif tam sayı çarpanlarını bulur, pozitif tam sayıların pozitif tam sayı çarpanlarını üslü ifadelerin çarpımı şeklinde yazar."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 4,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 4,
+      "B": 17
+    },
+    "outcomeCode": "8.1.2.1",
+    "outcomeName": "Tam sayıların, tam sayı kuvvetlerini hesaplar."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 5,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 5,
+      "B": 16
+    },
+    "outcomeCode": "8.1.2.1",
+    "outcomeName": "Tam sayıların, tam sayı kuvvetlerini hesaplar."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 6,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 6,
+      "B": 15
+    },
+    "outcomeCode": "8.1.2.2",
+    "outcomeName": "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 7,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 7,
+      "B": 14
+    },
+    "outcomeCode": "8.1.2.1",
+    "outcomeName": "Tam sayıların, tam sayı kuvvetlerini hesaplar."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 8,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 8,
+      "B": 13
+    },
+    "outcomeCode": "8.1.2.2",
+    "outcomeName": "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 9,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 9,
+      "B": 12
+    },
+    "outcomeCode": "8.1.1.2",
+    "outcomeName": "İki doğal sayının en büyük ortak bölenini (EBOB) ve en küçük ortak katını (EKOK) hesaplar, ilgili problemleri çözer."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 10,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 10,
+      "B": 11
+    },
+    "outcomeCode": "8.1.1.2",
+    "outcomeName": "İki doğal sayının en büyük ortak bölenini (EBOB) ve en küçük ortak katını (EKOK) hesaplar, ilgili problemleri çözer."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 11,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 11,
+      "B": 10
+    },
+    "outcomeCode": "8.1.2.2",
+    "outcomeName": "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 12,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 12,
+      "B": 9
+    },
+    "outcomeCode": "8.1.2.2",
+    "outcomeName": "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 13,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 13,
+      "B": 8
+    },
+    "outcomeCode": "8.1.2.2",
+    "outcomeName": "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 14,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 14,
+      "B": 7
+    },
+    "outcomeCode": "8.1.2.1",
+    "outcomeName": "Tam sayıların, tam sayı kuvvetlerini hesaplar."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 15,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 15,
+      "B": 6
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Verilen pozitif tam sayıların pozitif tam sayı çarpanlarını bulur, pozitif tam sayıların pozitif tam sayı çarpanlarını üslü ifadelerin çarpımı şeklinde yazar."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 16,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 16,
+      "B": 5
+    },
+    "outcomeCode": "8.1.1.2",
+    "outcomeName": "İki doğal sayının en büyük ortak bölenini (EBOB) ve en küçük ortak katını (EKOK) hesaplar, ilgili problemleri çözer."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 17,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 17,
+      "B": 4
+    },
+    "outcomeCode": "8.1.1.1",
+    "outcomeName": "Verilen pozitif tam sayıların pozitif tam sayı çarpanlarını bulur, pozitif tam sayıların pozitif tam sayı çarpanlarını üslü ifadelerin çarpımı şeklinde yazar."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 18,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 18,
+      "B": 3
+    },
+    "outcomeCode": "8.1.2.2",
+    "outcomeName": "Üslü ifadelerle ilgili temel kuralları anlar, birbirine denk ifadeler oluşturur."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 19,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 19,
+      "B": 2
+    },
+    "outcomeCode": "8.1.1.3",
+    "outcomeName": "Verilen iki doğal sayının aralarında asal olup olmadığını belirler."
+  },
+  {
+    "lesson": "MATEMATİK",
+    "number": 20,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 20,
+      "B": 1
+    },
+    "outcomeCode": "8.1.1.2",
+    "outcomeName": "İki doğal sayının en büyük ortak bölenini (EBOB) ve en küçük ortak katını (EKOK) hesaplar, ilgili problemleri çözer."
+  },
+  {
+    "lesson": "FEN",
+    "number": 1,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 1,
+      "B": 20
+    },
+    "outcomeCode": "8.1.2.1.17,8.1.2.1.13,8.1.2.1.16",
+    "outcomeName": "Meteorolog kavramını açıklar. | Hava olaylarının değişken olduğunu söyler. | Hava tahminlerinin yapıldığı sıklığı açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 2,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 2,
+      "B": 19
+    },
+    "outcomeCode": "8.1.2.1.2,8.1.2.1.3,8.1.2.1.4",
+    "outcomeName": "Alçak hava basıncını açıklar. | Yüksek hava basıncını açıklar. | Rüzgar kavramını açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 3,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 3,
+      "B": 18
+    },
+    "outcomeCode": "8.1.1.1.8",
+    "outcomeName": "Güney yarım küre ile kuzey yarım kürenin aynı anda farklı mevsimler yaşadığını açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 4,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 4,
+      "B": 17
+    },
+    "outcomeCode": "8.1.1.1.11",
+    "outcomeName": "Dünya'nın Güneş çevresinde dolanımı sırasında bulunduğu konumlara göre güney yarım kürede ve kuzey yarım kürede yaşanan mevsimleri tahmin eder."
+  },
+  {
+    "lesson": "FEN",
+    "number": 5,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 5,
+      "B": 16
+    },
+    "outcomeCode": "8.1.1.1.11",
+    "outcomeName": "Dünya'nın Güneş çevresinde dolanımı sırasında bulunduğu konumlara göre güney yarım kürede ve kuzey yarım kürede yaşanan mevsimleri tahmin eder."
+  },
+  {
+    "lesson": "FEN",
+    "number": 6,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 6,
+      "B": 15
+    },
+    "outcomeCode": "8.1.2.2.1,8.1.2.1.14,8.1.2.2.4",
+    "outcomeName": "İklim bilimci (klimatolog) kavramını açıklar. | Meteoroloji kavramını açıklar. | İklim ve hava olayları arasındaki farkları açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 7,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 7,
+      "B": 14
+    },
+    "outcomeCode": "8.1.1.1.7,8.1.1.1.10",
+    "outcomeName": "Güneş ışınlarının gelme açısı ile bölgelerdeki sıcaklık farklarını açıklar. | Birim alana düşen ışık miktarı ile sıcaklık değişimi arasındaki ilişkiyi açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 8,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 8,
+      "B": 13
+    },
+    "outcomeCode": "8.1.1.1.11",
+    "outcomeName": "Dünya'nın Güneş çevresinde dolanımı sırasında bulunduğu konumlara göre güney yarım kürede ve kuzey yarım kürede yaşanan mevsimleri tahmin eder."
+  },
+  {
+    "lesson": "FEN",
+    "number": 9,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 9,
+      "B": 12
+    },
+    "outcomeCode": "8.1.2.2.2,8.1.2.2.3",
+    "outcomeName": "Küresel iklim değişikliği kavramını açıklar. | Küresel iklim değişikliğinin sonuçlarını belirtir."
+  },
+  {
+    "lesson": "FEN",
+    "number": 10,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 10,
+      "B": 11
+    },
+    "outcomeCode": "8.1.1.1.11,8.1.1.1.7,8.1.1.1.10",
+    "outcomeName": "Dünya'nın Güneş çevresinde dolanımı sırasında bulunduğu konumlara göre güney yarım kürede ve kuzey yarım kürede yaşanan mevsimleri tahmin eder. | Güneş ışınlarının gelme açısı ile bölgelerdeki sıcaklık farklarını açıklar. | Birim alana düşen ışık miktarı ile sıcaklık değişimi arasındaki ilişkiyi açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 11,
+    "answer": "C",
+    "weight": null,
+    "positions": {
+      "A": 11,
+      "B": 10
+    },
+    "outcomeCode": "8.1.2.1.13,8.1.2.1.7,8.1.2.1.12",
+    "outcomeName": "Hava olaylarının değişken olduğunu söyler. | Yağmuru açıklar. | Sisi açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 12,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 12,
+      "B": 9
+    },
+    "outcomeCode": "8.1.2.1.7,8.1.2.1.8,8.1.2.1.9,8.1.2.1.10,8.1.2.1.1",
+    "outcomeName": "Yağmuru açıklar. | Karı açıklar. | Doluyu açıklar. | Çiyi açıklar. | Kırağıyı açıklar. | Sisi açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 13,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 13,
+      "B": 8
+    },
+    "outcomeCode": "8.1.1.1.7,8.1.1.1.10",
+    "outcomeName": "Güneş ışınlarının gelme açısı ile bölgelerdeki sıcaklık farklarını açıklar. | Birim alana düşen ışık miktarı ile sıcaklık değişimi arasındaki ilişkiyi açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 14,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 14,
+      "B": 7
+    },
+    "outcomeCode": "8.1.1.1.10",
+    "outcomeName": "Birim alana düşen ışık miktarı ile sıcaklık değişimi arasındaki ilişkiyi açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 15,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 15,
+      "B": 6
+    },
+    "outcomeCode": "8.1.1.1.11",
+    "outcomeName": "Dünya'nın Güneş çevresinde dolanımı sırasında bulunduğu konumlara göre güney yarım kürede ve kuzey yarım kürede yaşanan mevsimleri tahmin eder."
+  },
+  {
+    "lesson": "FEN",
+    "number": 16,
+    "answer": "A",
+    "weight": null,
+    "positions": {
+      "A": 16,
+      "B": 5
+    },
+    "outcomeCode": "8.1.1.1.11,8.1.1.1.10",
+    "outcomeName": "Dünya'nın Güneş çevresinde dolanımı sırasında bulunduğu konumlara göre güney yarım kürede ve kuzey yarım kürede yaşanan mevsimleri tahmin eder. | Birim alana düşen ışık miktarı ile sıcaklık değişimi arasındaki ilişkiyi açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 17,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 17,
+      "B": 4
+    },
+    "outcomeCode": "8.1.2.1.2,8.1.2.1.3,8.1.2.1.4,8.1.2.1.15",
+    "outcomeName": "Alçak hava basıncını açıklar. | Yüksek hava basıncını açıklar. | Rüzgar kavramını açıklar. | Günlük sıcaklık farklılıklarının hava olaylarının oluşmasındaki etkisini açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 18,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 18,
+      "B": 3
+    },
+    "outcomeCode": "8.1.1.1.8,8.1.1.1.11",
+    "outcomeName": "Güney yarım küre ile kuzey yarım kürenin aynı anda farklı mevsimler yaşadığını açıklar. | Dünya'nın Güneş çevresinde dolanımı sırasında bulunduğu konumlara göre güney yarım kürede ve kuzey yarım kürede yaşanan mevsimleri tahmin eder."
+  },
+  {
+    "lesson": "FEN",
+    "number": 19,
+    "answer": "B",
+    "weight": null,
+    "positions": {
+      "A": 19,
+      "B": 2
+    },
+    "outcomeCode": "8.1.2.2.2",
+    "outcomeName": "Küresel iklim değişikliği kavramını açıklar."
+  },
+  {
+    "lesson": "FEN",
+    "number": 20,
+    "answer": "D",
+    "weight": null,
+    "positions": {
+      "A": 20,
+      "B": 1
+    },
+    "outcomeCode": "8.1.1.1.2,8.1.1.1.5,8.1.1.1.6",
+    "outcomeName": "Mevsimlerin oluşumunu sağlayan olayları açıklar. | Dünya'nın ekseninin eğikliğinin mevsimlerin oluşumuna etkisini açıklar. | Dünya'nın Güneş etrafında dolanmasının mevsimlerin oluşumuna katkısını açıklar."
+  }
+]

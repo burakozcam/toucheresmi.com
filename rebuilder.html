@@ -5,7 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f9fc">
   <title>Sınav Listesi Düzenleyici</title>
-  <script>if (window.parent !== window) document.documentElement.classList.add("embedded-tool");</script>
+  <script>
+    document.documentElement.dataset.theme = "dark";
+    if (window.parent !== window) document.documentElement.classList.add("embedded-tool");
+    window.addEventListener("message", event => {
+      if (event.source === window.parent && event.data?.type === "kurumsal-tool-theme" && ["light","dark"].includes(event.data.theme)) {
+        document.documentElement.dataset.theme = event.data.theme;
+      }
+    });
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/vendor/xlsx.full.min.js"></script>
   <style>
@@ -42,26 +50,28 @@
     [class~="text-violet-700"] { color: #416eaf; }
     [class~="bg-violet-50"] { background-color: var(--brand-soft); }
     html.embedded-tool, html.embedded-tool body { overflow: hidden; }
-    html, body { color-scheme: dark; }
-    body.min-h-screen { color: #e1e9f5 !important; background: #111c30 !important; }
-    body > header { border-color: #29364c !important; background: #17243a !important; }
-    body > header .text-slate-900, main h1, main h2, main h3 { color: #dfe9ff !important; }
-    body > header .text-slate-500, main .text-slate-500, main .text-slate-600, main .text-slate-700 { color: #9caac0 !important; }
-    body .glass { border-color: #29364c !important; background: rgba(23,36,58,.94) !important; box-shadow: 0 16px 42px #0002; }
-    body [class~="bg-white"], body [class~="bg-white/70"], body [class~="bg-white/70"] *,
-    body [class~="bg-slate-50"], body [class~="bg-slate-50/70"] { background-color: #111c30 !important; }
-    body [class~="border-slate-100"], body [class~="border-slate-200"] { border-color: #29364c !important; }
-    body .field, body select, body input:not([type="checkbox"]):not([type="radio"]) { border-color: #394963; color: #e1e9f5; background-color: #111c30; }
-    body .field::placeholder, body input::placeholder { color: #77869b; }
-    body .cell-input:hover, body .cell-input:focus { border-color: #587eb8; background: #17243a; }
-    body table { color: #cbd6e7; }
-    body thead { background-color: #17243a !important; color: #9caac0 !important; }
-    body tbody { background-color: #17243a !important; }
-    body tbody tr { border-color: #29364c !important; }
-    body [class~="text-indigo-900"] { color: #dfe9ff; }
-    body [class~="bg-rose-50"], body [class~="bg-emerald-50"] { background-color: #243653; }
-    body [class~="text-rose-700"] { color: #ffb7b7; }
-    body [class~="text-emerald-700"] { color: #a1e4bd; }
+    html[data-theme="dark"], html[data-theme="dark"] body { color-scheme: dark; }
+    html[data-theme="dark"] body.min-h-screen { color: #e1e9f5 !important; background: #111c30 !important; }
+    html[data-theme="dark"] body > header { border-color: #29364c !important; background: #17243a !important; }
+    html[data-theme="dark"] body > header .text-slate-900, html[data-theme="dark"] main h1, html[data-theme="dark"] main h2, html[data-theme="dark"] main h3 { color: #dfe9ff !important; }
+    html[data-theme="dark"] body > header .text-slate-500, html[data-theme="dark"] main .text-slate-500, html[data-theme="dark"] main .text-slate-600, html[data-theme="dark"] main .text-slate-700 { color: #b5c1d4 !important; }
+    html[data-theme="dark"] body .glass { border-color: #29364c !important; background: rgba(23,36,58,.94) !important; box-shadow: 0 16px 42px #0002; }
+    html[data-theme="dark"] body [class~="bg-white"], html[data-theme="dark"] body [class~="bg-white/70"], html[data-theme="dark"] body [class~="bg-white/70"] *,
+    html[data-theme="dark"] body [class~="bg-slate-50"], html[data-theme="dark"] body [class~="bg-slate-50/70"] { background-color: #111c30 !important; }
+    html[data-theme="dark"] body [class~="border-slate-100"], html[data-theme="dark"] body [class~="border-slate-200"] { border-color: #29364c !important; }
+    html[data-theme="dark"] body .field, html[data-theme="dark"] body select, html[data-theme="dark"] body input:not([type="checkbox"]):not([type="radio"]) { border-color: #394963; color: #e1e9f5; background-color: #111c30; }
+    html[data-theme="dark"] body .field::placeholder, html[data-theme="dark"] body input::placeholder { color: #77869b; }
+    html[data-theme="dark"] body .cell-input:hover, html[data-theme="dark"] body .cell-input:focus { border-color: #587eb8; background: #17243a; }
+    html[data-theme="dark"] body table { color: #cbd6e7; }
+    html[data-theme="dark"] body thead { background-color: #17243a !important; color: #9caac0 !important; }
+    html[data-theme="dark"] body tbody { background-color: #17243a !important; }
+    html[data-theme="dark"] body tbody tr { border-color: #29364c !important; }
+    html[data-theme="dark"] body [class~="text-indigo-900"] { color: #dfe9ff; }
+    html[data-theme="dark"] body [class~="bg-rose-50"], html[data-theme="dark"] body [class~="bg-emerald-50"] { background-color: #243653; }
+    html[data-theme="dark"] body [class~="text-rose-700"] { color: #ffb7b7; }
+    html[data-theme="dark"] body [class~="text-emerald-700"] { color: #a1e4bd; }
+    html[data-theme="dark"] [class~="bg-indigo-50/40"],html[data-theme="dark"] [class~="bg-slate-50/70"] {background-color:#1c2b43!important}
+    html[data-theme="dark"] .text-slate-800,html[data-theme="dark"] .text-slate-900,html[data-theme="dark"] .text-slate-950 {color:#e1e9f5!important}
     h1, h2, h3 { font-family: "Manrope", "DM Sans", sans-serif; }
   </style>
 </head>
@@ -255,7 +265,7 @@
           </div>
         </div>
         <form id="roomForm" class="mb-4 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
-          <input id="roomCampus" list="campusSuggestions" class="field min-w-0" placeholder="Kampüs (tek okul kullanımında boş bırakın)">
+          <select id="roomCampus" class="field min-w-0" aria-label="Derslik kampüsü"><option value="">Kampüs seçin (tek okulda isteğe bağlı)</option></select>
           <input id="roomName" class="field min-w-0" placeholder="Derslik adı (Örn. 101, 1A)" required>
           <datalist id="campusSuggestions"></datalist>
           <div class="flex min-w-0 gap-2 sm:col-span-2">
@@ -265,7 +275,7 @@
           </div>
         </form>
         <div id="roomList" class="space-y-2"></div>
-        <p class="mt-3 text-xs leading-5 text-slate-400">Kampüs bilgisi Excel'den otomatik tanınır; gerekirse elle yazabilirsiniz. Tek okul kullanımında kampüs adı boş bırakılabilir. Öğrenciler yalnızca kendi kampüslerinin dersliklerine yerleştirilir. Kat bilgisi isteğe bağlıdır.</p>
+        <p class="mt-3 text-xs leading-5 text-slate-400">Kampüs bilgisi Excel'den otomatik tanınır; derslik için listeden seçin. Tek okul kullanımında kampüs adı boş bırakılabilir. Öğrenciler yalnızca kendi kampüslerinin dersliklerine yerleştirilir. Kat bilgisi isteğe bağlıdır.</p>
       </article>
 
       <article class="glass rounded-2xl border border-white p-5 shadow-sm sm:p-6">
@@ -543,6 +553,7 @@
       }
 
       function renderCampusSuggestions() {
+        const campusSelect=$("#roomCampus"), currentCampus=campusSelect.value;campusSelect.innerHTML='<option value="">Kampüs seçin</option>'+campusNames().map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");campusSelect.value=campusNames().includes(currentCampus)?currentCampus:(campusNames().length===1?campusNames()[0]:"");
         const campuses = campusNames();
         $("#campusSuggestions").innerHTML = campuses.map((campus) =>
           `<option value="${escapeHtml(campus)}"></option>`
@@ -1012,7 +1023,7 @@
           return;
         }
         rooms.push({ id: nextId++, campus, name, capacity, floor: floorValue === "" ? null : Number(floorValue) });
-        $("#roomForm").reset();
+        $("#roomForm").reset();$("#roomCampus").value=campus;
         renderRooms();
         renderStudentSelects();
         renderCampusSuggestions();
@@ -1398,9 +1409,7 @@
       });
       $("#roomForm").addEventListener("submit", addRoom);
       $("#addRoomBtn").addEventListener("click", () => {
-        $("#roomForm").scrollIntoView({ behavior: "smooth", block: "center" });
-        $("#roomName").focus({ preventScroll: true });
-        showToast("Derslik adını ve kapasitesini girip Ekle düğmesine basın.");
+        $("#roomForm").requestSubmit();
       });
       $("#roomList").addEventListener("click", async (event) => {
         const button = event.target.closest("[data-remove-room], [data-edit-room], [data-move-room]");

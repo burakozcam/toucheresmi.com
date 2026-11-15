@@ -50,7 +50,7 @@ export default function ContactForm({ showBrand = false, purpose = "support" }: 
         body: JSON.stringify({ ...values, humanToken:await getHumanToken("contact",humanToken), message: purpose === "answer-key" ? `[Cevap anahtarı ekleme talebi]\n${values.message}` : values.message }),
       });
       let response = await send(Boolean(token));
-      if (response.status === 401 && token) response = await send(false);
+      if(response.status===401&&token){sessionStorage.removeItem("kurumsal-auth-token");sessionStorage.removeItem("kurumsal-auth-user");throw Error("Oturumunuz sona erdi. Güvenlik doğrulamasını yenileyip mesajınızı tekrar gönderin.");}
       const result = await response.json() as { error?: string; message?: string; warning?: string };
       if (!response.ok) {
         setNotice(result.error ?? "Mesaj gönderilemedi. Bilgilerinizi kontrol edip tekrar deneyin.");

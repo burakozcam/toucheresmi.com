@@ -1,7 +1,6 @@
-# Kurumsal Sınav v1.2.7 — Yerel geliştirme
+# Kurumsal Sınav v1.2.8 — Yerel geliştirme
 
-
-**v1.2.7:** Orijinal Özdebir 2022 BLDM varyantı, eski manuel yerleşim ve boş kitapçık önizlemesi düzeltildi. Özgün üç sekmeli O8126 Excel içe aktarımı, reCAPTCHA v3, izinli analitik ve Windows/Linux ortam yükleme desteği eklendi. [Yayın raporu](docs/v127-release-report.md) · [Altyapı planı](docs/infrastructure-roadmap.md). Yeni migration yoktur; canlıya aktarım yapılmadı. TXT ile yeni üç karne aynı öğrencileri içermediğinden aynı öğrenci için TXT→orijinal karne kabulü açık kalır.
+7108/FMT/BLDM değerlendirmesi, revizyonlu öğrenci veri düzenleyicisi, toplu sınav girişi, kapak yönetimi ve kitaplık kataloğu güncellendi. Şifre göz düğmesi, v2/v3 CAPTCHA, kalıcı çerez tercihleri ve panel içi derslik aracı düzeltildi. Ayrıntılar ve kabul sınırları: [v1.2.8 yayın raporu](docs/v128-release-report.md). Yeni additive migration hazırlanmıştır; canlıya aktarım veya canlı migration yapılmadı.
 
 ## Windows 11 ve Linux: kısa kurulum
 
@@ -23,15 +22,19 @@ Linux'ta kopyalama komutu `cp .env.example .env`; diğer npm komutları aynıdı
 
 Sitemap hatasının nedeni Windows dosya yolu değildir: eski örnekte olmayan API URL'si, sitemap modülü yüklenirken hata veriyordu. Eksik değişken artık derlemenin başında açık mesaj verir. Kök örnekle Linux/Node 22 derlemesi doğrulandı; gerçek Windows işletim sistemi testi bu ortamda yapılmadı.
 
-`db:generate` migration uygulamaz. Yalnız yeni ve boş **yerel** PostgreSQL için adresi kontrol ettikten sonra `npm run db:migrate:deploy` çalıştırılabilir. Kullanıcıları korumak için otomatik seed/reset çalıştırılmaz. Testler gerçek DB kullanmaz; yerel/test API localhost dışını reddeder. `ALLOW_REMOTE_DATABASE=true` yalnız ayrı test DB'si için bilinçli bir istisnadır. Üretim bağlantısını yerel .env'ye kopyalamayın. Canlıda mutlak STORAGE_DIR ve mevcut şifreleme anahtarını koruyun.
+`db:generate` migration uygulamaz. Yalnız yeni ve boş **yerel** PostgreSQL için adresi kontrol ettikten sonra `npm run db:migrate:deploy` çalıştırılabilir. Kullanıcıları korumak için otomatik seed/reset çalıştırılmaz. `npm test` gerçek DB kullanmaz; yerel/test API localhost dışını reddeder. `ALLOW_REMOTE_DATABASE=true` yalnız ayrı test DB'si için bilinçli bir istisnadır. Üretim bağlantısını yerel .env'ye kopyalamayın. Canlıda mutlak STORAGE_DIR ve mevcut şifreleme anahtarını koruyun.
 
-## reCAPTCHA v3 ve Google değişkenleri
+## reCAPTCHA v2/v3 ve Google değişkenleri
 
 API: `NODE_ENV=production`, `RECAPTCHA_ENABLED=true`, `RECAPTCHA_SECRET_KEY`, `WEB_ORIGIN=https://kurumsalsinav.com`; `RECAPTCHA_HOSTNAME` boşsa WEB_ORIGIN hostname'i alınır. Varsayılan risk eşiği `RECAPTCHA_MIN_SCORE=0.5` (0–1). `www` kullanılıyorsa tam browser hostname'ini tanımlayın. Web build: `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` ve gerçek `NEXT_PUBLIC_API_URL`. API'de `RECAPTCHA_SITE_KEY` opsiyonel public fallback'tir; ayrı Web anahtarı normal kurulumdur. Yerel geliştirmede RECAPTCHA_ENABLED=false kullanılabilir; üretimde anahtarsız veya iki sağlayıcının da kapalı olduğu API başlamaz. Turnstile gerekiyorsa tek sağlayıcı kuralı geçerlidir.
 
-Token yalnız gönderimde üretilir; görsel kutu yoktur. Giriş, kayıt/kurum başvurusu, iletişim, sonuç sorgusu ve özel kodla PDF alma sunucuda doğrulanır. Public şifre sıfırlama uç noktası mevcut değildir; yetkili yönetici sıfırlaması ve davet akışı korunur. Güvenlik metni güncellendi; hukuki işletim kararları [yayın raporunda](docs/v127-release-report.md) ayrıca belirtilir. Gerçek Google anahtarıyla canlı kabul testi yapılmadı.
+Varsayılan `RECAPTCHA_VERSION=v3`; token yalnız gönderimde üretilir. v2 checkbox için API’de `RECAPTCHA_VERSION=v2` ve ayrı `RECAPTCHA_V2_SECRET_KEY`, Web build sırasında `NEXT_PUBLIC_RECAPTCHA_V2_SITE_KEY` ayarlayın. Opsiyonel API public fallback `RECAPTCHA_V2_SITE_KEY` değeridir. v2 anahtarları v3 anahtarlarıyla değiştirilemez. Dar ekranlarda gerçek Google compact widget kullanılır. Giriş, kayıt/kurum başvurusu, iletişim, sonuç sorgusu ve özel kodla PDF alma sunucuda doğrulanır. Davetle hesap kurma, hesap şifresi değiştirme ve yetkili yönetici şifre sıfırlaması da backend CAPTCHA doğrulamasından geçer. Güvenlik metni güncellendi; hukuki işletim kararları [yayın raporunda](docs/v127-release-report.md) ayrıca belirtilir. Gerçek Google anahtarıyla canlı kabul testi yapılmadı.
 
-Search Console: `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`. GA4: `NEXT_PUBLIC_GA4_ID`, hesapta otomatik ölçümleri kapattıktan sonra `NEXT_PUBLIC_GA4_APPROVED=true` ve kullanıcı analitik izni gerekir. Varsayılan durumda Google analitiği çalışmaz. GTM kimlik alanı ayrılmıştır; denetlenmiş container olmadan yükleyici çalıştırılmaz. Search Console/GTM hesapları kurulmuş veya doğrulanmış sayılmaz.
+Search Console: `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`. GA4: `NEXT_PUBLIC_GA4_ID`, hesapta otomatik ölçümleri kapattıktan sonra `NEXT_PUBLIC_GA4_APPROVED=true` ve kullanıcı analitik izni gerekir. Varsayılan durumda Google analitiği çalışmaz. GTM için `NEXT_PUBLIC_GTM_ID`, denetimden sonra `NEXT_PUBLIC_GTM_APPROVED=true` ve aynı analitik izni gerekir. GTM etkinse doğrudan GA4 yüklenmez. Container yalnız temizlenmiş `ks_public_page_view` olayını kullanmalı; DOM/form/otomatik history etiketleri açılmamalıdır. Search Console/GTM hesapları kurulmuş veya doğrulanmış sayılmaz.
+
+## v1.2.8 doğrulama
+
+Node 22 ve npm 10 ile `npm test` ve `npm run build` çalıştırın. Gerçek PostgreSQL/HTTP ve tarayıcı kabulünün kurulum ve çalıştırma adımları [tarayıcı testleri rehberinde](tests/e2e/README.md#v128-gerçek-postgresql-ve-tarayıcı-kabulü) bulunur. Bu yerel test derlemesi üretime doğrudan taşınmaz; canlı API adresi ve gerçek public CAPTCHA anahtarıyla yeniden derlenir. Resmî Ankara puan profili ile gerçek Google/cPanel/Neon kabulünün sınırları [yayın raporunda](docs/v128-release-report.md) açıklanır.
 
 ## v1.2.7 doğrulama komutları
 

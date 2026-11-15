@@ -55,7 +55,7 @@ export const opticalQuestionsSchema = z.array(opticalQuestionSchema).min(1).max(
   }
 });
 export type OpticalQuestion = z.infer<typeof opticalQuestionSchema>;
-export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[]; recordBooklets?:string[]; studentNo?:string;identityHash?:string;identityEncrypted?:string; separateSession?:boolean; identityMarks?:number; schoolCode?:string; missingLessons?:string[]; sessions?:Record<string,{lessons:string[];marks:number;sourceLine:number}> };
+export type OpticalStudent = { id: string; name: string; school: string; branch: string; answers: string[]; booklets: Record<string,string>; sourceLines: number[]; recordBooklets?:string[]; studentNo?:string;identityHash?:string;identityEncrypted?:string; separateSession?:boolean; identityMarks?:number; schoolCode?:string; provisionalSession?:"verbal"|"numeric"; missingLessons?:string[]; sessions?:Record<string,{lessons:string[];marks:number;sourceLine:number}> };
 export type OpticalData = { questions: Array<OpticalQuestion & { column: string }>; students: OpticalStudent[]; warnings: string[]; lineCount: number; diagnostics?:{rejectedLines:Array<{line:number;reason:string}>;duplicateRecords:number;missingVerbal:number;missingNumeric:number}; status?:"completed"|"completed_with_warnings"|"failed" };
 
 export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "windows-1254" = "auto") {
@@ -81,7 +81,8 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   if (!readerFamily(sourceLayout)&&questions.some(q => !layout.lessons.some(l => l.name === q.lesson))) mismatch("Cevap anahtarındaki bazı dersler FMT ile eşleşmiyor; okunamayan sorular boş değerlendirilecek.");
   for (const l of layout.lessons) {
     const count = questions.filter(q=>q.lesson===l.name).length;
-    if (!count || count > l.length) mismatch(`${l.name}: soru sayısı FMT alanıyla uyumsuz; alan dışındaki sorular boş, fazla işaretlemeler değerlendirme dışı bırakılacak.`);
+    if (!count) continue;
+    if (count > l.length) mismatch(`${l.name}: soru sayısı FMT alanıyla uyumsuz; alan dışındaki sorular boş, fazla işaretlemeler değerlendirme dışı bırakılacak.`);
   }
   const lines = txt.replace(/^\uFEFF/, "").split(/\r\n|\n|\r/);
   while (lines.at(-1) === "") lines.pop();
@@ -93,6 +94,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   const slice=(line:string,f?:{start:number;length:number})=>f?line.slice(f.start-1,f.start-1+f.length).trim():"";
   const normalized=(v:string)=>v.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g," ");
   const family=readerFamily(sourceLayout);
+  const universal7108=sourceLayout.lineLength===171&&sourceLayout.fields.booklet.start===51&&(sourceLayout.literals??[]).sort((a,b)=>a.start-b.start).map(l=>l.text).join("")==="7108";
   const reject=(index:number,reason:string)=>{const message=`TXT satır ${index+1}: ${reason}`;if(!options.allowMismatch)throw Error(message);warnings.push(message);diagnostics.rejectedLines.push({line:index+1,reason});};
   lines.forEach((line,index)=>{
     const label=`TXT satır ${index+1}`;
@@ -113,10 +115,11 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     if(/^(0+|\*+|-+)$/.test(identity))identity="";
     if(family&&identity&&!/^\d{11}$/.test(identity)){warnings.push(`${label}: kimlik alanı geçersiz; eşleştirmede öğrenci no, ad ve kurum bilgileri kullanılacak.`);identity="";}
     const name=[slice(line,f.name),slice(line,f.surname)].filter(Boolean).join(" ").replace(/\s+/g," "),grade=slice(line,f.grade),branch=slice(line,f.branch),schoolCode=slice(line,f.schoolCode);
-    if(!id&&!identity){reject(index,"öğrenci no ve kimlik boş; güvenilir eşleştirme yapılamadı.");return;}
+    if(!id&&!identity&&!name){reject(index,"öğrenci no, kimlik ve ad boş; kayıt tanımlanamıyor.");return;}
+    if(!id&&!identity)warnings.push(`${label}: öğrenci numarası ve kimlik boş; kayıt ayrı tutuldu, numara üretilmedi.`);
     if(f.grade&&grade&&!/^\d{1,2}$/.test(grade)){reject(index,"sınıf alanı geçersiz; FMT konumlarını kontrol edin.");return;}
     let book=slice(line,f.booklet).toUpperCase();
-    if(!book&&(options.missingBooklet||family)){book=options.missingBooklet??"A";warnings.push(`${label}: boş kitapçık için ${options.missingBooklet?"kullanıcı tarafından ":"varsayılan "}${book} kitapçığı kabul edildi; sonucu etkileyebilir.`);}
+    if(!book){book="A";warnings.push(`${label}: boş kitapçık için varsayılan A kitapçığı kabul edildi; sonucu etkileyebilir.`);}
     if(!/^[A-D]$/.test(book)||questions.some(q=>lessons.some(l=>l.name===q.lesson)&&!q.positions[book])){reject(index,`kitapçık türü eksik/geçersiz veya anahtarda tanımlı değil; konum: ${f.booklet.start}-${f.booklet.start+f.booklet.length-1}.`);return;}
     const chains=new Map<string,string>();
     for(const l of lessons){
@@ -130,10 +133,15 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     if(!chains.size){reject(index,"güvenilir biçimde okunabilen ders alanı yok.");return;}
     // Explicit family sessions retain blank-but-present fields. Legacy layouts without a
     // session marker keep complementary marked lesson groups for backwards compatibility.
-    if(!variant)for(const [lesson,chain]of chains)if(!chain.trim())chains.delete(lesson);
+    let universalSession="single";
+    if(universal7108){const marker=slice(line,f.session),numeric=(l:string)=>["MATEMATIK","FEN"].includes(lessonIdentity(l)),marked=(wantNumeric:boolean)=>[...chains].some(([l,a])=>numeric(l)===wantNumeric&&a.trim());
+      const complementary=marker===""&&lines.some(other=>{if(other===line||other.length!==line.length)return false;const otherName=[slice(other,f.name),slice(other,f.surname)].filter(Boolean).join(" ");if(!name||normalized(otherName)!==normalized(name))return false;const samePerson=(!!id&&slice(other,f.id)===id)||(!!identity&&slice(other,f.identity)===identity);if(!samePerson||(schoolCode&&slice(other,f.schoolCode)&&slice(other,f.schoolCode)!==schoolCode)||(grade&&slice(other,f.grade)&&slice(other,f.grade)!==grade)||(branch&&slice(other,f.branch)&&slice(other,f.branch)!==branch))return false;const otherMarked=(want:boolean)=>lessons.some(l=>numeric(l.name)===want&&other.slice(l.start-1,l.start-1+l.length).trim());return marked(true)&&!marked(false)&&otherMarked(false)&&!otherMarked(true)||marked(false)&&!marked(true)&&otherMarked(true)&&!otherMarked(false);});
+      if((marker==="1"||complementary)&&!marked(true)){universalSession="verbal";for(const l of chains.keys())if(numeric(l))chains.delete(l);}
+      else if((marker==="2"||complementary)&&!marked(false)){universalSession="numeric";for(const l of chains.keys())if(!numeric(l))chains.delete(l);}
+    }else if(!variant)for(const [lesson,chain]of chains)if(!chain.trim())chains.delete(lesson);
     if(!chains.size&&!variant){for(const l of lessons)if(questions.some(q=>q.lesson===l.name)&&line.length>=l.start+l.length-1)chains.set(l.name,"");}
     const marks=[...chains.values()].reduce((n,v)=>n+(v.match(/[ABCDE]/g)?.length??0),0);
-    const session=variant?.session||(slice(line,f.session)?`session:${slice(line,f.session)}`:[...chains.keys()].sort().join("|"));
+    const session=(universal7108?universalSession:variant?.session)||(slice(line,f.session)?`session:${slice(line,f.session)}`:[...chains.keys()].sort().join("|"));
     const candidates=options.mergeSessions===false?[]:entries.filter(e=>{
       if(e.schoolCode&&schoolCode&&e.schoolCode!==schoolCode)return false;
       if(e.identity&&identity&&e.identity!==identity){
@@ -159,7 +167,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     entry.records.set(session,{lessons:[...chains.keys()],chains,book,marks,sourceLine:index+1});
   });
   const students:OpticalStudent[]=entries.flatMap((entry,index)=>{
-    if(!entry.name){reject(entry.sourceLines[0]-1,"ad soyad alanı boş. FMT eşleştirmesini kontrol edin.");return [];}
+    if(!entry.name)warnings.push(`TXT satır ${entry.sourceLines[0]}: ad soyad boş; kaynak bilgi uydurulmadı.`);
     const chains=new Map<string,string>(),booklets:Record<string,string>={},sessions:NonNullable<OpticalStudent["sessions"]>={};
     // A full single-optic record is a whole-record alternative to a split pair.
     let records=[...entry.records.entries()];
@@ -171,15 +179,18 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     for(const [session,r]of records){sessions[session]={lessons:r.lessons,marks:r.marks,sourceLine:r.sourceLine};for(const [lesson,chain]of r.chains){chains.set(lesson,chain);booklets[lesson]=r.book;}}
     const missingLessons=questionLessons.filter(l=>!chains.has(l));
     if(missingLessons.length)warnings.push(`${entry.id}: eksik oturum / okunamayan dersler: ${missingLessons.join(", ")}; net ve puan hesaplanmadı.`);
-    if(family){if(!records.some(([k])=>k==="single"||k==="verbal"))diagnostics.missingVerbal++;if(!records.some(([k])=>k==="single"||k==="numeric"))diagnostics.missingNumeric++;}
+    if(family||universal7108){if(!records.some(([k])=>k==="single"||k==="verbal"))diagnostics.missingVerbal++;if(!records.some(([k])=>k==="single"||k==="numeric"))diagnostics.missingNumeric++;}
     let id=entry.id;if(!id&&entry.identity&&options.hashIdentity)id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;
-    if(!id){reject(entry.sourceLines[0]-1,"birleştirilen oturumlarda öğrenci numarası bulunamadı.");return [];}
+    const noStudentNumber=!entry.id;
+    if(!id)id=`row-${entry.sourceLines[0]}`;
     if(options.hashIdentity&&/^\d{11}$/.test(id)){entry.identity||=id;id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;}
+    const allChains=[...chains];const markedNumeric=allChains.some(([l,a])=>["MATEMATIK","FEN"].includes(lessonIdentity(l))&&a.trim()),markedVerbal=allChains.some(([l,a])=>!["MATEMATIK","FEN"].includes(lessonIdentity(l))&&a.trim());
+    const provisionalSession=universal7108&&sessions.single&&markedNumeric!==markedVerbal?(markedNumeric?"numeric":"verbal"):undefined;
     const repeated=entries.filter(e=>e.grade===entry.grade&&e.id===entry.id).length>1;
-    return [{id:repeated?`${id}-O${entry.sourceLines[0]}`:id,...(repeated||options.mergeSessions===false?{studentNo:entry.id}:{}),...(options.mergeSessions===false?{separateSession:true}:{}),
+    return [{id:repeated?`${id}-O${entry.sourceLines[0]}`:id,...(repeated||options.mergeSessions===false||noStudentNumber?{studentNo:entry.id}:{}),...(options.mergeSessions===false?{separateSession:true}:{}),
       ...(entry.identity&&options.hashIdentity?{identityHash:options.hashIdentity(entry.identity)}:{}),...(entry.identity&&options.encryptIdentity?{identityEncrypted:options.encryptIdentity(entry.identity)}:{}),
       name:entry.name,school,schoolCode:entry.schoolCode,branch:[entry.grade,entry.branch].filter(Boolean).join("-")||"Belirtilmedi",booklets,recordBooklets:[...new Set(records.map(([,r])=>r.book))],sourceLines:entry.sourceLines,
-      sessions,missingLessons,identityMarks:records.reduce((n,[,r])=>n+r.marks,0),answers:questions.map(q=>chains.get(q.lesson)?.[q.positions[booklets[q.lesson]]-1]?.trim()??"")}];
+      ...(provisionalSession?{provisionalSession}:{}),sessions,missingLessons,identityMarks:records.reduce((n,[,r])=>n+r.marks,0),answers:questions.map(q=>chains.get(q.lesson)?.[q.positions[booklets[q.lesson]]-1]?.trim()??"")}];
   });
   if(students.length>500)throw Error("Bir değerlendirmede en fazla 500 öğrenci desteklenir.");
   return {questions:questions.map(q=>({...q,column:`${q.lesson} | ${q.number}`})),students,warnings,lineCount:lines.length,diagnostics,status:!students.length?"failed":warnings.length?"completed_with_warnings":"completed"};

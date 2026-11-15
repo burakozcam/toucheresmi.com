@@ -1,3 +1,4 @@
+import ConsentPreferences from "./consent-preferences";
 import ReleaseMark from "./release-mark";
 import Link from "next/link";
 
@@ -17,6 +18,7 @@ export default function SiteFooter() {
         <Link href="/pdf-duzenleyici">PDF Düzenleyici</Link>
         <Link href="/contact">İletişim</Link>
         <a href="/contact#contact-form">destek@kurumsalsinav.com</a>
+        <ConsentPreferences/>
       </nav>
     </footer>
   );

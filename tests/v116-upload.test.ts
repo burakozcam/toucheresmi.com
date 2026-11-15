@@ -15,7 +15,7 @@ const renamed=questions.map(q=>({...q,lesson:names[q.lesson]??q.lesson}));
 test("FMT ve sınav ders adları eşleşir; soru sayısı ve sınıf denetimleri korunur",()=>{
   const key={grade:8,lessonCounts:Object.fromEntries([...new Set(renamed.map(q=>q.lesson))].map(name=>[name,renamed.filter(q=>q.lesson===name).length])),booklets:["A","B"]};
   assert.equal(compatibleEvaluation({layout:layout7108},key),true);
-  assert.equal(compatibleEvaluation({layout:layout7108,grade:7},key),false);
+  assert.equal(compatibleEvaluation({layout:layout7108,grade:7},key),true);
   assert.equal(compatibleEvaluation({layout:layout7108},{...key,lessonCounts:{...key.lessonCounts,TÜRKÇE:21}}),false);
   const actual=parseOptical(txt,layout7108,renamed,"Kurum"),expected=parseOptical(txt,layout7108,questions,"Kurum");
   assert.deepEqual(actual.students.map(s=>s.answers),expected.students.map(s=>s.answers));

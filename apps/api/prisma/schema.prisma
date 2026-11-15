@@ -396,6 +396,8 @@ model PublisherRequest {
 }
 
 model PublishedAnswerKey {
+  coverImage String? @db.Text
+  examDate DateTime? @db.Date
   id              String   @id @default(cuid())
   publisherId     String
   grade           Int

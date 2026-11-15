@@ -1,0 +1,27 @@
+{
+  "txtSha256": "191271e9b3841b1a710e553d7c451f76334a0fd9c4c016f7832da6ef673a681a",
+  "pdfSha256": "4ffe54960237097c7351f78bed5c13b7735c67e14f3c2787880030d46a2818db",
+  "records": 198,
+  "referenceCards": 40,
+  "anonymization": "All institutions/names/national/student identifiers replaced. Answer choices rotated A→C B→D C→A D→B; spacing, booklets and field widths preserved. Source row ordinal joins references; raw student identifiers not retained.",
+  "diagnosticScoreFit": {
+    "trainPages": 25,
+    "holdoutPages": 15,
+    "base": 196.61850177721317,
+    "weights": {
+      "TÜRKÇE": 4.107517315049837,
+      "SOSYAL": 1.7292279389576364,
+      "DİN": 1.8182043472718195,
+      "İNGİLİZCE": 1.5307181773119902,
+      "MATEMATİK": 4.632506712783083,
+      "FEN": 3.890009357426473
+    },
+    "maximumResidual": 0.0006399818741442687,
+    "warning": "Diagnostic approximation from rounded reports, not official or automatically applied scoring profile."
+  },
+  "acceptedStudents": 196,
+  "exactDuplicates": 1,
+  "rejectedUnidentifiedRecords": 1,
+  "acceptedStudentsWithoutNumber": 5,
+  "fmtAndBldmSha256": "5464cc6f29ad349d1fcb5808e6eb46cd2f5f398a7add899a67992f9fc519b857"
+}

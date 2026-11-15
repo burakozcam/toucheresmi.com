@@ -10,6 +10,9 @@ import { z } from "zod";
 
 const environmentSchema = z.object({
   RECAPTCHA_ENABLED:z.enum(["true","false"]).default(process.env.NODE_ENV==="production"?"true":"false"),
+  RECAPTCHA_VERSION:z.enum(["v2","v3"]).default("v3"),
+  RECAPTCHA_V2_SECRET_KEY:z.string().default(""),
+  RECAPTCHA_V2_SITE_KEY:z.string().default(""),
   RECAPTCHA_MIN_SCORE:z.coerce.number().min(0).max(1).default(0.5),
   ALLOW_REMOTE_DATABASE:z.enum(["true","false"]).default("false"),
   RECAPTCHA_SECRET_KEY:z.string().default(""),
@@ -39,7 +42,7 @@ const environmentSchema = z.object({
     try{const host=new URL(values.DATABASE_URL).hostname;if(!["localhost","127.0.0.1","[::1]"].includes(host))context.addIssue({code:z.ZodIssueCode.custom,path:["DATABASE_URL"],message:"Yerel/test ortamında uzak veritabanı engellendi. Ayrı test veritabanı için ALLOW_REMOTE_DATABASE=true değerini bilinçli olarak ayarlayın."});}catch{context.addIssue({code:z.ZodIssueCode.custom,path:["DATABASE_URL"],message:"Geçersiz veritabanı adresi."});}
   }
   if(values.RECAPTCHA_ENABLED==="true"&&values.TURNSTILE_ENABLED==="true")context.addIssue({code:z.ZodIssueCode.custom,path:["RECAPTCHA_ENABLED"],message:"Yalnızca bir CAPTCHA sağlayıcısını etkinleştirin."});
-  if(values.RECAPTCHA_ENABLED==="true"&&!values.RECAPTCHA_SECRET_KEY)context.addIssue({code:z.ZodIssueCode.custom,path:["RECAPTCHA_ENABLED"],message:"reCAPTCHA v3 için RECAPTCHA_SECRET_KEY gereklidir."});
+  if(values.RECAPTCHA_ENABLED==="true"&&!(values.RECAPTCHA_VERSION==="v2"?values.RECAPTCHA_V2_SECRET_KEY:values.RECAPTCHA_SECRET_KEY))context.addIssue({code:z.ZodIssueCode.custom,path:["RECAPTCHA_ENABLED"],message:"Seçili reCAPTCHA sürümü için ayrı anahtarları tanımlayın."});
   if(values.TURNSTILE_ENABLED==="true"&&(!values.TURNSTILE_SECRET_KEY||!values.TURNSTILE_SITE_KEY||!values.TURNSTILE_HOSTNAME))context.addIssue({code:z.ZodIssueCode.custom,path:["TURNSTILE_ENABLED"],message:"Turnstile etkinleştirilirken sunucu anahtarı, site anahtarı ve hostname birlikte gereklidir."});
   if (Boolean(values.SMTP_USER) !== Boolean(values.SMTP_PASSWORD)) {
     context.addIssue({

@@ -16,3 +16,6 @@ optical-txt/
 # Browser OCR assets are reproduced from locked npm dependencies.
 apps/web/public/vendor/ocr/
 apps/web/public/araclar/pdf-text-recovery.js
+
+# Python browser-test cache
+__pycache__/

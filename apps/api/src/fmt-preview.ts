@@ -14,7 +14,7 @@ export function previewFmt(txt:string,input:OpticalLayout){
     if(!read(line,rowLayout.fields.name))fail(`${label}: ad alanı boş.`);
     if(!read(line,rowLayout.fields.id)&&!read(line,rowLayout.fields.identity))fail(`${label}: öğrenci no ve eşleştirme kimliği boş.`);
     const booklet=read(line,rowLayout.fields.booklet).toUpperCase();
-    if(!booklet&&readerFamily(layout))warnings.push(`${label}: boş kitapçık varsayılan A kabul edildi.`);
+    if(!booklet)warnings.push(`${label}: boş kitapçık varsayılan A kabul edildi.`);
     else if(!/^[A-D]$/.test(booklet))fail(`${label}: kitapçık A, B, C veya D olmalı.`);
     for(const lesson of rowLayout.lessons)if(/[^ABCDE* .-]/i.test(line.slice(lesson.start-1,lesson.start-1+lesson.length)))fail(`${label} / ${lesson.name}: cevap alanında geçersiz karakter var.`);
   }

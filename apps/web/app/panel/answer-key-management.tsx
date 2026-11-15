@@ -1,4 +1,5 @@
 "use client";
+import CoverEditor from "./cover-editor";
 import AnswerPdfOptions from "../answer-pdf-options";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
@@ -14,6 +15,7 @@ import PublisherSelect from "./publisher-select";
 type Publisher = { id: string; name: string; active: boolean };
 type AnswerKeyFile = {generated?:boolean; id: string; category: "ANSWER_KEY" | "LEARNING_OUTCOMES"; originalFileName: string; mimeType: string; size: number; createdAt: string; storagePath?: string };
 type AnswerKeyRecord = {
+  coverImage?:string|null;
   id: string;
   publisherId: string;
   grade: number;
@@ -275,6 +277,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                   <p>{item.publisher.name}</p>
                   <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
                   {!readOnly&&<div className="answer-inline-publication"><label className="checkbox-row"><input type="checkbox" checked={item.published} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,e.target.checked,item.showInEvaluation)}/>Cevap Anahtarları sayfasında göster</label></div>}
+                  {!readOnly&&<CoverEditor token={token} id={item.id} initial={item.coverImage} onImage={image=>setRecords(current=>current.map(row=>row.id===item.id?{...row,coverImage:image}:row))}/>}
                   {!readOnly && editing?.id === item.id && (
                     <form className="answer-key-edit-form" onChange={()=>setEditConfirmed(false)} onSubmit={(event) => {
                       event.preventDefault();

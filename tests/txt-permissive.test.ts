@@ -9,7 +9,7 @@ const questions=Array.from({length:10},(_,i)=>({lesson:"TÜRKÇE",number:i+1,ans
 const put=(txt:string,start:number,value:string)=>txt.slice(0,start-1)+value+txt.slice(start-1+value.length);
 const line=put(put(original,51,"B"),52,"AAAAAAAAAAAAAAAAAAAA");
 test("TXT soru dağılımı farkı uyarıyla değerlendirilir; eşleşmeyen ders ve taşan sorular boş kalır",()=>{
- assert.throws(()=>parseOptical(line,layout7108,questions,"Kurum"),/uyumsuz/);
+ assert.throws(()=>parseOptical(line,layout7108,questions,"Kurum"),/uyumsuz|sonraki işaretlemeler/);
  const data=parseOptical(line,layout7108,questions,"Kurum",{allowMismatch:true});
  assert.deepEqual(data.students[0].answers,Array(10).fill("A"));
  assert.ok(data.warnings.some(w=>w.includes("sonraki işaretlemeler")));

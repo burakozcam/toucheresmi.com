@@ -14,6 +14,7 @@ export type Publisher = { id: string; name: string };
 type AnswerKeyFile = { id: string; category: "ANSWER_KEY" | "LEARNING_OUTCOMES"; originalFileName: string; mimeType: string; size: number; createdAt: string };
 export type AnswerKeyRecord = {
   id: string;
+  coverImage?:string|null;examDate?:string|null;
   publisherId: string;
   grade: number;
   examName: string;
@@ -27,6 +28,8 @@ type AnswerKeyPage = { items?: AnswerKeyRecord[]; totalPages?: number; error?: s
 
 type Props = { initialItems: AnswerKeyRecord[]; initialPublishers: Publisher[]; initialPages: number; initialError: string; filters: { page: number; publisherId: string; grade: string; search: string } };
 export default function PublicAnswerKeysPage({ initialItems, initialPublishers, initialPages, initialError, filters }: Props) {
+  const [recent,setRecent]=useState<AnswerKeyRecord[]>(initialItems.slice(0,10));
+  useEffect(()=>{const controller=new AbortController();fetch(`${API_URL}/api/answer-keys?limit=10&page=1`,{signal:controller.signal}).then(r=>r.json()).then(d=>{if(Array.isArray(d.items))setRecent(d.items);}).catch(()=>{});return()=>controller.abort();},[]);
   const [publishers, setPublishers] = useState<Publisher[]>(initialPublishers);
   const [items, setItems] = useState<AnswerKeyRecord[]>(initialItems);
   const [publisherId, setPublisherId] = useState(filters.publisherId);
@@ -100,87 +103,13 @@ export default function PublicAnswerKeysPage({ initialItems, initialPublishers, 
     setPage(1);
   }
 
-  return (
-    <main className="public-answer-page">
-      <header className="landing-header answer-header">
-        <Link className="brand" href="/" aria-label="Kurumsal Sınav ana sayfa">
-          <span className="brand-mark">K</span>
-          <span>kurumsal<span className="brand-light">sinav.com</span></span>
-        </Link>
-        <nav className="header-actions" aria-label="Ana menü">
-          <Link className="header-link" href="/">Ana Sayfa</Link>
-          <Link className="header-link" href="/sinav-degerlendir">Sınav Değerlendir</Link><ThemeToggle /><Link className="button button-navy" href="/login">Giriş Yap</Link>
-        </nav>
-      </header>
-
-      <section className="answer-page-hero">
-        <div className="answer-page-copy">
-          <p className="hero-tag">CEVAP ANAHTARLARI</p>
-          <h1>Deneme sınavı cevap anahtarları.</h1>
-          <p>1–12. sınıf denemelerinin cevap anahtarlarını ve kazanım dosyalarını yayınevi, sınıf veya sınav adına göre bul. Üyelik gerektirmeden indir, cevaplarını kontrol et.</p>
-        </div>
-      </section>
-
-      <div className="answer-library-links"><Link href="/sinav-degerlendir">Excel ile sınavını değerlendir →</Link><a href="#answer-key-request-form">Cevap anahtarı talep et →</a></div>
-      <section className="answer-filter-panel" aria-label="Cevap anahtarı filtreleri">
-        <label>
-          <span>Yayınevi</span>
-          <select value={publisherId} onChange={(event) => updateFilter(() => setPublisherId(event.target.value))}>
-            <option value="">Tümü</option>
-            {publishers.map((publisher) => <option key={publisher.id} value={publisher.id}>{publisher.name}</option>)}
-          </select>
-        </label>
-        <label>
-          <span>Sınıf</span>
-          <select value={grade} onChange={(event) => updateFilter(() => setGrade(event.target.value))}>
-            <option value="">Tümü</option>
-            {[1,2,3,4,5,6,7,8,9,10,11,12].map((value) => <option key={value} value={String(value)}>{value}. Sınıf</option>)}
-          </select>
-        </label>
-        <label className="search-grow answer-search prominent-answer-search">
-          <span>⌕ Cevap anahtarlarında ara</span>
-          <input type="search" aria-label="Cevap anahtarlarında ara" maxLength={200} value={search} onChange={(event) => updateFilter(() => setSearch(event.target.value))} placeholder="Aranacak sınavı veya cevap anahtarını yazın..." />
-        </label>
-      </section>
-
-      <div className="library-results-bar" aria-live="polite"><span>{loading ? "Aranıyor..." : `${items.length} yayın · Sayfa ${page} / ${totalPages}`}</span>{(publisherId || grade || search) && <button className="button button-quiet" onClick={() => { setPublisherId(""); setGrade(""); setSearch(""); setPage(1); }}>Filtreleri temizle ×</button>}</div>
-      <section className="public-answer-grid" aria-busy={loading}>
-        {loadError ? (
-          <p className="notice error" role="alert">{loadError}</p>
-        ) : loading && items.length===0 ? (
-          <p className="empty-state">Cevap anahtarları yükleniyor...</p>
-        ) : items.length === 0 ? (
-          <p className="empty-state">Seçilen filtrelere uygun yayın bulunmuyor.</p>
-        ) : (
-          items.map((item) => {
-            const answerFile = item.files.find((file) => file.category === "ANSWER_KEY");
-            const learningFile = item.files.find((file) => file.category === "LEARNING_OUTCOMES");
-            return (
-              <article className="answer-key-card public-answer-key-card" key={item.id}>
-                <div className="answer-key-header">
-                  <span className="badge">{item.grade}. Sınıf</span>
-                  <span className="status-dot">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</span>
-                </div>
-                <PublisherLogo id={item.publisher.id} name={item.publisher.name}/><p className="publisher-kicker">{item.publisher.name}</p><h2 className="library-card-title"><Link href={answerKeyPath(item)}>{item.examName} · {item.grade}. Sınıf Cevap Anahtarı</Link></h2>
-                <p className="exam-name">{item.files.length} dosya · {answerFile ? "Cevap anahtarı" : "Kazanım dosyası"}{answerFile && learningFile ? " ve kazanım" : ""}</p>
-                <Link className="answer-detail-link" href={answerKeyPath(item)}>Sınav detayları <span aria-hidden="true">→</span></Link>
-                <div className="download-actions">
-                  <AnswerPdfOptions id={item.id} name={item.examName}/>{answerFile && <a className="button button-navy" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>}
-                  {learningFile && <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${learningFile.id}`} target="_blank" rel="noreferrer">Kazanımı İndir</a>}
-                </div>
-              </article>
-            );
-          })
-        )}
-      </section>
-      {totalPages > 1 && <nav className="answer-pagination" aria-label="Cevap anahtarı sayfaları">
-        <Link className="button button-quiet" aria-disabled={page === 1} href={`?${new URLSearchParams({ ...(publisherId ? { publisherId } : {}), ...(grade ? { grade } : {}), ...(search ? { search } : {}), page: String(Math.max(1, page - 1)) })}`}>Önceki</Link>
-        <span>{page} / {totalPages}</span>
-        <Link className="button button-quiet" aria-disabled={page === totalPages} href={`?${new URLSearchParams({ ...(publisherId ? { publisherId } : {}), ...(grade ? { grade } : {}), ...(search ? { search } : {}), page: String(Math.min(totalPages, page + 1)) })}`}>Sonraki</Link>
-      </nav>}
-      <section className="evaluation-help"><h2>Cevap anahtarını nasıl bulabilirim?</h2><p>Önce sınıfını seç, ardından yayınevi veya deneme adını ara. Yayın kartından cevap anahtarını ve varsa kazanım dosyasını indirebilirsin. Detay sayfasında sınav adı, sınıf ve yayın tarihini kontrol ederek doğru denemeye baktığından emin ol.</p><h3>Aradığım deneme listede yoksa?</h3><p>Aşağıdaki cevap anahtarı ekleme talebi formuna yayınevi, sınıf ve sınav bilgilerini yazabilirsin. Talepler incelenir; her talebin dosyasının bulunması veya yayımlanması garanti edilmez.</p></section>
-      <section className="answer-request-section"><ContactForm purpose="answer-key" /></section>
-      <SiteFooter />
-    </main>
-  );
+  return <main className="public-answer-page publication-library">
+<header className="landing-header answer-header"><Link className="brand" href="/"><span className="brand-mark">K</span><span>kurumsalsinav.com</span></Link><nav className="header-actions"><Link href="/">Ana Sayfa</Link><ThemeToggle/><Link className="button button-navy" href="/login">Giriş Yap</Link></nav></header>
+<section className="catalog-heading"><h1>Cevap anahtarları</h1><p>Denemenizi bulun; cevap anahtarını, kazanımlarını ve kitapçık bilgilerini inceleyin.</p></section>
+<section className="answer-filter-panel" aria-label="Cevap anahtarı filtreleri"><label>Yayınevi<select value={publisherId} onChange={e=>updateFilter(()=>setPublisherId(e.target.value))}><option value="">Tümü</option>{publishers.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>Sınıf<select value={grade} onChange={e=>updateFilter(()=>setGrade(e.target.value))}><option value="">Tümü</option>{Array.from({length:12},(_,i)=><option key={i} value={i+1}>{i+1}. Sınıf</option>)}</select></label><label className="search-grow">Sınav ara<input type="search" aria-label="Cevap anahtarlarında ara" value={search} maxLength={200} onChange={e=>updateFilter(()=>setSearch(e.target.value))} placeholder="Sınav veya yayınevi adı"/></label></section>
+<section className="catalog-recent"><div className="catalog-section-title"><h2>Son Eklenen Sınavlar</h2><span>Yayımlanma tarihine göre</span></div><div className="book-showcase" tabIndex={0} role="region" aria-label="Son eklenen sınavları yatay kaydırın">{recent.map(item=><Link href={answerKeyPath(item)} key={item.id} className="showcase-book"><BookCover item={item}/><strong>{item.examName}</strong><span>{item.publisher.name} · {item.grade}. Sınıf</span></Link>)}</div></section>
+<section><div className="catalog-section-title"><h2>Tüm Cevap Anahtarları</h2><span aria-live="polite">{loading?'Aranıyor…':`${items.length} sınav · ${page}/${totalPages}`}</span></div>{loadError&&<p className="notice error" role="alert">{loadError}</p>}{!loading&&!loadError&&!items.length&&<p>Bu filtrelere uygun sınav bulunamadı.</p>}<div className="catalog-books" aria-busy={loading}>{items.map(item=>{const answer=item.files.find(f=>f.category==='ANSWER_KEY'),outcomes=item.files.find(f=>f.category==='LEARNING_OUTCOMES');return <article className="catalog-book" key={item.id}><Link href={answerKeyPath(item)} aria-label={`${item.examName} sınav detayları`}><BookCover item={item}/></Link><div><p className="book-publisher">{item.publisher.name}</p><h3><Link href={answerKeyPath(item)}>{item.examName}</Link></h3><p className="book-meta">{item.grade}. Sınıf · {item.examDate?'Sınav: '+new Date(item.examDate).toLocaleDateString('tr-TR'):'Yayın: '+new Date(item.publishedAt).toLocaleDateString('tr-TR')}</p><div className="book-downloads">{answer&&<a href={`${API_URL}/api/answer-key-files/${answer.id}`} target="_blank" rel="noreferrer">Cevap anahtarını indir ↓</a>}{outcomes&&<a href={`${API_URL}/api/answer-key-files/${outcomes.id}`} target="_blank" rel="noreferrer">Kazanımları indir ↓</a>}<Link href={answerKeyPath(item)}>Sınav detayları →</Link></div></div></article>;})}</div></section>
+{totalPages>1&&<nav className="answer-pagination" aria-label="Cevap anahtarı sayfaları"><button className="button button-quiet" disabled={page<=1||loading} onClick={()=>setPage(p=>p-1)}>Önceki</button><span>{page}/{totalPages}</span><button className="button button-quiet" disabled={page>=totalPages||loading} onClick={()=>setPage(p=>p+1)}>Sonraki</button></nav>}
+<details className="catalog-request"><summary>Aradığınız sınav bulunmuyor mu?</summary><ContactForm purpose="answer-key"/></details><SiteFooter/></main>;
 }
+function BookCover({item}:{item:AnswerKeyRecord}){return <div className="book-cover">{item.coverImage?<img src={item.coverImage} alt={`${item.examName} kapağı`} loading="lazy" width="450" height="600"/>:<div className="default-book-cover"><span>{item.publisher.name}</span><strong>{item.examName}</strong><small>{item.grade}. Sınıf</small></div>}</div>;}

@@ -10,6 +10,7 @@ import SiteFooter from "../../site-footer";
 import { cache } from "react";
 
 type AnswerKeyDetails = {
+  coverImage?:string|null;examDate?:string|null;
   id: string;
   grade: number;
   examName: string;
@@ -101,7 +102,7 @@ export default async function AnswerKeyDetailPage({
       </header>
       <article className="answer-detail">
         <p className="hero-tag">YAYIMLANMIŞ CEVAP ANAHTARI</p>
-        <PublisherLogo id={item.publisher.id} name={item.publisher.name}/><h1>{item.grade}. Sınıf {item.publisher.name} {item.examName}</h1>
+        {item.coverImage&&<img className="detail-cover" src={item.coverImage} alt={`${item.examName} kapağı`} width="225" height="300"/>}<h1>{item.grade}. Sınıf {item.publisher.name} {item.examName}</h1>
         <p className="answer-detail-meta">Yayın tarihi: {new Intl.DateTimeFormat("tr-TR", { dateStyle: "long" }).format(new Date(item.publishedAt))}</p>
         <p className="answer-detail-description">{descriptionFor(item)}</p>
         <AnswerPdfOptions id={item.id} name={item.examName}/><div className="download-actions">

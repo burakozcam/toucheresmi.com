@@ -1,3 +1,4 @@
+import {compatibleStudent} from "./result-data";
 import {encryptShareToken} from "./share-security";
 import {examView} from "./result-routes";
 import {enrichReportView} from "./report-metadata";
@@ -54,7 +55,7 @@ readerRouter.post("/reader-accounts",manager,inviteLimiter,wrap(async(req,res)=>
   const invite=await invitation();
   const account=await prisma.$transaction(async tx=>{
     const current=await tx.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:schoolScope(req)},select:{schoolId:true}});if(!current)return null;
-    const created=await tx.user.create({data:{email:data.email.toLowerCase(),firstName:data.firstName,lastName:data.lastName,role:data.role,schoolId:current.schoolId,readerManagerId:req.user!.id,readerStudentNo:data.role==="STUDENT"?data.studentNo:null,passwordHash:invite.passwordHash,setupTokenHash:invite.setupTokenHash,setupExpiresAt:invite.setupExpiresAt,mustChangePassword:true,studentResultAccess:{create:{resultId:data.resultId,studentNo:data.studentNo,studentName:student.name}}},select:accountSelect});
+    const created=await tx.user.create({data:{email:data.email.toLowerCase(),firstName:data.firstName,lastName:data.lastName,role:data.role,schoolId:current.schoolId,readerManagerId:req.user!.id,readerStudentNo:data.role==="STUDENT"?((student as any).studentNo??student.id)||null:null,passwordHash:invite.passwordHash,setupTokenHash:invite.setupTokenHash,setupExpiresAt:invite.setupExpiresAt,mustChangePassword:true,studentResultAccess:{create:{resultId:data.resultId,studentNo:data.studentNo,studentName:student.name}}},select:accountSelect});
     await tx.fmtShare.create({data:{category:"MEMBERSHIP",targetId:created.id,name:`${data.firstName} ${data.lastName}`,createdById:req.user!.id,tokenHash:invite.setupTokenHash,tokenEncrypted:encryptShareToken(invite.token),expiresAt:invite.setupExpiresAt}});return created;
   });
   if(!account){res.status(403).json({error:"Kurum erişimi değişti. Sayfayı yenileyin."});return;}
@@ -63,11 +64,17 @@ readerRouter.post("/reader-accounts",manager,inviteLimiter,wrap(async(req,res)=>
 readerRouter.post("/reader-accounts/:id/access",manager,wrap(async(req,res)=>{
   const data=selection.parse(req.body);
   const saved=await prisma.$transaction(async tx=>{
-    const [account,result]=await Promise.all([tx.user.findFirst({where:{id:id(req),...accountScope(req)},select:{id:true,role:true,schoolId:true,readerStudentNo:true,studentResultAccess:{select:{studentNo:true,result:{select:{schoolId:true}}}}}}),tx.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:schoolScope(req)},select:{snapshot:true,schoolId:true}})]);
+    const [account,result]=await Promise.all([tx.user.findFirst({where:{id:id(req),...accountScope(req)},select:{id:true,role:true,schoolId:true,readerStudentNo:true,studentResultAccess:{select:{studentNo:true,result:{select:{schoolId:true,snapshot:true}}}}}}),tx.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:schoolScope(req)},select:{snapshot:true,schoolId:true}})]);
     if(!account||!result)return{error:"Hesap veya sonuç bulunamadı; erişim yetkinizi kontrol edin.",status:404};
     let student;try{student=resultStudent(result.snapshot,data.studentNo);}catch(e){return{error:(e as Error).message,status:400};}
-    if(account.role===Role.STUDENT&&((account.readerStudentNo&&(account.readerStudentNo!==data.studentNo||account.schoolId!==result.schoolId))||account.studentResultAccess.some(a=>a.studentNo!==data.studentNo||a.result.schoolId!==result.schoolId)))return{error:"Öğrenci hesabına farklı bir öğrencinin sonucu bağlanamaz. Birden fazla çocuk için veli hesabı kullanın.",status:400};
-    if(account.role===Role.STUDENT&&!account.readerStudentNo)await tx.user.update({where:{id:account.id},data:{readerStudentNo:data.studentNo,schoolId:result.schoolId}});
+    if(account.role===Role.STUDENT){
+     if(account.schoolId&&account.schoolId!==result.schoolId||account.studentResultAccess.some(a=>a.result.schoolId!==result.schoolId))return{error:"Öğrenci hesabına başka kurumun sonucu bağlanamaz.",status:400};
+     const linked=account.studentResultAccess.flatMap(a=>{try{return[resultStudent(a.result.snapshot,a.studentNo)];}catch{return[];}});
+     if(linked.length&&!linked.some(source=>compatibleStudent(source as any,student as any)))return{error:"Öğrenci hesabına farklı bir öğrencinin sonucu bağlanamaz. Birden fazla çocuk için veli hesabı kullanın.",status:400};
+     const physical=(student as any).studentNo??student.id;
+     if(!linked.length&&account.readerStudentNo&&account.readerStudentNo!==physical&&account.readerStudentNo!==student.id)return{error:"Öğrenci numarası hesapla eşleşmiyor.",status:400};
+     if(!account.readerStudentNo)await tx.user.update({where:{id:account.id},data:{readerStudentNo:physical||null,schoolId:result.schoolId}});
+    }
     const grant=await tx.studentResultAccess.upsert({where:{userId_resultId_studentNo:{userId:account.id,resultId:data.resultId,studentNo:data.studentNo}},create:{userId:account.id,resultId:data.resultId,studentNo:data.studentNo,studentName:student.name},update:{}});
     return{grant};
   });
@@ -111,7 +118,7 @@ readerRouter.get("/my-results/:id/pdf",reader,wrap(async(req,res)=>{
  if(!access){res.status(404).json({error:"Sonuç bulunamadı veya hesabınıza bağlı değil."});return;}
  let own;try{own=resultStudent(access.result.snapshot,access.studentNo);}catch{res.status(404).json({error:"Sonuç erişilemiyor."});return;}
  const view=await examView(access.result.schoolId,access.result.keyId,true);if(!view){res.status(404).json({error:"Yayımlanmış sonuç bulunamadı."});return;}
- const candidates=view.data.students.filter(s=>{const source=own as typeof s;return (source.identityHash?s.identityHash===source.identityHash:studentNumberKey(s.studentNo??s.id)===studentNumberKey(source.id))&&s.name===source.name&&s.branch===source.branch;});
+ const candidates=view.data.students.filter(s=>{const source=own as typeof s;return (source.identityHash?s.identityHash===source.identityHash:studentNumberKey(s.studentNo??s.id)===studentNumberKey(source.studentNo??source.id))&&s.name===source.name&&s.branch===source.branch;});
  if(candidates.length!==1){res.status(400).json({error:"Sonuç bağlantısı tek bir öğrenciyle eşleşmiyor. Kurumunuza başvurun."});return;}
  res.attachment("ogrenci-karnesi.pdf").type("application/pdf").send(await reportPdf(await enrichReportView(view),{kind:"cards",order:"name",hideIdentity:true,studentId:candidates[0].id,templateId}));
 }));

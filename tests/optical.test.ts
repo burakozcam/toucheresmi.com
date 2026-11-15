@@ -41,7 +41,7 @@ test("7108: yinelenen ve çelişkili oturum birleşir; çelişkili kimlikler ayr
   assert.equal(parse(txt+first+"\r\n").students.length,2);
   assert.equal(parse(replace(0,16,"FARKLI    ")).students.length,2);
   const conflicted=parse(replace(3,11,"00001"));assert.equal(conflicted.students.length,2);assert.equal(new Set(conflicted.students.map(s=>s.id)).size,2);
-  assert.throws(()=>parse(replace(3,11,"     ")),/numarası bulunamadı/);
+  assert.ok(parse(replace(3,11,"     ")).students.some(s=>s.studentNo===""));
   assert.equal(ls.length,4);
 });
 test("7108: eksik oturum boş ders uyarısı üretir, H boş dahil doğru, X iptal, çoklu işaret yanlış sayılır",()=>{
@@ -49,7 +49,7 @@ test("7108: eksik oturum boş ders uyarısı üretir, H boş dahil doğru, X ipt
   const d=parse(replace(1,52," "),qs),r=opticalSummary(d,3)[0].lessons[0];
   assert.equal(r.correct,19); // The sole original wrong answer is now cancelled, H remains correct.
   assert.equal(r.cancelled,1);
-  const missing=parse(txt.split(/\r?\n/).slice(1).join("\r\n"));
+  const remaining=txt.split(/\r?\n/).slice(1);remaining[0]=remaining[0].slice(0,49)+"1"+remaining[0].slice(50);const missing=parse(remaining.join("\r\n"));
   assert.ok(missing.warnings.some(w=>w.includes("00001")&&w.includes("MATEMATİK")));
   const multi=parse(replace(1,54,"*"));assert.equal(opticalSummary(multi,3)[0].lessons[0].wrong,2);
 });

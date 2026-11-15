@@ -8,7 +8,7 @@ let loading:Promise<void>|undefined;
 /** Execute only on submit. No form values, identities or result data are sent to Google. */
 export async function getHumanToken(action:string,fallback=""):Promise<string>{
  const config=await humanConfig();if(!config.enabled)return "";
- if(config.provider!=="recaptcha-v3")return fallback;
+ if(config.provider!=="recaptcha-v3"){if(!fallback)throw Error("Lütfen formdaki güvenlik doğrulamasını tamamlayın.");return fallback;}
  const key=process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim()||config.siteKey;
  if(!key)throw Error("Güvenlik doğrulaması yapılandırılmamış. Lütfen kurum yöneticisine bildirin.");
  const google=()=> (window as any).grecaptcha;

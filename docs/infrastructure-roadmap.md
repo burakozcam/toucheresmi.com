@@ -1,4 +1,4 @@
-# Altyapı yol haritası · v1.2.7
+# Altyapı yol haritası · v1.2.8
 
 15 Kasım 2026. Bu belge bir geçiş planıdır. Veridyen cPanel, DNS, Cloudflare ve Neon hesabı değiştirilmedi. Ölçülmüş bir kapasite veya performans kazancı beyanı yoktur.
 
@@ -57,6 +57,6 @@ Her seviyede throughput, aktif oturum/bağlantı, p50/p95/p99, 429/5xx, CPU/RAM,
 
 Search Console doğrulaması için `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`, GA4 için `NEXT_PUBLIC_GA4_ID` ayrılmıştır. Gerçek hesap/kimlik yoksa servis etkin değildir. GA4 ayrıca `NEXT_PUBLIC_GA4_APPROVED=true` ve tarayıcıda analitik izni gerektirir; önce GA hesabında Enhanced Measurement, otomatik form/history/click ve kullanıcı sinyallerini kapatıp ağ yüklerini denetleyin. Kod yalnız sabit public yol için elle page_view üretir, referrer'ı temizler. Özellikle belge/optik araçlarında form/DOM toplama etiketleri kullanmayın.
 
-`NEXT_PUBLIC_GTM_ID` rezerv alandır; **GTM çalıştırıcısı eklenmedi**. Denetlenmemiş bir container serbest kod çalıştırabilir ve öğrenci DOM/URL verisini toplayabilir. Container, rıza ve kişisel veri denetimi tamamlandıktan sonra yalnız onaylı public sayfalara kontrollü yükleyici eklenmelidir; GA4 ile çifte sayımı önleyin. Bu, kurulmuş GTM hesabı anlamına gelmez.
+`NEXT_PUBLIC_GTM_ID` v1.2.8’de kontrollü yükleyiciye bağlandı. Yükleme için `NEXT_PUBLIC_GTM_APPROVED=true`, kullanıcı izni ve sabit public yol gerekir. GA4 ile çifte yükleme engellenir. Container denetimi, DOM/form toplamasının kapatılması ve gerçek hesap kurulumu operatör sorumluluğundadır; varsayılan kapalıdır.
 
 Sitemap public sabit sayfalar ile yayımlanmış cevap anahtarı/blog uçlarını kullanır; API yoksa statik liste döner. Robots özel yolları dışlar; robots erişim kontrolü değildir. Search Console'da sitemap gönderimi hesap sahibinin işlemidir. PageSpeed/Lighthouse ölçümlerini public URL ve sentetik oturumla mobil/masaüstü olarak en az üç kez alın; LCP/INP/CLS ve ilk JS boyutlarını kaydedin. Özel öğrenci URL'sini Google testlerine göndermeyin. Canlı PageSpeed ölçümü yapılmadı.

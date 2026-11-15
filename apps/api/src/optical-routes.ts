@@ -1,3 +1,4 @@
+import {resultEditRouter} from "./result-edit";
 import builtinScoreProfile from "../lib/ozdebir-profile.json";
 import {lessonIdentity} from "../lib/evaluation-compatibility";
 import {configuredNewExamProfile} from "./scoring-profile";
@@ -44,7 +45,7 @@ opticalRouter.use((_req,res,next)=>{res.setHeader("Cache-Control","private, no-s
 opticalRouter.use(requireAuth, (req: AuthenticatedRequest,res,next)=>{
   if (req.user?.role !== Role.SUPER_ADMIN && req.user?.role !== Role.DEALER) {res.status(403).json({error:"Bu bölüm yalnızca yönetici ve bayilere açıktır."});return;} next();
 });
-opticalRouter.use(resultRouter,txtArchiveRouter);
+opticalRouter.use(resultEditRouter,resultRouter,txtArchiveRouter);
 type Handler = (req: AuthenticatedRequest,res: express.Response)=>Promise<void>;
 const wrap = (handler: Handler): express.RequestHandler => async(req,res,next)=>{
   try {await handler(req as AuthenticatedRequest,res);} catch(error) {

@@ -25,7 +25,7 @@ test("v125 gerçek tek optik: boş kitapçık varsayılan A; açık seçimle alt
  const text=read("single-anonymous.txt");assert.equal(parse(text).students[0].booklets.TÜRKÇE,"A");
  const d=parse(text,{missingBooklet:"A"});assert.equal(d.students.length,1);assert.equal(Object.keys(d.students[0].booklets).length,6);
  for(const l of layout.lessons){const count=qs.filter(q=>q.lesson===l.name).length;assert.deepEqual(d.questions.flatMap((q,i)=>q.lesson===l.name?[d.students[0].answers[i]]:[]),text.slice(l.start-1,l.start-1+count).split("").map(c=>c.trim()));}
- assert.ok(d.warnings.some(w=>w.includes("kullanıcı tarafından A")));
+ assert.ok(d.warnings.some(w=>w.includes("varsayılan A")));
 });
 test("v125 yalnız sözel / yalnız sayısal: olmayan oturum null, mevcut boş cevap ise sıfır nettir",()=>{
  for(const [row,missing]of [[verbal,["MATEMATİK","FEN"]],[numeric,["TÜRKÇE","SOSYAL","İNGİLİZCE","DİN"]]]as const){const d=parse(row),s=d.students[0];assert.deepEqual(new Set(s.missingLessons),new Set(missing));assert.equal(opticalSummary(d,3)[0].score,null);}

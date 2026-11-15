@@ -33,7 +33,7 @@ export function matchExamAnswers(txt: string, layout: OpticalLayout, inputQuesti
     const rowLayout=variant?.layout??layout;
     const fields=new Map(rowLayout.lessons.map(lesson=>[lessonIdentity(lesson.name),lesson]));
     if (!line.trim() || (rowLayout.literals ?? []).some(literal => line.slice(literal.start - 1, literal.start - 1 + literal.text.length) !== literal.text)) return [];
-    const booklet = line.slice(rowLayout.fields.booklet.start - 1, rowLayout.fields.booklet.start - 1 + rowLayout.fields.booklet.length).trim().toUpperCase() || (readerFamily(layout) ? "A" : "");
+    const booklet = line.slice(rowLayout.fields.booklet.start - 1, rowLayout.fields.booklet.start - 1 + rowLayout.fields.booklet.length).trim().toUpperCase() || "A";
     if (!/^[A-D]$/.test(booklet)) return [];
     return [{ answers: questions.map(question => {
       const field = fields.get(lessonIdentity(question.lesson)), position = question.positions[booklet];

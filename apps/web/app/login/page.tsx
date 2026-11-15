@@ -164,7 +164,7 @@ export default function LoginPage() {
             <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Üyelik talebi gönder"} <span>→</span></button>
           </form> : selectedType === "admin" ? null : selectedType !== "institution" ? <form className="login-form" onSubmit={submitLogin}>
             <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>
-            <label>Şifre<div className="input-wrap"><span>▣</span><input name="password" type="password" autoComplete="current-password" placeholder="Şifrenizi girin" required /></div></label>
+            <label>Şifre<PasswordField name="password" placeholder="Şifrenizi girin"/></label>
             <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span>→</span></button>
           </form> : <div className="inactive-panel"><span>i</span><p>Bu giriş türü şu anda kullanıma kapalı. Erişim için sistem yöneticisine başvurun.</p></div>}
           {message && <p className={`login-message ${success ? "message-success" : "message-error"}`} role="status">{success ? "✓" : "!"} {message}</p>}
@@ -174,7 +174,7 @@ export default function LoginPage() {
           {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <Link href="/contact#contact-form">Bize ulaşın</Link></p>}
           <div className="admin-login-area"><button type="button" className="button button-quiet" onClick={()=>{setRegistering(false);selectType("admin",true);}}>⚙ Yönetici Girişi</button><p className="field-help">Yalnızca sistem yöneticileri içindir.</p>{selectedType==="admin"&&!registering&&<form className="login-form" onSubmit={submitLogin}>
             <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>
-            <label>Şifre<div className="input-wrap"><span>▣</span><input name="password" type="password" autoComplete="current-password" placeholder="Şifrenizi girin" required /></div></label>
+            <label>Şifre<PasswordField name="password" placeholder="Şifrenizi girin"/></label>
             <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span>→</span></button>
           </form>}</div>
         </section>

@@ -1,3 +1,4 @@
+import {examAuthoringRouter} from "./exam-authoring";
 import {encryptShareToken} from "./share-security";
 import {hashPassword,verifyPassword,newPasswordSchema} from "./passwords";
 import {configuredNewExamProfile} from "./scoring-profile";
@@ -40,7 +41,11 @@ app.use(cors({ origin: env.WEB_ORIGIN, exposedHeaders: ["Content-Disposition"] }
 app.use("/api/admin/exam-schedule", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "20mb" }));
 app.use("/api/optical/templates/bulk-rows", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use("/api/optical/templates/bulk", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
+app.use("/api/admin/bulk-exams",requireAuth,requireRole(Role.SUPER_ADMIN),express.json({limit:"24mb"}));
+app.use("/api/admin/answer-keys/:id/cover",requireAuth,requireRole(Role.SUPER_ADMIN),express.json({limit:"2mb"}));
+app.use("/api/optical/result-exams/:id",requireAuth,express.json({limit:"6mb"}));
 app.use(express.json({ limit: "1mb" }));
+app.use(examAuthoringRouter);
 // API responses may contain accounts or student results; CDN caching is never implicit.
 app.use("/api",(_req,res,next)=>{res.setHeader("Cache-Control","private, no-store");next();});
 // JSON presentation alias; does not change Prisma records or storage paths.
@@ -275,9 +280,14 @@ app.get("/api/health", (_request, response) => {
 
 const humanConfig=humanVerificationConfig();
 app.get("/api/auth/human-verification",(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({enabled:humanConfig.enabled,siteKey:humanConfig.enabled?humanConfig.siteKey:undefined,...(humanConfig.provider?{provider:humanConfig.provider}:{})});});
-for(const [route,action] of [["auth/login","login"],["auth/register","register"],["contact","contact"],["applications","register"]])app.use(`/api/${route}`,async(req,res,next)=>{
+for(const [route,action] of [["auth/login","login"],["auth/register","register"],["auth/setup","setup"],["contact","contact"],["applications","register"]])app.use(`/api/${route}`,async(req,res,next)=>{
  if(req.method!=="POST"){next();return;}
  if(!await verifyHuman(req.body?.humanToken,action,humanConfig)){res.status(403).json({error:"Güvenlik doğrulaması tamamlanamadı. Google hizmetine erişimi kontrol edip yeniden deneyin."});return;}if(action==="login"){limitLoginAccount(req,res,next);return;}next();
+});
+
+app.use(async(req,res,next)=>{
+ if(!["PATCH","POST"].includes(req.method)||!(req.path==="/api/account/password"||/^\/api\/admin\/users\/[^/]+\/password$/.test(req.path))){next();return;}
+ if(!await verifyHuman(req.body?.humanToken,"password",humanConfig)){res.status(403).json({error:"Güvenlik doğrulaması tamamlanamadı. Lütfen yeniden deneyin."});return;}next();
 });
 
 app.post("/api/auth/login", async (request, response, next) => {
@@ -841,7 +851,7 @@ app.patch(
     const parsed = passwordResetSchema.safeParse(request.body);
     const userId = getRouteParamId(request.params.id);
     if (!parsed.success || !userId) {
-      response.status(400).json({ error: "Yeni şifre en az 12 karakter ve en fazla 72 bayt olmalıdır." });
+      response.status(400).json({ error: "Yeni şifre 15–128 karakter olmalı; yaygın bir parola olmamalıdır." });
       return;
     }
     try {

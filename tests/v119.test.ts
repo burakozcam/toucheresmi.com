@@ -36,10 +36,10 @@ test("v119 7108 regression: 1-based booklet at 51, UTF-8/1254, BOM, CRLF/LF, opt
  for(const encoding of ["utf-8","windows-1254"] as const)for(const eol of ["\n","\r\n","\r"]){const decoded=decodeOptical(encodeTxt(turkish.join(eol)+eol,encoding));assert.deepEqual(parseOptical(decoded,layout7108,q,"Kurum").students,baseline.students);}
  assert.deepEqual(parseOptical("\ufeff"+turkish.join("\r\n"),layout7108,q,"Kurum").students,baseline.students);
  assert.equal(parseOptical(put(lines[0],5,6,""),layout7108,q,"Kurum").students.length,1);
- const missingBook=put(lines[0],51,1,"");assert.throws(()=>parseOptical(missingBook,layout7108,q,"Kurum"),/kitapçık.*51-51/);
+ const missingBook=put(lines[0],51,1,"");assert.equal(parseOptical(missingBook,layout7108,q,"Kurum").students[0].recordBooklets?.[0],"A");
  assert.throws(()=>parseOptical(put(lines[0],51,1,"E"),layout7108,q,"Kurum"),/kitapçık/);
  assert.throws(()=>parseOptical(lines[0].slice(1),layout7108,q,"Kurum"),/171 karakter/);
- assert.throws(()=>parseOptical(put(lines[0],16,10,"").slice(0,25)+" ".repeat(10)+lines[0].slice(35),layout7108,q,"Kurum"),/ad soyad/);
+ assert.equal(parseOptical(put(lines[0],16,10,"").slice(0,25)+" ".repeat(10)+lines[0].slice(35),layout7108,q,"Kurum").students[0].name,"");
  assert.equal(inferFmt(decodeOptical(encodeTxt(turkish.join("\r\n"),"windows-1254")),templates).confidence,"strong");
 });
 

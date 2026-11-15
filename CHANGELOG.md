@@ -1,3 +1,14 @@
+# v1.2.8 · 2026-11-15 · yerel geliştirme
+
+- 7108 kapasitesi sınav soru sayısından ayrıldı; yayınevi/sınıf bağı kaldırıldı. Boş kitapçık A, boş cevap boş kalır. Kimliği eksik fakat adı bulunan satırlar numara uydurulmadan korunur; tekli/çift oturum birleştirmesi mevcut boş alanları silmez.
+- Gerçek Ankara 198 satır ve 40 referans karne karşılaştırıldı; anonim regresyonlar eklendi. Resmî katsayısı bulunmayan Ankara profili otomatik tanımlanmaz.
+- Bayi/admin veri tablosunda kimlik, ortak/oturum/ders kitapçığı ve cevap düzenleme; önizleme, geri alma, yeniden hesaplama, değişmez revizyon, denetim kaydı ve öğrenci/veli bağlantılarının taşınması eklendi.
+- İki rebuilder kopyasında derslik düğmesi gerçek form gönderir; normalize kampüsler, aynı adın farklı kampüste kullanılması ve mevcut yerleşimler korunur.
+- Ortak göz düğmesi, gerçek v2/v3 sağlayıcı seçimi, tüm şifre işlemlerinde CAPTCHA, eksik öğrenci/veli giriş formu ve kalıcı çerez tercihleri düzeltildi. GA4/GTM ortak izne bağlıdır.
+- Admin toplu sınav tablosu çoklu hücre yapıştırma, IndexedDB taslakları, bağımsız kayıt sonuçları ve standart cevap/kazanım XLSX dosyaları üretir. Kapak kırpma/önizleme, sunucuda WebP optimizasyonu ve kaldırma eklendi.
+- Ziyaretçi cevap anahtarları raf/katalog düzenine geçirildi; dosyalar, detay ve paylaşım yolları korundu. Kapak ve sınav tarihi için additive migration hazırlandı.
+- Node 22 API/Web derlemesi ve yerel kabul kanıtları/sınırları: `docs/v128-release-report.md`. Canlı deploy veya canlı DB migration yapılmadı.
+
 # v1.2.7 · 2026-11-15 · yerel geliştirme
 
 - Orijinal 2022 Özdebir tek oturum BLDM içerik imzası eklendi. Eski genel analizde sınıfın 1. konuma ve derslerin yanlış etiketlere bağlanması, eşit okunabilirlikte de yalnız bu kesin eski düzen için düzeltilir. Eski DB satırı ve sonuç revizyonları değişmez.

@@ -4,6 +4,7 @@ import {preferFilledRecord} from "./student-merge";
 import { canonicalJson } from "./canonical-json";
 import { opticalQuestionsSchema,opticalSummary,type OpticalData,type OpticalStudent } from "./optical-core";
 import { studentNumberKey } from "./result-identity";
+import {lessonIdentity} from "../lib/evaluation-compatibility";
 import {keyFingerprint,type Snapshot} from "./optical-review";
 export type ResultSnapshot=Snapshot&{deletedAt?:string;mergeSessions?:boolean};
 export const isDeleted=(snapshot:unknown)=>!!(snapshot as ResultSnapshot)?.deletedAt;
@@ -18,6 +19,7 @@ export function compatibleStudent(a:OpticalStudent,b:OpticalStudent){
   return !!first&&!!second&&first.length===11&&second.length===11&&[...first].filter((v,i)=>v!==second[i]).length===1&&!(validNationalIdentity(first)&&validNationalIdentity(second))&&!!a.schoolCode&&a.schoolCode===b.schoolCode&&number(a)===number(b)&&!!a.name&&norm(a.name)===norm(b.name)&&a.branch===b.branch;
  }
  const norm=(v:string)=>v.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g," ");
+ if(!(a.studentNo??a.id).trim()||!(b.studentNo??b.id).trim())return false;
  return number(a)===number(b)&&(!a.name||!b.name||norm(a.name)===norm(b.name))&&
   (a.branch===b.branch||a.branch==="Belirtilmedi"||b.branch==="Belirtilmedi"||!a.branch.includes("-")||!b.branch.includes("-"));
 }
@@ -26,7 +28,8 @@ export function mergeStudentData(previous:OpticalData,next:OpticalData,replaceSt
  if(canonicalJson(opticalQuestionsSchema.parse(previous.questions))!==canonicalJson(opticalQuestionsSchema.parse(next.questions)))throw new Error("Oturumların cevap anahtarları farklı. Aynı anahtarla yeniden yükleyin.");
  const students=structuredClone(previous.students),mergeWarnings=[...previous.warnings,...next.warnings];
  let duplicateRecords=0;
- for(const incoming of next.students){
+ for(const sourceStudent of next.students){
+  const incoming=structuredClone(sourceStudent);
   const matches=students.filter(s=>!s.separateSession&&!incoming.separateSession&&compatibleStudent(s,incoming));
   const old=matches.length===1?matches[0]:undefined;
   if(!old){
@@ -34,6 +37,12 @@ export function mergeStudentData(previous:OpticalData,next:OpticalData,replaceSt
    const copy=structuredClone(incoming);copy.sourceLines=copy.sourceLines.map(l=>l+previous.lineCount);
    if(students.some(s=>s.id===copy.id)){copy.studentNo??=copy.id;copy.id=`${copy.id}-R${students.length+1}`;}students.push(copy);continue;
   }
+  // A lone 7108 row may contain real blank fields. Only complementary reads of
+  // the same matched student establish split sessions across separate uploads.
+  const narrow=(s:OpticalStudent)=>{const group=s.provisionalSession;if(!group)return;const lessons=previous.questions.map(q=>q.lesson).filter(l=>["MATEMATIK","FEN"].includes(lessonIdentity(l))===(group==="numeric"));const present=new Set(lessons);const record=s.sessions?.single;if(!record)return;s.sessions={[group]:{...record,lessons:[...present]}};s.booklets=Object.fromEntries(Object.entries(s.booklets).filter(([l])=>present.has(l)));s.answers=s.answers.map((a,i)=>present.has(previous.questions[i].lesson)?a:"");s.missingLessons=[...new Set(previous.questions.map(q=>q.lesson))].filter(l=>!present.has(l));delete s.provisionalSession;};
+  const opposite=(s:OpticalStudent)=>s.provisionalSession==="numeric"?"verbal":"numeric";
+  if(old.provisionalSession&&(incoming.provisionalSession===opposite(old)||incoming.sessions?.[opposite(old)]))narrow(old);
+  if(incoming.provisionalSession&&old.sessions?.[opposite(incoming)])narrow(incoming);
   if(old.id.startsWith("tc-")&&!incoming.id.startsWith("tc-")){old.id=incoming.id;old.studentNo=incoming.studentNo;}
   old.name||=incoming.name;if(old.branch==="Belirtilmedi")old.branch=incoming.branch;
   old.identityHash??=incoming.identityHash;old.identityEncrypted??=incoming.identityEncrypted;old.schoolCode??=incoming.schoolCode;

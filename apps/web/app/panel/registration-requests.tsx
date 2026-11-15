@@ -1,4 +1,7 @@
 "use client";
+import HumanVerification from "../human-verification";
+import {getHumanToken} from "../../lib/human-token";
+import PasswordField from "../password-field";
 
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
@@ -37,6 +40,7 @@ type MemberRow = {
 };
 
 export default function RegistrationRequests({ token }: { token: string }) {
+  const [humanToken,setHumanToken]=useState("");const [attempt,setAttempt]=useState(0);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -164,7 +168,7 @@ export default function RegistrationRequests({ token }: { token: string }) {
       const response = await fetch(`${API_URL}/api/admin/users/${encodeURIComponent(userId)}/password`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ password: newPassword }),
+        body: JSON.stringify({ password: newPassword,humanToken:await getHumanToken("password",humanToken) }),
       });
       const result = await response.json() as { error?: string; message?: string };
       if (!response.ok) {
@@ -174,10 +178,10 @@ export default function RegistrationRequests({ token }: { token: string }) {
       setNotice(result.message ?? "Yeni şifre kaydedildi.");
       setNewPassword("");
       setResetId("");
-    } catch {
-      setError("Sunucuya bağlanılamadı. Yeni şifre kaydedilemedi.");
+    } catch (error) {
+      setError(error instanceof Error?error.message:"Sunucuya bağlanılamadı. Yeni şifre kaydedilemedi.");
     } finally {
-      setPendingId("");
+      setPendingId("");setHumanToken("");setAttempt(n=>n+1);
     }
   }
 
@@ -243,7 +247,8 @@ export default function RegistrationRequests({ token }: { token: string }) {
                           </>}
                           {resetId === user.id ? (
                             <form className="password-reset-form" onSubmit={(event) => void resetPassword(event, user.id)}>
-                              <input aria-label={`${user.email} için yeni şifre`} type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={15} maxLength={128} placeholder="Yeni şifre (15+ karakter)" required />
+                              <PasswordField name="newPassword" aria-label={`${user.email} için yeni şifre`} newPassword value={newPassword} onChange={event=>setNewPassword(event.target.value)} placeholder="Yeni şifre (15+ karakter)"/>
+<HumanVerification key={attempt} action="password" onToken={setHumanToken}/>
                               <button className="button button-navy" type="submit" disabled={pendingId === user.id || newPassword.length < 15}>Kaydet</button>
                               <button className="button button-quiet" type="button" onClick={() => { setResetId(""); setNewPassword(""); }}>İptal</button>
                             </form>

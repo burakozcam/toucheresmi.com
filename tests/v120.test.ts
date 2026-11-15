@@ -28,11 +28,11 @@ test("v120 system template rows cannot replace canonical 7108 or defeat inferenc
 test("v120 all records inspected, invalid booklet remains invalid after prefix detection",()=>{
  const templates=systemEvaluationTemplates();
  const valid=decodeOptical(oracleBytes).replace(/[\r\n]+$/,'').split(/\r?\n/)[0];
- const many=Array.from({length:101},()=>valid);many[100]=valid.slice(0,50)+' '+valid.slice(51);
+ const many=Array.from({length:101},()=>valid);many[100]=valid.slice(0,50)+'Z'+valid.slice(51);
  const prediction=inferFmt(many.join('\n'),templates);assert.equal(prediction.confidence,'possible');assert.equal(prediction.candidates[0].sampled,101);assert.equal(prediction.candidates[0].valid,100);
  assert.throws(()=>parseOptical(many[100],layout7108,oracleQuestions,'Anonim'),/kitapçık/);
  const blankBooks=decodeOptical(oracleBytes).replace(/[\r\n]+$/,'').split(/\r?\n/).map(l=>l.slice(0,50)+' '+l.slice(51)).join('\n');
- assert.equal(inferFmt(blankBooks,templates).confidence,'possible');
+ assert.equal(inferFmt(blankBooks,templates).confidence,'strong');
  assert.equal(inferFmt('7108 fake data\n7108 fake data',templates).confidence,'failed');
 });
 
