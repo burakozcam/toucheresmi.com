@@ -1,4 +1,5 @@
 const scoreText=(v:unknown)=>typeof v==="number"&&Number.isFinite(v)?v.toLocaleString("tr-TR",{minimumFractionDigits:3,maximumFractionDigits:3}):"Hesaplanmadı";
+import {referenceReportPdf} from "./result-reference-pdf";
 import {professionalReportPdf} from "./result-professional-pdf";
 import { reportTemplate } from "../lib/report-templates";
 import { designedReportPdf } from "./result-designed-pdf";
@@ -8,13 +9,14 @@ import type { OpticalStudent } from "./optical-core";
 import { decryptIdentity } from "./result-identity";
 const PDFDocument=require("pdfkit");
 export type ReportView=any;
-export type ReportOptions={kind:"cards"|"school"|"classes";order:"score"|"name";hideIdentity:boolean;branch?:string;grade?:string;templateId?:string;studentId?:string};
+export type ReportOptions={kind:"cards"|"school"|"classes";order:"score"|"name";hideIdentity:boolean;branch?:string;grade?:string;templateId?:string;studentId?:string;showGeneralParticipation?:boolean};
 export function selectedStudents(view:ReportView,options:ReportOptions):OpticalStudent[]{return view.data.students.filter((s:OpticalStudent)=>(!options.grade||resultGrade(s.branch)===options.grade)&&(!options.branch||s.branch===options.branch)&&(!options.studentId||s.id===options.studentId)).sort((a:OpticalStudent,b:OpticalStudent)=>options.order==="name"?a.name.localeCompare(b.name,"tr"):(view.summary.find((r:any)=>r.id===b.id).score-view.summary.find((r:any)=>r.id===a.id).score||a.name.localeCompare(b.name,"tr")));}
 const displayNo=(s:OpticalStudent,hide:boolean)=>hide&&/^\d{11}$/.test(s.studentNo??s.id)?"***********":(s.studentNo??s.id).startsWith("tc-")?"—":s.studentNo??s.id;
 const n=(value:number|null)=>value===null?"Hesaplanmadı":new Intl.NumberFormat("tr-TR",{maximumFractionDigits:2}).format(value);
 export function reportPdf(view:ReportView,options:ReportOptions):Promise<Buffer>{
  const template=reportTemplate(options.kind,options.templateId);
- if(["summary-card","two-page-card","detailed-card","school-table"].includes(template.id))return professionalReportPdf(view,{...options,templateId:template.id});
+ if(options.kind==="cards")return referenceReportPdf(view,{...options,templateId:template.id});
+ if(["school-table"].includes(template.id))return professionalReportPdf(view,{...options,templateId:template.id});
  if(!template.id.startsWith("classic-"))return designedReportPdf(view,{...options,templateId:template.id});
  return new Promise((resolve,reject)=>{
  const doc=new PDFDocument({size:"A4",margin:36,autoFirstPage:false,info:{Title:view.keyName,Author:"Kurumsal Sınav"}}),chunks:Buffer[]=[];doc.on("data",(chunk:Buffer)=>chunks.push(chunk));doc.on("end",()=>resolve(Buffer.concat(chunks)));doc.on("error",reject);

@@ -1,8 +1,8 @@
 "use client";
 
 const reportOptions = [
-  { id: "summary-card", label: "1 sayfa · Özet", detail: "Genel başarı ve ders tablosu" },
-  { id: "two-page-card", label: "2 sayfa · Ayrıntılı", detail: "Başarı, cevap ve kazanım özeti" },
+  { id: "summary-card", label: "1 sayfa · Özet", detail: "Başarı, tüm ders cevapları ve öncelikler" },
+  { id: "two-page-card", label: "2 sayfa · Ayrıntılı", detail: "Sonuç belgesi ve ayrıntılı kazanımlar" },
   { id: "detailed-card", label: "Kazanımlı karne", detail: "Soru ve kazanım ayrıntıları" },
 ];
 

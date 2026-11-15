@@ -27,8 +27,8 @@ export default function SearchableSelect({
     const closeOutside = (event: PointerEvent) => {
       if (event.target instanceof Node && !root.current?.contains(event.target)) setOpen(false);
     };
-    document.addEventListener("click", closeOutside);
-    return () => document.removeEventListener("click", closeOutside);
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
   }, []);
 
   useEffect(() => {
@@ -39,8 +39,8 @@ export default function SearchableSelect({
   }, [activeIndex, filtered, open]);
 
   function choose(option: SearchOption) {
-    onChange(option.id);
     setOpen(false);
+    onChange(option.id);
     setQuery("");
     trigger.current?.focus();
   }
@@ -52,7 +52,7 @@ export default function SearchableSelect({
     else if (event.key === "Escape") { event.preventDefault(); setOpen(false); trigger.current?.focus(); }
   }
 
-  return <div className="publisher-select searchable-select" ref={root}>
+  return <div className="publisher-select searchable-select" ref={root} onKeyDown={event=>{if(event.key==="Escape"){event.preventDefault();setOpen(false);trigger.current?.focus();}}}>
     <button ref={trigger} type="button" className="publisher-select-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onClick={() => { setOpen((isOpen) => !isOpen); setQuery(""); setActiveIndex(0); }}>
       <span>{selected ? <>{selected.label}{selected.detail && <small>{selected.detail}</small>}</> : label}</span><span aria-hidden="true">⌄</span>
     </button>

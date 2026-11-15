@@ -114,8 +114,7 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
   else table(["Ders","Kazanım / konu açıklaması","Soru","D","Y","Boş","Başarı %"],[.14,.5,.065,.065,.065,.065,.1],os.map(o=>[o.lesson,[o.code,o.name].filter((v,i,a)=>v&&a.indexOf(v)===i).join(" · "),o.count,o.correct,o.wrong,o.blank,fmt(100*o.correct/o.count)]),7.5);
  }
  if(!list){for(const s of students){const before=pages;summary(s);if(options.templateId!=="summary-card")details(s);
-  const limit=options.templateId==="summary-card"?1:options.templateId==="two-page-card"?2:null;
-  if(limit&&pages-before>limit){doc.end();reject(new Error(`${limit} sayfalık karne sınırı bu sınavın içeriğine yetmiyor. İçeriğin tamamı için Kazanımlı Karne seçin.`));return;}
+
  }}
  else {
   const groups=options.kind==="classes"?[...new Set(students.map(s=>s.branch))]:[""];

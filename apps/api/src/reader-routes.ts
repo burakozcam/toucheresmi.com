@@ -113,6 +113,7 @@ readerRouter.get("/my-results/:id",reader,wrap(async(req,res)=>{
 }));
 
 readerRouter.get("/my-results/:id/pdf",reader,wrap(async(req,res)=>{
+ const showGeneralParticipation=z.enum(["true","false"]).default("true").parse(req.query.showGeneralParticipation)==="true";
  const templateId=z.enum(["summary-card","two-page-card","detailed-card","classic-card","analysis-card","table-card"]).default("detailed-card").parse(req.query.templateId);
  const access=await prisma.studentResultAccess.findFirst({where:{id:id(req),userId:req.user!.id,result:{studentPublished:true,nextRevision:null,school:{active:true}}},select:{studentNo:true,result:{select:{schoolId:true,keyId:true,snapshot:true}}}});
  if(!access){res.status(404).json({error:"Sonuç bulunamadı veya hesabınıza bağlı değil."});return;}
@@ -120,5 +121,5 @@ readerRouter.get("/my-results/:id/pdf",reader,wrap(async(req,res)=>{
  const view=await examView(access.result.schoolId,access.result.keyId,true);if(!view){res.status(404).json({error:"Yayımlanmış sonuç bulunamadı."});return;}
  const candidates=view.data.students.filter(s=>{const source=own as typeof s;return (source.identityHash?s.identityHash===source.identityHash:studentNumberKey(s.studentNo??s.id)===studentNumberKey(source.studentNo??source.id))&&s.name===source.name&&s.branch===source.branch;});
  if(candidates.length!==1){res.status(400).json({error:"Sonuç bağlantısı tek bir öğrenciyle eşleşmiyor. Kurumunuza başvurun."});return;}
- res.attachment("ogrenci-karnesi.pdf").type("application/pdf").send(await reportPdf(await enrichReportView(view),{kind:"cards",order:"name",hideIdentity:true,studentId:candidates[0].id,templateId}));
+ res.attachment("ogrenci-karnesi.pdf").type("application/pdf").send(await reportPdf(await enrichReportView(view),{kind:"cards",order:"name",hideIdentity:true,studentId:candidates[0].id,templateId,showGeneralParticipation}));
 }));

@@ -1,6 +1,6 @@
-# Kurumsal Sınav v1.2.9 — Yerel geliştirme
+# Kurumsal Sınav v1.3.0 — Yerel geliştirme
 
-Cevap anahtarı eklerken önceden sınav oluşturma zorunluluğu kaldırıldı; sınav ve anahtar birlikte kaydedilir. Excel/Calc çok hücreli yapıştırma, geri alma ve çok satırlı kazanım metinleri düzeltildi. Ana sayfa kitapçık → tarama → değerlendirme → karne animasyonuyla yenilendi. [v1.2.9 yayın raporu](docs/v129-release-report.md) gerçek tarayıcı akışlarını ve kabul sınırlarını açıklar. Yeni migration yoktur; canlıya aktarım veya canlı DB işlemi yapılmadı.
+Referans tasarıma göre yenilenen A4 öğrenci karneleri; tek sayfada bütün ders cevapları, iki sayfada ayrıntılı kazanım analizi sunar. “Genel katılımı göster” seçeneği genel sıra ve katılım bilgilerini PDF’den gizleyebilir. Uzun içerikler kırpılmadan, bilgi notuyla devam sayfasına aktarılır. Yayınevi seçim listesinin yeniden açılması düzeltildi. [v1.3.0 yayın raporu](docs/v130-release-report.md) doğrulama kapsamını açıklar. Veritabanı şeması ve mevcut kayıtlar değiştirilmedi; canlıya dağıtım yapılmadı.
 
 ## Windows 11 ve Linux: kısa kurulum
 
@@ -216,3 +216,8 @@ Panel demosunda hesap ayarları, hafta sonları/resmî tatil işaretleri bulunan
 ## Çok kiracılı erişim kuralı
 
 İsteklerde tenant kimliği istemciden gelen değere göre yetkilendirilmemeli; doğrulanmış kullanıcının rolü ve `dealerId`/`schoolId` ilişkileri üzerinden kapsam belirlenmelidir. Süper yönetici tüm kurumlara erişebilir; bayi kendi okullarıyla, okul kullanıcısı yalnızca kendi okuluyla sınırlandırılmalıdır. Dosya işleme ve rapor uçları da aynı kapsam kontrollerini uygulamalıdır.
+
+
+## v1.3.0 doğrulama
+
+Node.js 22 ile `npm test` ve `npm run build` çalıştırın. PDF testleri anonim örnekleri `output/pdf/v130/` altında üretir. `tests/e2e/v130-ui.py`, Web 127.0.0.1:3110 üzerinde açıkken mobil/masaüstü yayınevi araması, seçim, ESC, dışarı tıklama ve genel katılım seçeneğinin PDF isteğine aktarılmasını denetler. Bu tarayıcı testi API yanıtlarını taklit eder, veritabanına bağlanmaz. Önce `node --import tsx tests/v130.test.ts` çalıştırılmalıdır.

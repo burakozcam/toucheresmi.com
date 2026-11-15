@@ -1,5 +1,5 @@
 export const reportTemplates=[
- {id:"summary-card",family:"cards",name:"1 Sayfalık Karne · özet"},
+ {id:"summary-card",family:"cards",name:"1 Sayfalık Karne · sonuç ve tüm cevaplar"},
  {id:"two-page-card",family:"cards",name:"2 Sayfalık Karne · cevap ve kazanım analizi"},
  {id:"detailed-card",family:"cards",name:"Kazanımlı Karne · tam ayrıntı, gerektiğinde çok sayfa"},
  {id:"school-table",family:"lists",name:"Profesyonel okul sonuç tablosu"},

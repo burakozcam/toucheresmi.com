@@ -1,3 +1,12 @@
+# v1.3.0 · 2026-11-15 · yerel geliştirme
+
+- Referans görsele uygun dinamik A4 öğrenci karneleri: kurumsal başlık, bilgi/puan kartları, ders tablosu, karşılaştırma grafiği, sıralama/katılım tablosu, bütün derslerin öğrenci ve anahtar cevapları, gerçek performanstan öncelikli kazanımlar.
+- İki sayfalık ve kazanımlı karnelerde ders renkleri, kazanım D/Y/B ve başarı göstergeleri; yoğun listelerde iki sütun, uzun satırlarda ölçülmüş satır ve devam sayfası. Aynı ders/açıklamadaki kazanımlar, bütün kodları korunup gruplama açıkça belirtilerek birlikte hesaplanır.
+- Genel katılımı göster/gizle ayarı yönetici, öğrenci/veli ve erişim koduyla sonuç PDF akışlarına eklendi; toplu PDF ve ZIP aynı ayarı kullanır.
+- Sayfa sınırında PDF’yi reddeden kontrol kaldırıldı; öğrenci başına gerçek 1/1, 1/2, 2/2 veya devam sayfası numaraları.
+- Yayınevi seçimindeki label tıklama aktarımı düzeltildi; ortak aramalı bileşen seçim, ESC, dışarı tıklama ve klavye desteğini korur. Önceden sınav oluşturma zorunluluğu getirilmedi.
+- Ayrıntılar: `docs/v130-release-report.md`. Yeni migration veya canlı veritabanı işlemi yoktur.
+
 # v1.2.9 · 2026-11-15 · yerel geliştirme
 
 - Cevap anahtarı yüklemede zorunlu mevcut sınav seçimi ve API'nin koşulsuz 409 cevabı kaldırıldı. Excel ve elle giriş aynı onaylı kayıt akışını kullanır; yeni sınav aynı transaction'da oluşturulur, aynı adlı boş sınav korunur. Mevcut anahtarın otomatik üzerine yazılması ve eşzamanlı mükerrer kayıt engellenir.

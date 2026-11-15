@@ -209,11 +209,11 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
           {!targetPublicationId&&<p className="field-help">Önceden sınav eklemeniz gerekmez. Yayınevi, sınıf ve sınav adını girin; kaydettiğinizde sınav ve anahtar birlikte oluşturulur. Aynı adlı boş sınav kaydı varsa korunarak kullanılır.</p>}
           {targetPublicationId&&<p className="notice">Mevcut sınav güncellenecek; yeni mükerrer sınav oluşturulmayacak. Önceki sonuç kopyaları korunur.</p>}
           <div className="two-column-fields">
-            <label className="publisher-select-field">
+            <div className="publisher-select-field">
               Yayınevi
                 <input type="hidden" name="publisherId" value={form.publisherId} />
                 <PublisherSelect publishers={publishers.filter((publisher) => publisher.active)} value={form.publisherId} onChange={(publisherId) => setForm((current) => ({ ...current, publisherId }))} />
-              </label>
+              </div>
             <label>
               Sınıf
               <select name="grade" value={form.grade} onChange={(event) => setForm((current) => ({ ...current, grade: event.target.value }))} required>
@@ -288,7 +288,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                       void saveRecord(item.id, formData);
                     }}>
                       <input type="hidden" name="publisherId" value={editing.publisherId} />
-                      <label>Yayınevi<PublisherSelect publishers={publishers.filter((publisher) => publisher.active || publisher.id === editing.publisherId)} value={editing.publisherId} onChange={(publisherId) => setEditing((current) => current ? { ...current, publisherId } : current)} /></label>
+                      <div className="publisher-select-field">Yayınevi<PublisherSelect publishers={publishers.filter((publisher) => publisher.active || publisher.id === editing.publisherId)} value={editing.publisherId} onChange={(publisherId) => setEditing((current) => current ? { ...current, publisherId } : current)} /></div>
                       <div className="two-column-fields">
                         <label>Sınıf<select name="grade" value={String(editing.grade)} onChange={(event) => setEditing({ ...editing, grade: Number(event.target.value) })}>{[1,2,3,4,5,6,7,8,9,10,11,12].map((grade) => <option key={grade} value={String(grade)}>{grade}. Sınıf</option>)}</select></label>
                         <label>Yayın tarihi<input type="date" name="publishedAt" value={editing.publishedAt.slice(0, 10)} onChange={(event) => setEditing({ ...editing, publishedAt: event.target.value })} required /></label>
