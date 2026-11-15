@@ -37,7 +37,7 @@ export async function lookupStudentResults(input:z.infer<typeof lookup>,accessCo
 publicResultsRouter.use(["/lookup","/pdf"],async(req,res,next)=>{
  if(req.method!=="POST"){next();return;}
  const config=humanVerificationConfig();
- if(!await verifyHuman(req.body?.humanToken,"results",config)){res.status(403).json({error:"İnsan doğrulaması başarısız veya süresi doldu. Lütfen yeniden deneyin."});return;}next();
+ if(!await verifyHuman(req.body?.humanToken,"results",config)){res.status(403).json({error:"Güvenlik doğrulaması tamamlanamadı. Google hizmetine erişimi kontrol edip yeniden deneyin."});return;}next();
 });
 publicResultsRouter.post("/lookup",wrap(async(req,res)=>{const input=lookup.extend({accessCode:z.string().regex(/^[A-Za-z0-9_-]{16}$/,"Kurumunuzdan aldığınız erişim kodunu girin veya öğrenci hesabınızla giriş yapın.")}).parse(req.body),found=await lookupStudentResults(input,input.accessCode);if(!found.length){res.status(404).json({error:"Bu bilgilerle erişilebilir sonuç bulunamadı. Kurum, sınıf, öğrenci bilgisi ve erişim kodunu kontrol edin."});return;}
  res.json(found.map(({view,student})=>({keyId:view.keyId,examName:view.keyName,schoolName:view.schoolName,student:{id:student.id,name:student.name,studentNo:student.studentNo,branch:student.branch},summary:view.summary.find((r:any)=>r.id===student.id),ranking:view.rankings[student.id]})));

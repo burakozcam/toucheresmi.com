@@ -1,3 +1,4 @@
+import {legacyOzdebirSingle} from "./ozdebir-layout";
 import {opticalLayoutSchema,type OpticalLayout} from "./optical-core";
 import {readerFamily,recordLayout,reliableRecord} from "./optical-readers";
 import {canonicalJson} from "./canonical-json";
@@ -8,6 +9,6 @@ export function evaluationReader(text:string,selected:OpticalLayout,templates:Ar
  const selectedCount=count(selected),groups=new Map<string,{layout:OpticalLayout;name:string;count:number}>();
  for(const t of templates){const parsed=opticalLayoutSchema.safeParse(t.layout);if(!parsed.success)continue;const layout=parsed.data,key=readerFamily(layout)?.id??canonicalJson(layout);if(!groups.has(key))groups.set(key,{layout,name:t.name,count:count(layout)});}
  const ranked=[...groups.values()].sort((a,b)=>b.count-a.count),best=ranked[0];
- if(best&&best.count>selectedCount&&best.count>(ranked[1]?.count??0))return {matched:best.count,layout:best.layout,warning:`Seçilen FMT yerine kimlik, kitapçık, sabit kod ve cevap konumları doğrulanan ${best.name} kullanıldı. Konumlar kaydırılmadı.`};
+ if(best&&best.count>0&&(best.count>selectedCount||(best.count===selectedCount&&readerFamily(best.layout)&&canonicalJson(selected)===canonicalJson(legacyOzdebirSingle)))&&best.count>(ranked[1]?.count??0))return {matched:best.count,layout:best.layout,warning:`Seçilen FMT yerine kimlik, kitapçık, sabit kod ve cevap konumları doğrulanan ${best.name} kullanıldı. Konumlar kaydırılmadı.`};
  return {matched:selectedCount,layout:selected,warning:null};
 }

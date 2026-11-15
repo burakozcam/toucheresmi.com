@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   experimental: { webpackBuildWorker: false },
   async headers() {
     return [
+      ...["/panel/:path*","/sonuclar/:path*","/sonuclarim/:path*","/login","/hesap-kur/:path*","/fmt-paylasim/:path*","/dosya-paylasim/:path*"].map(source=>({source,headers:[{key:"Cache-Control",value:"private, no-store"},{key:"X-Robots-Tag",value:"noindex, nofollow"}]})),
       { source: "/rebuilder.html", headers: [{ key: "X-Robots-Tag", value: "noindex, follow" }] },
       { source: "/araclar/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, follow" }] },
     ];

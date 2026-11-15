@@ -1,4 +1,5 @@
 "use client";
+import {getHumanToken} from "../../lib/human-token";
 import PasswordField from "../password-field";
 import UiIcon from "../ui-icon";
 import HumanVerification from "../human-verification";
@@ -65,7 +66,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          humanToken,
+          humanToken:await getHumanToken("login",humanToken),
           email: form.get("email"),
           password: form.get("password"),
           role: selectedType === "admin" ? "SUPER_ADMIN" : selectedType === "student" ? "STUDENT" : selectedType === "parent" ? "PARENT" : "DEALER",
@@ -86,8 +87,8 @@ export default function LoginPage() {
       setSuccess(true);
       setMessage("Giriş başarılı. Yönetim paneline yönlendiriliyorsunuz...");
       window.setTimeout(() => window.location.assign(result.user!.role === "STUDENT" || result.user!.role === "PARENT" ? "/sonuclarim" : "/panel"), 650);
-    } catch {
-      setMessage("Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.");
+    } catch (error) {
+      setMessage(error instanceof Error?error.message:"Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.");
       setSubmitting(false);setHumanToken("");setAttempt(n=>n+1);
     }
   }
@@ -107,7 +108,7 @@ export default function LoginPage() {
           firstName: form.get("firstName"),
           lastName: form.get("lastName"),
           phone: form.get("phone"),
-          humanToken,
+          humanToken:await getHumanToken("register",humanToken),
           email: form.get("email"),
           password: form.get("password"),
         }),
@@ -121,8 +122,8 @@ export default function LoginPage() {
       setSuccess(true);
       setMessage(result.message ?? "Üyelik talebiniz yönetici onayına gönderildi.");
       formElement.reset();
-    } catch {
-      setMessage("Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.");
+    } catch (error) {
+      setMessage(error instanceof Error?error.message:"Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.");
     } finally {
       setSubmitting(false);setHumanToken("");setAttempt(n=>n+1);
     }

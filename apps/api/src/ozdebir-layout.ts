@@ -16,3 +16,6 @@ export const layoutOzdebirVerbal:OpticalLayout={...layoutOzdebirSingle,lineLengt
  lessons:[{name:"TÜRKÇE",start:52,length:20},{name:"DİN",start:72,length:10},{name:"SOSYAL",start:92,length:10},{name:"İNGİLİZCE",start:112,length:10}],literals:[{start:1,text:"1"}]};
 export const layoutOzdebirNumeric:OpticalLayout={...layoutOzdebirSingle,lineLength:91,
  lessons:["MATEMATİK","FEN"].map((name,i)=>({name,start:52+i*20,length:20})),literals:[{start:1,text:"2"}]};
+
+/** v1.2.6 generic analysis of the original 2022 single BLDM. Exact structure only. */
+export const legacyOzdebirSingle:OpticalLayout={lineLength:171,fields:{grade:{start:1,length:1},schoolCode:{start:2,length:8},id:{start:10,length:5},identity:{start:15,length:11},branch:{start:27,length:1},booklet:{start:28,length:1},name:{start:30,length:22}},lessons:[{name:"TÜRKÇE",start:52,length:20},{name:"MATEMATİK",start:72,length:20},{name:"FEN",start:92,length:20},{name:"SOSYAL",start:112,length:20},{name:"İNGİLİZCE",start:132,length:20},{name:"DIN KULT",start:152,length:20}],literals:[]};

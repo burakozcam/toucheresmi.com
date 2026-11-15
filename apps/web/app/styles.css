@@ -1278,3 +1278,5 @@ button, .button { touch-action: manipulation; }
 .share-link-card p{overflow-wrap:anywhere}.share-link-card input{width:100%;min-width:0}
 .share-link-card .studio-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 .share-link-card .studio-actions>*{max-width:100%}
+
+@media print { aside[aria-label="Analitik çerez tercihleri"] { display: none !important; } }

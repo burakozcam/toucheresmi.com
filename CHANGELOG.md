@@ -1,3 +1,13 @@
+# v1.2.7 · 2026-11-15 · yerel geliştirme
+
+- Orijinal 2022 Özdebir tek oturum BLDM içerik imzası eklendi. Eski genel analizde sınıfın 1. konuma ve derslerin yanlış etiketlere bağlanması, eşit okunabilirlikte de yalnız bu kesin eski düzen için düzeltilir. Eski DB satırı ve sonuç revizyonları değişmez.
+- Tekli/toplu FMT yüklemesi BLDM kabul eder; tekli yükleme de sunucu analizini kullanır. Özdebir boş kitapçığı önizlemede A kabul edilir; sınav önerilerinde de aynı kural uygulanır.
+- O8126 özgün cevap/kazanım/çapraz Excel'i ortak API/tarayıcı parser'ına eklendi. 90 soru ve iki bağımsız cevap sütunuyla A/B çapraz kontrolü yapılır; çelişkiler reddedilir. Kaynak X iptal değeri korunur; PDF'deki T/H kararları otomatik uydurulmaz.
+- reCAPTCHA v3 gönderim anında token üretir; backend hostname/action/skor/tarih/tekrar/kota hatasını denetler. Varsayılan eşik 0.5; mevcut hız limitleri korunur. Üretimde anahtarsız/kapalı koruma reddedilir. Public mevcut işlemler ve sonuç PDF'si kapsanır.
+- Analitik izin paneli, sabit yol allowlist'i, Search Console metadata alanı ve denetim sonrası etkinleşen GA4 hazırlığı eklendi. GTM container yüklemesi denetim bekler. Öğrenci sonuçları/özel tokenlı yollar analitiğe alınmaz.
+- Kök .env yüklemesi, açık API URL önkontrolü ve localhost HTTP build desteği Windows/Linux kurulumunu düzeltir. Yerel uzak DB engeli ve geliştirmede tek Prisma istemcisi eklendi. API/özel Web sayfalarında cache sınırları güçlendirildi.
+- Sürüm 1.2.7; yeni migration/deploy yok. Gerçek kaynak, anonim karne, test ve kabul sınırları `docs/v127-release-report.md`; altyapı yol haritası `docs/infrastructure-roadmap.md` içinde.
+
 ## v1.2.6 — 2026-11-15
 
 - Özdebir sözel ve tek optik ders sıraları/İNG takma adları düzeltildi; boş kitapçık uyarıyla A, yapısal alternatif kayıt düzeni ve bütün oturum birleştirme geliştirildi.

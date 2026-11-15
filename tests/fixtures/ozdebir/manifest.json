@@ -41,5 +41,24 @@
     "fixture": "o8126-reference-anonymous.json",
     "records": 427,
     "changes": "Only page ordinal, D/W counts, score, and answer-grid character slots retained. All names, institutions, national identifiers, student numbers and report headers excluded. Choices rotated A→C B→D C→A D→B, matching existing anonymous TXT fixtures. No PDF embedded. T and * preserved."
+  },
+  {
+    "source": "2022-2023-ÖZDEBİR-5-6-7-LGS(TEK-OTURUM).bldm",
+    "fixture": "single-original-2022.bldm",
+    "fixtureSha256": "dd3cbc08d0808abfe1dadd6e6e595364d68df1f396c26d160c5e68261623a226",
+    "changes": "Original reader definition; contains no students or secrets."
+  },
+  {
+    "source": "O8126 answer/outcome/cross-map workbook",
+    "fixture": "o8126-workbook.json",
+    "fixtureSha256": "b57a93e0199bf67c4f1391f3addbcb26d8e1f3dadff64ab9d7f6b15d1084ff44",
+    "changes": "Worksheet values only: public answer key and curriculum outcomes; no student records."
+  },
+  {
+    "source": "downloadreport (1).pdf",
+    "fixture": "v127-three-cards-anonymous.json",
+    "fixtureSha256": "db144df395415698e0ddb1bcc5a0d2a606acd780b83d847a04cc52950bea6957",
+    "changes": "Only page ordinal, D/W counts, score and fixed answer-grid slots; no names, IDs, institutions or report header. Choices rotated A→C B→D C→A D→B; T preserved.",
+    "sourceSha256": "5f1933039f40bcd332c7c7dec756ecc1f7d107066961a6287e0e87fe7fd230a1"
   }
 ]

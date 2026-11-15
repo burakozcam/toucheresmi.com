@@ -1,4 +1,4 @@
-import {recordLayout} from "./optical-readers";
+import {recordLayout,readerFamily} from "./optical-readers";
 import { opticalLayoutSchema, type OpticalLayout } from "./optical-core";
 export function previewFmt(txt:string,input:OpticalLayout){
   const layout=opticalLayoutSchema.parse(input),lines=txt.replace(/^\uFEFF/,"").split(/\r\n|\n|\r/);while(lines.at(-1)==="")lines.pop();
@@ -13,7 +13,9 @@ export function previewFmt(txt:string,input:OpticalLayout){
     for(const literal of rowLayout.literals??[])if(line.slice(literal.start-1,literal.start-1+literal.text.length)!==literal.text)fail(`${label}: ${literal.start}. konumdaki sabit metin eşleşmiyor.`);
     if(!read(line,rowLayout.fields.name))fail(`${label}: ad alanı boş.`);
     if(!read(line,rowLayout.fields.id)&&!read(line,rowLayout.fields.identity))fail(`${label}: öğrenci no ve eşleştirme kimliği boş.`);
-    if(!/^[A-D]$/.test(read(line,rowLayout.fields.booklet).toUpperCase()))fail(`${label}: kitapçık A, B, C veya D olmalı.`);
+    const booklet=read(line,rowLayout.fields.booklet).toUpperCase();
+    if(!booklet&&readerFamily(layout))warnings.push(`${label}: boş kitapçık varsayılan A kabul edildi.`);
+    else if(!/^[A-D]$/.test(booklet))fail(`${label}: kitapçık A, B, C veya D olmalı.`);
     for(const lesson of rowLayout.lessons)if(/[^ABCDE* .-]/i.test(line.slice(lesson.start-1,lesson.start-1+lesson.length)))fail(`${label} / ${lesson.name}: cevap alanında geçersiz karakter var.`);
   }
   if(!layout.fields.grade)warnings.push("Sınıf alanı tanımlı değil; sınıf uyuşmazlığı kontrolü sınırlı kalır.");

@@ -9,7 +9,7 @@ const parsedApiUrl = new URL(apiUrl);
 
 if (
   !["http:", "https:"].includes(parsedApiUrl.protocol) ||
-  (process.env.NODE_ENV === "production" && parsedApiUrl.protocol !== "https:")
+  (process.env.NODE_ENV === "production" && parsedApiUrl.protocol !== "https:" && !["localhost","127.0.0.1","[::1]"].includes(parsedApiUrl.hostname))
 ) {
   throw new Error("NEXT_PUBLIC_API_URL geçerli bir HTTPS adresi olmalıdır.");
 }

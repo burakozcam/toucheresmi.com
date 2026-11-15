@@ -41,6 +41,8 @@ app.use("/api/admin/exam-schedule", requireAuth, requireRole(Role.SUPER_ADMIN), 
 app.use("/api/optical/templates/bulk-rows", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use("/api/optical/templates/bulk", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use(express.json({ limit: "1mb" }));
+// API responses may contain accounts or student results; CDN caching is never implicit.
+app.use("/api",(_req,res,next)=>{res.setHeader("Cache-Control","private, no-store");next();});
 // JSON presentation alias; does not change Prisma records or storage paths.
 app.use((request,response,next)=>{
  const json=response.json.bind(response);
@@ -273,9 +275,9 @@ app.get("/api/health", (_request, response) => {
 
 const humanConfig=humanVerificationConfig();
 app.get("/api/auth/human-verification",(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({enabled:humanConfig.enabled,siteKey:humanConfig.enabled?humanConfig.siteKey:undefined,...(humanConfig.provider?{provider:humanConfig.provider}:{})});});
-for(const [route,action] of [["login","login"],["register","register"]])app.use(`/api/auth/${route}`,async(req,res,next)=>{
+for(const [route,action] of [["auth/login","login"],["auth/register","register"],["contact","contact"],["applications","register"]])app.use(`/api/${route}`,async(req,res,next)=>{
  if(req.method!=="POST"){next();return;}
- if(!await verifyHuman(req.body?.humanToken,action,humanConfig)){res.status(403).json({error:"İnsan doğrulaması başarısız veya süresi doldu. Lütfen yeniden deneyin."});return;}if(action==="login"){limitLoginAccount(req,res,next);return;}next();
+ if(!await verifyHuman(req.body?.humanToken,action,humanConfig)){res.status(403).json({error:"Güvenlik doğrulaması tamamlanamadı. Google hizmetine erişimi kontrol edip yeniden deneyin."});return;}if(action==="login"){limitLoginAccount(req,res,next);return;}next();
 });
 
 app.post("/api/auth/login", async (request, response, next) => {

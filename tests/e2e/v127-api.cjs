@@ -1,0 +1,20 @@
+const root=process.cwd(),fs=require('fs'),express=require(root+'/node_modules/express');
+process.env.NODE_ENV='test';process.env.DATABASE_URL='postgresql://test:test@127.0.0.1:1/test';process.env.JWT_SECRET='isolated-browser-only-secret-more-than-32-characters';process.env.RECAPTCHA_ENABLED='false';
+const {prisma}=require(root+'/apps/api/src/db.ts'),{opticalRouter}=require(root+'/apps/api/src/optical-routes.ts'),{layoutOzdebirSingle:layout,legacyOzdebirSingle}=require(root+'/apps/api/src/ozdebir-layout.ts'),{newExamProfile}=require(root+'/apps/api/src/scoring-profile.ts');
+const {parseWorkbook}=require(root+'/apps/api/lib/optical-import');
+const rotate=s=>s.replace(/[ABCD]/g,c=>({A:'C',B:'D',C:'A',D:'B'}[c]));
+const questions=newExamProfile(parseWorkbook(JSON.parse(fs.readFileSync('tests/fixtures/ozdebir/o8126-workbook.json'))).questions.map(q=>({...q,answer:rotate(q.answer)})),'Özdebir',8);
+const school={id:'school',name:'Anonim Kurum',city:'Eskişehir',district:'Tepebaşı'},template={id:'fmt',active:true,name:'Özdebir Tek Oturum',layout:legacyOzdebirSingle},exam={id:'key',name:'Özdebir O8126',questions,penalty:3,publication:{grade:8,examName:'Özdebir O8126'}};
+let last=null;prisma.opticalTemplate.findFirst=async()=>template;prisma.school.findFirst=async()=>school;prisma.opticalKey.findFirst=async()=>exam;prisma.opticalResult.findFirst=async()=>null;prisma.opticalResult.findMany=async()=>[];prisma.$transaction=async fn=>fn(prisma);prisma.opticalResult.create=async({data})=>({id:'isolated-result',revision:1,seriesId:'series',createdAt:new Date(),studentPublished:false,...data});
+const app=express();app.use((req,res,next)=>{res.set('Access-Control-Allow-Origin','*');res.set('Access-Control-Allow-Headers','Content-Type, Authorization');res.set('Access-Control-Allow-Methods','GET,POST,OPTIONS');if(req.method==='OPTIONS')return res.sendStatus(204);next();});app.use(express.json());
+app.get('/api/account',(_q,r)=>r.json({id:'user',role:'DEALER',email:'qa@example.invalid',firstName:'Test',lastName:'Bayi',mustChangePassword:false}));app.get('/api/schools',(_q,r)=>r.json([school]));
+app.get('/api/optical/txt-files',(_q,r)=>r.json([{id:'txt',name:'anonim-tek-optik.txt',size:173,createdAt:new Date().toISOString(),uploadedBy:'Test Bayi'}]));
+app.get('/api/optical/evaluation-templates',(_q,r)=>r.json([{...template,layout}]));app.get('/api/optical/evaluation-exams',(_q,r)=>r.json([{id:'key',name:exam.name,publisher:{id:'pub',name:'Özdebir'},grade:8,active:true,questionCount:90,booklets:['A','B'],lessonCounts:Object.fromEntries(layout.lessons.map(l=>[l.name,['DİN','SOSYAL','İNGİLİZCE'].includes(l.name)?10:20]))}]));
+app.post('/api/optical/infer-fmt',(_q,r)=>r.json([]));app.post('/api/optical/suggest-exams',(_q,r)=>r.json({items:[]}));
+for(const endpoint of ['preview','evaluate'])app.post('/api/optical/'+endpoint,async(q,r,next)=>{
+ delete q.body.fileIds;q.user={id:'user',role:'DEALER',dealerId:'dealer'};q.file={originalname:'anonymous-source.txt',buffer:fs.readFileSync('tests/fixtures/ozdebir/single-anonymous.txt')};
+ const json=r.json.bind(r);r.json=v=>{if(endpoint==='evaluate'&&r.statusCode===201)last=v;return json(v);};
+ await opticalRouter.stack.find(l=>l.route?.path==='/'+endpoint).route.stack.at(-1).handle(q,r,next);
+});
+app.get('/api/optical/result-exams',(_q,r)=>r.json(last?[{id:'key',publisher:'Özdebir',name:exam.name,uploadCount:1}]:[]));app.get('/api/optical/result-exams/key',(_q,r)=>r.json({...last,generalCount:1,sourceResultIds:['isolated-result'],rankings:Object.fromEntries((last?.data.students??[]).map(s=>[s.id,{generalRank:1,schoolRank:1,classRank:1,generalCount:1,schoolCount:1,classCount:1}]))}));
+app.use((_q,r)=>r.json([]));app.listen(4000,'127.0.0.1',()=>console.log('Isolated browser API ready; DB methods use memory.'));

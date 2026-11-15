@@ -1,0 +1,158 @@
+[
+  {
+    "page": 1,
+    "correct": [
+      0,
+      8,
+      0,
+      8,
+      0,
+      0
+    ],
+    "wrong": [
+      0,
+      2,
+      0,
+      6,
+      0,
+      0
+    ],
+    "score": 258.345,
+    "lessons": [
+      {
+        "lesson": "TÜRKÇE",
+        "key": "                    ",
+        "answers": "                    "
+      },
+      {
+        "lesson": "MATEMATİK",
+        "key": "BDAACDACACBABACDCDBD",
+        "answers": "  A CDA C BAB  C D  "
+      },
+      {
+        "lesson": "DİN",
+        "key": "          ",
+        "answers": "          "
+      },
+      {
+        "lesson": "FEN",
+        "key": "BTBCDAABBCTDADADDDCB",
+        "answers": "BD  CD BBAAA D DBD D"
+      },
+      {
+        "lesson": "SOSYAL",
+        "key": "          ",
+        "answers": "          "
+      },
+      {
+        "lesson": "İNGİLİZCE",
+        "key": "          ",
+        "answers": "          "
+      }
+    ]
+  },
+  {
+    "page": 2,
+    "correct": [
+      11,
+      4,
+      6,
+      8,
+      4,
+      8
+    ],
+    "wrong": [
+      7,
+      6,
+      4,
+      7,
+      4,
+      1
+    ],
+    "score": 293.003,
+    "lessons": [
+      {
+        "lesson": "TÜRKÇE",
+        "key": "CBDCADBABCDACBABACAB",
+        "answers": "CBDCAAADBCAAAB DC AB"
+      },
+      {
+        "lesson": "MATEMATİK",
+        "key": "ABDBCDACDCBDADCABAAC",
+        "answers": "  A CDA C BAB  C D  "
+      },
+      {
+        "lesson": "DİN",
+        "key": "ACBACBDDBA",
+        "answers": "ACDADBBCBA"
+      },
+      {
+        "lesson": "FEN",
+        "key": "BAADCBTBCADDDTBACDBD",
+        "answers": "BD  CD BBAAA D DBD D"
+      },
+      {
+        "lesson": "SOSYAL",
+        "key": "ABCABDCBDA",
+        "answers": "AACBCDB  A"
+      },
+      {
+        "lesson": "İNGİLİZCE",
+        "key": "ADCDABDBCC",
+        "answers": "ADC CBDBCC"
+      }
+    ]
+  },
+  {
+    "page": 3,
+    "correct": [
+      11,
+      0,
+      6,
+      0,
+      4,
+      8
+    ],
+    "wrong": [
+      7,
+      0,
+      4,
+      0,
+      4,
+      1
+    ],
+    "score": 262.703,
+    "lessons": [
+      {
+        "lesson": "TÜRKÇE",
+        "key": "CBDCADBABCDACBABACAB",
+        "answers": "CBDCAAADBCAAAB DC AB"
+      },
+      {
+        "lesson": "MATEMATİK",
+        "key": "                    ",
+        "answers": "                    "
+      },
+      {
+        "lesson": "DİN",
+        "key": "ACBACBDDBA",
+        "answers": "ACDADBBCBA"
+      },
+      {
+        "lesson": "FEN",
+        "key": "                    ",
+        "answers": "                    "
+      },
+      {
+        "lesson": "SOSYAL",
+        "key": "ABCABDCBDA",
+        "answers": "AACBCDB  A"
+      },
+      {
+        "lesson": "İNGİLİZCE",
+        "key": "ADCDABDBCC",
+        "answers": "ADC CBDBCC"
+      }
+    ]
+  }
+]

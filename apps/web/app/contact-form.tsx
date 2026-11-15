@@ -1,4 +1,6 @@
 "use client";
+import HumanVerification from "./human-verification";
+import {getHumanToken} from "../lib/human-token";
 
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
@@ -8,6 +10,8 @@ type ContactFormProps = { showBrand?: boolean; purpose?: "support" | "answer-key
 
 export default function ContactForm({ showBrand = false, purpose = "support" }: ContactFormProps) {
   const [values, setValues] = useState({ firstName: "", lastName: "", phone: "", email: "", message: "" });
+  const [humanToken,setHumanToken]=useState("");
+  const [attempt,setAttempt]=useState(0);
   const [notice, setNotice] = useState("");
   const [warning, setWarning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -37,13 +41,13 @@ export default function ContactForm({ showBrand = false, purpose = "support" }: 
     setWarning(false);
     const token = window.sessionStorage.getItem("kurumsal-auth-token");
     try {
-      const send = (withToken: boolean) => fetch(`${API_URL}/api/contact`, {
+      const send = async (withToken: boolean) => fetch(`${API_URL}/api/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(withToken && token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ ...values, message: purpose === "answer-key" ? `[Cevap anahtarı ekleme talebi]\n${values.message}` : values.message }),
+        body: JSON.stringify({ ...values, humanToken:await getHumanToken("contact",humanToken), message: purpose === "answer-key" ? `[Cevap anahtarı ekleme talebi]\n${values.message}` : values.message }),
       });
       let response = await send(Boolean(token));
       if (response.status === 401 && token) response = await send(false);
@@ -56,11 +60,11 @@ export default function ContactForm({ showBrand = false, purpose = "support" }: 
       setNotice([result.message ?? "Mesajınız iletildi.", result.warning].filter(Boolean).join(" "));
       setWarning(Boolean(result.warning));
       setValues((current) => ({ ...current, phone: "", message: "" }));
-    } catch {
-      setNotice("Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.");
+    } catch (error) {
+      setNotice(error instanceof Error?error.message:"Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.");
       setWarning(true);
     } finally {
-      setSubmitting(false);
+      setSubmitting(false);setHumanToken("");setAttempt(n=>n+1);
     }
   }
 
@@ -77,6 +81,7 @@ export default function ContactForm({ showBrand = false, purpose = "support" }: 
           <label>E-posta<input autoComplete="email" name="email" type="email" value={values.email} onChange={(event) => setValues({ ...values, email: event.target.value })} maxLength={254} required /></label>
         </div>
         <label>{purpose === "answer-key" ? "Yayınevi, sınav adı, sınıf ve talebiniz" : "Mesajınız"}<textarea name="message" rows={5} placeholder={purpose === "answer-key" ? "Örn. yayınevi adı, 8. sınıf, deneme numarası / tarihi..." : undefined} value={values.message} onChange={(event) => setValues({ ...values, message: event.target.value.slice(0, purpose === "answer-key" ? 1900 : 2000) })} minLength={5} maxLength={purpose === "answer-key" ? 1900 : 2000} required /></label>
+        <HumanVerification key={attempt} action="contact" onToken={setHumanToken}/>
         <div className="contact-form-footer">
           <small>{values.message.length}/{purpose === "answer-key" ? 1900 : 2000} karakter</small>
           <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Mesajı gönder"} <span>→</span></button>

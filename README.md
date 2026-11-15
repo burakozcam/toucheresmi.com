@@ -1,4 +1,47 @@
-# Kurumsal Sınav v1.2.6 — Yerel geliştirme
+# Kurumsal Sınav v1.2.7 — Yerel geliştirme
+
+
+**v1.2.7:** Orijinal Özdebir 2022 BLDM varyantı, eski manuel yerleşim ve boş kitapçık önizlemesi düzeltildi. Özgün üç sekmeli O8126 Excel içe aktarımı, reCAPTCHA v3, izinli analitik ve Windows/Linux ortam yükleme desteği eklendi. [Yayın raporu](docs/v127-release-report.md) · [Altyapı planı](docs/infrastructure-roadmap.md). Yeni migration yoktur; canlıya aktarım yapılmadı. TXT ile yeni üç karne aynı öğrencileri içermediğinden aynı öğrenci için TXT→orijinal karne kabulü açık kalır.
+
+## Windows 11 ve Linux: kısa kurulum
+
+Node.js 22 (doğrulanan 22.16.0), npm 10 ve Git kurun. VS Code'da depo kökünü açın. Windows PowerShell:
+
+```powershell
+npm ci
+Copy-Item .env.example .env
+# .env: yerel PostgreSQL DATABASE_URL, 32+ karakter JWT_SECRET ve yerel STORAGE_DIR ayarlayın.
+npm run db:generate
+npm test
+npm run build
+# Ayrı iki terminalde:
+npm run dev:api
+npm run dev:web
+```
+
+Linux'ta kopyalama komutu `cp .env.example .env`; diğer npm komutları aynıdır. `npm ci` mevcut kilit dosyasını kullanır. Özel SheetJS paket kaynağına ve yerel OCR bağımlılıklarına erişim gerekir. API'nin `apps/api/.env` ve Web'in `apps/web/.env.local` dosyaları da desteklenir; kabuk/cPanel değişkenleri önceliklidir. Ortak kök `.env`, her iki uygulamada okunur. Derlemede `NEXT_PUBLIC_API_URL` gerekir; örnekte `http://localhost:4000` yerel geliştirme için verilmiştir. Canlıda gerçek HTTPS API adresini **build öncesinde** ayarlayın; NEXT_PUBLIC değişkenleri bundle'a gömülür. Secret key'in başına NEXT_PUBLIC eklemeyin.
+
+Sitemap hatasının nedeni Windows dosya yolu değildir: eski örnekte olmayan API URL'si, sitemap modülü yüklenirken hata veriyordu. Eksik değişken artık derlemenin başında açık mesaj verir. Kök örnekle Linux/Node 22 derlemesi doğrulandı; gerçek Windows işletim sistemi testi bu ortamda yapılmadı.
+
+`db:generate` migration uygulamaz. Yalnız yeni ve boş **yerel** PostgreSQL için adresi kontrol ettikten sonra `npm run db:migrate:deploy` çalıştırılabilir. Kullanıcıları korumak için otomatik seed/reset çalıştırılmaz. Testler gerçek DB kullanmaz; yerel/test API localhost dışını reddeder. `ALLOW_REMOTE_DATABASE=true` yalnız ayrı test DB'si için bilinçli bir istisnadır. Üretim bağlantısını yerel .env'ye kopyalamayın. Canlıda mutlak STORAGE_DIR ve mevcut şifreleme anahtarını koruyun.
+
+## reCAPTCHA v3 ve Google değişkenleri
+
+API: `NODE_ENV=production`, `RECAPTCHA_ENABLED=true`, `RECAPTCHA_SECRET_KEY`, `WEB_ORIGIN=https://kurumsalsinav.com`; `RECAPTCHA_HOSTNAME` boşsa WEB_ORIGIN hostname'i alınır. Varsayılan risk eşiği `RECAPTCHA_MIN_SCORE=0.5` (0–1). `www` kullanılıyorsa tam browser hostname'ini tanımlayın. Web build: `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` ve gerçek `NEXT_PUBLIC_API_URL`. API'de `RECAPTCHA_SITE_KEY` opsiyonel public fallback'tir; ayrı Web anahtarı normal kurulumdur. Yerel geliştirmede RECAPTCHA_ENABLED=false kullanılabilir; üretimde anahtarsız veya iki sağlayıcının da kapalı olduğu API başlamaz. Turnstile gerekiyorsa tek sağlayıcı kuralı geçerlidir.
+
+Token yalnız gönderimde üretilir; görsel kutu yoktur. Giriş, kayıt/kurum başvurusu, iletişim, sonuç sorgusu ve özel kodla PDF alma sunucuda doğrulanır. Public şifre sıfırlama uç noktası mevcut değildir; yetkili yönetici sıfırlaması ve davet akışı korunur. Güvenlik metni güncellendi; hukuki işletim kararları [yayın raporunda](docs/v127-release-report.md) ayrıca belirtilir. Gerçek Google anahtarıyla canlı kabul testi yapılmadı.
+
+Search Console: `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`. GA4: `NEXT_PUBLIC_GA4_ID`, hesapta otomatik ölçümleri kapattıktan sonra `NEXT_PUBLIC_GA4_APPROVED=true` ve kullanıcı analitik izni gerekir. Varsayılan durumda Google analitiği çalışmaz. GTM kimlik alanı ayrılmıştır; denetlenmiş container olmadan yükleyici çalıştırılmaz. Search Console/GTM hesapları kurulmuş veya doğrulanmış sayılmaz.
+
+## v1.2.7 doğrulama komutları
+
+`npm test` anonim regresyonları çalıştırır; `npm run test:report` salt okunur Test Merkezi raporunu günceller. Yerel gerçek kaynaklar için aşağıdaki komut yalnız bellekte DB taklidi kullanır, dosyaları Git'e kopyalamaz ve kimlik bilgisi yazdırmaz:
+
+```powershell
+node --import tsx tests/verify-local-ozdebir.cjs "C:/özel/optik.txt" "C:/özel/anahtar.xlsx" "C:/özel/özdebir.bldm"
+```
+
+Tarayıcı kabulünü ayrı terminallerde çalıştırın: `node --import tsx tests/e2e/v127-api.cjs` (yalnız test API'si, 127.0.0.1:4000), `npm run start -w @optik/web -- --hostname 127.0.0.1 --port 3100` (önce build) ve Playwright/Chromium kurulu Python ile `python tests/e2e/v127-ui.py`. Test API'sini canlıya dağıtmayın. Bu test anonim kaynakları gerçek önizleme/onay/kayıt handler'larına verir; veritabanı yöntemleri bellektedir, gerçek PostgreSQL kabulü değildir.
 
 **v1.2.6:** Özdebir sözel/tek optik ders konumları, ayrı yüklemelerde oturum birleştirme, başlangıç puanlı sınav profilleri ve gerçek O8126 karne regresyonları. Ortak paylaşım yönetimi, korumalı PDF bağlantıları, davet sonrası oturum, yeni parola politikası, kampüs aktarımı ve yerel tarayıcı OCR eklendi.
 

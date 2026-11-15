@@ -1,11 +1,13 @@
 const {locate,norm,answer,lessonName,weightFor,basic,sourceRow}=require("./parsers/common");
+const ozdebir=require("./parsers/ozdebir");
 const fernus=require("./parsers/fernus"),okulizyon=require("./parsers/okulizyon");
 function parseWorkbook(sheets,format="auto",options={}){
  if(!Array.isArray(sheets)||!sheets.length||sheets.length>50)throw new Error("Excel sekmeleri okunamadı veya sekme sayısı 50’yi aşıyor.");
  if(!["auto","f","o","standard"].includes(format))throw new Error("Dosya formatı geçersiz.");
  const kind=format==="auto"?(locate(sheets,"f")?"f":locate(sheets,"o")?"o":"standard"):format;
  let result;
- if(kind==="f"||kind==="o")result=(kind==="f"?fernus:okulizyon)(sheets);
+ if(format==="auto"&&ozdebir.locate(sheets))result=ozdebir.parse(sheets);
+ else if(kind==="f"||kind==="o")result=(kind==="f"?fernus:okulizyon)(sheets);
  else{
   const found=locate(sheets,"standard");if(!found)throw new Error("Değerlendirme Excel başlıkları tanınmadı. Doğru formatı seçin.");
   const {sheet,index,head}=found,questions=[],issues=[];
