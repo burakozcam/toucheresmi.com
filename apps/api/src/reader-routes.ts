@@ -20,7 +20,7 @@ readerRouter.use(requireAuth,(_req,res,next)=>{res.setHeader("Cache-Control","pr
 const manager:express.RequestHandler=(req:AuthenticatedRequest,res,next)=>{if(req.user!.role!==Role.SUPER_ADMIN&&req.user!.role!==Role.DEALER){res.status(403).json({error:"Bu işlem için bayi veya yönetici hesabı gerekir."});return;}next();};
 const reader:express.RequestHandler=(req:AuthenticatedRequest,res,next)=>{if(req.user!.role!==Role.STUDENT&&req.user!.role!==Role.PARENT){res.status(403).json({error:"Öğrenci veya veli hesabı gerekir."});return;}next();};
 const schoolScope=(req:AuthenticatedRequest):Prisma.SchoolWhereInput=>req.user!.role===Role.SUPER_ADMIN?{}:{dealerId:req.user!.dealerId??"__none__"};
-const accountScope=(req:AuthenticatedRequest):Prisma.UserWhereInput=>({role:{in:[Role.STUDENT,Role.PARENT]},...(req.user!.role===Role.SUPER_ADMIN?{}:{readerManagerId:req.user!.id})});
+const accountScope=(req:AuthenticatedRequest):Prisma.UserWhereInput=>({role:{in:[Role.STUDENT,Role.PARENT]},...(req.user!.role===Role.SUPER_ADMIN?{}:{school:{dealerId:req.user!.dealerId??"__none__"}})});
 const accountSelect={id:true,email:true,firstName:true,lastName:true,role:true,active:true,mustChangePassword:true} as const;
 const id=(req:AuthenticatedRequest)=>String(req.params.id??"");
 type Handler=(req:AuthenticatedRequest,res:express.Response)=>Promise<void>;
@@ -49,12 +49,12 @@ readerRouter.get("/reader-accounts",manager,wrap(async(req,res)=>{
 }));
 readerRouter.post("/reader-accounts",manager,inviteLimiter,wrap(async(req,res)=>{
   const data=selection.extend({role:z.enum(["STUDENT","PARENT"]),email:z.string().trim().email().max(254),firstName:z.string().trim().min(2).max(80),lastName:z.string().trim().min(2).max(80)}).parse(req.body);
-  const allowed=await prisma.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:schoolScope(req)},select:{snapshot:true}});
+  const allowed=await prisma.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:{active:true,...schoolScope(req)}},select:{snapshot:true}});
   if(!allowed){res.status(404).json({error:"Sonuç bulunamadı veya bu kurumda yetkiniz yok."});return;}
   let student;try{student=resultStudent(allowed.snapshot,data.studentNo);}catch(e){res.status(400).json({error:(e as Error).message});return;}
   const invite=await invitation();
   const account=await prisma.$transaction(async tx=>{
-    const current=await tx.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:schoolScope(req)},select:{schoolId:true}});if(!current)return null;
+    const current=await tx.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:{active:true,...schoolScope(req)}},select:{schoolId:true}});if(!current)return null;
     const created=await tx.user.create({data:{email:data.email.toLowerCase(),firstName:data.firstName,lastName:data.lastName,role:data.role,schoolId:current.schoolId,readerManagerId:req.user!.id,readerStudentNo:data.role==="STUDENT"?((student as any).studentNo??student.id)||null:null,passwordHash:invite.passwordHash,setupTokenHash:invite.setupTokenHash,setupExpiresAt:invite.setupExpiresAt,mustChangePassword:true,studentResultAccess:{create:{resultId:data.resultId,studentNo:data.studentNo,studentName:student.name}}},select:accountSelect});
     await tx.fmtShare.create({data:{category:"MEMBERSHIP",targetId:created.id,name:`${data.firstName} ${data.lastName}`,createdById:req.user!.id,tokenHash:invite.setupTokenHash,tokenEncrypted:encryptShareToken(invite.token),expiresAt:invite.setupExpiresAt}});return created;
   });
@@ -64,7 +64,7 @@ readerRouter.post("/reader-accounts",manager,inviteLimiter,wrap(async(req,res)=>
 readerRouter.post("/reader-accounts/:id/access",manager,wrap(async(req,res)=>{
   const data=selection.parse(req.body);
   const saved=await prisma.$transaction(async tx=>{
-    const [account,result]=await Promise.all([tx.user.findFirst({where:{id:id(req),...accountScope(req)},select:{id:true,role:true,schoolId:true,readerStudentNo:true,studentResultAccess:{select:{studentNo:true,result:{select:{schoolId:true,snapshot:true}}}}}}),tx.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:schoolScope(req)},select:{snapshot:true,schoolId:true}})]);
+    const [account,result]=await Promise.all([tx.user.findFirst({where:{id:id(req),...accountScope(req)},select:{id:true,role:true,schoolId:true,readerStudentNo:true,studentResultAccess:{select:{studentNo:true,result:{select:{schoolId:true,snapshot:true}}}}}}),tx.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:{active:true,...schoolScope(req)}},select:{snapshot:true,schoolId:true}})]);
     if(!account||!result)return{error:"Hesap veya sonuç bulunamadı; erişim yetkinizi kontrol edin.",status:404};
     let student;try{student=resultStudent(result.snapshot,data.studentNo);}catch(e){return{error:(e as Error).message,status:400};}
     if(account.role===Role.STUDENT){
@@ -103,23 +103,25 @@ readerRouter.patch("/reader-accounts/:id",manager,wrap(async(req,res)=>{
   if(!changed.count){res.status(404).json({error:"Hesap bulunamadı veya yetkiniz yok."});return;}res.json({message:"Hesap erişimi kapatıldı. Önceki oturum ve davetler geçersizdir."});
 }));
 readerRouter.get("/my-results",reader,wrap(async(req,res)=>{
-  const access=await prisma.studentResultAccess.findMany({where:{userId:req.user!.id,result:{studentPublished:true}},select:{id:true,studentNo:true,studentName:true,result:{select:{id:true,createdAt:true,snapshot:true}}},orderBy:{result:{createdAt:"desc"}},take:100});
+  const access=await prisma.studentResultAccess.findMany({where:{userId:req.user!.id,result:{studentPublished:true,nextRevision:null,school:{active:true}}},select:{id:true,studentNo:true,studentName:true,result:{select:{id:true,createdAt:true,snapshot:true}}},orderBy:{result:{createdAt:"desc"}},take:100});
   res.json(access.filter(a=>!(a.result.snapshot as any)?.deletedAt).map(a=>({id:a.id,studentNo:a.studentNo,studentName:a.studentName,resultId:a.result.id,createdAt:a.result.createdAt,examName:(a.result.snapshot as unknown as StoredResult).keyName,schoolName:(a.result.snapshot as unknown as StoredResult).schoolName})));
 }));
+async function ownExam(req:AuthenticatedRequest){
+ const access=await prisma.studentResultAccess.findFirst({where:{id:id(req),userId:req.user!.id,result:{studentPublished:true,nextRevision:null,school:{active:true}}},select:{studentNo:true,result:{select:{schoolId:true,keyId:true,createdAt:true,snapshot:true}}}});
+ if(!access)return null;
+ let own;try{own=resultStudent(access.result.snapshot,access.studentNo);}catch{return null;}
+ const view=await examView(access.result.schoolId,access.result.keyId,true);if(!view)return null;
+ const matches=view.data.students.filter(s=>compatibleStudent(s,own as typeof s));
+ return matches.length===1?{view,person:matches[0],createdAt:access.result.createdAt}:null;
+}
 readerRouter.get("/my-results/:id",reader,wrap(async(req,res)=>{
-  const access=await prisma.studentResultAccess.findFirst({where:{id:id(req),userId:req.user!.id,result:{studentPublished:true}},select:{studentNo:true,result:{select:{createdAt:true,snapshot:true}}}});
-  if(!access){res.status(404).json({error:"Sonuç bulunamadı, yayımlanmamış veya hesabınıza bağlı değil."});return;}
-  try{res.json({createdAt:access.result.createdAt,...privateResult(access.result.snapshot,access.studentNo)});}catch(e){res.status(400).json({error:(e as Error).message});}
+ const found=await ownExam(req);if(!found){res.status(404).json({error:"Sonuç bulunamadı, yayımlanmamış veya hesabınıza bağlı değil."});return;}
+ res.json({createdAt:found.createdAt,...privateResult(found.view,found.person.id),rankings:{[found.person.id]:found.view.rankings[found.person.id]}});
 }));
 
 readerRouter.get("/my-results/:id/pdf",reader,wrap(async(req,res)=>{
  const showGeneralParticipation=z.enum(["true","false"]).default("true").parse(req.query.showGeneralParticipation)==="true";
  const templateId=z.enum(["summary-card","two-page-card","detailed-card","classic-card","analysis-card","table-card"]).default("detailed-card").parse(req.query.templateId);
- const access=await prisma.studentResultAccess.findFirst({where:{id:id(req),userId:req.user!.id,result:{studentPublished:true,nextRevision:null,school:{active:true}}},select:{studentNo:true,result:{select:{schoolId:true,keyId:true,snapshot:true}}}});
- if(!access){res.status(404).json({error:"Sonuç bulunamadı veya hesabınıza bağlı değil."});return;}
- let own;try{own=resultStudent(access.result.snapshot,access.studentNo);}catch{res.status(404).json({error:"Sonuç erişilemiyor."});return;}
- const view=await examView(access.result.schoolId,access.result.keyId,true);if(!view){res.status(404).json({error:"Yayımlanmış sonuç bulunamadı."});return;}
- const candidates=view.data.students.filter(s=>{const source=own as typeof s;return (source.identityHash?s.identityHash===source.identityHash:studentNumberKey(s.studentNo??s.id)===studentNumberKey(source.studentNo??source.id))&&s.name===source.name&&s.branch===source.branch;});
- if(candidates.length!==1){res.status(400).json({error:"Sonuç bağlantısı tek bir öğrenciyle eşleşmiyor. Kurumunuza başvurun."});return;}
- res.attachment("ogrenci-karnesi.pdf").type("application/pdf").send(await reportPdf(await enrichReportView(view),{kind:"cards",order:"name",hideIdentity:true,studentId:candidates[0].id,templateId,showGeneralParticipation}));
+ const found=await ownExam(req);if(!found){res.status(404).json({error:"Yayımlanmış sonuç bulunamadı veya hesabınıza bağlı değil."});return;}
+ res.attachment("ogrenci-karnesi.pdf").type("application/pdf").send(await reportPdf(await enrichReportView(found.view),{kind:"cards",order:"name",hideIdentity:true,studentId:found.person.id,templateId,showGeneralParticipation}));
 }));

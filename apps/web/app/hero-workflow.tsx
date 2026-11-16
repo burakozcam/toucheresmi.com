@@ -38,6 +38,7 @@ export default function HeroWorkflow(){
     <g clipPath="url(#wf-sheet-clip)"><rect className="wf-scan" x="225" y="113" width="197" height="48" fill="url(#wf-scan)"/></g>
     <text x="227" y="365" fill="#7c8ba0" fontSize="7" letterSpacing="1">OPTİK OKUMA · 7108</text><path d="M381 354v13m3-13v13m5-13v13m3-13v13m6-13v13m3-13v13m5-13v13m3-13v13" stroke="#637a99" strokeWidth="1.5"/>
    </g></g>
+   <g className="wf-pencil" transform="rotate(28 492 85)" aria-hidden="true"><path d="M487 34h10v100l-5 16-5-16Z" fill="#6b92cc"/><path d="M487 134h10l-5 16Z" fill="#d8c4a4"/><path d="m490 144 2 6 2-6Z" fill="#172b4d"/><path d="M490 36v96" stroke="#adc8ed" strokeWidth="2"/></g>
    <g className="wf-verified"><rect x="389" y="159" width="147" height="40" rx="20" className="wf-chip"/><circle cx="410" cy="179" r="10" fill="#e7f2ed"/><path d="m405 179 3 3 6-7" fill="none" stroke="#4d806c" strokeWidth="1.8" strokeLinecap="round"/><text x="427" y="183" className="wf-chip-text" fontSize="10">Cevaplar eşleşti</text></g>
    <g className="wf-report" filter="url(#wf-shadow)">
     <rect x="331" y="250" width="215" height="219" rx="10" className="wf-report-paper"/>

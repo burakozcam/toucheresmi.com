@@ -46,7 +46,7 @@ test("hesap daveti özeti saklanır, token tek kullanımlıktır ve süresi dolu
   prisma.$transaction=(async(fn:any)=>fn(prisma))as any;
   prisma.user.findUnique=(async({where}:any)=>account?.setupTokenHash===where.setupTokenHash?{...account}:null)as any;
   prisma.fmtShare.create=(async()=>({}))as any;prisma.fmtShare.updateMany=(async()=>({count:1}))as any;
-  prisma.user.create = (async ({data}:any) => { account={id:"new",active:true,...data}; return {id:account.id,email:data.email,phone:data.phone}; }) as any;
+  prisma.user.create = (async ({data}:any) => { account={id:"new",active:true,dealerId:"invited-dealer",...data}; return {id:account.id,email:data.email,phone:data.phone}; }) as any;
   prisma.user.updateMany = (async ({where,data}:any) => { if(account.setupTokenHash!==where.setupTokenHash || !account.setupExpiresAt || account.setupExpiresAt<=where.setupExpiresAt.gt || !account.active || !account.mustChangePassword) return {count:0}; Object.assign(account,data); return {count:1}; }) as any;
   try {
     const created=await invoke(handler(app,"/api/admin/users","post"),{firstName:"Yeni",lastName:"Kullanıcı",email:"new@example.test",phone:"05321234567"});

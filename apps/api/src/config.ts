@@ -22,6 +22,9 @@ const environmentSchema = z.object({
   TURNSTILE_SECRET_KEY:z.string().default(""),
   TURNSTILE_SITE_KEY:z.string().default(""),
   TURNSTILE_HOSTNAME:z.string().default(""),
+  RATE_LIMIT_STORE: z.enum(["database","memory"]).default(process.env.NODE_ENV==="production"?"database":"memory"),
+  TRUST_PROXY_CIDRS: z.string().default(""),
+  MFA_ENCRYPTION_KEY: z.preprocess(v=>v===""?undefined:v,z.string().regex(/^[a-fA-F0-9]{64}$/).optional()),
   DATABASE_URL: z.string().min(1),
   TXT_STORAGE_KEY:z.preprocess(v=>v===""?undefined:v,z.string().min(32).optional()),
   JWT_SECRET: z.string().min(32, "JWT_SECRET en az 32 karakter olmalıdır."),
@@ -37,6 +40,8 @@ const environmentSchema = z.object({
   STORAGE_DIR: z.string().min(1).default("./storage"),
   MAX_UPLOAD_SIZE: z.coerce.number().int().positive().default(10485760),
 }).superRefine((values, context) => {
+  if(process.env.NODE_ENV==="production"&&values.RATE_LIMIT_STORE!=="database")context.addIssue({code:z.ZodIssueCode.custom,path:["RATE_LIMIT_STORE"],message:"Canlıda ortak veritabanı istek sınırı zorunludur."});
+  if(process.env.NODE_ENV==="production"&&!values.MFA_ENCRYPTION_KEY)context.addIssue({code:z.ZodIssueCode.custom,path:["MFA_ENCRYPTION_KEY"],message:"Canlı ortamda ayrı 32 bayt MFA şifreleme anahtarı gereklidir."});
   if(process.env.NODE_ENV==="production"&&values.RECAPTCHA_ENABLED!=="true"&&values.TURNSTILE_ENABLED!=="true")context.addIssue({code:z.ZodIssueCode.custom,path:["RECAPTCHA_ENABLED"],message:"Canlı ortamda insan doğrulaması kapatılamaz."});
   if(process.env.NODE_ENV!=="production"&&values.ALLOW_REMOTE_DATABASE!=="true"){
     try{const host=new URL(values.DATABASE_URL).hostname;if(!["localhost","127.0.0.1","[::1]"].includes(host))context.addIssue({code:z.ZodIssueCode.custom,path:["DATABASE_URL"],message:"Yerel/test ortamında uzak veritabanı engellendi. Ayrı test veritabanı için ALLOW_REMOTE_DATABASE=true değerini bilinçli olarak ayarlayın."});}catch{context.addIssue({code:z.ZodIssueCode.custom,path:["DATABASE_URL"],message:"Geçersiz veritabanı adresi."});}

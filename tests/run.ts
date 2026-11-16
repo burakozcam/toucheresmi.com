@@ -1,3 +1,4 @@
+import "./unit-security-fixtures";
 import "./auth.test";
 import "./evaluation.test";
 import "./rate-limit.test";
@@ -56,3 +57,5 @@ import "./v128.test";
 import "./v129.test";
 
 import "./v130.test";
+
+import "./v132.test";

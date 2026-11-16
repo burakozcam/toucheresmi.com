@@ -17,7 +17,8 @@ export default async function AnswerKeys({ searchParams }: { searchParams: Param
   const params = await searchParams;
   const value = (key: string) => typeof params[key] === "string" ? params[key] as string : "";
   const requestedPage = Number(value("page") || 1);
-  const filters = { page: Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage < 100000 ? requestedPage : 1, publisherId: value("publisherId"), grade: value("grade"), search: value("search").slice(0, 200) };
+  const gradeSearch = /^(1[0-2]|[1-9])(?:\s*\.?\s*sınıf)?$/iu.exec(value("search").trim());
+  const filters = { page: Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage < 100000 ? requestedPage : 1, publisherId: value("publisherId"), grade: value("grade") || gradeSearch?.[1] || "", search: gradeSearch ? "" : value("search").slice(0, 200) };
   const query = new URLSearchParams({ page: String(filters.page), limit: "30", ...(filters.publisherId ? { publisherId: filters.publisherId } : {}), ...(filters.grade ? { grade: filters.grade } : {}), ...(filters.search ? { search: filters.search } : {}) });
   const [keys, publishers] = await Promise.allSettled([
     fetch(`${API_URL}/api/answer-keys?${query}`, { cache: "no-store", signal: AbortSignal.timeout(8000) }).then(async (r) => { if (!r.ok) throw new Error("Cevap anahtarları şu anda yüklenemiyor. Lütfen tekrar deneyin."); return r.json() as Promise<{ items: AnswerKeyRecord[]; totalPages: number }>; }),

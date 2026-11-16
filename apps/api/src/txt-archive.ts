@@ -1,3 +1,4 @@
+import {SecurityError} from "./security-errors";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -15,7 +16,7 @@ export function archivePath(storedName:string){if(!/^[a-f0-9-]{36}\.txt\.enc$/.t
 export function archiveDto(row:{id:string;name:string;size:number;createdAt:Date;evaluatedAt:Date|null;resultId:string|null;createdBy?:{role:string;firstName:string;lastName:string;dealer?:{name:string}|null}}){return {id:row.id,name:row.name,size:row.size,createdAt:row.createdAt,evaluatedAt:row.evaluatedAt,resultId:row.resultId,uploadedBy:row.createdBy?(row.createdBy.role==="SUPER_ADMIN"?"Admin":row.createdBy.dealer?.name||`${row.createdBy.firstName} ${row.createdBy.lastName}`):"Bilinmiyor"};}
 export async function readArchivedTxts(user:NonNullable<AuthenticatedRequest["user"]>,ids:string[]){
  const rows=await prisma.opticalTxtFile.findMany({where:{id:{in:ids},deletedAt:null,...archiveScope(user)},include:{result:{select:{id:true,schoolId:true,keyId:true,seriesId:true}},uses:{orderBy:{createdAt:"desc"},select:{result:{select:{id:true,schoolId:true,keyId:true,seriesId:true}}}}}});
- if(rows.length!==ids.length)throw Error("Seçilen TXT dosyalarına erişilemiyor. Dosya listesini yenileyin.");
+ if(rows.length!==ids.length)throw new SecurityError(404,"Seçilen TXT dosyalarına erişilemiyor. Dosya listesini yenileyin.");
  return ids.map(id=>{const row=rows.find(row=>row.id===id)!;let buffer:Buffer;try{buffer=openTxt(fs.readFileSync(archivePath(row.storedName)));if(buffer.length!==row.size||archiveChecksum(buffer)!==row.checksum)throw Error("checksum");}catch{throw Error(`${row.name}: arşiv okunamadı. Depolama dizini ve şifreleme anahtarını kontrol edin.`);}return {row,file:{fieldname:"files",originalname:row.name,mimetype:"text/plain",encoding:"7bit",size:row.size,buffer} as Express.Multer.File};});
 }
 

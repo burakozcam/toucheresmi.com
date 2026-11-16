@@ -1,3 +1,9 @@
+import {privateStoragePath} from "./upload-security";
+import { securityRouter, completePasswordLogin } from "./security-routes";
+import { dealerRouter } from "./dealer-routes";
+import { issueSession } from "./auth-sessions";
+import { dealerPermission, schoolScope as tenantSchoolScope, activity } from "./dealer-policy";
+import { SecurityError } from "./security-errors";
 import {examAuthoringRouter} from "./exam-authoring";
 import {encryptShareToken} from "./share-security";
 import {hashPassword,verifyPassword,newPasswordSchema} from "./passwords";
@@ -36,8 +42,12 @@ import { answerPdfRouter } from "./answer-pdf-routes";
 import { publisherLogoRouter } from "./publisher-logos";
 
 export const app = express();
+app.disable("x-powered-by");
+if(env.TRUST_PROXY_CIDRS)app.set("trust proxy",env.TRUST_PROXY_CIDRS.split(",").map(v=>v.trim()).filter(Boolean));
+app.use((_q,r,n)=>{r.setHeader("Cache-Control","private, no-store");r.setHeader("X-Content-Type-Options","nosniff");r.setHeader("X-Frame-Options","DENY");r.setHeader("Referrer-Policy","no-referrer");r.setHeader("Content-Security-Policy","default-src 'none'; frame-ancestors 'none'");if(process.env.NODE_ENV==="production")r.setHeader("Strict-Transport-Security","max-age=31536000");n();});
+app.use((q,r,n)=>{if(["POST","PUT","PATCH","DELETE"].includes(q.method)&&q.header("origin")&&q.header("origin")!==env.WEB_ORIGIN){r.status(403).json({error:"İstek kaynağına izin verilmiyor."});return;}n();});
 app.use(systemObserver);
-app.use(cors({ origin: env.WEB_ORIGIN, exposedHeaders: ["Content-Disposition"] }));
+app.use(cors({ origin: env.WEB_ORIGIN, credentials: true, exposedHeaders: ["Content-Disposition"] }));
 app.use("/api/admin/exam-schedule", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "20mb" }));
 app.use("/api/optical/templates/bulk-rows", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use("/api/optical/templates/bulk", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
@@ -59,7 +69,7 @@ const recentContactSubmissions = new Map<string, number>();
 app.use("/api/auth/setup", new RequestLimiter(10, 10 * 60_000).middleware());
 app.use("/api/auth/login", new RequestLimiter(20, 10 * 60_000).middleware());
 const loginAccountLimiter=new RequestLimiter(20,10*60_000);
-const limitLoginAccount:express.RequestHandler=(req,res,next)=>{if(req.method!=="POST"){next();return;}const email=typeof req.body?.email==="string"?req.body.email.trim().toLowerCase():"";if(!email){next();return;}const key=crypto.createHmac("sha256",env.JWT_SECRET).update(email).digest("hex"),limit=loginAccountLimiter.check(key);if(limit.allowed){next();return;}res.setHeader("Retry-After",limit.retryAfter);res.status(429).json({error:"Çok sık deneme yapıldı. Lütfen biraz bekleyip tekrar deneyin."});};
+const limitLoginAccount:express.RequestHandler=async(req,res,next)=>{try{if(req.method!=="POST"){next();return;}const email=typeof req.body?.email==="string"?req.body.email.trim().toLowerCase():"";if(!email){next();return;}const key=crypto.createHmac("sha256",env.JWT_SECRET).update(email).digest("hex"),limit=await loginAccountLimiter.checkShared(key);if(limit.allowed){next();return;}res.setHeader("Retry-After",limit.retryAfter);res.status(429).json({error:"Çok sık deneme yapıldı. Lütfen biraz bekleyip tekrar deneyin."});}catch{res.status(503).json({error:"Giriş güvenlik sınırı doğrulanamadı."});}};
 app.use("/api/account/password", new RequestLimiter(10, 10 * 60_000).middleware());
 app.use("/api/auth/register", new RequestLimiter(8, 30 * 60_000).middleware());
 app.use("/api/applications", new RequestLimiter(8, 30 * 60_000).middleware());
@@ -93,26 +103,21 @@ async function recordAudit(
 
 app.use((request: AuthenticatedRequest, response, next) => {
   const method = request.method.toUpperCase();
-  const isAuditedResource = request.path.startsWith("/api/admin/")
-    || request.path.startsWith("/api/optical/")
-    || request.path.startsWith("/api/reader-accounts") || request.path.startsWith("/api/reader-access/")
-    || ["/api/exams", "/api/schools", "/api/publisher-requests"].some((prefix) =>
-      request.path === prefix || request.path.startsWith(`${prefix}/`)
-    );
+  const isAuditedResource = request.path.startsWith("/api/");
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(method) || !isAuditedResource) {
     next();
     return;
   }
   response.on("finish", () => {
     const readerChange = request.path.startsWith("/api/reader-") || request.path.includes("/publication");
-    if (response.statusCode < 200 || response.statusCode >= 300 || !(request.user?.role === Role.SUPER_ADMIN || readerChange && request.user?.role === Role.DEALER)) return;
+    if (response.statusCode < 200 || response.statusCode >= 300 || !(request.user?.role === Role.SUPER_ADMIN || request.user?.role === Role.DEALER)) return;
     const route = request.route?.path;
     const routePath = typeof route === "string" ? route : request.path;
     const segments = routePath.split("/").filter(Boolean);
     const targetType = segments[1] === "admin" ? segments[2] ?? "system" : segments[1] ?? "system";
     const targetId = Object.values(request.params).find((value) => typeof value === "string") ?? null;
     void recordAudit(
-      request.user.id,
+      request.user.actorAdminId ?? request.user.id,
       `${method} ${routePath}`,
       targetType,
       targetId,
@@ -157,9 +162,9 @@ const schoolSchema = z.object({
   dealerId: z.string().min(1).nullable().optional(),
 });
 
-const schoolUpdateSchema = schoolSchema.partial().extend({
+const schoolUpdateSchema = schoolSchema.omit({dealerId:true}).partial().extend({
   active: z.boolean().optional(),
-});
+}).strict();
 
 const examSchema = z.object({
   schoolId: z.string().min(1),
@@ -223,8 +228,8 @@ const upload = multer({
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().email().max(254),
+  password: z.string().min(1).max(128),
   role: z.nativeEnum(Role),
 });
 
@@ -313,38 +318,17 @@ app.post("/api/auth/login", async (request, response, next) => {
     }
     await recordAudit(user.id, "AUTH_LOGIN_SUCCESS", "AUTH", user.id, "Kullanıcı oturumu açıldı.");
 
-    const token = jwt.sign(
-      {
-        role: user.role,
-        dealerId: user.dealerId,
-        schoolId: user.schoolId,
-        credentialVersion: credentialVersion(user.passwordHash),
-      },
-      env.JWT_SECRET,
-      { subject: user.id, expiresIn: "8h" },
-    );
-
-    response.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        role: user.role,
-        mustChangePassword: user.mustChangePassword,
-      },
-    });
+    await completePasswordLogin(user,request,response);
   } catch (error) {
     next(error);
   }
 });
 
-const profileSelect = { avatar: true, id: true, email: true, firstName: true, lastName: true, phone: true, role: true, mustChangePassword: true } as const;
+const profileSelect = { dealerId: true, avatar: true, id: true, email: true, firstName: true, lastName: true, phone: true, role: true, mustChangePassword: true } as const;
 app.get("/api/account", requireAuth, async (request: AuthenticatedRequest, response, next) => {
   try {
-    response.json(await prisma.user.findUniqueOrThrow({ where: { id: request.user!.id }, select: profileSelect }));
+    const account=await prisma.user.findUniqueOrThrow({ where: { id: request.user!.id }, select: profileSelect });
+    response.json({...account,impersonation:request.user!.actorAdminId?{dealerName:(await prisma.dealer.findUnique({where:{id:request.user!.dealerId!},select:{name:true}}))?.name,expiresAt:(await prisma.authSession.findUniqueOrThrow({where:{id:request.user!.sessionId}})).expiresAt}:null});
   } catch (error) { next(error); }
 });
 const profileSchema = z.object({
@@ -380,7 +364,7 @@ app.post("/api/admin/users", requireAuth, requireRole(Role.SUPER_ADMIN), async (
     const setupToken = crypto.randomBytes(32).toString("base64url");
     const setupTokenHash = crypto.createHash("sha256").update(setupToken).digest("hex");
     const setupExpiresAt = new Date(Date.now() + 30 * 60_000);
-    const user = await prisma.$transaction(async tx=>{const created = await tx.user.create({ data: { setupTokenHash, setupExpiresAt, ...parsed.data, email: parsed.data.email.toLowerCase(), phone: parsed.data.phone || null, passwordHash, role: Role.DEALER, mustChangePassword: true }, select: profileSelect });
+    const user = await prisma.$transaction(async tx=>{const created = await tx.user.create({ data: { setupTokenHash, setupExpiresAt, ...parsed.data, email: parsed.data.email.toLowerCase(), phone: parsed.data.phone || null, passwordHash, role: Role.DEALER, dealer:{create:{name:`${parsed.data.firstName} ${parsed.data.lastName}`}}, mustChangePassword: true }, select: profileSelect });
     await tx.fmtShare.create({data:{category:"MEMBERSHIP",targetId:created.id,name:`${created.firstName} ${created.lastName}`,createdById:(request as AuthenticatedRequest).user!.id,tokenHash:setupTokenHash,tokenEncrypted:encryptShareToken(setupToken),expiresAt:setupExpiresAt}});return created;});
     response.setHeader("Cache-Control", "no-store");
     response.status(201).json({ user, setupUrl: `${env.WEB_ORIGIN}/hesap-kur#${setupToken}`, expiresAt: setupExpiresAt, message: "30 dakika geçerli tek kullanımlık şifre belirleme bağlantısı oluşturuldu." });
@@ -404,8 +388,8 @@ app.post("/api/auth/setup", async (request, response, next) => {
       return result.count?candidate:null;
     });
     if(!user){response.status(400).json({error:"Bağlantının süresi dolmuş veya daha önce kullanılmış."});return;}
-    const token=jwt.sign({role:user.role,dealerId:user.dealerId,schoolId:user.schoolId,credentialVersion:credentialVersion(passwordHash)},env.JWT_SECRET,{subject:user.id,expiresIn:"8h"});
-    response.json({message:"Şifreniz belirlendi.",token,user:{id:user.id,email:user.email,firstName:user.firstName,lastName:user.lastName,role:user.role}});
+    await prisma.trustedDevice.updateMany({where:{userId:user.id},data:{revokedAt:new Date()}});
+    await completePasswordLogin({...user,passwordHash,mustChangePassword:false},request,response);
   } catch (error) { next(error); }
 });
 const ownPasswordSchema = z.object({
@@ -422,9 +406,11 @@ app.patch("/api/account/password", requireAuth, async (request: AuthenticatedReq
     const passwordHash = await hashPassword(parsed.data.newPassword);
     const result = await prisma.user.updateMany({ where: { id: current.id, passwordHash: current.passwordHash, active: true }, data: { passwordHash, mustChangePassword: false, setupTokenHash: null, setupExpiresAt: null } });
     if (!result.count) { response.status(409).json({ error: "Hesap değişti. Yeniden giriş yapın." }); return; }
-    const token = jwt.sign({ role: current.role, dealerId: current.dealerId, schoolId: current.schoolId, credentialVersion: credentialVersion(passwordHash) }, env.JWT_SECRET, { subject: current.id, expiresIn: "8h" });
-    await recordAudit(current.id, "PASSWORD_CHANGED", "user", current.id, "Kullanıcı kendi şifresini belirledi.");
-    response.json({ token, user: { id: current.id, email: current.email, firstName: current.firstName, lastName: current.lastName, phone: current.phone, role: current.role, mustChangePassword: false } });
+    await prisma.trustedDevice.updateMany({where:{userId:current.id},data:{revokedAt:new Date()}});
+    await prisma.authSession.updateMany({where:{userId:current.id},data:{revokedAt:new Date()}});
+    await recordAudit(current.id,"PASSWORD_CHANGED","user",current.id,"Şifre ve cihaz izinleri yenilendi.");
+    const oldSession=await prisma.authSession.findUnique({where:{id:request.user!.sessionId}});
+    response.json(await issueSession({...current,passwordHash,mustChangePassword:false},request,{...(oldSession?.mfaVerifiedAt?{mfaVerifiedAt:oldSession.mfaVerifiedAt}:{})}));
   } catch (error) { next(error); }
 });
 
@@ -905,6 +891,7 @@ app.patch(
               lastName: registration.lastName,
               phone: registration.phone,
               role: Role.DEALER,
+              dealer:{create:{name:`${registration.firstName} ${registration.lastName}`}},
               active: true,
             },
             select: { id: true },
@@ -1326,14 +1313,7 @@ app.get(
         : request.query.active === "false"
           ? { active: false }
           : {};
-      const ownership = request.user!.role === Role.SUPER_ADMIN
-        ? {}
-        : {
-          OR: [
-            { createdByUserId: request.user!.id },
-            ...(request.user!.dealerId ? [{ dealerId: request.user!.dealerId }] : []),
-          ],
-        };
+      const ownership = tenantSchoolScope(request.user!);
       const schools = await prisma.school.findMany({
         where: { ...activeFilter, ...ownership },
         select: request.query.compact==="true" ? {id:true,name:true,city:true,district:true} : {
@@ -1373,6 +1353,8 @@ app.post(
 
     const identity = schoolIdentityKey(parsed.data.name, parsed.data.city, parsed.data.district);
     try {
+      await dealerPermission(request.user!,"canCreateSchool");
+      if(request.user!.role==="DEALER"&&parsed.data.dealerId&&parsed.data.dealerId!==request.user!.dealerId)throw new SecurityError(403,"Başka bayi adına kurum oluşturamazsınız.");
       const schools = await prisma.school.findMany({
         select: { id: true, name: true, city: true, district: true },
       });
@@ -1405,7 +1387,7 @@ app.post(
           return;
         }
       }
-      const school = await prisma.school.create({
+      const school = await prisma.$transaction(async tx=>{await dealerPermission(request.user!,"canCreateSchool",tx,true); return tx.school.create({
         data: {
           name: parsed.data.name,
           city: parsed.data.city?.trim() || null,
@@ -1427,7 +1409,7 @@ app.post(
           dealer: { select: { id: true, name: true } },
           createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
         },
-      });
+      });},{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
       response.status(201).json(school);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -1539,7 +1521,6 @@ app.patch(
           ...(parsed.data.city !== undefined ? { city: parsed.data.city?.trim() || null } : {}),
           ...(parsed.data.district !== undefined ? { district: parsed.data.district?.trim() || null } : {}),
           ...(parsed.data.code !== undefined ? { code: parsed.data.code?.trim() || null } : {}),
-          ...(parsed.data.dealerId !== undefined ? { dealerId: parsed.data.dealerId } : {}),
           ...(parsed.data.active !== undefined ? { active: parsed.data.active } : {}),
           ...(identityChanged ? { duplicateKey: identity } : {}),
         },
@@ -1581,12 +1562,7 @@ app.get(
         : request.user!.role === Role.SCHOOL_ADMIN
           ? { schoolId: request.user!.schoolId ?? "" }
           : {
-            school: {
-              OR: [
-                { createdByUserId: request.user!.id },
-                ...(request.user!.dealerId ? [{ dealerId: request.user!.dealerId }] : []),
-              ],
-            },
+            school: tenantSchoolScope(request.user!),
           };
       const exams = await prisma.exam.findMany({
         where,
@@ -1621,12 +1597,7 @@ app.post(
       const schoolScope: Prisma.SchoolWhereInput = request.user!.role === Role.SCHOOL_ADMIN
         ? { id: request.user!.schoolId ?? "" }
         : request.user!.role === Role.DEALER
-          ? {
-            OR: [
-              { createdByUserId: request.user!.id },
-              ...(request.user!.dealerId ? [{ dealerId: request.user!.dealerId }] : []),
-            ],
-          }
+          ? tenantSchoolScope(request.user!)
           : {};
       const schoolWhere: Prisma.SchoolWhereInput = {
         id: parsed.data.schoolId,
@@ -1785,7 +1756,7 @@ app.get(
         response.status(404).json({ error: "Dosya sunucuda bulunamadı." });
         return;
       }
-      response.download(fileRecord.storagePath, answerKeyDownloadName(fileRecord), {
+      response.download(privateStoragePath(storageRoot,fileRecord.storagePath), answerKeyDownloadName(fileRecord), {
         headers: { "Content-Type": fileRecord.mimeType },
       });
     } catch (error) {
@@ -1809,7 +1780,7 @@ app.get("/api/answer-key-files/:id", async (request, response, next) => {
       response.status(404).json({ error: "Dosya sunucuda bulunamadı." });
       return;
     }
-    response.download(fileRecord.storagePath, answerKeyDownloadName(fileRecord), {
+    response.download(privateStoragePath(storageRoot,fileRecord.storagePath), answerKeyDownloadName(fileRecord), {
       headers: { "Content-Type": fileRecord.mimeType },
     });
   } catch (error) {
@@ -2027,6 +1998,8 @@ app.delete(
   },
 );
 
+app.use(securityRouter);
+app.use(dealerRouter);
 app.use(answerPdfRouter);
 app.use(publisherLogoRouter);
 app.use(systemRouter);
@@ -2039,6 +2012,9 @@ app.use("/api", readerRouter);
 
 app.use(
   (error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+    if(error instanceof SecurityError){response.status(error.status).json({error:error.message,code:error.code});return;}
+    if(error instanceof Prisma.PrismaClientKnownRequestError&&error.code==="P2034"){response.status(409).json({error:"Eşzamanlı işlem nedeniyle kayıt değişti. Önizlemeyi yenileyip tekrar deneyin."});return;}
+    if(error instanceof Prisma.PrismaClientKnownRequestError&&error.code==="P2002"){response.status(409).json({error:"Bu kayıt zaten mevcut veya başka işlemle eşzamanlı oluşturuldu."});return;}
     if ((error as { type?: string })?.type === "entity.too.large") { response.status(413).json({ error: "İstek boyutu sınırı aşıldı. Takvim dosyasını daha küçük parçalara bölün." }); return; }
     if (error instanceof multer.MulterError) {
       response.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({ error: error.code === "LIMIT_FILE_SIZE" ? "Dosya boyutu izin verilen sınırı aşıyor." : "Yüklenen dosya sayısını ve dosya alanlarını kontrol edin." });

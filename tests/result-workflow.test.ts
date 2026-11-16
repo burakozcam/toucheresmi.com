@@ -28,7 +28,7 @@ test("aynı sınavdaki yüklemeler kurum raporunda toplanır; eski sürüm/delet
  const {identityHash,encryptIdentity,aggregateResults}=await modules(),options={hashIdentity:identityHash,encryptIdentity};
  const data=parseOptical(lines.join("\n"),layout7108,questions,"Kurum",options),s=snapshot(data),r={id:"r",schoolId:"s",snapshot:s,createdAt:new Date()};
  const view=aggregateResults([r,{...r,id:"new",createdAt:new Date(Date.now()+1000)},{...r,id:"deleted",snapshot:{...s,deletedAt:new Date().toISOString()}}])!;assert.equal(view.data.students.length,2);assert.equal(view.sourceResultIds.length,2);assert.equal(view.summary[0].net,s.summary[0].net);
- const separate=parseOptical(lines.join("\n"),layout7108,questions,"Kurum",{...options,mergeSessions:false});assert.equal(aggregateResults([{...r,snapshot:snapshot(separate)}])!.data.students.length,4);
+ const separate=parseOptical(lines.join("\n"),layout7108,questions,"Kurum",{...options,mergeSessions:false});assert.equal(aggregateResults([{...r,snapshot:snapshot(separate)}])!.data.students.length,2);
  const noIdentity=structuredClone(data);delete noIdentity.students[0].identityHash;delete noIdentity.students[0].identityEncrypted;const mixed=aggregateResults([{...r,snapshot:snapshot(noIdentity)},{...r,id:"with-tc",createdAt:new Date(Date.now()+1000)}])!;assert.equal(mixed.data.students.length,2);
 });
 test("PDF ve Excel: gerçek karne, kazanım, üç sıralama ve TC gizleme uygulanır",async()=>{

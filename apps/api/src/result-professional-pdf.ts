@@ -1,3 +1,4 @@
+import {drawBrandLogo} from "./brand-logo";
 const scoreText=(v:unknown)=>typeof v==="number"&&Number.isFinite(v)?v.toLocaleString("tr-TR",{minimumFractionDigits:3,maximumFractionDigits:3}):"Hesaplanmadı";
 import {patternedBar} from "./pdf-patterns";
 import {decryptIdentity} from "./result-identity";
@@ -19,7 +20,7 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
  const number=(s:any)=>{const no=s.studentNo??s.id,identity=!options.hideIdentity?decryptIdentity(s.identityEncrypted):"";const displayed=no.startsWith("tc-")||no==="—"?"-":options.hideIdentity&&/^\d{11}$/.test(no)?"***********":no;return displayed+(/^\d{11}$/.test(identity)?`\nTC/Tel: ${identity}`:"");};
  const result=(s:any)=>view.summary.find((r:any)=>r.id===s.id);
  function page(newTitle=title,newSubject=subject){title=newTitle;subject=newSubject;doc.addPage();pages++;y=24;
-  text("KURUMSAL SINAV",24,y,260,14,true);text("Ölçme ve değerlendirme raporu",24,y+19,260,7,false,colors.muted);
+  drawBrandLogo(doc,24,y,27);text("KURUMSAL SINAV",59,y,225,14,true);text("Ölçme ve değerlendirme raporu",59,y+19,225,7,false,colors.muted);
   if(view.publisherLogo){try{doc.image(view.publisherLogo,24+W-54,y,{fit:[54,30],align:"right"});}catch{/* Optional publisher artwork may be absent. */}}
   if(metadata.publisherName)text(metadata.publisherName,24+W-230,y,view.publisherLogo?170:230,9,true);
   y+=Math.max(39,metadata.publisherName?height(metadata.publisherName,view.publisherLogo?170:230,9,true)+6:0);const examHeight=height(view.keyName,W,11,true);text(view.keyName,24,y,W,11,true);y+=examHeight+7;

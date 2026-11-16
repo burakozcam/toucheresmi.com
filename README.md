@@ -1,6 +1,19 @@
-# Kurumsal Sınav v1.3.0 — Yerel geliştirme
+# Kurumsal Sınav v1.3.2 — Yerel geliştirme
 
-Referans tasarıma göre yenilenen A4 öğrenci karneleri; tek sayfada bütün ders cevapları, iki sayfada ayrıntılı kazanım analizi sunar. “Genel katılımı göster” seçeneği genel sıra ve katılım bilgilerini PDF’den gizleyebilir. Uzun içerikler kırpılmadan, bilgi notuyla devam sayfasına aktarılır. Yayınevi seçim listesinin yeniden açılması düzeltildi. [v1.3.0 yayın raporu](docs/v130-release-report.md) doğrulama kapsamını açıklar. Veritabanı şeması ve mevcut kayıtlar değiştirilmedi; canlıya dağıtım yapılmadı.
+Bayi izolasyonu, işlem yetkileri, yayınevi/bölge kuralları, günlük öğrenci kotası, faaliyet takibi, geri alınabilir sonuç silme, sınırlı yönetici temsil oturumu ve 2FA eklendi. Kurum sahipliği API ve veritabanında sabittir. Yönetici TOTP zorunlu, bayi TOTP isteğe bağlıdır; oturumlar ve güvenilir cihazlar iptal edilebilir.
+
+Mevcut ve yeni bayilerde **bütün işlem yetkileri açık, bölge serbest, kota sınırsızdır**. v1.3.1 lacivert/mavi öğrenci odaklı ziyaretçi tasarımı ve A4 karne düzeni korunur; PDF'ler web sitesinin orijinal K SVG logosunu kullanır. Misafir sonuçları genel kurum listesi yerine kişisel erişim koduyla açılır. Canlı veritabanı değiştirilmedi ve otomatik dağıtım yapılmadı.
+
+- [v1.3.2 yayın, migration ve kontrollü geçiş raporu](docs/v132-release-report.md)
+- [Güvenlik denetimi, bulgular ve kalan riskler](docs/v132-security-audit.md)
+- [195 yöntem/yol çiftinin API envanteri](docs/v132-endpoint-inventory.md)
+- Önceki tasarım raporları: [v1.3.1](docs/v131-release-report.md), [v1.3.0](docs/v130-release-report.md).
+
+Node 22'de 232 regresyon testi, gerçek yerel PostgreSQL/HTTP üzerinden 22 güvenlik senaryo grubu ve gerçek Web/API üzerinden 9 tarayıcı senaryo grubu geçti. Tam ve production npm audit sonucu 0 bildirilen açıktır; bu sonuç bütün saldırılara karşı garanti değildir. Hosting/TLS, canlı Neon yetkileri, SMTP ve canlı yedeğin geri yüklenmesi ayrıca operatör doğrulaması gerektirir.
+
+**Mevcut kurulumdan geçiş:** Önce DB/dosya/anahtar yedeği ve staging doğrulaması yapın. Mevcut `JWT_SECRET` ve TXT anahtarını koruyun; ayrı `MFA_ENCRYPTION_KEY` (64 hex), production `RATE_LIMIT_STORE=database` ayarlayın. Kontrollü migration sonrasında eski yayımlanmış sonuçlar için `npm run security:index-public-codes -w @optik/api` elle çalıştırılmalıdır. Eski oturumlar yeniden giriş yapar; yönetici ilk girişte TOTP kurar. Tam sıra ve geri dönüş sınırları yayın raporundadır. Bu komutları bu çalışma canlıda çalıştırmadı.
+
+Yerel güvenlik testleri yalnız sentetik veriye ayrılmış PostgreSQL `127.0.0.1:55442/ks_v132` ve ayrı migration DB'siyle çalışır. `tests/e2e/v132-security.cjs` çalışırken API port 4000'i kullanır; `V132_KEEP_SERVER=true` tarayıcı testi için açık bırakır. Web'i `localhost:3110` ile açıp `python3 tests/e2e/v132-ui.py` çalıştırın. `test-results/v132/` sahte hesaplar, token'lar ve kurtarma ekranları içerir, Git dışında kalmalıdır. Bunları canlı DB'ye yönlendirmeyin veya GitHub'a yüklemeyin. Eski ziyaretçi mock testi `tests/e2e/v131-public.py` ayrıca korunur.
 
 ## Windows 11 ve Linux: kısa kurulum
 
@@ -10,6 +23,7 @@ Node.js 22 (doğrulanan 22.16.0), npm 10 ve Git kurun. VS Code'da depo kökünü
 npm ci
 Copy-Item .env.example .env
 # .env: yerel PostgreSQL DATABASE_URL, 32+ karakter JWT_SECRET ve yerel STORAGE_DIR ayarlayın.
+# Yönetici TOTP kurulumu için ayrıca MFA_ENCRYPTION_KEY: 32 rastgele byte / 64 hex karakter.
 npm run db:generate
 npm test
 npm run build

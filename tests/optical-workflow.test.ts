@@ -65,7 +65,7 @@ test("sonuç sürümleri API: eski anlık kopya korunur, önizleme bağlanır, y
     assert.equal((await invoke("/results/:id/re-evaluate","v1",{confirm:true,previewToken:preview.body.previewToken},"other")).status,409);
     const answer=key.questions[0].answer;key.questions[0].answer="H";
     assert.equal((await invoke("/results/:id/re-evaluate","v1",{confirm:true,previewToken:preview.body.previewToken})).status,409);key.questions[0].answer=answer;
-    const saved=await invoke("/results/:id/re-evaluate","v1",{confirm:true,previewToken:preview.body.previewToken});assert.equal(saved.status,201);assert.equal(saved.body.revision,2);assert.equal(saved.body.studentPublished,false);assert.deepEqual(results[0].snapshot,initial);assert.equal(results[0].studentPublished,true);assert.equal(copied[0].resultId,"v2");
+    const saved=await invoke("/results/:id/re-evaluate","v1",{confirm:true,previewToken:preview.body.previewToken});assert.equal(saved.status,201);assert.equal(saved.body.revision,2);assert.equal(saved.body.studentPublished,false);assert.deepEqual(results[0].snapshot,initial);assert.equal(results[0].studentPublished,false);assert.equal(copied[0].resultId,"v2");
     assert.equal((await invoke("/results/:id/re-evaluate/preview")).status,409);
     const oldChecks=await invoke("/results/:id/checks");assert.ok(oldChecks.body.blockers.some((v:string)=>v.includes("yeni sürümü")));
     const checks=await invoke("/results/:id/checks","v2");assert.equal(checks.body.blockers.length,0);
@@ -76,7 +76,7 @@ test("sonuç sürümleri API: eski anlık kopya korunur, önizleme bağlanır, y
 test("erişim iptali sınavın tüm sürümlerini kapsar ve bayi kapsamını korur",async()=>{
   const {prisma}=await import("../apps/api/src/db"),{readerRouter}=await import("../apps/api/src/reader-routes");const originalTx=prisma.$transaction,originalFind=prisma.studentResultAccess.findFirst,originalDelete=prisma.studentResultAccess.deleteMany;
   prisma.$transaction=(async(fn:any)=>fn(prisma)) as any;
-  prisma.studentResultAccess.findFirst=(async({where}:any)=>{assert.equal(where.user.readerManagerId,"manager");assert.equal(where.result.school.dealerId,"dealer");return{userId:"student",studentNo:"01",result:{seriesId:"series"}};}) as any;
+  prisma.studentResultAccess.findFirst=(async({where}:any)=>{assert.equal(where.user.school.dealerId,"dealer");assert.equal(where.result.school.dealerId,"dealer");return{userId:"student",studentNo:"01",result:{seriesId:"series"}};}) as any;
   prisma.studentResultAccess.deleteMany=(async({where}:any)=>{assert.equal(where.userId,"student");assert.equal(where.studentNo,"01");assert.equal(where.id,undefined);assert.equal(where.result.seriesId,"series");assert.equal(where.result.school.dealerId,"dealer");return{count:2};}) as any;
   try{let status=200;const handler=(readerRouter as any).stack.find((l:any)=>l.route?.path==="/reader-access/:id").route.stack.at(-1).handle;await handler({params:{id:"grant"},user:{id:"manager",role:"DEALER",dealerId:"dealer"}},{status(n:number){status=n;return this;},end(){}},(e:any)=>{if(e)throw e;});assert.equal(status,204);}finally{prisma.$transaction=originalTx;prisma.studentResultAccess.findFirst=originalFind;prisma.studentResultAccess.deleteMany=originalDelete;}
 });

@@ -94,6 +94,6 @@ test("v120 equivalent joined/split 7108 literals are aliases, not ambiguous form
 
 test("v120 read-only inference quota is per authenticated user, separate from shared-IP uploads",async()=>{
  const {RequestLimiter}=await import("../apps/api/src/rate-limit");const handler=new RequestLimiter(1,60000).middleware((req:any)=>req.user.id);
- const run=(id:string)=>{let status=200,passed=false;handler({ip:"127.0.0.1",user:{id}} as any,{setHeader(){},status(n:number){status=n;return this;},json(){}} as any,()=>{passed=true;});return {status,passed};};
- assert.deepEqual(run("first"),{status:200,passed:true});assert.deepEqual(run("first"),{status:429,passed:false});assert.deepEqual(run("second"),{status:200,passed:true});
+ const run=async(id:string)=>{let status=200,passed=false;await handler({ip:"127.0.0.1",user:{id}} as any,{setHeader(){},status(n:number){status=n;return this;},json(){}} as any,()=>{passed=true;});return {status,passed};};
+ assert.deepEqual(await run("first"),{status:200,passed:true});assert.deepEqual(await run("first"),{status:429,passed:false});assert.deepEqual(await run("second"),{status:200,passed:true});
 });

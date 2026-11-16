@@ -75,7 +75,10 @@ export function aggregateResults(rows:Array<{id:string;schoolId:string;snapshot:
   let data:OpticalData|undefined;
   for(const row of active){const snapshot=row.snapshot as ResultSnapshot;
     if(snapshotFingerprint(snapshot)!==snapshotFingerprint(base))throw new Error("Aynı sınavın yüklemeleri farklı cevap anahtarları kullanıyor. Önce güncel anahtarla tekrar değerlendirin.");
-    data=data?mergeStudentData(data,snapshot.data):structuredClone(snapshot.data);
+    const normalized=structuredClone(snapshot.data);for(const student of normalized.students)delete student.separateSession;
+    // Separate imports remain immutable in storage; exam-level views merge the same person's sessions.
+    const empty={...normalized,students:[],lineCount:0,warnings:[]};
+    data=data?mergeStudentData(data,normalized):mergeStudentData(empty,normalized);
   }
   data={...data!,students:data!.students.map((s,i)=>({...s,studentNo:(s.studentNo??s.id).startsWith("tc-")?"—":s.studentNo??s.id,id:`r${i+1}`}))};
   return {...base,keyFingerprint:snapshotFingerprint(base),data,summary:opticalSummary(data,base.penalty),sourceResultIds:active.map(r=>r.id),schoolId:latest.schoolId};

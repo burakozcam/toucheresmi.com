@@ -52,6 +52,16 @@ enum AnswerKeyFileCategory {
 }
 
 model User {
+  sessions AuthSession[]
+  trustedDevices TrustedDevice[]
+  twoFactorSecret String?
+  twoFactorPending String?
+  twoFactorPendingAt DateTime?
+  twoFactorEnabled Boolean @default(false)
+  twoFactorCounter BigInt @default(-1)
+  recoveryHashes String[] @default([])
+  lastLoginAt DateTime?
+
   opticalTxtFiles OpticalTxtFile[]
   readerManagerId String?
   readerStudentNo String?
@@ -110,6 +120,19 @@ model RegistrationRequest {
 }
 
 model Dealer {
+  canCreateSchool Boolean @default(true)
+  canEditSchool Boolean @default(true)
+  canEvaluate Boolean @default(true)
+  canDeleteResult Boolean @default(true)
+  canEditResult Boolean @default(true)
+  canReevaluate Boolean @default(true)
+  canExport Boolean @default(true)
+  restrictedRegions Boolean @default(false)
+  dailyStudentLimit Int?
+  regions DealerRegion[]
+  usage DealerDailyUsage[]
+  quotaStudents DealerQuotaStudent[]
+
   id        String   @id @default(cuid())
   name      String
   phone     String?
@@ -692,4 +715,112 @@ model ScoreProfile {
   active Boolean @default(true)
   updatedAt DateTime @updatedAt
   @@index([publisher,grade,active])
+}
+
+
+model AuthSession {
+  id String @id @default(uuid())
+  userId String
+  credentialVersion String
+  role Role
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  mfaVerifiedAt DateTime?
+  actorAdminId String?
+  trustedDeviceId String?
+  parentSessionId String?
+  label String
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  @@index([userId, revokedAt, expiresAt])
+  @@index([parentSessionId])
+}
+model TrustedDevice {
+  id String @id @default(uuid())
+  userId String
+  tokenHash String @unique
+  credentialVersion String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  label String
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  @@index([userId, revokedAt])
+}
+model DealerRegion {
+  id String @id @default(cuid())
+  dealerId String
+  publisherId String?
+  city String?
+  district String?
+  dealer Dealer @relation(fields:[dealerId], references:[id], onDelete:Cascade)
+  @@index([dealerId, publisherId])
+}
+model DealerDailyUsage {
+  id String @id @default(cuid())
+  dealerId String
+  day String
+  students Int @default(0)
+  evaluations Int @default(0)
+  dealer Dealer @relation(fields:[dealerId], references:[id], onDelete:Restrict)
+  @@unique([dealerId, day])
+}
+model DealerQuotaStudent {
+  id String @id @default(cuid())
+  dealerId String
+  day String
+  keyId String
+  schoolId String
+  studentHash String
+  dealer Dealer @relation(fields:[dealerId], references:[id], onDelete:Restrict)
+  @@unique([dealerId, day, keyId, schoolId, studentHash])
+}
+model DealerActivity {
+  id String @id @default(cuid())
+  dealerId String?
+  actorUserId String
+  actorAdminId String?
+  schoolId String?
+  keyId String?
+  publisherId String?
+  city String?
+  district String?
+  action String
+  success Boolean
+  studentCount Int @default(0)
+  resultId String?
+  createdAt DateTime @default(now())
+  @@index([dealerId, createdAt])
+  @@index([schoolId, createdAt])
+  @@index([publisherId, createdAt])
+  @@index([action, createdAt])
+}
+model SchoolLocationRequest {
+  id String @id @default(cuid())
+  schoolId String
+  dealerId String
+  actorUserId String
+  city String
+  district String
+  previousCity String?
+  previousDistrict String?
+  status String @default("PENDING")
+  reviewedById String?
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([status, createdAt])
+}
+model SecurityRateBucket {
+  key String @id
+  count Int @default(1)
+  resetAt DateTime
+  @@index([resetAt])
+}
+
+model PublicResultCode {
+  codeHash String @id
+  schoolId String
+  keyId String
+  createdAt DateTime @default(now())
+  @@index([schoolId,keyId])
 }

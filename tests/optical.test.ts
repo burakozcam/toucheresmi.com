@@ -112,7 +112,7 @@ test("optik API: önizleme yazmaz; değerlendirme kimliksiz anlık kopya saklar 
   };
   try{
     const preview=await invoke("/preview");assert.equal(preview.status,200);assert.equal(writes,0);assert.equal(preview.data.data.students.length,2);
-    const saved=await invoke("/evaluate",txt,"true");assert.equal(saved.status,201);assert.equal(writes,1);assert.equal(schoolChecks,3);
+    const saved=await invoke("/evaluate",txt,"true");assert.equal(saved.status,201);assert.equal(writes,1);assert.equal(schoolChecks,4);
     assert.equal(stored.createdById,"dealer-user");assert.equal(stored.schoolId,"school");assert.equal(stored.snapshot.summary[0].net,78);
     assert.ok(!JSON.stringify(stored).includes("SAMPLE00001"));assert.equal(stored.snapshot.data.students[0].answers.length,90);
     const incomplete=txt.split(/\r?\n/).slice(1).join("\r\n");

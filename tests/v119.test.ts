@@ -89,7 +89,7 @@ test("v119 public grade lookup: publication, school isolation, ambiguous number 
  // Legacy branch-based links remain supported.
  assert.equal((await lookupStudentResults({schoolId:"school",branch:"8-A",identifier:"00001"})).length,1);
  const route=(publicResultsRouter as any).stack.find((l:any)=>l.route?.path==="/grades").route.stack.at(-1).handle;let grades:any;
- await route({query:{schoolId:"school"}},{json(v:any){grades=v;}},(e:any)=>{if(e)throw e;});assert.deepEqual(grades,["8"]);
+ let directoryStatus=200;await route({query:{schoolId:"school"}},{status(n:number){directoryStatus=n;return this;},json(v:any){grades=v;}},(e:any)=>{if(e)throw e;});assert.equal(directoryStatus,403);assert.ok(grades.error);
  }finally{prisma.school.findFirst=originals[0] as any;prisma.opticalResult.findMany=originals[1] as any;}
 });
 

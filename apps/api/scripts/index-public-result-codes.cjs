@@ -1,0 +1,5 @@
+// Run only after v1.3.2 migration, with the existing JWT_SECRET. Never prints access codes or student records.
+if(!process.argv.includes('--confirm-public-code-index'))throw Error('Use --confirm-public-code-index after checking DATABASE_URL and a backup.');
+require('tsx/cjs');
+const {prisma}=require('../src/db.ts'),{aggregateResults,isDeleted}=require('../src/result-data.ts'),{indexResultCodes}=require('../src/public-result-codes.ts');
+(async()=>{let groups=0,indexed=0;const pairs=await prisma.opticalResult.findMany({where:{studentPublished:true,nextRevision:null,school:{active:true}},select:{schoolId:true,keyId:true},distinct:['schoolId','keyId']});for(const pair of pairs){const rows=await prisma.opticalResult.findMany({where:{...pair,studentPublished:true,nextRevision:null},orderBy:{createdAt:'asc'}});const view=aggregateResults(rows.filter(r=>!isDeleted(r.snapshot)));if(view){await indexResultCodes(prisma,pair.schoolId,pair.keyId,view.data.students);indexed+=view.data.students.length;groups++;}}console.log({examGroups:groups,indexedCapabilities:indexed});})().finally(()=>prisma.$disconnect());

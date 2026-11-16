@@ -1,3 +1,4 @@
+import {publicCodeHash} from "./public-result-codes";
 import {humanVerificationConfig} from "./captcha-config";
 import {enrichReportView} from "./report-metadata";
 import {env} from "./config";
@@ -15,9 +16,8 @@ export const publicResultsRouter=express.Router();
 publicResultsRouter.use((_req,res,next)=>{res.setHeader("Cache-Control","private, no-store");next();});
 publicResultsRouter.use(new RequestLimiter(30,10*60_000).middleware());
 const wrap=(fn:(req:express.Request,res:express.Response)=>Promise<void>):express.RequestHandler=>async(req,res,next)=>{try{await fn(req,res);}catch(e){if(e instanceof z.ZodError){res.status(400).json({error:e.issues[0]?.message??"Kurum, sınıf, öğrenci bilgisini kontrol edin."});return;}if(e instanceof Error&&!((e as any).code)&&/eşleştirme|çelişen|cevap anahtarları/.test(e.message)){res.status(400).json({error:"Sonuç kayıtlarının eşleştirmesi belirsiz. Kurumunuzdan kayıtları kontrol etmesini isteyin."});return;}next(e);}};
-publicResultsRouter.get("/schools",wrap(async(_req,res)=>{const rows=await prisma.opticalResult.findMany({where:{nextRevision:null,studentPublished:true,school:{active:true}},include:{school:{select:{id:true,name:true}}}});res.json([...new Map(rows.filter(r=>!isDeleted(r.snapshot)).map(r=>[r.schoolId,r.school])).values()].sort((a,b)=>a.name.localeCompare(b.name,"tr")));}));
-publicResultsRouter.get("/classes",wrap(async(req,res)=>{const schoolId=z.string().min(1).parse(req.query.schoolId);const rows=await prisma.opticalResult.findMany({where:{schoolId,nextRevision:null,studentPublished:true,school:{active:true}},select:{snapshot:true}});res.json([...new Set(rows.filter(r=>!isDeleted(r.snapshot)).flatMap(r=>(r.snapshot as any).data.students.map((s:any)=>s.branch)))].sort());}));
-publicResultsRouter.get("/grades",wrap(async(req,res)=>{const schoolId=z.string().min(1).parse(req.query.schoolId);const rows=await prisma.opticalResult.findMany({where:{schoolId,nextRevision:null,studentPublished:true,school:{active:true}},select:{snapshot:true}});res.json([...new Set(rows.filter(r=>!isDeleted(r.snapshot)).flatMap(r=>(r.snapshot as any).data.students.map((s:any)=>resultGrade(s.branch))))].sort());}));
+// No public institution/class directory: a personal capability resolves only its own institution.
+for(const path of ["/schools","/classes","/grades"])publicResultsRouter.get(path,(_req,res)=>{res.status(403).json({error:"Kurumunuzu kişisel sınav erişim kodunuzla bulun."});});
 const lookup=z.object({schoolId:z.string().min(1).max(100),branch:z.string().min(1).max(100).optional(),grade:z.string().regex(/^\d{1,2}$/).optional(),identifier:z.string().trim().min(1).max(30),keyId:z.string().optional(),studentId:z.string().optional()});
 export async function lookupStudentResults(input:z.infer<typeof lookup>,accessCode?:string){
  if(!input.grade&&!input.branch)return[];
@@ -34,11 +34,20 @@ export async function lookupStudentResults(input:z.infer<typeof lookup>,accessCo
  if(matchedPeople.size>1)throw new z.ZodError([{code:"custom",path:["identifier"],message:"Öğrenci numarası birden fazla kayıtla eşleşiyor. TC veya öğrenci hesabıyla giriş yapın."}]);
  return results;
 }
-publicResultsRouter.use(["/lookup","/pdf"],async(req,res,next)=>{
+publicResultsRouter.use(["/lookup","/pdf","/resolve"],async(req,res,next)=>{
  if(req.method!=="POST"){next();return;}
  const config=humanVerificationConfig();
  if(!await verifyHuman(req.body?.humanToken,"results",config)){res.status(403).json({error:"Güvenlik doğrulaması tamamlanamadı. Google hizmetine erişimi kontrol edip yeniden deneyin."});return;}next();
 });
+publicResultsRouter.post("/resolve",wrap(async(req,res)=>{
+ const input=z.object({accessCode:z.string().regex(/^[A-Za-z0-9_-]{16}$/)}).parse(req.body);
+ const index=await prisma.publicResultCode.findUnique({where:{codeHash:publicCodeHash(input.accessCode)}});
+ const school=index?await prisma.school.findFirst({where:{id:index.schoolId,active:true},select:{id:true,name:true}}):null;
+ const view=index&&school?await examView(index.schoolId,index.keyId,true):null;
+ const own=view?.data.students.filter(s=>matchesReportAccessCode(input.accessCode,index!.schoolId,index!.keyId,s))??[];
+ if(!school||own.length!==1){res.status(404).json({error:"Bu kodla erişilebilir sonuç bulunamadı. Kurumunuzdan güncel kişisel erişim kodunuzu isteyin."});return;}
+ res.json({school,grade:resultGrade(own[0].branch)});
+}));
 publicResultsRouter.post("/lookup",wrap(async(req,res)=>{const input=lookup.extend({accessCode:z.string().regex(/^[A-Za-z0-9_-]{16}$/,"Kurumunuzdan aldığınız erişim kodunu girin veya öğrenci hesabınızla giriş yapın.")}).parse(req.body),found=await lookupStudentResults(input,input.accessCode);if(!found.length){res.status(404).json({error:"Bu bilgilerle erişilebilir sonuç bulunamadı. Kurum, sınıf, öğrenci bilgisi ve erişim kodunu kontrol edin."});return;}
  res.json(found.map(({view,student})=>({keyId:view.keyId,examName:view.keyName,schoolName:view.schoolName,student:{id:student.id,name:student.name,studentNo:student.studentNo,branch:student.branch},summary:view.summary.find((r:any)=>r.id===student.id),ranking:view.rankings[student.id]})));
 }));

@@ -1,3 +1,25 @@
+# v1.3.2 · 2026-11-16 · yerel geliştirme
+
+- Tek bayi sahipliği kapsamı; kurum sahibini API ve DB trigger ile sabitleme; öğrenci/veli sonuçlarında yayın, aktiflik, silinme ve son sürüm koşullarını birleştirme; kimliğe göre güvenli erişim taşıma.
+- Bayi/çalışan yönetimi, yedi işlem yetkisi, çoklu yayınevi/il/ilçe kuralları ve konum değişikliği onayı. Varsayılan bütün yetkiler açık, bölge serbest ve kota sınırsız.
+- Türkiye gününe göre atomik benzersiz öğrenci kotası; önizleme/başarısız/tekrar işlemlerinde tüketim yok; ayrı oturumlarda tek sayım. Sonraki sürümlerde aynı TXT'nin mükerrer kaydedilmesi düzeltildi.
+- Filtrelenebilir bayi faaliyetleri, gerçek yöneticiyle ilişkilendirilmiş 15 dakikalık temsil sekmesi, soft delete/geri yükleme geçmişi; yeni/geri yüklenen sürüm otomatik yayımlanmaz.
+- Yöneticiye zorunlu, bayiye isteğe bağlı TOTP; yerel QR, ayrı anahtarla şifreli sır, on hash'li tek kullanımlık kurtarma kodu, iptal edilebilir güvenilir cihaz ve DB oturumları. Eski JWT'ler yeniden giriş gerektirir.
+- Genel kurum/sınıf dizini kaldırıldı; kişisel kod hash indeksli misafir çözümleme. Aynı sınavdan anonim genel/il/ilçe sıralaması, küçük çapraz kurum ortalamalarını gizleme.
+- Özel depolama containment, bounded XLSX/ZIP açma, ortak PostgreSQL rate limiter, ağır iş concurrency sınırı, CORS/Origin/header/CSP düzenlemeleri; audit özetlerinde ham öğrenci değişikliklerini azaltma.
+- Bütün karne başlıklarında orijinal web K SVG logosu; v1.3.1 kurumsal lacivert/mavi ziyaretçi tasarımı ve mevcut A4 düzenleri korundu.
+- Uyumlu Nodemailer/Zod/PostCSS/deepmerge güncellemeleri; tam ve production npm audit 0. Node 22 API/Web derlemesi, 232/232 regresyon, gerçek PostgreSQL/HTTP 22 grup, gerçek tarayıcı 9 grup ve eski şemadan migration testi geçti.
+- Yeni migration ve `.env.example` MFA/rate/proxy alanları; canlıda uygulanmadı. Geçiş, eski sonuç kodlarının MANUEL indekslenmesi, yedek ve geri dönüş: `docs/v132-release-report.md`. Bulgular/kalan riskler: `docs/v132-security-audit.md`.
+
+# v1.3.1 · 2026-11-16 · yerel geliştirme
+
+- Lacivert/mavi kurumsal kimlik korunarak öğrenci odaklı ana sayfa: büyük sınav araması, sunucu tarafında gerçek yayımlanmış sınavlar, kapak vitrini, yayınevleri ve kurumsal hizmet bölümü.
+- Fareye tepki veren SVG kitapçık/optik/kalem kompozisyonu, durdurulabilir yayınevi şeridi, kaydırmayla gelişen temsili karne grafikleri ve yedi aşamalı optikten karneye hikâyesi. Yeni animasyon bağımlılığı eklenmedi.
+- Cevap anahtarı kütüphanesinde kurumsal kapaklar, bozuk görsel alternatifi ve yayınevi kataloğu; ana sayfada “8. sınıf” gibi sınıf aramaları mevcut sınıf filtresine aktarılır.
+- Sınav detaylarında yayınevinin aynı sınıftaki diğer denemeleri ve sınava özel Türkçe Open Graph görseli; mevcut canonical, yapılandırılmış veri, robots/sitemap ve özel sonuçların noindex kuralları korunur.
+- Herkese açık sayfalarda ortak mavi vurgu, mobil düzen, açık/koyu tema ve azaltılmış hareket görünümü. Giriş, CAPTCHA, çerez tercihleri ve dosya erişim koşulları değişmez.
+- Node.js 22 API/Web derlemeleri ve yerel tarayıcı doğrulaması: `docs/v131-release-report.md`. Migration ve canlı dağıtım yoktur.
+
 # v1.3.0 · 2026-11-15 · yerel geliştirme
 
 - Referans görsele uygun dinamik A4 öğrenci karneleri: kurumsal başlık, bilgi/puan kartları, ders tablosu, karşılaştırma grafiği, sıralama/katılım tablosu, bütün derslerin öğrenci ve anahtar cevapları, gerçek performanstan öncelikli kazanımlar.

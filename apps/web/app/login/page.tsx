@@ -1,4 +1,5 @@
 "use client";
+import MfaLogin, {type SecurityLogin} from "../mfa-login";
 import {getHumanToken} from "../../lib/human-token";
 import PasswordField from "../password-field";
 import UiIcon from "../ui-icon";
@@ -22,6 +23,7 @@ const loginTypes = [
 type LoginType = (typeof loginTypes)[number]["id"];
 
 export default function LoginPage() {
+  const [mfa,setMfa]=useState<{challengeToken:string;setupRequired:boolean}|null>(null);
   const [humanToken,setHumanToken]=useState("");
   const [attempt,setAttempt]=useState(0);
   const [selectedType, setSelectedType] = useState<LoginType>("dealer");
@@ -64,6 +66,7 @@ export default function LoginPage() {
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           humanToken:await getHumanToken("login",humanToken),
@@ -74,9 +77,11 @@ export default function LoginPage() {
       });
       const result = await response.json() as {
         error?: string;
+        mfaRequired?:boolean;setupRequired?:boolean;challengeToken?:string;
         token?: string;
         user?: { id: string; email: string; firstName: string; lastName: string; role: string };
       };
+      if(response.ok&&result.mfaRequired&&result.challengeToken){setMfa({challengeToken:result.challengeToken,setupRequired:!!result.setupRequired});setSubmitting(false);return;}
       if (!response.ok || !result.token || !result.user) {
         setMessage(result.error ?? "Giriş yapılamadı. Bilgilerinizi kontrol edip tekrar deneyin.");
         setSubmitting(false);setHumanToken("");setAttempt(n=>n+1);
@@ -128,6 +133,8 @@ export default function LoginPage() {
       setSubmitting(false);setHumanToken("");setAttempt(n=>n+1);
     }
   }
+
+  if(mfa)return <main className="auth-page"><header className="auth-header"><Link className="brand" href="/"><span className="brand-mark">K</span>Kurumsal Sınav</Link><ThemeToggle/></header><MfaLogin {...mfa} onCancel={()=>setMfa(null)} onComplete={result=>{sessionStorage.setItem("kurumsal-auth-token",result.token);sessionStorage.setItem("kurumsal-auth-user",JSON.stringify(result.user));location.assign("/panel");}}/></main>;
 
   return (
     <main className="auth-page login-page">

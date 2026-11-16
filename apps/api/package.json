@@ -1,6 +1,6 @@
 {
   "name": "@optik/api",
-  "version": "1.3.0",
+  "version": "1.3.2",
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -9,7 +9,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "security:index-public-codes": "node scripts/index-public-result-codes.cjs --confirm-public-code-index"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
@@ -20,12 +21,13 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.5.0",
-    "nodemailer": "^7.0.3",
+    "nodemailer": "^10.6.0",
     "pdfjs-dist": "4.10.38",
     "pdfkit": "0.17.2",
+    "qrcode": "^1.5.4",
+    "sharp": "0.35.5",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "zod": "^3.25.28",
-    "sharp": "0.35.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.18",

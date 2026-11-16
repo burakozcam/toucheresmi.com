@@ -1,3 +1,4 @@
+import {safeWorkbookRead} from "./upload-security";
 import fs from "node:fs";
 import path from "node:path";
 import { decodeOptical,type OpticalQuestion } from "./optical-core";
@@ -7,7 +8,7 @@ const norm=(s:unknown)=>String(s??"").trim().toLocaleUpperCase("tr-TR");
 export async function inspectOutcomeFile(filePath:string,originalName:string,format:ImportFormat="auto",allowInvalid=true){
  const extension=path.extname(originalName).toLowerCase();let sheets:Array<{name:string;rows:unknown[][]}>;
  if([".xls",".xlsx",".csv",".tsv"].includes(extension)){
-  const x=require("xlsx"),bytes=fs.readFileSync(filePath),book=x.read([".csv",".tsv"].includes(extension)?decodeOptical(bytes):bytes,{type:[".csv",".tsv"].includes(extension)?"string":"buffer",raw:true,cellDates:false});
+  const x=require("xlsx"),bytes=fs.readFileSync(filePath),book=safeWorkbookRead([".csv",".tsv"].includes(extension)?decodeOptical(bytes):bytes,{type:[".csv",".tsv"].includes(extension)?"string":"buffer",raw:true,cellDates:false});
   sheets=book.SheetNames.map((name:string)=>({name,rows:x.utils.sheet_to_json(book.Sheets[name],{header:1,defval:""})}));
  }else if(extension===".pdf"){
   const pages:Array<Array<{text:string;x:number;y:number;width:number}>>=await require("../lib/pdf-text.cjs").readPdfText(fs.readFileSync(filePath));

@@ -1,0 +1,8 @@
+const fs=require('node:fs');
+module.exports=function inventory(app){
+ const {opticalRouter}=require('../../apps/api/src/optical-routes.ts'),{readerRouter}=require('../../apps/api/src/reader-routes.ts'),{dealerRouter}=require('../../apps/api/src/dealer-routes.ts'),{systemRouter}=require('../../apps/api/src/system-center.ts'),{contentRouter}=require('../../apps/api/src/admin-content.ts'),{publisherLogoRouter}=require('../../apps/api/src/publisher-logos.ts');
+ const prefixes=new Map([[opticalRouter,'/api/optical'],[readerRouter,'/api']]);
+ for(const [router,prefix]of [[dealerRouter,'/api/admin/dealer-management'],[systemRouter,'/api/admin/system'],[contentRouter,'/api/admin'],[publisherLogoRouter,'/api/admin/publisher-logos']]){const child=router.stack.find(l=>l.handle?.stack);if(child)prefixes.set(child.handle,prefix);}
+ const routes=[];function walk(stack,prefix=''){for(const layer of stack){if(layer.route){for(const method of Object.keys(layer.route.methods))for(const part of Array.isArray(layer.route.path)?layer.route.path:[layer.route.path]){const path=prefix+part;routes.push({method:method.toUpperCase(),path,private:/^\/api\/(?:admin(?:\/|$)|optical(?:\/|$)|reader-|my-results(?:\/|$)|account(?:\/|$)|exams(?:\/|$)|schools(?:\/|$)|publisher-requests(?:\/|$)|dealer-policy(?:\/|$))/.test(path)||path.startsWith('/api/security/')&&!['/api/security/mfa/login','/api/security/mfa/setup','/api/security/mfa/confirm'].includes(path)});}}else if(layer.handle?.stack)walk(layer.handle.stack,prefix+(prefixes.get(layer.handle)??''));}}
+ walk(app.router.stack);return [...new Map(routes.map(r=>[r.method+' '+r.path,r])).values()].sort((a,b)=>a.path.localeCompare(b.path)||a.method.localeCompare(b.method));
+};

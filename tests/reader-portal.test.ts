@@ -41,8 +41,9 @@ test("öğrenci/veli uçları oturum ister ve öğrenci hesabı yönetim işleml
 test("sonuç listesi ve detayda kullanıcı ve yayın durumu veritabanında birlikte sınırlandırılır",async()=>{
   const r=await router(),{prisma}=await import("../apps/api/src/db"),original=prisma.studentResultAccess.findFirst,originalList=prisma.studentResultAccess.findMany;
   try{
-    prisma.studentResultAccess.findFirst=(async({where}:any)=>{assert.equal(where.userId,"reader");assert.equal(where.result.studentPublished,true);return where.id==="own"?{studentNo:"00001",result:{snapshot,createdAt:new Date()}}:null;}) as any;
+    prisma.studentResultAccess.findFirst=(async({where}:any)=>{assert.equal(where.userId,"reader");assert.equal(where.result.studentPublished,true);return where.id==="own"?{studentNo:"00001",result:{schoolId:"school",keyId:"key",snapshot,createdAt:new Date()}}:null;}) as any;
     assert.equal((await invoke(r,"/my-results/:id",{params:{id:"foreign"}})).status,404);
+    prisma.opticalResult.findMany=(async()=>[{id:"result",schoolId:"school",keyId:"key",studentPublished:true,snapshot,createdAt:new Date()}])as any;
     const own=await invoke(r,"/my-results/:id",{params:{id:"own"}});assert.equal(own.status,200);assert.equal(own.body.data.students.length,1);
     prisma.studentResultAccess.findMany=(async({where}:any)=>{assert.equal(where.userId,"reader");assert.equal(where.result.studentPublished,true);return[];}) as any;
     assert.deepEqual((await invoke(r,"/my-results",{})).body,[]);
@@ -50,7 +51,7 @@ test("sonuç listesi ve detayda kullanıcı ve yayın durumu veritabanında birl
 });
 test("bayi yalnızca kendi yönettiği hesaba ve kendi kurumundaki sonuca bağlantı verebilir; öğrenciye başka çocuk bağlanmaz",async()=>{
   const r=await router(),{prisma}=await import("../apps/api/src/db"),original=prisma.$transaction;let role="STUDENT",owned=true,grantCount=0;
-  prisma.$transaction=(async(fn:any)=>fn({user:{findFirst:async({where}:any)=>{assert.equal(where.readerManagerId,"dealer-user");assert.deepEqual(where.role.in,["STUDENT","PARENT"]);return owned?{id:"account",role,readerStudentNo:role==="STUDENT"?"00001":null,schoolId:"school",studentResultAccess:[]}:null;}},opticalResult:{findFirst:async({where}:any)=>{assert.equal(where.school.dealerId,"dealer-1");return{snapshot,schoolId:"school"};}},studentResultAccess:{upsert:async({create}:any)=>{grantCount++;return create;}}})) as any;
+  prisma.$transaction=(async(fn:any)=>fn({user:{findFirst:async({where}:any)=>{assert.equal(where.school.dealerId,"dealer-1");assert.deepEqual(where.role.in,["STUDENT","PARENT"]);return owned?{id:"account",role,readerStudentNo:role==="STUDENT"?"00001":null,schoolId:"school",studentResultAccess:[]}:null;}},opticalResult:{findFirst:async({where}:any)=>{assert.equal(where.school.dealerId,"dealer-1");return{snapshot,schoolId:"school"};}},studentResultAccess:{upsert:async({create}:any)=>{grantCount++;return create;}}})) as any;
   const req={user:{id:"dealer-user",role:"DEALER",dealerId:"dealer-1"},params:{id:"account"},body:{resultId:"result",studentNo:"00002"}};
   try{
     assert.equal((await invoke(r,"/reader-accounts/:id/access",req,"post")).status,400);assert.equal(grantCount,0);
@@ -71,8 +72,8 @@ test("veli hesabı yalnızca seçili öğrenciye bağlanır, davet özeti saklan
 test("bağlantı kaldırma ve hesap kapatma diğer bayinin kullanıcılarına uygulanamaz",async()=>{
   const r=await router(),{prisma}=await import("../apps/api/src/db"),originalTx=prisma.$transaction,originalRemove=prisma.studentResultAccess.findFirst,originalUpdate=prisma.user.updateMany;
   prisma.$transaction=(async(fn:any)=>fn(prisma)) as any;
-  prisma.studentResultAccess.findFirst=(async({where}:any)=>{assert.equal(where.user.readerManagerId,"dealer-user");assert.equal(where.result.school.dealerId,"dealer-1");return null;}) as any;
-  prisma.user.updateMany=(async({where,data}:any)=>{assert.equal(where.readerManagerId,"dealer-user");assert.equal(data.active,false);assert.equal(data.setupTokenHash,null);assert.ok(data.passwordHash);return{count:0};}) as any;
+  prisma.studentResultAccess.findFirst=(async({where}:any)=>{assert.equal(where.user.school.dealerId,"dealer-1");assert.equal(where.result.school.dealerId,"dealer-1");return null;}) as any;
+  prisma.user.updateMany=(async({where,data}:any)=>{assert.equal(where.school.dealerId,"dealer-1");assert.equal(data.active,false);assert.equal(data.setupTokenHash,null);assert.ok(data.passwordHash);return{count:0};}) as any;
   try{const req={user:{id:"dealer-user",role:"DEALER",dealerId:"dealer-1"},body:{active:false}};assert.equal((await invoke(r,"/reader-access/:id",req,"delete")).status,404);assert.equal((await invoke(r,"/reader-accounts/:id",req,"patch")).status,404);}finally{prisma.$transaction=originalTx;prisma.studentResultAccess.findFirst=originalRemove;prisma.user.updateMany=originalUpdate;}
 });
 test("FMT indirme ve sonuç yayımlama API'de etkin şablon ve bayi kurumuyla sınırlandırılır",async()=>{

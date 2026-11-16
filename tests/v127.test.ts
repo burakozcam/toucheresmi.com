@@ -64,7 +64,7 @@ test('v127 v3 score, action, hostname, age, replay, malformed provider and netwo
 });
 
 test('v127 canlı doğrulama kapatılamaz, yerelde uzak DB engellenir, localhost geliştirme desteklenir',()=>{
- const run=(extra:Record<string,string>)=>spawnSync(process.execPath,['--import','tsx','-e',"require('./apps/api/src/config')"],{encoding:'utf8',env:{...process.env,JWT_SECRET:'unit-test-only-secret-at-least-32-chars',DATABASE_URL:'postgresql://test:test@127.0.0.1:1/test',RECAPTCHA_SECRET_KEY:'',RECAPTCHA_ENABLED:'false',TURNSTILE_ENABLED:'false',ALLOW_REMOTE_DATABASE:'false',...extra}});
+ const run=(extra:Record<string,string>)=>spawnSync(process.execPath,['--import','tsx','-e',"require('./apps/api/src/config')"],{encoding:'utf8',env:{...process.env,MFA_ENCRYPTION_KEY:'a1'.repeat(32),JWT_SECRET:'unit-test-only-secret-at-least-32-chars',DATABASE_URL:'postgresql://test:test@127.0.0.1:1/test',RECAPTCHA_SECRET_KEY:'',RECAPTCHA_ENABLED:'false',TURNSTILE_ENABLED:'false',ALLOW_REMOTE_DATABASE:'false',...extra}});
  assert.notEqual(run({NODE_ENV:'production'}).status,0);
  assert.notEqual(run({NODE_ENV:'production',RECAPTCHA_ENABLED:'true'}).status,0);
  assert.equal(run({NODE_ENV:'development'}).status,0);

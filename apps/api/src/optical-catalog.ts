@@ -1,3 +1,4 @@
+import {safeWorkbookRead} from "./upload-security";
 import fs from "node:fs";
 import path from "node:path";
 import { Prisma } from "@prisma/client";
@@ -17,9 +18,9 @@ const xlsx = () => require("xlsx") as {
 };
 export type ImportFormat="auto"|"f"|"o"|"standard";
 export function inspectEvaluationExcel(filePath:string,format:ImportFormat="auto",allowInvalid=false){
-  const lib=xlsx(),book=lib.read(fs.readFileSync(filePath),{type:"buffer"});
+  const lib=xlsx(),book=safeWorkbookRead(fs.readFileSync(filePath),{type:"buffer"});
   const {parseWorkbook}=require("../lib/optical-import");
-  const sheets=book.SheetNames.map(name=>({name,rows:lib.utils.sheet_to_json(book.Sheets[name],{header:1,defval:""})}));
+  const sheets=book.SheetNames.map((name:string)=>({name,rows:lib.utils.sheet_to_json(book.Sheets[name],{header:1,defval:""})}));
   return parseWorkbook(sheets,format,{allowInvalid}) as {questions:OpticalQuestion[];format:string;issues:string[]};
 }
 export function readEvaluationExcel(filePath:string,format:ImportFormat="auto"):OpticalQuestion[]{return evaluationQuestions(inspectEvaluationExcel(filePath,format).questions);}

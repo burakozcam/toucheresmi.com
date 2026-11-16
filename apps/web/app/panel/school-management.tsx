@@ -102,7 +102,7 @@ export default function SchoolManagement({ token, role }: { token: string; role:
           ...(role === "SUPER_ADMIN" ? { dealerId: form.dealerId || null } : {}),
         }),
       });
-      const result = await response.json() as { error?: string };
+      const result = await response.json() as { error?: string;message?:string };
       if (!response.ok) {
         setError(result.error ?? "Kurum eklenemedi.");
         return;
@@ -121,18 +121,18 @@ export default function SchoolManagement({ token, role }: { token: string; role:
     setError("");
     setNotice("");
     try {
-      const response = await fetch(`${API_URL}/api/admin/schools/${encodeURIComponent(schoolId)}`, {
+      const response = await fetch(`${API_URL}/api/${role==="SUPER_ADMIN"?"admin/":""}schools/${encodeURIComponent(schoolId)}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(changes),
       });
-      const result = await response.json() as { error?: string };
+      const result = await response.json() as { error?: string;message?:string };
       if (!response.ok) {
         setError(result.error ?? "Kurum güncellenemedi.");
         return;
       }
       setEditing(null);
-      setNotice("Kurum bilgileri güncellendi.");
+      setNotice(result.message??"Kurum bilgileri güncellendi.");
       await loadData();
     } catch {
       setError("Kurum güncellenirken sunucuya ulaşılamadı.");
@@ -147,7 +147,7 @@ export default function SchoolManagement({ token, role }: { token: string; role:
         headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      const result = await response.json() as { error?: string };
+      const result = await response.json() as { error?: string;message?:string };
       if (!response.ok) {
         setError(result.error ?? "İnceleme durumu kaydedilemedi.");
         return;
@@ -219,9 +219,9 @@ export default function SchoolManagement({ token, role }: { token: string; role:
                       <small>{school.code ? `Kod: ${school.code} · ` : ""}{school.active ? "Aktif" : "Pasif"}</small>
                       {role === "SUPER_ADMIN" && <small>Ekleyen: {school.createdBy ? `${school.createdBy.firstName} ${school.createdBy.lastName}` : school.dealer?.name ?? "Bilinmiyor"}{school.dealer ? ` · ${school.dealer.name}` : ""}</small>}
                     </div>
-                    {role === "SUPER_ADMIN" && <div className="school-admin-actions">
+                    {<div className="school-admin-actions">
                       <button type="button" className="button button-quiet" onClick={() => setEditing(school)}>Düzenle</button>
-                      <button type="button" className="button button-quiet" onClick={() => void updateSchool(school.id, { active: !school.active })}>{school.active ? "Pasife al" : "Yeniden aktifleştir"}</button>
+                      {role==="SUPER_ADMIN"&&<button type="button" className="button button-quiet" onClick={() => void updateSchool(school.id, { active: !school.active })}>{school.active ? "Pasife al" : "Yeniden aktifleştir"}</button>}
                     </div>}
                   </>
                 )}

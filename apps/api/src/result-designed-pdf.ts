@@ -1,3 +1,4 @@
+import {drawBrandLogo} from "./brand-logo";
 const scoreText=(v:unknown)=>typeof v==="number"&&Number.isFinite(v)?v.toLocaleString("tr-TR",{minimumFractionDigits:3,maximumFractionDigits:3}):"Hesaplanmadı";
 import {patternedBar} from "./pdf-patterns";
 import path from "node:path";
@@ -13,7 +14,7 @@ export function designedReportPdf(view:ReportView,options:ReportOptions):Promise
  doc.registerFont("R",path.join(__dirname,"../assets/fonts/LiberationSans-Regular.ttf"));doc.registerFont("B",path.join(__dirname,"../assets/fonts/LiberationSans-Bold.ttf"));
  let y=24,page=0;const width=list?793:547,bottom=list?540:795,accent=pastel?"#ffdce5":"#dceaf5";
  const text=(s:string,x:number,top:number,w:number,size=8,bold=false)=>{doc.font(bold?"B":"R").fontSize(size).fillColor("#102638").text(s,x,top,{width:w,lineGap:1});};
- function start(title:string){doc.addPage();page++;y=24;text(title,24,y,width,13,true);y+=25;text(view.keyName,24,y,width,10,true);y+=Math.max(18,doc.heightOfString(view.keyName,{width}));text(view.schoolName,24,y,width,9);y+=20;doc.moveTo(24,y).lineTo(24+width,y).strokeColor("#526574").stroke();y+=10;
+ function start(title:string){doc.addPage();page++;y=24;drawBrandLogo(doc,24,y,24);text(title,58,y,width-34,13,true);y+=25;text(view.keyName,24,y,width,10,true);y+=Math.max(18,doc.heightOfString(view.keyName,{width}));text(view.schoolName,24,y,width,9);y+=20;doc.moveTo(24,y).lineTo(24+width,y).strokeColor("#526574").stroke();y+=10;
  text(`Kurumsal Sınav · ${page} · Yerel deneme puanı; resmî LGS/YKS puanı değildir.`,24,bottom+12,width,7);}
  function row(cells:string[],sizes:number[],header=false,x=24,w=width){doc.font(header?"B":"R").fontSize(8);const h=Math.max(20,...cells.map((v,i)=>doc.heightOfString(v,{width:w*sizes[i]-8})+8));let left=x;
  cells.forEach((value,i)=>{const cw=w*sizes[i];doc.rect(left,y,cw,h).fillAndStroke(header?accent:"#ffffff","#82919a");text(value,left+4,y+4,cw-8,8,header);left+=cw;});y+=h;}
