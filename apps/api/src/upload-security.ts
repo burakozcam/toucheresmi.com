@@ -6,6 +6,7 @@ export function privateStoragePath(root:string,target:string){const resolved=pat
 /** Verify declared AND actual expanded ZIP sizes before SheetJS sees any workbook XML. */
 export function inspectWorkbookBytes(bytes:Buffer){
  if(bytes.length>10*1024*1024)throw new SecurityError(413,"Excel dosyası en fazla 10 MB olabilir.");
+ if(bytes.length<8)throw new SecurityError(400,"Excel dosyası eksik.");
  if(bytes.readUInt32LE(0)!==0x04034b50)return; // OLE and text are handled by their own signatures/parsers.
  let eocd=-1;for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--)if(bytes.readUInt32LE(i)===0x06054b50){eocd=i;break;}
  if(eocd<0)throw new SecurityError(400,"Bozuk Excel ZIP yapısı.");
@@ -22,5 +23,21 @@ export function inspectWorkbookBytes(bytes:Buffer){
   offset+=46+nameLength+bytes.readUInt16LE(offset+30)+bytes.readUInt16LE(offset+32);
  }
 }
-export function safeWorkbookRead(bytes:Buffer|string,options:any={}){if(Buffer.isBuffer(bytes)){if(bytes.length<8)throw new SecurityError(400,"Excel dosyası eksik.");inspectWorkbookBytes(bytes);}else if(bytes.length>10*1024*1024)throw new SecurityError(413,"Tablo dosyası çok büyük.");return require("xlsx").read(bytes,{...options,sheetRows:10001,cellHTML:false,cellFormula:false});}
+/** Reject truncation and oversized sparse ranges before callers allocate rectangular row arrays. */
+export function safeWorkbookRead(bytes:Buffer|string,options:any={}){
+ if(Buffer.isBuffer(bytes))inspectWorkbookBytes(bytes);
+ else if(Buffer.byteLength(bytes,"utf8")>10*1024*1024)throw new SecurityError(413,"Tablo dosyası çok büyük.");
+ const x=require("xlsx"),book=x.read(bytes,{...options,sheetRows:10002,cellHTML:false,cellFormula:false});
+ if(book.SheetNames.length>64)throw new SecurityError(400,"Excel dosyası en fazla 64 sayfa içerebilir.");
+ let cells=0;
+ for(const name of book.SheetNames){
+  const sheet=book.Sheets[name],ref=sheet?.["!fullref"]??sheet?.["!ref"];
+  if(!ref)continue;
+  const range=x.utils.decode_range(ref),rows=range.e.r+1,columns=range.e.c+1;
+  if(!Number.isSafeInteger(rows)||!Number.isSafeInteger(columns)||rows<1||columns<1||rows>10001||columns>256)throw new SecurityError(400,"Excel sayfası en fazla 10.000 veri satırı (ve bir başlık) ile 256 sütun içerebilir. Dosyayı bölerek yeniden yükleyin; hiçbir satır kaydedilmedi.");
+  cells+=rows*columns;
+  if(cells>2_000_000)throw new SecurityError(400,"Excel tablolarının toplam hücre aralığı çok büyük. Dosyayı bölerek yeniden yükleyin.");
+ }
+ return book;
+}
 export const safeWorkbookFile=(file:string,options:any={})=>safeWorkbookRead(fs.readFileSync(file),{...options,type:"buffer"});

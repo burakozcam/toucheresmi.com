@@ -1,4 +1,15 @@
-# Kurumsal Sınav v1.3.2 — Yerel geliştirme
+# Kurumsal Sınav v1.3.3 — Yerel geliştirme
+
+v1.3.3; oturum/temsil ve kurum yöneticisi denetimlerini, Excel okuma sınırlarını, sıralama ve toplu PDF maliyetini iyileştirir. Puanlama ve kurumsal tasarım korunur. Yeni migration veya bağımlılık yoktur; canlı deploy yapılmadı.
+
+- [Ayrıntılı v1.3.3 teknik raporu](docs/v133-release-report.md)
+- [Kalıcı proje hafızası](PROJECT_MEMORY.md)
+- [Değişiklik kaydı](CHANGELOG.md)
+
+Node 24.22.1 ile 238/238 regresyon, gerçek HTTP/PostgreSQL 22+7 senaryo grubu, tarayıcı 9+6 grup, API/Web build ve Prisma kontrolü geçti. Güncel npm audit tamamlanamadı; dış registry'ye dependency metadata aktarımı otomatik onay denetimince reddedildi. Node 18 desteklenmez; Node 22 veya bu sürümde doğrulanan Node 24 kullanın. Kapasite ve canlı hizmet kabulünün sınırları rapordadır.
+
+## v1.3.2 tabanı ve önceki geçiş bilgileri
+
 
 Bayi izolasyonu, işlem yetkileri, yayınevi/bölge kuralları, günlük öğrenci kotası, faaliyet takibi, geri alınabilir sonuç silme, sınırlı yönetici temsil oturumu ve 2FA eklendi. Kurum sahipliği API ve veritabanında sabittir. Yönetici TOTP zorunlu, bayi TOTP isteğe bağlıdır; oturumlar ve güvenilir cihazlar iptal edilebilir.
 
@@ -96,15 +107,15 @@ Next.js Web, Node.js API ve PostgreSQL/Prisma tabanlı sınav yönetim uygulamas
 
 v1.0.5: 2.500 satırlık düzenlenebilir Excel takvimi, onaylı yayınevi/seri eşleştirme, yükleme geçmişi ve güvenli geri alma; derslik düzeltmeleri, mobil oyunlar, tek kullanımlık hesap kurulumu ve kurumsal OG görseli. Ayrıntılı değişiklikler, test sınırları ve GitHub/cPanel adımları [sürüm raporunda](docs/v1.0.5-release.md), özet [changelog dosyasında](CHANGELOG.md).
 
-## Önerilen teknoloji seti
+## Kullanılan teknoloji seti
 
-- **Backend:** Node.js 20+, TypeScript, Express, Zod. Başlangıçta anlaşılır REST API; büyüdükçe modüller NestJS'e taşınabilir.
+- **Backend:** Node.js 20+, TypeScript, Express, Zod. REST API ve modüler Express router yapısı.
 - **Frontend:** Next.js App Router ve React. Yönetim panelleri ve herkese açık başvuru sayfaları aynı uygulamada.
 - **Veritabanı:** PostgreSQL ve Prisma ORM. Kurum/bayi ilişkileri ve veritabanı migrasyonları için uygundur.
 - **Kimlik doğrulama:** bcrypt parola özeti ve imzalı JWT. Rol seçimi arayüz kolaylığıdır; yetki API tarafında kullanıcı kaydından doğrulanır.
-- **Dosya yükleme:** İleride API'de Multer/Busboy ve S3 uyumlu nesne depolama; ham TXT dosyaları web kökünde tutulmamalıdır.
-- **PDF:** İlk tercih HTML şablonlarını PDF'e dönüştürmek için Playwright. Basit belge/etiketlerde pdfmake alternatif olabilir.
-- **Test ve kalite:** Vitest/Jest, Supertest, ESLint, Prettier; CI'da migration ve test adımları.
+- **Dosya yükleme:** API'de Multer ve özel dosya deposu; TXT arşivi şifrelidir ve public web kökünde tutulmaz.
+- **PDF:** Sunucuda PDFKit, metin doğrulamada PDF.js; tarayıcı araçlarında pdf-lib/PDF.js.
+- **Test ve kalite:** node:test/tsx regresyonları, gerçek localhost PostgreSQL/HTTP ve Playwright tarayıcı kabulü. CI/deployment önerileri altyapı yol haritasındadır.
 
 ## Başlangıç
 

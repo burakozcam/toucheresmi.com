@@ -1600,9 +1600,7 @@ app.post(
           ? tenantSchoolScope(request.user!)
           : {};
       const schoolWhere: Prisma.SchoolWhereInput = {
-        id: parsed.data.schoolId,
-        active: true,
-        ...schoolScope,
+        AND: [{ id: parsed.data.schoolId, active: true }, schoolScope],
       };
       const school = await prisma.school.findFirst({ where: schoolWhere, select: { id: true } });
       if (!school) {

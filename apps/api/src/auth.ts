@@ -19,20 +19,25 @@ export async function requireAuth(request: AuthenticatedRequest, response: Respo
   } catch { response.status(401).json({ error: "Oturum geçersiz veya süresi dolmuş. Yeniden giriş yapın." }); return; }
   try {
     const [user, session] = await Promise.all([
-      prisma.user.findUnique({ where: { id: claims.sub }, include: { dealer: { select: { active: true } } } }),
+      prisma.user.findUnique({ where: { id: claims.sub }, include: { dealer: { select: { active: true } }, school: { select: { active: true } } } }),
       prisma.authSession.findUnique({ where: { id: claims.jti } }),
     ]);
     const valid = user && session && user.active && user.role === claims.role && session.userId === user.id && session.role === user.role && !session.revokedAt && +session.expiresAt > Date.now() && session.credentialVersion === credentialVersion(user.passwordHash) && claims.credentialVersion === session.credentialVersion;
-    if (!valid || user.role === "DEALER" && (!user.dealerId || !user.dealer?.active) || user.role === "SUPER_ADMIN" && (!user.twoFactorEnabled || !session.mfaVerifiedAt && !session.trustedDeviceId)) {
+    if (!valid || user.role === "DEALER" && (!user.dealerId || !user.dealer?.active) || user.role === "SUPER_ADMIN" && !user.twoFactorEnabled || user.twoFactorEnabled && !session.actorAdminId && !session.mfaVerifiedAt && !session.trustedDeviceId) {
       response.status(401).json({ error: "Kullanıcı oturumu artık geçerli değil." }); return;
     }
+    if (user.role === "SCHOOL_ADMIN" && (!user.schoolId || !user.school?.active)) { response.status(401).json({ error: "Kurum hesabı artık etkin değil." }); return; }
     if (session.trustedDeviceId) {
       const device = await prisma.trustedDevice.findUnique({ where: { id: session.trustedDeviceId } });
       if (!device || device.userId !== user.id || device.revokedAt || +device.expiresAt <= Date.now() || device.credentialVersion !== session.credentialVersion) { response.status(401).json({ error: "Güvenilir cihaz izni sonlandırıldı." }); return; }
     }
     if (session.actorAdminId) {
       const [actor, parent] = await Promise.all([prisma.user.findUnique({ where: { id: session.actorAdminId } }), prisma.authSession.findUnique({ where: { id: session.parentSessionId ?? "__none__" } })]);
-      if (user.role !== "DEALER" || !actor?.active || actor.role !== "SUPER_ADMIN" || !actor.twoFactorEnabled || !parent || parent.actorAdminId || parent.userId !== actor.id || parent.revokedAt || +parent.expiresAt <= Date.now() || parent.credentialVersion !== credentialVersion(actor.passwordHash)) { response.status(401).json({ error: "Temsil oturumu sonlandı." }); return; }
+      if (user.role !== "DEALER" || !actor?.active || actor.role !== "SUPER_ADMIN" || !actor.twoFactorEnabled || !parent || parent.actorAdminId || parent.role !== "SUPER_ADMIN" || parent.userId !== actor.id || parent.revokedAt || +parent.expiresAt <= Date.now() || parent.credentialVersion !== credentialVersion(actor.passwordHash) || !parent.mfaVerifiedAt && !parent.trustedDeviceId) { response.status(401).json({ error: "Temsil oturumu sonlandı." }); return; }
+      if (parent.trustedDeviceId) {
+        const device = await prisma.trustedDevice.findUnique({ where: { id: parent.trustedDeviceId } });
+        if (!device || device.userId !== actor.id || device.revokedAt || +device.expiresAt <= Date.now() || device.credentialVersion !== parent.credentialVersion) { response.status(401).json({ error: "Temsil oturumunun güvenilir cihaz izni sonlandırıldı." }); return; }
+      }
     }
     request.user = { id: user.id, role: user.role, dealerId: user.dealerId, schoolId: user.schoolId, mustChangePassword: user.mustChangePassword, sessionId: session.id, ...(session.actorAdminId ? { actorAdminId: session.actorAdminId, parentSessionId: session.parentSessionId! } : {}) };
     const pathname = request.originalUrl?.split("?")[0];

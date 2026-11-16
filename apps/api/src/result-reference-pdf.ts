@@ -15,6 +15,7 @@ export function referenceReportPdf(view:any,options:ReportOptions):Promise<Buffe
  doc.on("data",(b:Buffer)=>chunks.push(b));doc.on("error",reject);doc.on("end",()=>resolve(Buffer.concat(chunks)));
  doc.registerFont("R",path.join(__dirname,"../assets/fonts/LiberationSans-Regular.ttf"));doc.registerFont("B",path.join(__dirname,"../assets/fonts/LiberationSans-Bold.ttf"));
  const W=555.28,L=20,bottom=796,showGeneral=options.showGeneralParticipation!==false;
+ const summaries=new Map<string,any>(view.summary.map((row:any)=>[row.id,row]));
  const schoolBenchmarks=reportBenchmarks([{data:view.data,summary:view.summary}]);
  let y=0,pageCount=0,current:any;
  const tx=(v:any,x:number,t:number,w:number,size=8,bold=false,color=C.ink)=>{doc.font(bold?"B":"R").fontSize(size).fillColor(color).text(String(v??"—"),x,t,{width:w,lineGap:0});};
@@ -30,7 +31,7 @@ export function referenceReportPdf(view:any,options:ReportOptions):Promise<Buffe
  function outcomes(s:any){const map=new Map<string,any>();view.data.questions.forEach((q:any,i:number)=>{if(q.answer==="X"||s.missingLessons?.includes(q.lesson)||(!q.outcomeName&&!q.outcomeCode))return;const key=JSON.stringify([q.lesson,q.outcomeName||q.outcomeCode]),o=map.get(key)??{lesson:q.lesson,description:q.outcomeName||q.outcomeCode,codes:new Set<string>(),count:0,correct:0,wrong:0,blank:0};if(q.outcomeCode)o.codes.add(q.outcomeCode);o.count++;const state=answerState(q,s.answers[i]);o[state]++;map.set(key,o);});return [...map.values()].map(o=>({...o,name:[o.description,o.codes.size?`Kodlar: ${[...o.codes].join(", ")}`:""].filter(Boolean).join(" · ")}));}
  function answerState(q:any,a:any):"correct"|"wrong"|"blank" {return q.answer==="H"||a===q.answer?"correct":!a||a==="-"||a==="*"&&q.multipleMark==="blank"?"blank":"wrong";}
  function identity(s:any){const raw=s.studentNo??s.id;const no=raw.startsWith("tc-")?"—":options.hideIdentity&&/^\d{11}$/.test(raw)?"***********":raw;const id=!options.hideIdentity?decryptIdentity(s.identityEncrypted):"";return `${no}${/^\d{11}$/.test(id)?` · TC: ${id}`:""}`;}
- function summary(s:any){const r=view.summary.find((v:any)=>v.id===s.id),rank=view.rankings[s.id],school=schoolBenchmarks.grades[resultGrade(s.branch)]??schoolBenchmarks.all;page();
+ function summary(s:any){const r=summaries.get(s.id),rank=view.rankings[s.id],school=schoolBenchmarks.grades[resultGrade(s.branch)]??schoolBenchmarks.all;page();
   const info=[['Öğrenci',s.name],['Öğrenci No',identity(s)],['Sınıf',s.branch],['Kurum',[view.schoolName,view.reportMetadata?.city,view.reportMetadata?.district].filter(Boolean).join(' / ')]];
   const widths=[.32,.19,.14,.35],infoH=Math.max(49,...info.map((v,i)=>ht(v[1],W*widths[i]-16,9,true)+25));let x=L;info.forEach((v,i)=>{box(x,y,W*widths[i]-3,infoH);tx(v[0],x+8,y+7,W*widths[i]-18,8);tx(v[1],x+8,y+24,W*widths[i]-18,9,true);x+=W*widths[i];});y+=infoH+12;
   const metrics=[['Sınav Puanı',score(r.score)],['Toplam Net',`${n(r.net)} / ${view.data.questions.length}`],['Kurum Sırası',`${rank.schoolRank??'—'} / ${rank.schoolCount}`],...(showGeneral?[['Genel Sıra',`${n(rank.generalRank,0)} / ${n(rank.generalCount,0)}`]]:[])];
@@ -52,7 +53,7 @@ export function referenceReportPdf(view:any,options:ReportOptions):Promise<Buffe
   y=Math.max(y,focusTop);ensure(12);tx('D: doğru (+) · Y: yanlış (×) · B: boş (-) · H: tümü doğru · X: iptal. Cevaplar ortak A sırasındadır.',L,y,W,7);y+=12;for(const label of remainingFocus){page(true);y=heading('Öncelikli Kazanımlar · Devam');let rest=label;while(rest){const available=bottom-y-6;let lo=0,hi=rest.length;while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(ht(rest.slice(0,mid),W-16,8)<=available)lo=mid;else hi=mid-1;}const part=rest.slice(0,lo);tx(part,L+8,y,W-16,8);y+=ht(part,W-16,8)+6;rest=rest.slice(lo);if(rest)page(true);}}
  }
  function details(s:any){
-  page();y=heading('Derslere Göre Kazanım Analizi');tx('Aynı ders ve açıklamadaki kazanımlar birlikte hesaplanır; bütün kaynak kodları gösterilir.',L,y,W,7);y+=14;const os=outcomes(s),r=view.summary.find((v:any)=>v.id===s.id);
+  page();y=heading('Derslere Göre Kazanım Analizi');tx('Aynı ders ve açıklamadaki kazanımlar birlikte hesaplanır; bütün kaynak kodları gösterilir.',L,y,W,7);y+=14;const os=outcomes(s),r=summaries.get(s.id);
   // Use two measured columns for dense, ordinary exams, preserving readable 7.5 pt text.
   const dense=os.length>=30,dw=dense?(W-12)/2:W,startY=y,font=dense?7.5:8;
   let plannedSplit=-1;
@@ -70,6 +71,6 @@ export function referenceReportPdf(view:any,options:ReportOptions):Promise<Buffe
   }
  }
 
- try{for(const s of selectedStudents(view,options)){current=s;const start=pageCount;summary(s);if(options.templateId!=='summary-card')details(s);const total=pageCount-start;for(let i=0;i<total;i++){doc.switchToPage(start+i);doc.moveTo(L,808).lineTo(L+W,808).strokeColor(C.line).stroke();tx('kurumsalsinav.com',L+5,811,160,8);tx(`${i+1}/${total}`,L+W-40,811,35,8,true);}doc.switchToPage(pageCount-1);}}
+ try{for(const s of selectedStudents(view,options)){current=s;const start=pageCount;summary(s);if(options.templateId!=='summary-card')details(s);const total=pageCount-start;for(let i=0;i<total;i++){doc.switchToPage(start+i);doc.moveTo(L,808).lineTo(L+W,808).strokeColor(C.line).stroke();tx('kurumsalsinav.com',L+5,811,160,8);tx(`${i+1}/${total}`,L+W-40,811,35,8,true);}doc.switchToPage(pageCount-1);doc.flushPages();}}
  catch(error){doc.end();reject(error);return;}doc.end();
 });}

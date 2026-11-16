@@ -18,7 +18,8 @@ export function designedReportPdf(view:ReportView,options:ReportOptions):Promise
  text(`Kurumsal Sınav · ${page} · Yerel deneme puanı; resmî LGS/YKS puanı değildir.`,24,bottom+12,width,7);}
  function row(cells:string[],sizes:number[],header=false,x=24,w=width){doc.font(header?"B":"R").fontSize(8);const h=Math.max(20,...cells.map((v,i)=>doc.heightOfString(v,{width:w*sizes[i]-8})+8));let left=x;
  cells.forEach((value,i)=>{const cw=w*sizes[i];doc.rect(left,y,cw,h).fillAndStroke(header?accent:"#ffffff","#82919a");text(value,left+4,y+4,cw-8,8,header);left+=cw;});y+=h;}
- const students=selectedStudents(view,options),summary=(s:any)=>view.summary.find((r:any)=>r.id===s.id);
+ const summaries=new Map<string,any>(view.summary.map((row:any)=>[row.id,row]));
+ const students=selectedStudents(view,options),summary=(s:any)=>summaries.get(s.id);
  const no=(s:any)=>{const value=s.studentNo??s.id;return value.startsWith("tc-")?"-":options.hideIdentity&&/^\d{11}$/.test(value)?"***********":value;};
  const mean=(members:any[],lesson:string)=>{const values=members.map(s=>summary(s)?.lessons.find((l:any)=>l.lesson===lesson)?.net).filter((v:any)=>typeof v==="number");return values.length?values.reduce((a:number,b:number)=>a+b,0)/values.length:null;};
  function chart(lessons:any[],members:any[],student?:any){const h=100,top=y+15,cw=width/Math.max(1,lessons.length),series=student?[{name:"Öğrenci",color:"#ed5959"},{name:"Sınıf",color:"#568fd0"},{name:"Kurum",color:"#df9b26"}]:[{name:"Kurum",color:"#df9b26"}];if(y+h+55>bottom)start(student?`${student.name} · Net karşılaştırması`:`${view.schoolName} · Net karşılaştırması`);

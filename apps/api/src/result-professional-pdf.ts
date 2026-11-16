@@ -18,7 +18,8 @@ export function professionalReportPdf(view:any,options:ReportOptions):Promise<Bu
  const text=(value:unknown,x:number,top:number,width:number,size=8,bold=false,color=colors.ink)=>{doc.font(bold?"B":"R").fontSize(size).fillColor(color).text(String(value??"-"),x,top,{width,lineGap:1});};
  const height=(value:unknown,width:number,size=8,bold=false)=>{doc.font(bold?"B":"R").fontSize(size);return doc.heightOfString(String(value??"-"),{width,lineGap:1});};
  const number=(s:any)=>{const no=s.studentNo??s.id,identity=!options.hideIdentity?decryptIdentity(s.identityEncrypted):"";const displayed=no.startsWith("tc-")||no==="—"?"-":options.hideIdentity&&/^\d{11}$/.test(no)?"***********":no;return displayed+(/^\d{11}$/.test(identity)?`\nTC/Tel: ${identity}`:"");};
- const result=(s:any)=>view.summary.find((r:any)=>r.id===s.id);
+ const summaries=new Map<string,any>(view.summary.map((row:any)=>[row.id,row]));
+ const result=(s:any)=>summaries.get(s.id);
  function page(newTitle=title,newSubject=subject){title=newTitle;subject=newSubject;doc.addPage();pages++;y=24;
   drawBrandLogo(doc,24,y,27);text("KURUMSAL SINAV",59,y,225,14,true);text("Ölçme ve değerlendirme raporu",59,y+19,225,7,false,colors.muted);
   if(view.publisherLogo){try{doc.image(view.publisherLogo,24+W-54,y,{fit:[54,30],align:"right"});}catch{/* Optional publisher artwork may be absent. */}}

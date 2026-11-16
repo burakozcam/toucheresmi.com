@@ -14,6 +14,6 @@ export async function issueSession(user: any, request?: Request, options: { mfaV
 export async function assertFreshAdmin(user: any, db: any = prisma) {
   if (user?.role !== "SUPER_ADMIN" || user.actorAdminId || !user.sessionId) throw new SecurityError(403, "Yalnızca doğrudan yönetici oturumu bu işlemi yapabilir.");
   const session = await db.authSession.findUnique({ where: { id: user.sessionId } });
-  if (!session || session.revokedAt || !session.mfaVerifiedAt || +session.expiresAt <= Date.now() || Date.now() - +session.mfaVerifiedAt > 5 * 60_000) throw new SecurityError(403, "Bu işlem için güncel iki aşamalı yönetici doğrulaması gerekir.", "FRESH_MFA_REQUIRED");
+  if (!session || session.userId !== user.id || session.role !== "SUPER_ADMIN" || session.actorAdminId || session.revokedAt || !session.mfaVerifiedAt || +session.expiresAt <= Date.now() || Date.now() - +session.mfaVerifiedAt > 5 * 60_000) throw new SecurityError(403, "Bu işlem için güncel iki aşamalı yönetici doğrulaması gerekir.", "FRESH_MFA_REQUIRED");
   return session;
 }

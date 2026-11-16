@@ -86,6 +86,7 @@ securityRouter.post("/api/security/mfa/confirm", wrap(async (q, r) => {
 }));
 securityRouter.post("/api/security/mfa/enroll", requireAuth, wrap(async (q, r) => {
   if (q.user!.actorAdminId || !["DEALER", "SUPER_ADMIN"].includes(q.user!.role)) throw new SecurityError(403, "Temsil oturumunda güvenlik ayarları değiştirilemez.");
+  await limitFactor(q.user!.id);
   const data = z.object({ password: z.string().max(128) }).parse(q.body), user = await prisma.user.findUniqueOrThrow({ where: { id: q.user!.id } });
   if (!await verifyPassword(data.password, user.passwordHash) || user.twoFactorEnabled) throw new SecurityError(403, "Şifreyi ve mevcut 2FA durumunu kontrol edin.");
   r.json({ challengeToken: challenge(user, true) });

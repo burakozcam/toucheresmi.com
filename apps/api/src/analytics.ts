@@ -1,3 +1,4 @@
+export const analyticsPages = new Set(["/","/cevap-anahtarlari","/sinav-degerlendir","/sinav-takvimi","/pdf-duzenleyici","/verilerinizin-guvenligi","/blog","/contact"]);
 import { prisma } from "./db";
 import { Prisma } from "@prisma/client";
 // Bounded write-behind buffer: page requests never wait for PostgreSQL.

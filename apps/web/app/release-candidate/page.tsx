@@ -1,15 +1,15 @@
 import Link from "next/link";
 import ReleaseMark from "../release-mark";
+import { SITE_VERSION } from "../../config/site";
 
-export default function ReleaseCandidatePage() {
+// Keep existing bookmarks working after leaving the release candidate phase.
+export default function ReleasePage() {
   return <main className="rc-page"><article className="rc-card">
-    <p className="hero-tag">KURUMSAL SINAV · v1.3.0</p>
+    <p className="hero-tag">KURUMSAL SINAV · {SITE_VERSION}</p>
     <p className="rc-kicker">Ürün güncellemesi</p>
-    <h1>Kurumsal Sınav <span>Release Candidate</span></h1>
-    <p>Kurumsal Sınav, sınav yönetimi ve optik değerlendirme süreçlerini tek yerde buluşturan ilk sürüm adayına ulaştı.</p>
-    <p>Bu aşamada arayüzü sadeleştiriyor, kullanım akışlarını iyileştiriyor ve farklı cihazlardaki deneyimi gözden geçiriyoruz. Geri bildirimlerle ürünü geliştirmeye devam edeceğiz.</p>
-    <blockquote>Bir zamanlar yalnızca fikirdi. Şimdi çalışan, gelişen ve geleceğe hazırlanan gerçek bir yazılım.</blockquote>
-    <p className="rc-signoff"><strong>Kurumsal Sınav — Daha yeni başlıyoruz.</strong></p>
+    <h1>Güvenli ve kararlı sınav yönetimi</h1>
+    <p>Bu güncelleme hesap güvenliği, Excel dosyalarının denetimi ve büyük sınav gruplarının raporlanmasına odaklanır.</p>
+    <p>Mevcut sınav değerlendirme kuralları ve kurumsal tasarım korunur. Hesap ayarlarından oturumlarınızı ve güvenilir cihazlarınızı yönetebilirsiniz.</p>
     <div className="rc-actions"><Link className="button button-navy" href="/">Ana sayfa</Link><Link className="button button-quiet" href="/panel">Panele dön</Link><ReleaseMark/></div>
   </article></main>;
 }

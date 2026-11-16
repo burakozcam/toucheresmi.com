@@ -1,3 +1,16 @@
+# v1.3.3 · 2026-11-16 · yerel geliştirme
+
+- Temsil oturumunda ana yöneticinin güvenilir cihaz iptali/süre sonu ve MFA kanıtı da denetlenir; güncel yönetici doğrulamasında oturum sahibi/rolü kontrol edilir. Bayi 2FA kanıtı ve kurulumda hesap bazlı deneme sınırı güçlendirildi.
+- Aktif kurumu olmayan kurum yöneticisinin mevcut oturumu reddedilir. Başka kurum kimliğiyle sınav oluşturma isteğinin sessizce kendi kurumunda kayıt açması düzeltildi.
+- Genel/il/ilçe/kurum/sınıf sıralamalarında indeks ve ikili arama; Excel/PDF/ortalama hesaplarında Map erişimi. Mevcut puanlama, null katılım ve eşit puan toleransı korunur.
+- Toplu PDF'de tamamlanan öğrencinin sayfaları flush edilir; 150 öğrenci/300 sayfa testinde en çok 2 sayfa nesnesi tamponda kaldı. Çıktı Buffer olarak üretilmeye devam eder.
+- Excel/CSV satırlarının sessizce kırpılması ve aşırı geniş seyrek tablo alanlarının büyük dizilere çevrilmesi engellendi. Türkçe/sıfırlı numara/boş hücre ve eski XLS/XLSX şablon uyumluluğu sınandı.
+- Analitik sunucuda da sabit public yol listesine sınırlandı. Güvenlik sayfası 2FA, cihaz/oturum iptali ve panel TXT arşivi ayrımıyla güncellendi; hesap güvenliğinde yüklenme/işlem durumu ve tekrarlı tıklama koruması eklendi.
+- Görünür Release Candidate etiketleri kaldırıldı; mevcut adres çalışmaya devam eder. Paket, footer, OG/favicon, statik önizleme, Sistem/Test Merkezi sürümleri v1.3.3'e getirildi; migration durumunun eski sabite bağlı yanlış raporlanması düzeltildi.
+- Node 24.22.1: 238/238 regresyon, API/Web build, Prisma validate/generate, temiz sentetik PostgreSQL migration zinciri; gerçek HTTP/DB 22+7 grup, tarayıcı 9+6 grup, Passenger sözleşme smoke testi başarılı.
+- Yeni bağımlılık/migration, canlı deploy, reset/seed veya kullanıcı verisi silme yok. Güncel npm audit ağ/onay sınırı nedeniyle tamamlanamadı; önceki sürümün temiz sonucu bu sürüme taşınmadı.
+- Kalıcı hafıza: `PROJECT_MEMORY.md`. Bulgular, değişen dosyalar, test kanıtları ve açık kapasite/hosting sınırları: `docs/v133-release-report.md`.
+
 # v1.3.2 · 2026-11-16 · yerel geliştirme
 
 - Tek bayi sahipliği kapsamı; kurum sahibini API ve DB trigger ile sabitleme; öğrenci/veli sonuçlarında yayın, aktiflik, silinme ve son sürüm koşullarını birleştirme; kimliğe göre güvenli erişim taşıma.

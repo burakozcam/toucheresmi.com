@@ -1,3 +1,5 @@
+import { analyticsPages } from "./analytics";
+import { API_VERSION } from "./version";
 import express from "express";
 import { bufferVisit, analyticsSummary } from "./analytics";
 import crypto from "node:crypto";
@@ -59,7 +61,7 @@ export function trackPage(day:string,page:string,visitor:string,hour:number){
 export const systemRouter=express.Router();
 systemRouter.post("/api/analytics/page",new RequestLimiter(120,60_000).middleware(),(q,r)=>{
  const data=z.object({page:z.string().max(160).regex(/^\/(?:[a-z0-9-]+\/?)*$/),visitor:z.string().uuid()}).safeParse(q.body);
- if(data.success&&!bot.test(q.get("user-agent")??"")&&q.get("origin")===env.WEB_ORIGIN&&!/^\/(panel|login|sonuclarim|hesap-kur|dosya-paylasim|fmt-paylasim)/.test(data.data.page)){
+ if(data.success&&!bot.test(q.get("user-agent")??"")&&q.get("origin")===env.WEB_ORIGIN&&analyticsPages.has(data.data.page)){
  const now=new Date(),day=new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Istanbul"}).format(now),hour=Number(new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Istanbul",hour:"2-digit",hourCycle:"h23"}).format(now));
  trackPage(day,data.data.page,crypto.createHmac("sha256",env.JWT_SECRET).update(day.slice(0,7)+data.data.visitor).digest("hex"),hour);
  }r.status(204).end();
@@ -79,9 +81,9 @@ async function health(){
  });
  if((db as {status:string}).status==="ok"&&site.status==="ok")lastSuccess=checkedAt;
  if((db as {status:string}).status==="failed"||site.status==="failed")lastFailure=checkedAt;
- const migrations=await prisma.$queryRaw<Array<{migration_name:string;finished_at:Date|null;rolled_back_at:Date|null}>>`SELECT migration_name, finished_at, rolled_back_at FROM "_prisma_migrations" ORDER BY started_at DESC LIMIT 5`.then(rows=>({status:rows.some(v=>!v.finished_at&&!v.rolled_back_at)?"failed":rows.some(v=>v.migration_name==="20261109090000_system_center_content_files"&&v.finished_at)?"ok":"pending",latest:rows[0]?.migration_name??null})).catch(()=>null);
+ const migrations=await prisma.$queryRaw<Array<{migration_name:string;finished_at:Date|null;rolled_back_at:Date|null}>>`SELECT migration_name, finished_at, rolled_back_at FROM "_prisma_migrations" ORDER BY started_at DESC`.then(rows=>({status:rows.some(v=>!v.finished_at&&!v.rolled_back_at)?"failed":rows.some(v=>v.migration_name==="20261116010000_dealer_security"&&v.finished_at&&!v.rolled_back_at)?"ok":"pending",latest:rows[0]?.migration_name??null})).catch(()=>null);
  const disk=await fs.statfs(env.STORAGE_DIR).then(s=>({total:s.blocks*s.bsize,free:s.bavail*s.bsize})).catch(()=>null);
- healthCache={checkedAt,lastSuccess,lastFailure,database:db,site,api:{status:"ok",averageMs:samples.length?Math.round(samples.reduce((a,b)=>a+b,0)/samples.length):null},resources:{scope:"Node süreci / işletim sistemi; hesap türü ve hosting kotası doğrulanmaz",processRam:process.memoryUsage().rss,hostRam:os.totalmem(),hostFreeRam:os.freemem(),cpuLoad:os.loadavg(),disk},version:"1.2.9",apiVersion:"1.2.9",deployment:process.env.RELEASE_ID?.replace(/[^a-zA-Z0-9._-]/g,"").slice(0,80)||null,migrations:migrations?`${migrations.status==="ok"?"Yeni migration uygulanmış":migrations.status==="failed"?"Tamamlanmamış migration var":"Yeni migration bekliyor"} · Son kayıt: ${migrations.latest??"yok"}`:"Kontrol edilemiyor; dağıtım öncesi migration geçmişini ayrı inceleyin."};healthAt=Date.now();return healthCache;
+ healthCache={checkedAt,lastSuccess,lastFailure,database:db,site,api:{status:"ok",averageMs:samples.length?Math.round(samples.reduce((a,b)=>a+b,0)/samples.length):null},resources:{scope:"Node süreci / işletim sistemi; hesap türü ve hosting kotası doğrulanmaz",processRam:process.memoryUsage().rss,hostRam:os.totalmem(),hostFreeRam:os.freemem(),cpuLoad:os.loadavg(),disk},version:API_VERSION,apiVersion:API_VERSION,deployment:process.env.RELEASE_ID?.replace(/[^a-zA-Z0-9._-]/g,"").slice(0,80)||null,migrations:migrations?`${migrations.status==="ok"?"Yeni migration uygulanmış":migrations.status==="failed"?"Tamamlanmamış migration var":"Yeni migration bekliyor"} · Son kayıt: ${migrations.latest??"yok"}`:"Kontrol edilemiyor; dağıtım öncesi migration geçmişini ayrı inceleyin."};healthAt=Date.now();return healthCache;
  })().finally(()=>{healthTask=null;});return healthTask;
 }
 let usageCache:unknown=null,usageAt=0,usageTask:Promise<unknown>|null=null;

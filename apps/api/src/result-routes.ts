@@ -1,3 +1,4 @@
+import { resultRankings } from "./result-rankings";
 import {indexResultCodes} from "./public-result-codes";
 import { dealerPermission, schoolScope, activity } from "./dealer-policy";
 import { SecurityError } from "./security-errors";
@@ -5,7 +6,6 @@ import {studentReportAccessCode} from "./result-identity";
 import {reportBenchmarks} from "./report-benchmarks";
 import {enrichReportView} from "./report-metadata";
 import { reportTemplates,reportTemplate } from "../lib/report-templates";
-import { resultGrade } from "../lib/result-grade";
 import express from "express";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
@@ -20,23 +20,15 @@ export async function examView(schoolId:string,keyId:string,publishedOnly=false)
  const all=await prisma.opticalResult.findMany({where:{keyId,nextRevision:null},orderBy:{createdAt:"asc"}});
  const own=all.filter(r=>r.schoolId===schoolId&&!isDeleted(r.snapshot)&&(!publishedOnly||r.studentPublished));
  const view=aggregateResults(own);if(!view)return null;
- const cohorts=[...new Set(all.filter(r=>!isDeleted(r.snapshot)).map(r=>r.schoolId))].map(id=>{
-  const rows=all.filter(r=>r.schoolId===id&&!isDeleted(r.snapshot)&&snapshotFingerprint(r.snapshot as any)===view.keyFingerprint);
-  return rows.length?aggregateResults(rows):null;
- }).filter(Boolean) as NonNullable<ReturnType<typeof aggregateResults>>[];
- const locations=await prisma.school.findMany({where:{id:{in:cohorts.map(c=>c.schoolId)}},select:{id:true,city:true,district:true}}),location=locations.find(s=>s.id===schoolId);
- const members=cohorts.flatMap(v=>v.data.students.map(person=>({schoolId:v.schoolId,grade:resultGrade(person.branch),branch:person.branch,score:v.summary.find(r=>r.id===person.id)!.score})));
- const rank=(score:number|null,group:typeof members)=>score===null?null:1+group.filter(v=>v.score!==null&&v.score>score+1e-8).length;
- const rankings=Object.fromEntries(view.data.students.map(person=>{
-  const score=view.summary.find(r=>r.id===person.id)!.score,grade=resultGrade(person.branch),general=members.filter(m=>m.grade===grade),school=general.filter(m=>m.schoolId===schoolId),branch=school.filter(m=>m.branch===person.branch);
-  const city=location?.city?general.filter(m=>locations.find(l=>l.id===m.schoolId)?.city===location.city):null;
-  const district=location?.city&&location?.district?city!.filter(m=>locations.find(l=>l.id===m.schoolId)?.district===location.district):null;
-  return[person.id,{generalRank:rank(score,general),generalCount:general.length,cityRank:city?rank(score,city):null,cityCount:city?.length??null,districtRank:district?rank(score,district):null,districtCount:district?.length??null,schoolRank:rank(score,school),schoolCount:school.length,classRank:rank(score,branch),classCount:branch.length}];
- }));
+ const grouped=new Map<string,typeof all>();
+ for(const row of all){if(isDeleted(row.snapshot)||snapshotFingerprint(row.snapshot as any)!==view.keyFingerprint)continue;const rows=grouped.get(row.schoolId)??[];rows.push(row);grouped.set(row.schoolId,rows);}
+ const cohorts=[...grouped.values()].map(rows=>aggregateResults(rows)).filter(Boolean) as NonNullable<ReturnType<typeof aggregateResults>>[];
+ const locations=await prisma.school.findMany({where:{id:{in:cohorts.map(c=>c.schoolId)}},select:{id:true,city:true,district:true}});
+ const {rankings,generalCount}=resultRankings(view,cohorts,locations);
  const benchmarks=reportBenchmarks(cohorts);
  // Exact ranks/participation are allowed; suppress small cross-institution means that can expose a peer's score.
  const safeMean=(value:any)=>value.count>=5&&cohorts.length>=2?value:{...value,score:null,lessons:{}};
- return {...view,keyId,rankings,generalCount:members.length,benchmarks:{all:safeMean(benchmarks.all),grades:Object.fromEntries(Object.entries(benchmarks.grades).map(([g,v])=>[g,safeMean(v)]))}};
+ return {...view,keyId,rankings,generalCount,benchmarks:{all:safeMean(benchmarks.all),grades:Object.fromEntries(Object.entries(benchmarks.grades).map(([g,v])=>[g,safeMean(v)]))}};
 }
 resultRouter.get("/report-templates",(_req,res)=>{res.json(reportTemplates);});
 async function allowed(req:AuthenticatedRequest,schoolId:string){return prisma.school.findFirst({where:{id:schoolId,...scope(req)},select:{id:true}});}
