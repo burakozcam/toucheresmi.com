@@ -238,9 +238,9 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
           <label>Değerlendirme kuralı<select name="penalty" value={form.penalty} onChange={e=>setForm({...form,penalty:Number(e.target.value)})}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
           <p className="field-help">Doğru cevapları içeren kazanım dosyası tek başına yeterlidir; cevap PDF’si onaylanan tablodan oluşturulur. Format seçimi kazanım dosyasının kaynağını belirtir.</p>
           <label>Veri giriş yöntemi<select aria-label="Cevap anahtarı giriş yöntemi" value={entryMethod} onChange={e=>setEntryMethod(e.target.value)}><option value="file">Kazanım dosyasından / hazır PDF</option><option value="manual">Elle soru ve kazanım gir</option></select></label>
-          {entryMethod==="manual"?<ManualKeyEntry disabled={submitting} context={targetPublicationId+JSON.stringify(form)} onReview={setManualReview}/>:          <div className="file-upload-grid">
+          {entryMethod==="manual"?<ManualKeyEntry publisher={publishers.find(p=>p.id===form.publisherId)?.name} grade={Number(form.grade)} disabled={submitting} context={targetPublicationId+JSON.stringify(form)} onReview={setManualReview}/>:          <div className="file-upload-grid">
             <AnswerArchiveFileInput key={`answer-${uploadReset}`} label="Cevap Anahtarı" disabled={submitting} onChange={setAnswerFileKey}/>
-            <AnswerKeyFileInput token={token} key={uploadReset} disabled={submitting} reviewContext={targetPublicationId+JSON.stringify(form)+answerFileKey}  onExamName={examName=>setForm(current=>current.examName.trim()?current:{...current,examName})}/>
+            <AnswerKeyFileInput publisher={publishers.find(p=>p.id===form.publisherId)?.name} grade={Number(form.grade)} token={token} key={uploadReset} disabled={submitting} reviewContext={targetPublicationId+JSON.stringify(form)+answerFileKey}  onExamName={examName=>setForm(current=>current.examName.trim()?current:{...current,examName})}/>
           </div>}
 
 

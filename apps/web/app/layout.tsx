@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { SITE_NAME, SITE_URL } from "../config/site";
+import { SITE_NAME, SITE_URL, SITE_VERSION } from "../config/site";
 import "./styles.css";
 import AnalyticsConsent from "./analytics-consent";
 import VisitorTracker from "./visitor-tracker";
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: "Kurumsal Sınav | Optik Okuma ve Sınav Yönetimi",
     description: "Optik okuma, sınav değerlendirme ve raporlama süreçleri için kurumsal platform.",
   },
-  icons: { icon: [{ url: "/favicon.svg?v=1.3.3", type: "image/svg+xml" }] },
+  icons: { icon: [{ url: `/favicon.svg?v=${SITE_VERSION.slice(1)}`, type: "image/svg+xml" }] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

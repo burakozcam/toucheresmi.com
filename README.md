@@ -1,7 +1,8 @@
-# Kurumsal Sınav v1.3.3 — Yerel geliştirme
+# Kurumsal Sınav v1.3.4 — Yerel geliştirme
 
-v1.3.3; oturum/temsil ve kurum yöneticisi denetimlerini, Excel okuma sınırlarını, sıralama ve toplu PDF maliyetini iyileştirir. Puanlama ve kurumsal tasarım korunur. Yeni migration veya bağımlılık yoktur; canlı deploy yapılmadı.
+v1.3.4; ana sayfa, ortak sınav/anahtar yönetimi, kompakt rapor ayarları, TXT öneri yüklemesi ve standart konum seçimlerini geliştirir. Mevcut puanlama ve Excel şablonları korunur. Yeni migration/bağımlılık ve canlı deployment yoktur.
 
+- [v1.3.4 raporu](docs/v134-release-report.md) · [Dağıtım prosedürü](DEPLOYMENT.md)
 - [Ayrıntılı v1.3.3 teknik raporu](docs/v133-release-report.md)
 - [Kalıcı proje hafızası](PROJECT_MEMORY.md)
 - [Değişiklik kaydı](CHANGELOG.md)

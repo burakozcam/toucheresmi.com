@@ -1,3 +1,4 @@
+import {resolveLocation} from "../lib/turkey-locations";
 import { resultGrade } from "../lib/result-grade";
 
 type Person = { id: string; branch: string };
@@ -6,7 +7,7 @@ type Location = { id: string; city: string | null; district: string | null };
 type Group = { count: number; scores: number[] };
 /** Same competition ranks and 1e-8 tolerance, with one index per cohort rather than scans per student. */
 export function resultRankings(view: Cohort, cohorts: Cohort[], locations: Location[]) {
-  const places = new Map(locations.map(place => [place.id, place]));
+  const places = new Map(locations.map(place => [place.id, {...place,...(resolveLocation(place.city,place.district)??{})}]));
   const groups = new Map<string, Group>();
   const key = (...parts: unknown[]) => JSON.stringify(parts);
   const keysFor = (schoolId: string, person: Person) => {

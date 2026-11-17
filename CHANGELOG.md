@@ -1,3 +1,14 @@
+# v1.3.4 · 2026-11-17 · yerel geliştirme
+
+- Kurumsal kimliği koruyan ana sayfa: gerçek karne üreticisinden anonim görsel, kazanım/geçmiş sonuç tanıtımı, örnek gelişim grafiği ve kaydırma hızından bağımsız viewport animasyonları.
+- Kompakt rapor oluşturucu; bütün şablonlar korunarak bağımsız genel/kurum katılımı, yeniden yerleşen PDF/Excel alanları; önizleme/tekli/toplu/ZIP ve öğrenci/veli/misafir akışları.
+- Sınav, cevap anahtarı, toplu dosya ve sınav hazırlama mevcut bileşenlerle ortak yönetim ekranında; Excel şablonları, PDF-only, manuel/çapraz/kazanım ve sonradan anahtar ekleme korunur. Varsayılan Katsayılar görüntüleme/taslağa uygulama.
+- TXT önerisinde önce güvenli arşive yükleme, ardından otomatik seçim; kalıcı başarı bildirimi ve eşzamanlı checksum tekrar koruması. Gerçek eşleşme yüzdesini değiştirmeyen reduced-motion uyumlu shimmer.
+- Kaynaklı 81 il/973 ilçe listesi, bağımlı dropdown ve API ilişki doğrulaması; eski yazımlarla uyumlu filtre/yetki/sıralama; salt okunur konum/çakışma raporu. Mevcut veriler otomatik birleştirilmez.
+- Temiz release değişimi, ortam/reCAPTCHA ön kontrolü, yedek/saklama/geri dönüş için DEPLOYMENT.md ve ön kontrol betiği.
+- 245/245 otomatik regresyon; API/Web production build ve Prisma doğrulaması başarılı. Gerçek HTTP 22+7+5, tarayıcı 9+6 grup; üretim Google/hosting/backup kabulü ayrıca gerekir.
+- Yeni migration veya npm bağımlılığı yok. Canlı deploy/veri değişimi/commit/push yapılmadı. Testler ve üretim kabul sınırları: `docs/v134-release-report.md`.
+
 # v1.3.3 · 2026-11-16 · yerel geliştirme
 
 - Temsil oturumunda ana yöneticinin güvenilir cihaz iptali/süre sonu ve MFA kanıtı da denetlenir; güncel yönetici doğrulamasında oturum sahibi/rolü kontrol edilir. Bayi 2FA kanıtı ve kurulumda hesap bazlı deneme sınırı güçlendirildi.

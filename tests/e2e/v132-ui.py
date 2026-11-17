@@ -32,7 +32,7 @@ with sync_playwright() as p:
  toggle.check();page.get_by_role('button',name='Yetkileri kaydet',exact=True).click();expect(page.get_by_role('status')).to_contain_text('hemen uygulanır');checks.append('UI permission edit applies immediately to live dealer API');print('Permissions UI passed',flush=True)
  page.screenshot(path=str(out/'dealer-before-region.png'),full_page=True)
  # Region modes, quota and actual detail view remain usable at all widths and themes.
- page.get_by_label('Erişim modu',exact=True).select_option('restricted');page.get_by_label('Bölge',exact=True).select_option('city');page.get_by_label('İl',exact=True).fill('İstanbul');page.get_by_label('İlçe (boşsa ilin bütün ilçeleri)',exact=True).fill('Kadıköy');page.get_by_role('button',name='Bölge kuralı ekle',exact=True).click();page.get_by_label('Kota',exact=True).select_option('500')
+ page.get_by_label('Erişim modu',exact=True).select_option('restricted');page.get_by_label('Bölge',exact=True).select_option('city');page.get_by_label('İl',exact=True).select_option('İstanbul');page.get_by_label('İlçe',exact=True).select_option('Kadıköy');page.get_by_role('button',name='Bölge kuralı ekle',exact=True).click();page.get_by_label('Kota',exact=True).select_option('500')
  page.get_by_role('button',name='Yetkileri kaydet',exact=True).click();expect(page.get_by_role('status')).to_contain_text('hemen uygulanır')
  for width in [320,768,1440]:
   page.set_viewport_size({'width':width,'height':1000})

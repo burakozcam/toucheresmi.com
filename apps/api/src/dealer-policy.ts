@@ -1,3 +1,4 @@
+import {locationKey} from "../lib/turkey-locations";
 import {evaluationPublicationWhere} from "./optical-catalog";
 import {compatibleStudent} from "./result-data";
 import crypto from "node:crypto";
@@ -12,7 +13,7 @@ type User = NonNullable<AuthenticatedRequest["user"]>;
 export type DealerPermission = "canCreateSchool" | "canEditSchool" | "canEvaluate" | "canDeleteResult" | "canEditResult" | "canReevaluate" | "canExport";
 export const schoolScope = (user: User): Prisma.SchoolWhereInput => user.role === "SUPER_ADMIN" ? {} : user.role === "DEALER" && user.dealerId ? { dealerId: user.dealerId } : { id: "__no_access__" };
 export const turkeyDay = (date = new Date()) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Istanbul", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
-export const normalizeRegion = (value: string | null | undefined) => (value ?? "").trim().toLocaleLowerCase("tr-TR").normalize("NFC");
+export const normalizeRegion = (value: string | null | undefined) => locationKey(value);
 export function regionAllowed(dealer: { restrictedRegions: boolean; regions: { publisherId: string | null; city: string | null; district: string | null }[] }, publisherId: string | null, city: string | null, district: string | null) {
   return !dealer.restrictedRegions || dealer.regions.some(rule => (!rule.publisherId || rule.publisherId === publisherId) && (!rule.city || normalizeRegion(rule.city) === normalizeRegion(city)) && (!rule.district || normalizeRegion(rule.district) === normalizeRegion(district)));
 }

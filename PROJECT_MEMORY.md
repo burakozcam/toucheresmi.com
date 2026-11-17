@@ -1,6 +1,6 @@
 # Kurumsal Sınav — Proje hafızası
 
-Son güncelleme: 16 Kasım 2026 · v1.3.3 · yerel geliştirme. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
+Son güncelleme: 17 Kasım 2026 · v1.3.4 · yerel geliştirme. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
 
 ## Amaç ve mimari
 
@@ -83,3 +83,17 @@ Mevcut plan/kurulum: Veridyen cPanel + Passenger, Neon PostgreSQL, ayrı Next We
 3. Son rapordaki test komutlarını seçin. API güvenlik betikleri yalnız `127.0.0.1:55442/ks_v132` kabul eder; aynı portta kullanıcı DB'si varsa yeniden kullanmayın.
 4. v1.3.3 testleri yerel `ks-v133-test` isimli Docker PostgreSQL 16 geçici konteyneriyle çalıştırıldı. Konteyner ve test sunucuları iş sonunda durduruldu; canlı servisler etkilenmedi. Docker imajını/sistemi değiştirmeyin.
 5. Yeni değişiklikleri CHANGELOG ve bu dosyaya, doğrulama sınırlarıyla birlikte yazın; asla sır eklemeyin.
+
+## v1.3.4 deneyim ve iş akışı
+
+- Ayrıntı ve doğrulama sınırları: `docs/v134-release-report.md`; işletim prosedürü `DEPLOYMENT.md`. Yeni DB migration/bağımlılık yok; canlıya işlem yapılmadı.
+- Ortak `ExamWorkspace` mevcut Excel/PDF/manuel/toplu bileşenlerini korur. Eski section bağlantıları güvenli sabit bölüm listesiyle açılır. Yeni ayrı rol/uç yoktur.
+- Katılım seçenekleri `showGeneralParticipation` ve `showSchoolParticipation`, varsayılan true. Bütün öğrenci karneleri referans üreticiye gider; flags PDF/Excel görünümüne etkir, sonuç verisine etki etmez. Liste PDF'leri eski görünümü korur.
+- Yerel TXT önerisi önce arşive yüklenir; dosya nesnesi tekrar kullanımı ve API sahip/checksum transaction kilidi tekrar kaydı önler. Aynı sahip/aynı içerik aktif kayıt ID'sini tekrar alır. Uploader limit/şifreleme/yetki korunur.
+- Konum kaynağı `apps/api/lib/turkey-locations.json`, ortak helper `.ts`, kaynak doğrulaması `docs/turkey-locations-source.md`. DB metin kolonları korunur; yeni yazımlar kanonik. `scripts/audit-school-locations.ts` salt okunur; canlıda otomatik normalizasyon/birleştirme yapılmaz. İl/ilçe dinamik sıralamaları bilinen eski ASCII yazımları birleştirir, geçmiş puan değişmez.
+- Ana sayfa `home-report.webp` sentetik PDF'den üretilir; yeniden üretim `scripts/generate-home-report.ts` + Poppler/Sharp. Otomatik sınavlar arası kazanım/gelişim motoru yok; tanıtım bunu açıklar. Yeni animasyon paketi yok.
+- Yerel kabul için bu oturumda yeni `ks-v134-test` PostgreSQL konteyneri kullanıldı; 55442/ks_v132 adresi eski test yardımcılarının sabit sözleşmesidir. Kullanıcı/önceki DB tekrar kullanılmadı. Son test sayıları sürüm raporu ve Test Merkezi JSON'da tutulur. Üretim Google/cPanel/Neon/backup restore kabulü açık kalır.
+
+- v1.3.4 son yerel kabul: 245/245 regresyon; API/Web build ve Prisma validate/generate; HTTP 22+7+5 ve tarayıcı 9+6 grup, PDF/ZIP içerik kontrolleri. Test Merkezi digest artık yeni işletim betikleri, paket/lock ve anonim hero görselini de kapsar.
+
+- İş bitiminde bu oturuma ait Web/API test servisleri ve `ks-v134-test` konteyneri durduruldu; sentetik DB/dosyalar silinmedi. Önizleme son kontrolde yerel PDF.js ile gerçek canvas olarak doğrulandı (yerleşik PDF eklentisindeki boş görünüm giderildi).

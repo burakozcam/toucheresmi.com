@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import {locationKey} from "../../../api/lib/turkey-locations";
+import LocationFields from "../location-fields";
 import { API_URL } from "../../lib/api";
 
 type School = {
@@ -42,8 +44,8 @@ export default function SchoolManagement({ token, role }: { token: string; role:
   const [submitting, setSubmitting] = useState(false);
 
   const visibleSchools = useMemo(() => schools.filter((school) => {
-    const text = `${school.name} ${school.city ?? ""} ${school.district ?? ""} ${school.dealer?.name ?? ""}`.toLocaleLowerCase("tr-TR");
-    return (!search.trim() || text.includes(search.trim().toLocaleLowerCase("tr-TR")))
+    const text = locationKey(`${school.name} ${school.city ?? ""} ${school.district ?? ""} ${school.dealer?.name ?? ""}`);
+    return (!search.trim() || text.includes(locationKey(search)))
       && (status === "all" || (status === "active" ? school.active : !school.active));
   }), [schools, search, status]);
 
@@ -175,8 +177,7 @@ export default function SchoolManagement({ token, role }: { token: string; role:
         </div>}
         <div className="two-column-fields">
           <label>Kurum adı<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} maxLength={180} required /></label>
-          <label>İl<input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} maxLength={100} /></label>
-          <label>İlçe<input value={form.district} onChange={(event) => setForm({ ...form, district: event.target.value })} maxLength={100} /></label>
+          <LocationFields city={form.city} district={form.district} onChange={(city,district)=>setForm({...form,city,district})}/>
           <label>Kurum kodu (isteğe bağlı)<input value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} maxLength={80} /></label>
           {role === "SUPER_ADMIN" && <label>Bayi (isteğe bağlı)<select value={form.dealerId} onChange={(event) => setForm({ ...form, dealerId: event.target.value })}><option value="">Bayi seçilmedi</option>{dealers.map((dealer) => <option key={dealer.id} value={dealer.id}>{dealer.name}</option>)}</select></label>}
         </div>
@@ -205,8 +206,7 @@ export default function SchoolManagement({ token, role }: { token: string; role:
                     });
                   }}>
                     <label>Kurum adı<input value={editing.name} onChange={(event) => setEditing({ ...editing, name: event.target.value })} required /></label>
-                    <label>İl<input value={editing.city ?? ""} onChange={(event) => setEditing({ ...editing, city: event.target.value })} /></label>
-                    <label>İlçe<input value={editing.district ?? ""} onChange={(event) => setEditing({ ...editing, district: event.target.value })} /></label>
+                    <LocationFields city={editing.city??""} district={editing.district??""} onChange={(city,district)=>setEditing({...editing,city,district})}/>
                     <label>Kurum kodu<input value={editing.code ?? ""} onChange={(event) => setEditing({ ...editing, code: event.target.value })} /></label>
                     <button className="button button-navy" type="submit">Kaydet</button>
                     <button className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</button>

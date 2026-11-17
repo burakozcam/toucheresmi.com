@@ -1,6 +1,6 @@
 {
   "name": "@optik/api",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",

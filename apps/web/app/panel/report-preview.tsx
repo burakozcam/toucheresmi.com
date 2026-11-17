@@ -1,0 +1,15 @@
+"use client";
+import {useEffect,useRef,useState} from "react";
+/** Existing local PDF.js distribution; one page at a time bounds canvas memory. */
+export default function ReportPreview({bytes}:{bytes:Uint8Array}){
+ const canvas=useRef<HTMLCanvasElement>(null),container=useRef<HTMLDivElement>(null),documentRef=useRef<any>(null),renderRef=useRef<any>(null);
+ const [page,setPage]=useState(1),[count,setCount]=useState(0),[width,setWidth]=useState(700),[loading,setLoading]=useState(true),[error,setError]=useState("");
+ useEffect(()=>{const node=container.current;if(!node)return;const observer=new ResizeObserver(([entry])=>setWidth(Math.max(240,Math.min(1000,entry.contentRect.width))));observer.observe(node);return()=>observer.disconnect();},[]);
+ useEffect(()=>{let active=true,task:any;setLoading(true);setError("");setCount(0);setPage(1);documentRef.current=null;
+ void(async()=>{const url="/vendor/pdfjs/pdf.min.mjs";const pdfjs:any=await import(/* webpackIgnore: true */ url);if(!active)return;pdfjs.GlobalWorkerOptions.workerSrc="/vendor/pdfjs/pdf.worker.min.mjs";task=pdfjs.getDocument({data:bytes.slice(),isEvalSupported:false});const pdf=await task.promise;if(active){documentRef.current=pdf;setCount(pdf.numPages);}})().catch(e=>{if(active){setError(e.message??"PDF önizleme açılamadı.");setLoading(false);}});
+ return()=>{active=false;renderRef.current?.cancel();documentRef.current=null;if(task)void task.destroy().catch(()=>{});};},[bytes]);
+ useEffect(()=>{const pdf=documentRef.current,node=canvas.current;if(!pdf||!node||!count)return;let active=true,task:any;setLoading(true);setError("");
+ void(async()=>{const sheet=await pdf.getPage(page);if(!active)return;const base=sheet.getViewport({scale:1}),scale=width/base.width,dpr=Math.min(window.devicePixelRatio||1,2),viewport=sheet.getViewport({scale:scale*dpr});node.width=Math.ceil(viewport.width);node.height=Math.ceil(viewport.height);node.style.width=`${width}px`;node.style.height=`${viewport.height/dpr}px`;const context=node.getContext("2d");if(!context)throw Error("Tarayıcı önizleme tuvali açamadı.");task=sheet.render({canvasContext:context,viewport});renderRef.current=task;await task.promise;if(active)setLoading(false);})().catch(e=>{if(active&&e.name!=="RenderingCancelledException"){setError(e.message??"Sayfa çizilemedi.");setLoading(false);}});
+ return()=>{active=false;task?.cancel();};},[page,count,width,bytes]);
+ return <div ref={container} className="report-canvas-preview"><div className="results-toolbar"><button type="button" className="button button-quiet" disabled={page<=1||loading} onClick={()=>setPage(p=>p-1)}>Önceki sayfa</button><span aria-live="polite">{count?`${page} / ${count} sayfa`:"PDF açılıyor…"}</span><button type="button" className="button button-quiet" disabled={page>=count||loading} onClick={()=>setPage(p=>p+1)}>Sonraki sayfa</button></div>{loading&&<p role="status">Karne önizlemesi hazırlanıyor…</p>}{error&&<p role="alert" className="notice error">{error} PDF indirme seçeneğini kullanabilirsiniz.</p>}<canvas ref={canvas} role="img" aria-label={`Karne PDF önizlemesi, ${page}. sayfa`} data-rendered={!loading&&!error&&count>0}/></div>;
+}

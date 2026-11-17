@@ -120,8 +120,9 @@ readerRouter.get("/my-results/:id",reader,wrap(async(req,res)=>{
 }));
 
 readerRouter.get("/my-results/:id/pdf",reader,wrap(async(req,res)=>{
+ const showSchoolParticipation=z.enum(["true","false"]).default("true").parse(req.query.showSchoolParticipation)==="true";
  const showGeneralParticipation=z.enum(["true","false"]).default("true").parse(req.query.showGeneralParticipation)==="true";
  const templateId=z.enum(["summary-card","two-page-card","detailed-card","classic-card","analysis-card","table-card"]).default("detailed-card").parse(req.query.templateId);
  const found=await ownExam(req);if(!found){res.status(404).json({error:"Yayımlanmış sonuç bulunamadı veya hesabınıza bağlı değil."});return;}
- res.attachment("ogrenci-karnesi.pdf").type("application/pdf").send(await reportPdf(await enrichReportView(found.view),{kind:"cards",order:"name",hideIdentity:true,studentId:found.person.id,templateId,showGeneralParticipation}));
+ res.attachment("ogrenci-karnesi.pdf").type("application/pdf").send(await reportPdf(await enrichReportView(found.view),{kind:"cards",order:"name",hideIdentity:true,studentId:found.person.id,templateId,showGeneralParticipation,showSchoolParticipation}));
 }));

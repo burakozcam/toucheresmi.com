@@ -1,3 +1,4 @@
+import {resolveLocation,schoolLocationIdentity,findProvince} from "../lib/turkey-locations";
 import express from "express";
 import crypto from "node:crypto";
 import { Prisma, Role } from "@prisma/client";
@@ -14,7 +15,7 @@ export const dealerRouter = express.Router();
 const wrap = (fn: (q: AuthenticatedRequest, r: express.Response) => Promise<void>): express.RequestHandler => async (q, r, n) => { try { await fn(q as AuthenticatedRequest, r); } catch (e) { if (e instanceof z.ZodError) { r.status(400).json({ error: e.issues[0]?.message }); return; } n(e); } };
 const admin = express.Router(); admin.use(requireAuth, requireRole(Role.SUPER_ADMIN));
 const permissions = { canCreateSchool: z.boolean(), canEditSchool: z.boolean(), canEvaluate: z.boolean(), canDeleteResult: z.boolean(), canEditResult: z.boolean(), canReevaluate: z.boolean(), canExport: z.boolean() };
-const region = z.object({ publisherId: z.string().min(1).max(100).nullable(), city: z.string().trim().min(1).max(100).nullable(), district: z.string().trim().min(1).max(100).nullable() }).refine(v => !v.district || !!v.city, { message: "İlçeden önce il seçin." });
+const region = z.object({ publisherId: z.string().min(1).max(100).nullable(), city: z.string().trim().min(1).max(100).nullable(), district: z.string().trim().min(1).max(100).nullable() }).refine(v => !v.district || !!v.city, { message: "İlçeden önce il seçin." }).refine(v=>!v.city&&!v.district||!!findProvince(v.city)&&(!v.district||!!resolveLocation(v.city,v.district)),{message:"Geçerli il ve ilçe ilişkisi seçin."}).transform(v=>({...v,city:v.city?findProvince(v.city)!.name:null,district:v.district?resolveLocation(v.city,v.district)!.district:null}));
 const policy = z.object({ ...permissions, name: z.string().trim().min(2).max(180), email: z.string().email().max(254).nullable(), phone: z.string().max(40).nullable(), active: z.boolean(), restrictedRegions: z.boolean(), dailyStudentLimit: z.number().int().min(0).max(10000000).nullable(), regions: z.array(region).max(500) }).strict();
 const usersSelect = { id: true, firstName: true, lastName: true, email: true, active: true, createdAt: true, lastLoginAt: true, role: true, twoFactorEnabled: true } as const;
 async function summary(dealerId: string) {
@@ -82,7 +83,7 @@ admin.post("/location-requests/:id/review", wrap(async (q, r) => {
     await tx.$queryRaw`SELECT "id" FROM "School" WHERE "id"=${item.schoolId} FOR UPDATE`;
     const school = await tx.school.findUnique({ where: { id: item.schoolId } });
     if (!school || school.dealerId !== item.dealerId || normalizeRegion(school.city) !== normalizeRegion(item.previousCity) || normalizeRegion(school.district) !== normalizeRegion(item.previousDistrict)) throw new SecurityError(409, "Kurum bilgileri değişmiş. Yeni düzeltme talebi oluşturun.");
-    if (approve) { const duplicateKey = [school.name,item.city,item.district].map(v=>v.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim().toUpperCase()).join("|"); await tx.school.update({ where: { id: school.id }, data: { city: item.city, district: item.district, duplicateKey } }); }
+    if (approve) { if(!resolveLocation(item.city,item.district))throw new SecurityError(400,"Konum isteği güncel il/ilçe listesiyle eşleşmiyor.");const duplicateKey = schoolLocationIdentity(school.name,item.city,item.district); if((await tx.school.findMany({where:{id:{not:school.id}},select:{name:true,city:true,district:true}})).some(s=>schoolLocationIdentity(s.name,s.city,s.district)===duplicateKey))throw new SecurityError(409,"Bu konumda aynı kurum zaten var; kayıtları yönetici incelemelidir."); await tx.school.update({ where: { id: school.id }, data: { city: item.city, district: item.district, duplicateKey } }); }
     await tx.schoolLocationRequest.update({ where: { id: item.id }, data: { status: approve ? "APPROVED" : "REJECTED", reviewedById: q.user!.id, reviewedAt: new Date() } }); await activity(tx,q.user!,approve?"SCHOOL_LOCATION_APPROVED":"SCHOOL_LOCATION_REJECTED",{schoolId:school.id,city:item.city,district:item.district});
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});r.json({message:"Düzeltme talebi incelendi."});
 }));
@@ -95,9 +96,11 @@ dealerRouter.get("/api/dealer-policy", requireAuth, wrap(async (q, r) => {
 dealerRouter.patch("/api/schools/:id",requireAuth,wrap(async(q,r)=>{
  const data=z.object({name:z.string().trim().min(2).max(180).optional(),code:z.string().trim().max(80).nullable().optional(),city:z.string().trim().min(1).max(100).optional(),district:z.string().trim().min(1).max(100).optional()}).strict().parse(q.body);
  const outcome=await prisma.$transaction(async tx=>{await dealerPermission(q.user!,"canEditSchool",tx,true);const school=await tx.school.findFirst({where:{id:String(q.params.id),...schoolScope(q.user!)}});if(!school)throw new SecurityError(404,"Kurum bulunamadı.");
-  const city=data.city??school.city,district=data.district??school.district;
+  let city=data.city??school.city,district=data.district??school.district;
+  if(data.city!==undefined||data.district!==undefined){const geo=resolveLocation(city,district);if(!geo)throw new SecurityError(400,"Geçerli il ve bu ile ait ilçe seçin.");city=geo.city;district=geo.district;}
   if(normalizeRegion(city)!==normalizeRegion(school.city)||normalizeRegion(district)!==normalizeRegion(school.district)){if(!city||!district)throw new SecurityError(400,"İl ve ilçe seçin.");const request=await tx.schoolLocationRequest.create({data:{schoolId:school.id,dealerId:school.dealerId!,actorUserId:q.user!.id,city,district,previousCity:school.city,previousDistrict:school.district}});return{pending:true,id:request.id,message:"İl/ilçe düzeltmesi yönetici onayına gönderildi. Kurumun mevcut bölgesi değişmedi."};}
-  const {city:_city,district:_district,...nonGeo}=data;const name=data.name??school.name;const duplicateKey=[name,school.city??"",school.district??""].map(v=>v.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim().toUpperCase()).join("|");
+  const {city:_city,district:_district,...nonGeo}=data;const name=data.name??school.name;const duplicateKey=schoolLocationIdentity(name,school.city,school.district);
+  if((await tx.school.findMany({where:{id:{not:school.id}},select:{name:true,city:true,district:true}})).some(s=>schoolLocationIdentity(s.name,s.city,s.district)===duplicateKey))throw new SecurityError(409,"Bu konumda aynı kurum zaten var.");
   await tx.school.update({where:{id:school.id},data:{...nonGeo,duplicateKey}});await activity(tx,q.user!,"SCHOOL_EDIT",{schoolId:school.id});return{message:"Kurum güncellendi."};
  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});r.status("pending"in outcome?202:200).json(outcome);
 }));

@@ -1,3 +1,4 @@
+import {resolveLocation,schoolLocationIdentity} from "../lib/turkey-locations";
 import {privateStoragePath} from "./upload-security";
 import { securityRouter, completePasswordLogin } from "./security-routes";
 import { dealerRouter } from "./dealer-routes";
@@ -152,7 +153,7 @@ const normalizeSchoolIdentityPart = (value: string | null | undefined) =>
   normalizePublisherName(value ?? "");
 
 const schoolIdentityKey = (name: string, city?: string | null, district?: string | null) =>
-  [name, city, district].map(normalizeSchoolIdentityPart).join("|");
+  schoolLocationIdentity(name,city,district);
 
 const schoolSchema = z.object({
   name: z.string().trim().min(2).max(180),
@@ -1351,6 +1352,7 @@ app.post(
       return;
     }
 
+    const geo=resolveLocation(parsed.data.city,parsed.data.district);if(!geo){response.status(400).json({error:"Listeden geçerli il ve ilçe seçin."});return;}parsed.data.city=geo.city;parsed.data.district=geo.district;
     const identity = schoolIdentityKey(parsed.data.name, parsed.data.city, parsed.data.district);
     try {
       await dealerPermission(request.user!,"canCreateSchool");
@@ -1501,6 +1503,7 @@ app.patch(
       const name = parsed.data.name ?? current.name;
       const city = parsed.data.city === undefined ? current.city : parsed.data.city;
       const district = parsed.data.district === undefined ? current.district : parsed.data.district;
+      if(parsed.data.city!==undefined||parsed.data.district!==undefined){const geo=resolveLocation(city,district);if(!geo){response.status(400).json({error:"Geçerli il ve ilçe seçin."});return;}parsed.data.city=geo.city;parsed.data.district=geo.district;}
       const identity = schoolIdentityKey(name, city, district);
       const identityChanged = identity !== schoolIdentityKey(current.name, current.city, current.district);
       if (identityChanged) {
