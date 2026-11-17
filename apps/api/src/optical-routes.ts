@@ -1,3 +1,4 @@
+import {writeResultSnapshot,withResultSnapshots} from "./result-snapshot-storage";
 import {inspectTxt} from "./txt-limits";
 import {heavyWorkGuard} from "./heavy-work";
 import {indexResultCodes} from "./public-result-codes";
@@ -239,6 +240,8 @@ opticalRouter.post("/suggest-exams",inferenceLimit,upload.single("file"),wrap(as
  const publications=await prisma.publishedAnswerKey.findMany({where:evaluationPublicationWhere,include:{publisher:{select:{name:true}},opticalKey:true},orderBy:[{publisher:{name:"asc"}},{examName:"asc"}]});
  const items=[];let incompatibleCount=0,firstIncompatibleReason="";
  for(const publication of publications){
+  // Let health checks and other connections run between catalog candidates.
+  await new Promise<void>(resolve=>setImmediate(resolve));
   if(!publication.opticalKey)continue;
   try{
    const questions=evaluationQuestions(publication.opticalKey.questions);
@@ -304,8 +307,9 @@ for(const endpoint of ["preview","evaluate"]){
     }
     const inputStudentCount=data.students.length;
     const uploadChecksum=checksum(decoded+"\nmerge:"+input.mergeSessions+"\nbook:"+(input.missingBooklet??""));
-    const duplicate=await prisma.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum},select:{id:true,snapshot:true}});
-    const previousRows=await prisma.opticalResult.findMany({where:{schoolId:school.id,keyId:key.id,nextRevision:null},orderBy:{createdAt:"desc"}});
+    const duplicateItem=await prisma.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum},select:{id:true}});
+    const [duplicate]=await withResultSnapshots(prisma,duplicateItem?[duplicateItem]:[]);
+    const previousRows=await withResultSnapshots(prisma,await prisma.opticalResult.findMany({where:{schoolId:school.id,keyId:key.id,nextRevision:null},omit:{snapshot:true},orderBy:{createdAt:"desc"}}));
     const replaceKeys=new Set<string>();
     for(const item of archived.filter(item=>evaluatedContext(item,school.id,key.id))){
       try{const original=parseOptical(decodeOptical(item.file.buffer,input.encoding),opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{missingBooklet:input.missingBooklet,allowMismatch:true,mergeSessions:true,hashIdentity:identityHash});for(const student of original.students){if(student.identityHash)replaceKeys.add(student.identityHash);replaceKeys.add(`${student.branch.split("-")[0]}:${studentNumberKey(student.studentNo??student.id)}`);}}catch(error){res.status(400).json({error:(error as Error).message});return;}
@@ -340,15 +344,18 @@ for(const endpoint of ["preview","evaluate"]){
       const stillAvailable=await tx.opticalKey.findFirst({where:{id:key.id,publication:evaluationPublicationWhere}});
       if(!stillAvailable)return null;
       if(keyFingerprint(stillAvailable.questions,stillAvailable.penalty)!==snapshot.keyFingerprint)throw new z.ZodError([{code:"custom",path:[],message:"Cevap anahtarı değişti. Önizlemeyi yenileyin."}]);
-      const repeated=await tx.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum},select:{snapshot:true}});
+      const repeatedItem=await tx.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum},select:{id:true}});
+      const [repeated]=await withResultSnapshots(tx,repeatedItem?[repeatedItem]:[]);
       if(repeated&&!isDeleted(repeated.snapshot)&&!reprocessing)throw new z.ZodError([{code:"custom",path:[],message:"Bu TXT zaten kaydedildi. Sınav Sonuçları ekranından açın."}]);
       const systemTemplate=systemEvaluationTemplate(input.templateId);
       const currentTemplate=systemTemplate
         ? await tx.opticalTemplate.upsert({where:{id:template.id},update:{},create:{...systemTemplate,id:template.id,layout:systemTemplate.layout as Prisma.InputJsonValue}})
         : await tx.opticalTemplate.findFirst({where:{id:template.id,active:true}});
       if(!currentTemplate||currentTemplate.active===false||canonicalJson(opticalLayoutSchema.parse(currentTemplate.layout))!==canonicalJson(opticalLayoutSchema.parse(template.layout)))throw new z.ZodError([{code:"custom",path:[],message:"FMT değişti veya pasif yapıldı. Önizlemeyi yenileyin."}]);
-      if(parent){const current=await tx.opticalResult.findFirst({where:{id:parent.id,nextRevision:null,school:scope(req)}});if(!current||isDeleted(current.snapshot))throw new Error("Oturum kaydı değişti. Dosyayı yeniden değerlendirin.");}
-      const created=await tx.opticalResult.create({data:{schoolId:school.id,templateId:template.id,keyId:key.id,createdById:req.user!.id,filename:files.map(file=>file.originalname).join(" + ").slice(0,200),...(parent?{seriesId:parent.seriesId,revision:parent.revision+1,supersedesId:parent.id,studentPublished:false}:{}),uploadChecksum,snapshot:snapshot as unknown as Prisma.InputJsonValue}});
+      if(parent){const currentItem=await tx.opticalResult.findFirst({where:{id:parent.id,nextRevision:null,school:scope(req)},select:{id:true}});const [current]=await withResultSnapshots(tx,currentItem?[currentItem]:[]);if(!current||isDeleted(current.snapshot))throw new Error("Oturum kaydı değişti. Dosyayı yeniden değerlendirin.");}
+      const snapshotJson=JSON.stringify(snapshot),largeSnapshot=Buffer.byteLength(snapshotJson)>1024*1024;
+      const created=await tx.opticalResult.create({data:{schoolId:school.id,templateId:template.id,keyId:key.id,createdById:req.user!.id,filename:files.map(file=>file.originalname).join(" + ").slice(0,200),...(parent?{seriesId:parent.seriesId,revision:parent.revision+1,supersedesId:parent.id,studentPublished:false}:{}),uploadChecksum,snapshot:largeSnapshot?{}:snapshot as unknown as Prisma.InputJsonValue},select:{id:true,createdAt:true,studentPublished:true,revision:true,seriesId:true}});
+      if(largeSnapshot)await writeResultSnapshot(tx,created.id,snapshotJson);
       if(parent){await carryReaderGrants(tx,parent,created.id,snapshot.data);if(parent.studentPublished)await tx.opticalResult.update({where:{id:parent.id},data:{studentPublished:false}});}
       if(input.fileIds){const updated=await tx.opticalTxtFile.updateMany({where:{id:{in:input.fileIds},deletedAt:null,...archiveScope(req.user!)},data:{evaluatedAt:new Date(),resultId:created.id}});if(updated.count!==input.fileIds.length)throw new Error("TXT arşivi değişti. Dosya listesini yenileyin.");await tx.opticalTxtUse.createMany({data:input.fileIds.map(fileId=>({fileId,resultId:created.id})),skipDuplicates:true});}
       await activity(tx,req.user!,"EVALUATE",{schoolId:school.id,keyId:key.id,publisherId:authorization.publisherId,city:authorization.school.city,district:authorization.school.district,studentCount:inputStudentCount,resultId:created.id});

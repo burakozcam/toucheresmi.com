@@ -2027,7 +2027,7 @@ app.use(
     if(error instanceof SecurityError){response.status(error.status).json({error:error.message,code:error.code});return;}
     if(error instanceof Prisma.PrismaClientKnownRequestError&&error.code==="P2034"){response.status(409).json({error:"Eşzamanlı işlem nedeniyle kayıt değişti. Önizlemeyi yenileyip tekrar deneyin."});return;}
     if(error instanceof Prisma.PrismaClientKnownRequestError&&error.code==="P2002"){response.status(409).json({error:"Bu kayıt zaten mevcut veya başka işlemle eşzamanlı oluşturuldu."});return;}
-    if ((error as { type?: string })?.type === "entity.too.large") { response.status(413).json({ error: "İstek boyutu sınırı aşıldı. Takvim dosyasını daha küçük parçalara bölün." }); return; }
+    if ((error as { type?: string })?.type === "entity.too.large") { response.status(413).json({ error: "İstek boyutu sınırı aşıldı. Daha küçük bir dosya veya kayıt grubu gönderin." }); return; }
     if (error instanceof multer.MulterError) {
       response.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({ error: error.code === "LIMIT_FILE_SIZE" ? "Dosya boyutu izin verilen sınırı aşıyor." : "Yüklenen dosya sayısını ve dosya alanlarını kontrol edin." });
       return;

@@ -1,6 +1,7 @@
+import {withResultSnapshots} from "./result-snapshot-storage";
 import {locationKey} from "../lib/turkey-locations";
 import {evaluationPublicationWhere} from "./optical-catalog";
-import {compatibleStudent} from "./result-data";
+import {studentMatcher} from "./result-data";
 import crypto from "node:crypto";
 import { Prisma, type Dealer } from "@prisma/client";
 import { prisma } from "./db";
@@ -35,9 +36,10 @@ export async function authorizeEvaluation(db: any, user: User, schoolId: string,
   const school = await db.school.findFirst({ where: { id: schoolId, active: true, ...schoolScope(user) } });
   const key = await db.opticalKey.findFirst({ where: { id: keyId, publication:evaluationPublicationWhere }, include: { publication: { select: { publisherId: true } } } });
   if (!school || !key) throw new SecurityError(404, "Kurum veya sınav bulunamadı.");
-  const previous = await db.opticalResult.findMany({ where: { schoolId, keyId }, select: { snapshot: true } });
+  const previous = await withResultSnapshots(db,await db.opticalResult.findMany({ where: { schoolId, keyId }, select: { id: true } }));
   const known = previous.flatMap((r: any) => r.snapshot?.data?.students ?? []);
-  const fresh = [...new Set(students.filter(s=>!known.some((old:any)=>compatibleStudent(old,s))).map(s => quotaIdentity(schoolId, s)))];
+  const matcher=studentMatcher(known);
+  const fresh = [...new Set(students.filter(s=>!matcher.matches(s).length).map(s => quotaIdentity(schoolId, s)))];
   if (dealer && fresh.length && !regionAllowed(dealer, key.publication?.publisherId ?? null, school.city, school.district)) throw regionError();
   if (dealer && !fresh.length && previous.length) await dealerPermission(user, "canReevaluate", db);
   if (dealer) {

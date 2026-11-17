@@ -22,8 +22,8 @@ export function inferFmt(text:string,templates:FmtCandidate[]){
  const exact=(l:OpticalLayout)=>!!l.literals?.length&&sample.every(line=>l.literals!.every(v=>line.slice(v.start-1,v.start-1+v.text.length)===v.text));
  if(readerFamily(layout)&&exact(layout)&&!exact(existing.layout)){existing.id=t.id;existing.name=t.name;existing.layout=layout;}
  }else groups.set(key,{...t,aliases:[t.id],layout});}
- const candidates=[...groups.values()].map(t=>{let valid=0,coverage=0,width=0,literals=0,structural=0,booklets=0;for(const line of sample){if(!line.trim())continue;if(line.length===t.layout.lineLength)width++;
- const record=recordLayout(t.layout,line),family=readerFamily(t.layout),rowLayout=record?.layout??t.layout;
+ const candidates=[...groups.values()].map(t=>{let valid=0,coverage=0,width=0,literals=0,structural=0,booklets=0;const family=readerFamily(t.layout);for(const line of sample){if(!line.trim())continue;if(line.length===t.layout.lineLength)width++;
+ const record=recordLayout(t.layout,line,family??null),rowLayout=record?.layout??t.layout;
  const read=(f?:{start:number;length:number})=>f?line.slice(f.start-1,f.start-1+f.length).trim():"";
  const literalOk=(!family||!!record)&&(rowLayout.literals??[]).every(l=>line.slice(l.start-1,l.start-1+l.text.length)===l.text);if(literalOk)literals++;
  const f=rowLayout.fields,bookletOk=/^[A-D]$/i.test(read(f.booklet)||"A");if(bookletOk)booklets++;const structureOk=literalOk&&(!f.grade||!read(f.grade)||/^\d{1,2}$/.test(read(f.grade)))&&!/[\x00-\x1f\x7f\ufffd]/.test(line)&&read(f.name)&&(read(f.id)||read(f.identity)||(rowLayout.literals??[]).map(l=>l.text).join("")==="7108")&&rowLayout.lessons.every(l=>!/[^ABCDE* .-]/i.test(line.slice(l.start-1,l.start-1+l.length)));if(structureOk){structural++;if(bookletOk){valid++;coverage+=Math.min(line.length,rowLayout.lineLength)/Math.max(line.length,rowLayout.lineLength);}}}

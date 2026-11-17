@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import {LiveReport,SecurityScene,InferenceScene} from "./home-demos";
+import {LiveReport,SecurityScene,InferenceScene,AcademicProgress,BatchScene} from "./home-demos";
 import ExamCover from "./exam-cover";
-import { PublisherRibbon, ProgressReport, ScrollStory, HomeEffects, AcademicProgress } from "./home-motion";
+import { PublisherRibbon, ProgressReport, ScrollStory, HomeEffects } from "./home-motion";
 import ThemeToggle from "./theme-toggle";
 import SiteFooter from "./site-footer";
 import BlogPreview from "./blog-preview";
@@ -36,8 +36,8 @@ export default async function Home() {
     <PublisherRibbon publishers={publishers}/>
     <LiveReport/><SecurityScene/><AcademicProgress/>
 
-    <section className="institution-section" id="kurumlar"><div><p className="hero-tag">KURUMLARA ÖZEL</p><h2>Arkasında güçlü<br />bir sistem var.</h2><p>Okullar, yayınevleri, kurs merkezleri ve bayiler için optik değerlendirme, sınav yönetimi ve ayrıntılı raporlama. Excel ve PDF anahtarlarından kitapçık eşleştirmelerine, güvenli sonuç paylaşımından kazanım analizine kadar tek çalışma alanı.</p><div className="hero-buttons"><Link className="button" href="/contact">Birlikte çalışalım ↗</Link><Link className="institution-login" href="/login">Kurum girişi →</Link></div></div><ol><li><span>01</span><div><strong>Optik formdan veriye</strong><p>7108 ve Özdebir optik desteği, TXT ve FMT işlemleri.</p></div></li><li><span>02</span><div><strong>Veriden anlamlı sonuçlara</strong><p>Öğrenci, sınıf ve kurum bazında ayrıntılı değerlendirme.</p></div></li><li><span>03</span><div><strong>Sonuçlardan yeni hedeflere</strong><p>Kazanım bazlı öğrenci karneleri, geçmiş sınav arşivi, tekli ve toplu PDF / Excel raporları.</p></div></li></ol></section>
-    <InferenceScene/><section className="home-tool-links" aria-label="Öğrenci araçları"><Link href="/sinav-takvimi"><span>01 / PLANLA</span><strong>Bir sonraki denemen<br /> ne zaman?</strong><small>Sınav takvimine git ↗</small></Link><Link href="/sinav-degerlendir"><span>02 / DEĞERLENDİR</span><strong>Cevapların elinde.<br /> Karneni oluştur.</strong><small>Sınav değerlendirmeyi aç ↗</small></Link><Link href="/pdf-duzenleyici"><span>03 / HAZIRLA</span><strong>Dosyaların da<br /> sınava hazır olsun.</strong><small>PDF araçlarını keşfet ↗</small></Link></section>
+    <section className="institution-section" id="kurumlar"><div><p className="hero-tag">KURUMLARA ÖZEL</p><h2>Arkasında güçlü<br />bir sistem var.</h2><p>Okullar, yayınevleri, kurs merkezleri ve bayiler için optik değerlendirme, sınav yönetimi ve ayrıntılı raporlama. Excel ve PDF anahtarlarından kitapçık eşleştirmelerine, güvenli sonuç paylaşımından kazanım analizine kadar tek çalışma alanı.</p><div className="hero-buttons"><Link className="button" href="/contact">Birlikte çalışalım ↗</Link><Link className="institution-login" href="/login">Kurum girişi →</Link></div></div><ol><li><span>01</span><div><strong>Optik formdan veriye</strong><p>Yaygın optik düzenleri, desteklenen TXT ve FMT şablonlarıyla esnek değerlendirme.</p></div></li><li><span>02</span><div><strong>Veriden anlamlı sonuçlara</strong><p>Öğrenci, sınıf ve kurum bazında ayrıntılı değerlendirme.</p></div></li><li><span>03</span><div><strong>Sonuçlardan yeni hedeflere</strong><p>Kazanım bazlı öğrenci karneleri, geçmiş sınav arşivi, tekli ve toplu PDF / Excel raporları.</p></div></li></ol></section>
+    <InferenceScene/><BatchScene/><section className="home-tool-links" aria-label="Öğrenci araçları"><Link href="/sinav-takvimi"><span>01 / PLANLA</span><strong>Bir sonraki denemen<br /> ne zaman?</strong><small>Sınav takvimine git ↗</small></Link><Link href="/sinav-degerlendir"><span>02 / DEĞERLENDİR</span><strong>Cevapların elinde.<br /> Karneni oluştur.</strong><small>Sınav değerlendirmeyi aç ↗</small></Link><Link href="/pdf-duzenleyici"><span>03 / HAZIRLA</span><strong>Dosyaların da<br /> sınava hazır olsun.</strong><small>PDF araçlarını keşfet ↗</small></Link></section>
     <BlogPreview/><SiteFooter/>
   </main>;
 }

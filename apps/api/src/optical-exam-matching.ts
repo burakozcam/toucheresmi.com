@@ -27,19 +27,20 @@ export function bestAnswerPatternMatch(
 
 /** Suggestions inspect answer fields only: identity/duplicate/session errors must not hide a candidate. */
 export function matchExamAnswers(txt: string, layout: OpticalLayout, inputQuestions: OpticalQuestion[]) {
-  const questions = opticalQuestionsSchema.parse(inputQuestions);
+  const questions = opticalQuestionsSchema.parse(inputQuestions),family=readerFamily(layout);
+  // Field/position plans depend on layout and booklet, never on a student's answers.
+  const lessonIds=questions.map(q=>lessonIdentity(q.lesson));
+  const plans=new Map<OpticalLayout["lessons"],Map<string,number[]>>();
   const students = txt.replace(/^\uFEFF/, "").split(/\r\n|\n|\r/).flatMap(line => {
-    const variant=recordLayout(layout,line);if(readerFamily(layout)&&!variant)return [];
+    const variant=recordLayout(layout,line,family??null);if(family&&!variant)return [];
     const rowLayout=variant?.layout??layout;
-    const fields=new Map(rowLayout.lessons.map(lesson=>[lessonIdentity(lesson.name),lesson]));
     if (!line.trim() || (rowLayout.literals ?? []).some(literal => line.slice(literal.start - 1, literal.start - 1 + literal.text.length) !== literal.text)) return [];
     const booklet = line.slice(rowLayout.fields.booklet.start - 1, rowLayout.fields.booklet.start - 1 + rowLayout.fields.booklet.length).trim().toUpperCase() || "A";
     if (!/^[A-D]$/.test(booklet)) return [];
-    return [{ answers: questions.map(question => {
-      const field = fields.get(lessonIdentity(question.lesson)), position = question.positions[booklet];
-      if (!field || !position || position > field.length) return "";
-      return line[field.start + position - 2]?.toUpperCase() ?? "";
-    }) }];
+    let books=plans.get(rowLayout.lessons);if(!books){books=new Map();plans.set(rowLayout.lessons,books);}
+    let positions=books.get(booklet);
+    if(!positions){const fields=new Map(rowLayout.lessons.map(lesson=>[lessonIdentity(lesson.name),lesson]));positions=questions.map((question,i)=>{const field=fields.get(lessonIds[i]),position=question.positions[booklet];return !field||!position||position>field.length?-1:field.start+position-2;});books.set(booklet,positions);}
+    return [{ answers:positions.map(position=>position<0?"":line[position]?.toUpperCase()??"") }];
   });
   return bestAnswerPatternMatch(questions, students);
 }

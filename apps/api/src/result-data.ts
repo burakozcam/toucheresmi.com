@@ -23,19 +23,27 @@ export function compatibleStudent(a:OpticalStudent,b:OpticalStudent){
  return number(a)===number(b)&&(!a.name||!b.name||norm(a.name)===norm(b.name))&&
   (a.branch===b.branch||a.branch==="Belirtilmedi"||b.branch==="Belirtilmedi"||!a.branch.includes("-")||!b.branch.includes("-"));
 }
+/** Superset index: always apply the original predicate before accepting a match. */
+export function studentMatcher(initial:OpticalStudent[]){
+ const numbers=new Map<string,Set<OpticalStudent>>(),identities=new Map<string,Set<OpticalStudent>>(),ids=new Map<string,Set<OpticalStudent>>(),order=new Map<OpticalStudent,number>();
+ const add=(student:OpticalStudent)=>{if(!order.has(student))order.set(student,order.size);for(const [map,key]of [[numbers,number(student)],[identities,student.identityHash],[ids,student.id]] as const){if(!key)continue;let bucket=map.get(key);if(!bucket){bucket=new Set();map.set(key,bucket);}bucket.add(student);}};
+ initial.forEach(add);
+ return {add,matches:(student:OpticalStudent)=>[...new Set([...(numbers.get(number(student))??[]),...(student.identityHash?identities.get(student.identityHash)??[]:[])])].sort((a,b)=>order.get(a)!-order.get(b)!).filter(s=>compatibleStudent(s,student)),hasNumber:(student:OpticalStudent)=>[...(numbers.get(number(student))??[])].some(s=>number(s)===number(student)),hasId:(id:string)=>[...(ids.get(id)??[])].some(s=>s.id===id)};
+}
 /** Pick complete session records, including their blanks and booklet; never mix lessons in one session. */
 export function mergeStudentData(previous:OpticalData,next:OpticalData,replaceStudent?:(student:OpticalStudent)=>boolean):OpticalData{
  if(canonicalJson(opticalQuestionsSchema.parse(previous.questions))!==canonicalJson(opticalQuestionsSchema.parse(next.questions)))throw new Error("Oturumların cevap anahtarları farklı. Aynı anahtarla yeniden yükleyin.");
  const students=structuredClone(previous.students),mergeWarnings=[...previous.warnings,...next.warnings];
+ const matcher=studentMatcher(students);
  let duplicateRecords=0;
  for(const sourceStudent of next.students){
   const incoming=structuredClone(sourceStudent);
-  const matches=students.filter(s=>!s.separateSession&&!incoming.separateSession&&compatibleStudent(s,incoming));
+  const matches=incoming.separateSession?[]:matcher.matches(incoming).filter(s=>!s.separateSession);
   const old=matches.length===1?matches[0]:undefined;
   if(!old){
-   if(matches.length>1||students.some(s=>number(s)===number(incoming)))mergeWarnings.push(`${incoming.studentNo??incoming.id}: aynı numarada kimlik çelişkisi / belirsiz eşleşme; kayıt ayrı tutuldu.`);
+   if(matches.length>1||matcher.hasNumber(incoming))mergeWarnings.push(`${incoming.studentNo??incoming.id}: aynı numarada kimlik çelişkisi / belirsiz eşleşme; kayıt ayrı tutuldu.`);
    const copy=structuredClone(incoming);copy.sourceLines=copy.sourceLines.map(l=>l+previous.lineCount);
-   if(students.some(s=>s.id===copy.id)){copy.studentNo??=copy.id;copy.id=`${copy.id}-R${students.length+1}`;}students.push(copy);continue;
+   if(matcher.hasId(copy.id)){copy.studentNo??=copy.id;copy.id=`${copy.id}-R${students.length+1}`;}students.push(copy);matcher.add(copy);continue;
   }
   // A lone 7108 row may contain real blank fields. Only complementary reads of
   // the same matched student establish split sessions across separate uploads.
@@ -45,7 +53,7 @@ export function mergeStudentData(previous:OpticalData,next:OpticalData,replaceSt
   if(incoming.provisionalSession&&old.sessions?.[opposite(incoming)])narrow(incoming);
   if(old.id.startsWith("tc-")&&!incoming.id.startsWith("tc-")){old.id=incoming.id;old.studentNo=incoming.studentNo;}
   old.name||=incoming.name;if(old.branch==="Belirtilmedi")old.branch=incoming.branch;
-  old.identityHash??=incoming.identityHash;old.identityEncrypted??=incoming.identityEncrypted;old.schoolCode??=incoming.schoolCode;
+  old.identityHash??=incoming.identityHash;old.identityEncrypted??=incoming.identityEncrypted;old.schoolCode??=incoming.schoolCode;matcher.add(old);
   const groups=incoming.sessions??Object.fromEntries(Object.keys(incoming.booklets).map(l=>[l,{lessons:[l],marks:previous.questions.reduce((n,q,i)=>n+(q.lesson===l&&incoming.answers[i]?1:0),0),sourceLine:incoming.sourceLines[0]}]));
   const current=old.sessions??Object.fromEntries(Object.keys(old.booklets).map(l=>[l,{lessons:[l],marks:previous.questions.reduce((n,q,i)=>n+(q.lesson===l&&old.answers[i]?1:0),0),sourceLine:old.sourceLines[0]}]));
   for(const [session,record]of Object.entries(groups)){

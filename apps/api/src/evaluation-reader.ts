@@ -5,7 +5,7 @@ import {canonicalJson} from "./canonical-json";
 /** Switch only with unique structural evidence, never from answer-key success rates. */
 export function evaluationReader(text:string,selected:OpticalLayout,templates:Array<{name:string;layout:unknown}>,missingBooklet?:string){
  const lines=text.replace(/^\uFEFF/,"").split(/\r\n|\n|\r/).filter(l=>l.trim());
- const count=(layout:OpticalLayout)=>lines.filter(line=>{const family=readerFamily(layout),r=recordLayout(layout,line);return (!family||r)&&reliableRecord(line,r?.layout??layout,"A");}).length;
+ const count=(layout:OpticalLayout)=>{const family=readerFamily(layout);return lines.filter(line=>{const r=recordLayout(layout,line,family??null);return (!family||r)&&reliableRecord(line,r?.layout??layout,"A");}).length;};
  const legacy7108={...layout7108,fields:{...layout7108.fields,booklet:{start:50,length:1},session:{start:51,length:1}}};
  const knownStale=canonicalJson(selected)===canonicalJson(legacyOzdebirSingle)||canonicalJson(selected)===canonicalJson(legacy7108);
  const selectedCount=count(selected),groups=new Map<string,{layout:OpticalLayout;name:string;count:number}>();

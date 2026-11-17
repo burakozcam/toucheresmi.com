@@ -92,6 +92,10 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   type RecordEntry={lessons:string[];chains:Map<string,string>;book:string;marks:number;sourceLine:number};
   type Entry={id:string;name:string;branch:string;grade:string;identity:string;schoolCode:string;sourceLines:number[];records:Map<string,RecordEntry>};
   const entries:Entry[]=[],seenLines=new Set<string>();
+  // Candidate indexes narrow the search only; the identity/session predicate below is unchanged.
+  const numberKey=(id:string)=>id.replace(/^0+(?=\d)/,"");
+  const byNumber=new Map<string,Set<Entry>>(),byIdentity=new Map<string,Set<Entry>>(),order=new Map<Entry,number>();
+  const indexEntry=(entry:Entry)=>{for(const [map,value]of [[byNumber,numberKey(entry.id)],[byIdentity,entry.identity]] as const){if(!value)continue;let bucket=map.get(value);if(!bucket){bucket=new Set();map.set(value,bucket);}bucket.add(entry);}};
   const diagnostics={rejectedLines:[] as Array<{line:number;reason:string}>,duplicateRecords:0,missingVerbal:0,missingNumeric:0};
   const slice=(line:string,f?:{start:number;length:number})=>f?line.slice(f.start-1,f.start-1+f.length).trim():"";
   const normalized=(v:string)=>v.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g," ");
@@ -102,7 +106,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     const label=`TXT satır ${index+1}`;
     if(!line.trim()){reject(index,"boş satır atlandı.");return;}
     if(seenLines.has(line)){diagnostics.duplicateRecords++;warnings.push(`${label}: yinelenen TXT satırı atlandı; öğrenci ikinci kez sayılmadı.`);return;}seenLines.add(line);
-    const variant=recordLayout(sourceLayout,line);
+    const variant=recordLayout(sourceLayout,line,family??null);
     if(family&&!variant){reject(index,"doğrulanmış kayıt türü bulunamadı; satır atlandı.");return;}
     if(variant&&"warning" in variant)warnings.push(`${label}: ${variant.warning}`);
     const rowLayout=variant?.layout??sourceLayout;
@@ -137,14 +141,15 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     // session marker keep complementary marked lesson groups for backwards compatibility.
     let universalSession="single";
     if(universal7108){const marker=slice(line,f.session),numeric=(l:string)=>["MATEMATIK","FEN"].includes(lessonIdentity(l)),marked=(wantNumeric:boolean)=>[...chains].some(([l,a])=>numeric(l)===wantNumeric&&a.trim());
-      const complementary=marker===""&&lines.some(other=>{if(other===line||other.length!==line.length)return false;const otherName=[slice(other,f.name),slice(other,f.surname)].filter(Boolean).join(" ");if(!name||normalized(otherName)!==normalized(name))return false;const samePerson=(!!id&&slice(other,f.id)===id)||(!!identity&&slice(other,f.identity)===identity);if(!samePerson||(schoolCode&&slice(other,f.schoolCode)&&slice(other,f.schoolCode)!==schoolCode)||(grade&&slice(other,f.grade)&&slice(other,f.grade)!==grade)||(branch&&slice(other,f.branch)&&slice(other,f.branch)!==branch))return false;const otherMarked=(want:boolean)=>lessons.some(l=>numeric(l.name)===want&&other.slice(l.start-1,l.start-1+l.length).trim());return marked(true)&&!marked(false)&&otherMarked(false)&&!otherMarked(true)||marked(false)&&!marked(true)&&otherMarked(true)&&!otherMarked(false);});
+      const complementary=marker===""&&marked(true)!==marked(false)&&lines.some(other=>{if(other===line||other.length!==line.length)return false;const otherName=[slice(other,f.name),slice(other,f.surname)].filter(Boolean).join(" ");if(!name||normalized(otherName)!==normalized(name))return false;const samePerson=(!!id&&slice(other,f.id)===id)||(!!identity&&slice(other,f.identity)===identity);if(!samePerson||(schoolCode&&slice(other,f.schoolCode)&&slice(other,f.schoolCode)!==schoolCode)||(grade&&slice(other,f.grade)&&slice(other,f.grade)!==grade)||(branch&&slice(other,f.branch)&&slice(other,f.branch)!==branch))return false;const otherMarked=(want:boolean)=>lessons.some(l=>numeric(l.name)===want&&other.slice(l.start-1,l.start-1+l.length).trim());return marked(true)&&!marked(false)&&otherMarked(false)&&!otherMarked(true)||marked(false)&&!marked(true)&&otherMarked(true)&&!otherMarked(false);});
       if((marker==="1"||complementary)&&!marked(true)){universalSession="verbal";for(const l of chains.keys())if(numeric(l))chains.delete(l);}
       else if((marker==="2"||complementary)&&!marked(false)){universalSession="numeric";for(const l of chains.keys())if(!numeric(l))chains.delete(l);}
     }else if(!variant)for(const [lesson,chain]of chains)if(!chain.trim())chains.delete(lesson);
     if(!chains.size&&!variant){for(const l of lessons)if(questions.some(q=>q.lesson===l.name)&&line.length>=l.start+l.length-1)chains.set(l.name,"");}
     const marks=[...chains.values()].reduce((n,v)=>n+(v.match(/[ABCDE]/g)?.length??0),0);
     const session=(universal7108?universalSession:variant?.session)||(slice(line,f.session)?`session:${slice(line,f.session)}`:[...chains.keys()].sort().join("|"));
-    const candidates=options.mergeSessions===false?[]:entries.filter(e=>{
+    const pool=new Set([...(byNumber.get(numberKey(id))??[]),...(identity?byIdentity.get(identity)??[]:[])]);
+    const candidates=options.mergeSessions===false?[]:[...pool].sort((a,b)=>order.get(a)!-order.get(b)!).filter(e=>{
       if(e.schoolCode&&schoolCode&&e.schoolCode!==schoolCode)return false;
       if(e.identity&&identity&&e.identity!==identity){
         const sameHeader=!!id&&e.id.replace(/^0+(?=\d)/,"")===id.replace(/^0+(?=\d)/,"")&&!!name&&!!e.name&&normalized(e.name)===normalized(name)&&!!schoolCode&&schoolCode===e.schoolCode&&!!branch&&branch===e.branch&&!!grade&&grade===e.grade;
@@ -158,16 +163,18 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
        (!!e.name&&!!name&&normalized(e.name)===normalized(name))&&(!e.branch||!branch||e.branch===branch);
     });
     let entry=candidates.length===1?candidates[0]:undefined;
-    if(!entry&&entries.some(e=>id&&e.id.replace(/^0+(?=\d)/,"")===id.replace(/^0+(?=\d)/,"")))warnings.push(`${label}: aynı numarada kimlik bilgileri çelişiyor veya eşleştirme belirsiz; kayıtlar ayrı tutuldu.`);
-    if(!entry){entry={id,name,branch,grade,identity,schoolCode,sourceLines:[],records:new Map()};entries.push(entry);}
+    if(!entry&&id&&byNumber.has(numberKey(id)))warnings.push(`${label}: aynı numarada kimlik bilgileri çelişiyor veya eşleştirme belirsiz; kayıtlar ayrı tutuldu.`);
+    if(!entry){entry={id,name,branch,grade,identity,schoolCode,sourceLines:[],records:new Map()};order.set(entry,entries.length);entries.push(entry);}
     if(entry.identity&&identity&&entry.identity!==identity)warnings.push(`${label}: kimlikte tek karakterlik olası okuma hatası; kurum, numara, sınıf/şube ve ad eşleşmesiyle oturumlar birleştirildi. Kontrol edin.`);
     if(entry.name&&name&&normalized(entry.name)!==normalized(name))warnings.push(`${label}: güvenilir kimlik eşleşti ancak ad bilgileri çelişiyor; ilk ad korundu.`);
     if(identity&&validNationalIdentity(identity)&&!validNationalIdentity(entry.identity))entry.identity=identity;
-    entry.name||=name;entry.grade||=grade;entry.branch||=branch;entry.identity||=identity;entry.id||=id;entry.schoolCode||=schoolCode;entry.sourceLines.push(index+1);
+    entry.name||=name;entry.grade||=grade;entry.branch||=branch;entry.identity||=identity;entry.id||=id;entry.schoolCode||=schoolCode;entry.sourceLines.push(index+1);indexEntry(entry);
     const old=entry.records.get(session);
     if(old){diagnostics.duplicateRecords++;warnings.push(`${label}: aynı oturum tekrar okundu; en fazla geçerli işaretlemesi bulunan kayıt bütünüyle seçildi, eşitlikte ilk kayıt korundu.`);if(marks<=old.marks)return;}
     entry.records.set(session,{lessons:[...chains.keys()],chains,book,marks,sourceLine:index+1});
   });
+  const repeatedHeaders=new Map<string,number>();
+  for(const entry of entries){const key=JSON.stringify([entry.grade,entry.id]);repeatedHeaders.set(key,(repeatedHeaders.get(key)??0)+1);}
   const students:OpticalStudent[]=entries.flatMap((entry,index)=>{
     if(!entry.name)warnings.push(`TXT satır ${entry.sourceLines[0]}: ad soyad boş; kaynak bilgi uydurulmadı.`);
     const chains=new Map<string,string>(),booklets:Record<string,string>={},sessions:NonNullable<OpticalStudent["sessions"]>={};
@@ -188,7 +195,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
     if(options.hashIdentity&&/^\d{11}$/.test(id)){entry.identity||=id;id=`tc-${options.hashIdentity(entry.identity).slice(0,16)}`;}
     const allChains=[...chains];const markedNumeric=allChains.some(([l,a])=>["MATEMATIK","FEN"].includes(lessonIdentity(l))&&a.trim()),markedVerbal=allChains.some(([l,a])=>!["MATEMATIK","FEN"].includes(lessonIdentity(l))&&a.trim());
     const provisionalSession=universal7108&&sessions.single&&markedNumeric!==markedVerbal?(markedNumeric?"numeric":"verbal"):undefined;
-    const repeated=entries.filter(e=>e.grade===entry.grade&&e.id===entry.id).length>1;
+    const repeated=(repeatedHeaders.get(JSON.stringify([entry.grade,entry.id]))??0)>1;
     return [{id:repeated?`${id}-O${entry.sourceLines[0]}`:id,...(repeated||options.mergeSessions===false||noStudentNumber?{studentNo:entry.id}:{}),...(options.mergeSessions===false?{separateSession:true}:{}),
       ...(entry.identity&&options.hashIdentity?{identityHash:options.hashIdentity(entry.identity)}:{}),...(entry.identity&&options.encryptIdentity?{identityEncrypted:options.encryptIdentity(entry.identity)}:{}),
       name:entry.name,school,schoolCode:entry.schoolCode,branch:[entry.grade,entry.branch].filter(Boolean).join("-")||"Belirtilmedi",booklets,recordBooklets:[...new Set(records.map(([,r])=>r.book))],sourceLines:entry.sourceLines,

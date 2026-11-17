@@ -168,3 +168,30 @@ Kabul çıktıları `/tmp/v129-evidence/` altındadır; seed/token dosyalarını
 4. `python3 tests/e2e/v135-ui.py`
 
 Kod/tanıtım için gerçek öğrenci verisi kullanılmaz. `test-results/v135` yerel, Git dışında kabul kanıtıdır; `ui-seed.json` sentetik oturum token'ları içerir ve paylaşılmaz. UI koşumu mağaza görünürlüğünü yalnız test DB'de değiştirir, sonunda kapatır. İş sonunda yalnız bu koşumun servislerini ve test konteynerini durdurun.
+
+## v1.3.5 son kalite düzeltmeleri (v136 QA betikleri)
+
+Yukarıdaki **yalnız izole** `ks135@127.0.0.1:55445/ks_v135` PostgreSQL ortamı kullanılır. Başka `DATABASE_URL` kabul edilmez. Önce `v135-http.cjs` ile yerel temel fixture'ları oluşturun; canlı API/DB kullanmayın. Migration eklenmez.
+
+```sh
+npm test
+node --import tsx tests/e2e/v135-http.cjs
+QA_PHASE=final node --max-old-space-size=256 --import tsx tests/e2e/v136-http.cjs
+NEXT_PUBLIC_API_URL=http://localhost:4015 npm run build
+```
+
+API: `node --max-old-space-size=256 --import tsx tests/e2e/v135-serve.cjs`; Web: `npm run start -w @optik/web -- --hostname 127.0.0.1 -p 3115`. Ardından sırayla:
+
+```sh
+python3 tests/e2e/v136-ui.py
+python3 tests/e2e/v136-visual-details.py
+python3 tests/e2e/v136-api-memory.py
+```
+
+Python Playwright/Chromium gerekir; üretim bağımlılığı değildir. HTTP testi 4.995 sentetik 7108 kaydını arşivler, tahmin eder, değerlendirir, sonuç/sıralamayı açar; 2 MB/5.001 retlerini ve gerçek PostgreSQL trigger hatasıyla transaction rollback'ini kontrol eder. Yapay cevap anahtarı her koşumda farklıdır; biriken test katalogları eşit öneriler oluşturmaz. Bellek testi ayrı süreçteki API'nin Linux `/proc` RSS/HWM değerlerini ölçer. Tek süreçli HTTP koşumunun RSS değeri, test istemcisinin JSON belleğini de içerir.
+
+Görsel test dört genişlik/iki tema, bütün sahnelerin tekrar/durdurma/görünürlük ve çubuk senkronunu, gerçek tarayıcıyla yükleme/öneri/kaydı doğrular. Ek görsel kontrol doluş renklerini, en az 4.5:1 metin kontrastını ve optik formdaki doğru/yanlış renklerini ölçer. Sonuçlar ve ekran görüntüleri `test-results/v136` altındadır; `*-seed.json` test oturumlarını paylaşmayın.
+
+CPU karşılaştırması için yalnız yerelde `node --import tsx tests/e2e/v136-parser-baseline.cjs` eski okuyucuyu, `QA_READER=current node --import tsx tests/e2e/v136-parser-baseline.cjs` güncel okuyucuyu çalıştırır. Eski okuyucu bu dosyada yaklaşık iki dakika CPU kullanır; canlı sunucuda çalıştırmayın. Ayrıntılar: `docs/v135-quality-followup.md`. İş sonunda yalnız kendi yerel API/Web süreçlerinizi ve test konteynerinizi durdurun. Yerel API adresiyle oluşmuş Web build'ini canlıya taşımayın.
+
+Yalnız API tahmin/kayıt değişikliğinden sonra kısa tarayıcı regresyonu: `V136_UPLOAD_ONLY=1 python3 tests/e2e/v136-ui.py`. Bu koşum beş yükleme kontrolünü `ui/checks-upload.json` dosyasına yazar; tam animasyon kabulünün yerine geçmez ve önceki `ui/checks.json` dosyasını ezmez.

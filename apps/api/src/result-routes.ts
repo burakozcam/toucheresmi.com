@@ -1,3 +1,4 @@
+import {withResultSnapshots} from "./result-snapshot-storage";
 import { resultRankings } from "./result-rankings";
 import {indexResultCodes} from "./public-result-codes";
 import { dealerPermission, schoolScope, activity } from "./dealer-policy";
@@ -17,7 +18,7 @@ export const resultRouter=express.Router();
 const scope=(req:AuthenticatedRequest)=>schoolScope(req.user!);
 const wrap=(fn:(req:AuthenticatedRequest,res:express.Response)=>Promise<void>):express.RequestHandler=>async(req,res,next)=>{try{await fn(req as AuthenticatedRequest,res);}catch(e){if(e instanceof SecurityError){next(e);return;}if(e instanceof z.ZodError){res.status(400).json({error:e.issues[0]?.message});return;}if(e instanceof Error&&!((e as any).code)){res.status(400).json({error:e.message});return;}next(e);}};
 export async function examView(schoolId:string,keyId:string,publishedOnly=false){
- const all=await prisma.opticalResult.findMany({where:{keyId,nextRevision:null},orderBy:{createdAt:"asc"}});
+ const all=await withResultSnapshots(prisma,await prisma.opticalResult.findMany({where:{keyId,nextRevision:null},omit:{snapshot:true},orderBy:{createdAt:"asc"}}));
  const own=all.filter(r=>r.schoolId===schoolId&&!isDeleted(r.snapshot)&&(!publishedOnly||r.studentPublished));
  const view=aggregateResults(own);if(!view)return null;
  const grouped=new Map<string,typeof all>();
@@ -33,7 +34,7 @@ export async function examView(schoolId:string,keyId:string,publishedOnly=false)
 resultRouter.get("/report-templates",(_req,res)=>{res.json(reportTemplates);});
 async function allowed(req:AuthenticatedRequest,schoolId:string){return prisma.school.findFirst({where:{id:schoolId,...scope(req)},select:{id:true}});}
 resultRouter.get("/result-exams",wrap(async(req,res)=>{const schoolId=z.string().min(1).parse(req.query.schoolId);if(!await allowed(req,schoolId)){res.status(403).json({error:"Kurum erişimi yok."});return;}
- const rows=await prisma.opticalResult.findMany({where:{schoolId,nextRevision:null},include:{key:{include:{publication:{select:{examName:true,publisher:{select:{name:true}}}}}}},orderBy:{createdAt:"desc"}});
+ const rows=await withResultSnapshots(prisma,await prisma.opticalResult.findMany({where:{schoolId,nextRevision:null},omit:{snapshot:true},include:{key:{include:{publication:{select:{examName:true,publisher:{select:{name:true}}}}}}},orderBy:{createdAt:"desc"}}));
  const grouped=new Map<string,any>();for(const row of rows.filter(r=>!isDeleted(r.snapshot))){const snapshot=row.snapshot as any;const current=grouped.get(row.keyId);if(current){current.uploadCount++;continue;}grouped.set(row.keyId,{id:row.keyId,name:row.key.publication?.examName??snapshot.keyName,publisher:row.key.publication?.publisher?.name??"",createdAt:row.createdAt,uploadCount:1});}res.json([...grouped.values()]);
 }));
 resultRouter.get("/result-exams/:id",wrap(async(req,res)=>{const schoolId=z.string().min(1).parse(req.query.schoolId);if(!await allowed(req,schoolId)){res.status(403).json({error:"Kurum erişimi yok."});return;}const view=await examView(schoolId,String(req.params.id));if(!view){res.status(404).json({error:"Kayıtlı sınav sonucu yok."});return;}res.json(safeSnapshot(view));}));

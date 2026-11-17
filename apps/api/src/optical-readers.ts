@@ -8,8 +8,8 @@ export const readerFamilies=[{id:"ozdebir-middle",records:[
  {session:"numeric",label:"sayısal",layout:layoutOzdebirNumeric},
 ]}];
 export function readerFamily(layout:OpticalLayout){const key=canonicalJson(layout);return readerFamilies.find(f=>f.records.some(r=>canonicalJson(r.layout)===key));}
-export function recordLayout(layout:OpticalLayout,line:string){
- const family=readerFamily(layout);if(!family)return undefined;
+export function recordLayout(layout:OpticalLayout,line:string,family:ReturnType<typeof readerFamily>|null=readerFamily(layout)){
+ if(!family)return undefined;
  const marked=family.records.find(r=>(r.layout.literals??[]).every(l=>line.slice(l.start-1,l.start-1+l.text.length)===l.text));
  if(marked?.layout.lineLength===line.length)return marked;
  const byWidth=family.records.filter(r=>r.layout.lineLength===line.length&&reliableRecord(line,{...r.layout,literals:[]},"A"));
