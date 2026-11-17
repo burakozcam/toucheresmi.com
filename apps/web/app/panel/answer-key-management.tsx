@@ -1,4 +1,5 @@
 "use client";
+import PublisherTransfer from "./publisher-transfer";
 import CoverEditor from "./cover-editor";
 import AnswerPdfOptions from "../answer-pdf-options";
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +25,7 @@ type AnswerKeyRecord = {
   showInEvaluation: boolean;
   opticalKey?: { id: string; penalty: number; active: boolean } | null;
   createdAt: string;
+  updatedAt: string;
   publishedAt: string;
   publisher: Publisher;
   files: AnswerKeyFile[];
@@ -277,6 +279,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                   <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
                   {!readOnly&&<div className="answer-inline-publication"><label className="checkbox-row"><input type="checkbox" checked={item.published} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,e.target.checked,item.showInEvaluation)}/>Cevap Anahtarları sayfasında göster</label></div>}
                   {!readOnly&&<CoverEditor token={token} id={item.id} initial={item.coverImage} onImage={image=>setRecords(current=>current.map(row=>row.id===item.id?{...row,coverImage:image}:row))}/>}
+                  {!readOnly&&<PublisherTransfer token={token} record={item} publishers={publishers} onSaved={()=>{setEditing(null);void loadData();}}/>}
                   {!readOnly && editing?.id === item.id && (
                     <form className="answer-key-edit-form" onChange={()=>setEditConfirmed(false)} onSubmit={(event) => {
                       event.preventDefault();
@@ -288,7 +291,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                       void saveRecord(item.id, formData);
                     }}>
                       <input type="hidden" name="publisherId" value={editing.publisherId} />
-                      <div className="publisher-select-field">Yayınevi<PublisherSelect publishers={publishers.filter((publisher) => publisher.active || publisher.id === editing.publisherId)} value={editing.publisherId} onChange={(publisherId) => setEditing((current) => current ? { ...current, publisherId } : current)} /></div>
+                      <label>Yayınevi<input readOnly value={editing.publisher.name}/><small>Bağlantıyı “Sınavın yayınevini değiştir” alanından önizleyerek değiştirebilirsiniz.</small></label>
                       <div className="two-column-fields">
                         <label>Sınıf<select name="grade" value={String(editing.grade)} onChange={(event) => setEditing({ ...editing, grade: Number(event.target.value) })}>{[1,2,3,4,5,6,7,8,9,10,11,12].map((grade) => <option key={grade} value={String(grade)}>{grade}. Sınıf</option>)}</select></label>
                         <label>Yayın tarihi<input type="date" name="publishedAt" value={editing.publishedAt.slice(0, 10)} onChange={(event) => setEditing({ ...editing, publishedAt: event.target.value })} required /></label>

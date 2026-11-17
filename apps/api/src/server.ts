@@ -1,5 +1,8 @@
+import {studentPortalRouter} from "./student-portal";
+import {storeRouter} from "./store-routes";
+import { publisherTransferRouter } from "./publisher-transfer";
 import {resolveLocation,schoolLocationIdentity} from "../lib/turkey-locations";
-import {privateStoragePath} from "./upload-security";
+import {validateSupportedUpload,privateStoragePath} from "./upload-security";
 import { securityRouter, completePasswordLogin } from "./security-routes";
 import { dealerRouter } from "./dealer-routes";
 import { issueSession } from "./auth-sessions";
@@ -239,6 +242,8 @@ const publisherRequestSchema = z.object({
   description: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
+const publisherDetailsSchema = z.object({description:z.string().trim().max(1000).optional(),email:z.union([z.string().trim().email().max(254),z.literal("")]).optional(),phone:z.string().trim().max(40).optional(),active:z.boolean().optional()});
+
 const publisherDecisionSchema = z.object({
   status: z.enum([PublisherRequestStatus.APPROVED, PublisherRequestStatus.REJECTED]),
 });
@@ -278,6 +283,9 @@ function toPublicPublisher(publisher: { id: string; name: string; normalizedName
 }
 
 app.use(scheduleRouter);
+app.use(storeRouter);
+app.use(studentPortalRouter);
+app.use("/api/admin", publisherTransferRouter);
 
 app.get("/api/health", (_request, response) => {
   response.json({ status: "ok" });
@@ -1141,7 +1149,7 @@ app.post(
   requireAuth,
   requireRole(Role.SUPER_ADMIN),
   async (request: AuthenticatedRequest, response, next) => {
-    const parsed = publisherRequestSchema.safeParse(request.body);
+    const parsed = publisherRequestSchema.merge(publisherDetailsSchema).safeParse(request.body);
     if (!parsed.success) {
       response.status(400).json({ error: "Yayınevi adı geçerli değil." });
       return;
@@ -1155,15 +1163,17 @@ app.post(
         return;
       }
 
-      const publisher = await prisma.publisher.create({
+      const publisher = await prisma.$transaction(async tx=>{const saved=await tx.publisher.create({
         data: {
           name: parsed.data.publisherName.trim(),
           normalizedName,
-          active: true,
+          active: parsed.data.active ?? true,
+          description: parsed.data.description || null, email: parsed.data.email || null, phone: parsed.data.phone || null,
         },
       });
+      await tx.auditLog.create({data:{actorUserId:request.user!.id,actorName:"Yönetici",action:"PUBLISHER_CREATE",targetType:"Publisher",targetId:saved.id,summary:"Yayınevi oluşturuldu; kullanıcı yetkisi verilmedi."}});return saved;});
 
-      response.status(201).json(toPublicPublisher(publisher));
+      response.status(201).json(publisher);
     } catch (error) {
       next(error);
     }
@@ -1178,7 +1188,7 @@ app.get(
     try {
       const publishers = await prisma.publisher.findMany({
         orderBy: { name: "asc" },
-        select: { id: true, name: true, normalizedName: true, active: true, createdAt: true, updatedAt: true },
+        select: { id: true, name: true, normalizedName: true, active: true, description:true, email:true, phone:true, createdAt: true, updatedAt: true },
       });
       response.json([...publishers].sort((left, right) => left.name.localeCompare(right.name, "tr-TR")));
     } catch (error) {
@@ -1196,7 +1206,7 @@ app.patch(
     const parsed = z.object({
       name: z.string().trim().min(2).max(180).optional(),
       active: z.boolean().optional(),
-    }).refine((value) => value.name !== undefined || value.active !== undefined).safeParse(request.body);
+    }).merge(publisherDetailsSchema).refine((value) => Object.keys(value).length > 0).safeParse(request.body);
     if (!publisherId || !parsed.success) {
       response.status(400).json({ error: "Yayınevi bilgileri geçersiz." });
       return;
@@ -1225,8 +1235,11 @@ app.patch(
         data: {
           ...(parsed.data.name ? { name: parsed.data.name.trim(), normalizedName } : {}),
           ...(parsed.data.active !== undefined ? { active: parsed.data.active } : {}),
+          ...(parsed.data.description !== undefined ? {description:parsed.data.description || null}:{}),
+          ...(parsed.data.email !== undefined ? {email:parsed.data.email || null}:{}),
+          ...(parsed.data.phone !== undefined ? {phone:parsed.data.phone || null}:{}),
         },
-        select: { id: true, name: true, normalizedName: true, active: true, createdAt: true, updatedAt: true },
+        select: { id: true, name: true, normalizedName: true, active: true, description:true, email:true, phone:true, createdAt: true, updatedAt: true },
       });
       response.json(updated);
     } catch (error) {
@@ -1791,6 +1804,7 @@ app.get("/api/answer-key-files/:id", async (request, response, next) => {
 
 app.post("/api/admin/outcome-preview",requireAuth,requireRole(Role.SUPER_ADMIN),upload.single("file"),async(request:AuthenticatedRequest,response,next)=>{
  try{if(!request.file){response.status(400).json({error:"Kazanım dosyasını seçin."});return;}const format=z.enum(["auto","standard","f","o"]).parse(request.body.evaluationFormat??"auto");
+ await validateSupportedUpload(fs.readFileSync(request.file.path),request.file.originalname);
  if(!validateFileSignature(request.file.path,path.extname(request.file.originalname).slice(1).toLowerCase())){response.status(400).json({error:"Dosya içeriği uzantısıyla eşleşmiyor."});return;}
  const result=await inspectOutcomeFile(request.file.path,request.file.originalname,format,true);response.json({...result,checksum:crypto.createHash("sha256").update(fs.readFileSync(request.file.path)).digest("hex")});
  }catch(error){response.status(400).json({error:error instanceof Error?error.message:"Kazanım dosyası okunamadı."});}finally{if(request.file&&fs.existsSync(request.file.path))fs.unlinkSync(request.file.path);}
@@ -1864,19 +1878,12 @@ const saveAnswerKey: express.RequestHandler[] = [
       if(automatic&&!uploadedFiles.length){response.status(400).json({error:"Cevap anahtarı veya kazanım dosyası seçin."});return;}
       let pdfPublisherName=current.publisher?.name;
       if (parsed.data.publisherId !== current.publisherId) {
-        const activePublisher = await prisma.publisher.findFirst({
-          where: { id: parsed.data.publisherId, active: true },
-          select: { id: true,name:true },
-        });
-        if (!activePublisher) {
-          removeTemporaryUploads();
-          response.status(400).json({ error: "Yeni yayınevi seçimi etkin değil veya bulunamadı." });
-          return;
-        }
-        pdfPublisherName=activePublisher.name;
+        response.status(409).json({error:"Yayınevi değişikliği için önizlemeli yayınevi değiştirme işlemini kullanın."});return;
       }
 
+
       for (const file of uploadedFiles) {
+        await validateSupportedUpload(fs.readFileSync(file.path),file.originalname);
         const extension = path.extname(file.originalname).toLowerCase().replace(".", "");
         if (!allowedExtensions.has(extension) || !validateFileSignature(file.path, extension)) {
           removeTemporaryUploads();
@@ -1923,6 +1930,10 @@ const saveAnswerKey: express.RequestHandler[] = [
       const previousFiles = current.files.filter((file) => replacedCategories.includes(file.category));
       try {
         const updated = await prisma.$transaction(async (transaction) => {
+          // Use the same lock/order as affiliation transfer: a stale multipart edit
+          // must never write the old publisher back after a successful transfer.
+          await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"publisher-transfer:"+answerKeyId}))`;
+          if(existing){const latest=await transaction.publishedAnswerKey.findUnique({where:{id:answerKeyId},select:{publisherId:true,updatedAt:true}});if(!latest||latest.publisherId!==existing.publisherId||latest.updatedAt?.toISOString()!==existing.updatedAt?.toISOString())throw Object.assign(new Error("Sınav başka bir işlemde değişti. Güncel kaydı yeniden açın."),{status:409});}
           await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${parsed.data.publisherId+":"+parsed.data.grade}))`;
           const duplicate=await transaction.publishedAnswerKey.findFirst({where:{publisherId:parsed.data.publisherId,grade:parsed.data.grade,examName:{equals:parsed.data.examName,mode:"insensitive"},id:{not:answerKeyId}},select:{id:true}});
           if(duplicate)throw Object.assign(new Error("Aynı yayınevi ve sınıfta bu sınav zaten var. Mevcut sınavı seçin."),{status:409});

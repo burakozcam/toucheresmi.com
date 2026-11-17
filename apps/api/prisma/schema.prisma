@@ -146,6 +146,7 @@ model Dealer {
 }
 
 model School {
+  studentPortals StudentPortal[]
   opticalResults OpticalResult[]
   id              String   @id @default(cuid())
   dealerId        String?
@@ -202,6 +203,7 @@ model OpticalKey {
 }
 
 model OpticalResult {
+  portalGrants StudentPortalGrant[]
   txtUses OpticalTxtUse[]
   txtFiles OpticalTxtFile[]
   id String @id @default(cuid())
@@ -378,6 +380,10 @@ model AnswerKey {
 }
 
 model Publisher {
+  storeBrands StoreBrand[]
+  description String?
+  email String?
+  phone String?
   opticalTemplates OpticalTemplate[]
   logo PublisherLogo?
   id             String   @id @default(cuid())
@@ -823,4 +829,76 @@ model PublicResultCode {
   keyId String
   createdAt DateTime @default(now())
   @@index([schoolId,keyId])
+}
+
+// v1.3.5 catalog is closed until an administrator explicitly opens it.
+model StoreSettings {
+  id String @id @default("main")
+  open Boolean @default(false)
+  updatedAt DateTime @updatedAt
+}
+model StoreCategory {
+  id String @id @default(cuid())
+  name String
+  active Boolean @default(true)
+  parentId String?
+  parent StoreCategory? @relation("StoreCategoryTree", fields:[parentId], references:[id], onDelete:Restrict)
+  children StoreCategory[] @relation("StoreCategoryTree")
+  products StoreProduct[]
+  updatedAt DateTime @updatedAt
+}
+model StoreBrand {
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+  description String @default("")
+  logo String?
+  active Boolean @default(true)
+  publisherId String?
+  publisher Publisher? @relation(fields:[publisherId], references:[id], onDelete:Restrict)
+  products StoreProduct[]
+  updatedAt DateTime @updatedAt
+}
+model StoreProduct {
+  id String @id @default(cuid())
+  barcode String? @unique
+  name String
+  description String @default("")
+  price Decimal @db.Decimal(12,2)
+  discount Int @default(0)
+  stock Int @default(0)
+  categoryId String
+  brandId String
+  grade Int?
+  lesson String?
+  images String[] @default([])
+  active Boolean @default(false)
+  category StoreCategory @relation(fields:[categoryId], references:[id], onDelete:Restrict)
+  brand StoreBrand @relation(fields:[brandId], references:[id], onDelete:Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([active,categoryId,brandId])
+}
+model StudentPortal {
+  id String @id @default(cuid())
+  schoolId String
+  academicYear String
+  studentNo String
+  codeHash String @unique
+  version Int @default(1)
+  school School @relation(fields:[schoolId], references:[id], onDelete:Restrict)
+  grants StudentPortalGrant[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([schoolId,academicYear,studentNo])
+}
+model StudentPortalGrant {
+  id String @id @default(cuid())
+  portalId String
+  resultId String
+  studentId String
+  identityKey String
+  portal StudentPortal @relation(fields:[portalId], references:[id], onDelete:Cascade)
+  result OpticalResult @relation(fields:[resultId], references:[id], onDelete:Restrict)
+  @@unique([portalId,resultId])
 }

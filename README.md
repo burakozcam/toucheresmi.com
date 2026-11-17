@@ -1,3 +1,5 @@
+> Güncel yerel sürüm: **v1.3.5**. [Sürüm raporu](docs/v135-release-report.md) ve [dağıtım prosedürü](DEPLOYMENT.md). Yeni migration hazırdır; canlıya uygulanmamıştır. Mağaza varsayılan kapalıdır. Öğrenci erişimi akademik yıl ve doğrulanmış sonuç bağlantılarıyla çalışır.
+
 # Kurumsal Sınav v1.3.4 — Yerel geliştirme
 
 v1.3.4; ana sayfa, ortak sınav/anahtar yönetimi, kompakt rapor ayarları, TXT öneri yüklemesi ve standart konum seçimlerini geliştirir. Mevcut puanlama ve Excel şablonları korunur. Yeni migration/bağımlılık ve canlı deployment yoktur.

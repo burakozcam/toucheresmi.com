@@ -1,3 +1,4 @@
+import { TXT_MAX_RECORDS, inspectTxt } from "./txt-limits";
 import { z } from "zod";
 import {readerFamily,recordLayout} from "./optical-readers";
 import { lessonIdentity } from "../lib/evaluation-compatibility";
@@ -68,6 +69,7 @@ export function decodeOptical(buffer: Uint8Array, encoding: "auto" | "utf-8" | "
 
 /** Canonical A-question order; no identity numbers are returned or stored. */
 export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuestions: OpticalQuestion[], school: string, options:{missingBooklet?:"A"|"B"|"C"|"D";allowMismatch?:boolean;mergeSessions?:boolean;hashIdentity?:(v:string)=>string;encryptIdentity?:(v:string)=>string}={}): OpticalData {
+  inspectTxt(txt);
   const questions = opticalQuestionsSchema.parse(inputQuestions);
   const warnings: string[] = [];
   const mismatch = (message: string) => { if (!options.allowMismatch) throw new Error(message); warnings.push(message); };
@@ -86,7 +88,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   }
   const lines = txt.replace(/^\uFEFF/, "").split(/\r\n|\n|\r/);
   while (lines.at(-1) === "") lines.pop();
-  if (!lines.length || lines.length > 2000) throw new Error("TXT 1–2000 kayıt satırı içermelidir.");
+  if (!lines.length || lines.length > TXT_MAX_RECORDS) throw new Error("TXT 1–5.000 kayıt satırı içermelidir.");
   type RecordEntry={lessons:string[];chains:Map<string,string>;book:string;marks:number;sourceLine:number};
   type Entry={id:string;name:string;branch:string;grade:string;identity:string;schoolCode:string;sourceLines:number[];records:Map<string,RecordEntry>};
   const entries:Entry[]=[],seenLines=new Set<string>();
@@ -192,7 +194,7 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
       name:entry.name,school,schoolCode:entry.schoolCode,branch:[entry.grade,entry.branch].filter(Boolean).join("-")||"Belirtilmedi",booklets,recordBooklets:[...new Set(records.map(([,r])=>r.book))],sourceLines:entry.sourceLines,
       ...(provisionalSession?{provisionalSession}:{}),sessions,missingLessons,identityMarks:records.reduce((n,[,r])=>n+r.marks,0),answers:questions.map(q=>chains.get(q.lesson)?.[q.positions[booklets[q.lesson]]-1]?.trim()??"")}];
   });
-  if(students.length>500)throw Error("Bir değerlendirmede en fazla 500 öğrenci desteklenir.");
+  if(students.length>TXT_MAX_RECORDS)throw Error("Bir değerlendirmede en fazla 5.000 öğrenci desteklenir.");
   return {questions:questions.map(q=>({...q,column:`${q.lesson} | ${q.number}`})),students,warnings,lineCount:lines.length,diagnostics,status:!students.length?"failed":warnings.length?"completed_with_warnings":"completed"};
 }
 

@@ -7,6 +7,7 @@ import { API_URL } from "../../lib/api";
 type Publisher = {
   id: string;
   name: string;
+  description?:string|null; email?:string|null; phone?:string|null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -26,6 +27,7 @@ type PublisherRequest = {
 };
 
 export default function PublisherManagement({ token, role }: { token: string; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" | "PARENT" }) {
+  const [creating,setCreating]=useState(false),[contact,setContact]=useState({email:"",phone:"",active:true});
   const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [requests, setRequests] = useState<PublisherRequest[]>([]);
   const [query, setQuery] = useState("");
@@ -89,20 +91,21 @@ export default function PublisherManagement({ token, role }: { token: string; ro
     setSubmitting(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/publisher-requests`, {
+      const response = await fetch(`${API_URL}/api/${role==="SUPER_ADMIN"?"admin/publishers":"publisher-requests"}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ publisherName, description }),
+        body: JSON.stringify({ publisherName, description, ...contact }),
       });
       const result = await response.json() as { error?: string; message?: string };
       if (!response.ok) {
         setError(result.error ?? "Yayınevi talebi oluşturulamadı.");
         return;
       }
-      setNotice(result.message ?? "Yayınevi talebi gönderildi.");
+      setNotice(result.message ?? (role==="SUPER_ADMIN"?"Yayınevi oluşturuldu. Kullanıcı hesabı veya yetki verilmedi.":"Yayınevi talebi gönderildi."));
+      setCreating(false);
       setPublisherName("");
       setDescription("");
       await loadData();
@@ -140,7 +143,7 @@ export default function PublisherManagement({ token, role }: { token: string; ro
     }
   }
 
-  async function updatePublisher(publisher: Publisher, changes: { name?: string; active?: boolean }) {
+  async function updatePublisher(publisher: Publisher, changes: { name?: string; active?: boolean; description?:string; email?:string; phone?:string }) {
     setError("");
     setNotice("");
     try {
@@ -203,7 +206,7 @@ export default function PublisherManagement({ token, role }: { token: string; ro
       {notice && <p className="notice success" role="status">{notice}</p>}
       {error && <p className="notice error" role="alert">{error}</p>}
 
-      <div className="publisher-controls">
+      <div className="publisher-controls">{role==="SUPER_ADMIN"&&<button className="button button-navy" onClick={()=>setCreating(v=>!v)}>＋ Yayınevi Ekle</button>}
         <label className="search-field">
           <span>Arama</span>
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Yayınevi ara..." />
@@ -227,10 +230,11 @@ export default function PublisherManagement({ token, role }: { token: string; ro
                   {role === "SUPER_ADMIN" && editingPublisherId === publisher.id ? (
                     <form className="publisher-inline-edit" onSubmit={(event) => {
                       event.preventDefault();
-                      void updatePublisher(publisher, { name: editingPublisherName });
+                      const data=new FormData(event.currentTarget);
+                      void updatePublisher(publisher, { name: editingPublisherName,description:String(data.get("description")??""),email:String(data.get("email")??""),phone:String(data.get("phone")??"") });
                     }}>
                       <input aria-label="Yayınevi adı" value={editingPublisherName} onChange={(event) => setEditingPublisherName(event.target.value)} maxLength={180} required />
-                      <button className="button button-navy" type="submit">Kaydet</button>
+                      <label>Açıklama<textarea name="description" defaultValue={publisher.description??""} maxLength={1000}/></label><label>E-posta<input name="email" type="email" defaultValue={publisher.email??""} maxLength={254}/></label><label>Telefon<input name="phone" defaultValue={publisher.phone??""} maxLength={40}/></label><button className="button button-navy" type="submit">Kaydet</button>
                       <button className="button button-quiet" type="button" onClick={() => setEditingPublisherId("")}>Vazgeç</button>
                     </form>
                   ) : <strong>{publisher.name}</strong>}
@@ -252,9 +256,9 @@ export default function PublisherManagement({ token, role }: { token: string; ro
           )}
         </div>
 
-        {role !== "SUPER_ADMIN" && (
+        {(role !== "SUPER_ADMIN" || creating) && (
           <form id="publisher-request-form" className="publisher-form" onSubmit={submitPublisherRequest}>
-            <h3>Yayınevi ekleme talebi</h3>
+            <h3>{role==="SUPER_ADMIN"?"Yeni yayınevi":"Yayınevi ekleme talebi"}</h3>
             <label>
               Yayınevi adı
               <input value={publisherName} onChange={(event) => setPublisherName(event.target.value)} maxLength={180} placeholder="Örn. A Plus" required />
@@ -263,7 +267,7 @@ export default function PublisherManagement({ token, role }: { token: string; ro
               Açıklama
               <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} maxLength={1000} placeholder="İsteğe bağlı açıklama" />
             </label>
-            <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Talebi gönder"}</button>
+            {role==="SUPER_ADMIN"&&<><label>E-posta<input type="email" maxLength={254} value={contact.email} onChange={e=>setContact({...contact,email:e.target.value})}/></label><label>Telefon<input maxLength={40} value={contact.phone} onChange={e=>setContact({...contact,phone:e.target.value})}/></label><label className="checkbox-row"><input type="checkbox" checked={contact.active} onChange={e=>setContact({...contact,active:e.target.checked})}/>Aktif</label><p>Logoyu oluşturduktan sonra Yayınevi Logoları bölümünden ekleyebilirsiniz.</p></>}<button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : role==="SUPER_ADMIN"?"Yayınevini kaydet":"Talebi gönder"}</button>
           </form>
         )}
       </div>

@@ -157,3 +157,14 @@ Workflow gerçek admin/bayi giriş formlarını kullanır; hazır token ile giri
 `v128-ui.py`, `v128-covers.py` ve `v128-security.cjs` bu sürümde de regresyon olarak çalıştırılır. Uzun UI koşumları kaynak sınırlı ortamda `V128_UI_WIDTHS=320,375,390` ve `V128_UI_WIDTHS=768,1024,1280,1920` gruplarıyla yürütülebilir; varsayılan yine yedi genişliktir. Grupların JSON sonuçlarını ayrı saklayın. Microsoft Excel uygulamasından kopyalama, macOS yerel Cmd+V ve gerçek Google doğrulaması bu yerel koşumlarla doğrulanmış sayılmaz.
 
 Kabul çıktıları `/tmp/v129-evidence/` altındadır; seed/token dosyalarını paylaşmayın. Bu test derlemesi gerçek HTTPS API/public anahtarlarla yeniden build alınmadan canlıya taşınmaz.
+
+## v1.3.5 izole kabul
+
+`tests/e2e/v135-http.cjs` ve `v135-serve.cjs` yalnız `postgresql://ks135@127.0.0.1:55445/ks_v135` kabul eder; ortamda başka DATABASE_URL varsa durur. Yeni, boş ve yalnız bu koşuma ait PostgreSQL üzerinde migration zincirini uygulayın. HTTP betiği sentetik kayıtlar oluşturur, yalnız test DB rate sayaçlarını temizler ve rollback deneyi için geçici test trigger'ı kullanır. Üretimde çalıştırılmaz.
+
+1. `node --import tsx tests/e2e/v135-http.cjs`
+2. Web'i `NEXT_PUBLIC_API_URL=http://localhost:4015` ile build edin.
+3. `node --import tsx tests/e2e/v135-serve.cjs` ve Web'i `npm run start -w @optik/web -- -p 3115` ile başlatın.
+4. `python3 tests/e2e/v135-ui.py`
+
+Kod/tanıtım için gerçek öğrenci verisi kullanılmaz. `test-results/v135` yerel, Git dışında kabul kanıtıdır; `ui-seed.json` sentetik oturum token'ları içerir ve paylaşılmaz. UI koşumu mağaza görünürlüğünü yalnız test DB'de değiştirir, sonunda kapatır. İş sonunda yalnız bu koşumun servislerini ve test konteynerini durdurun.

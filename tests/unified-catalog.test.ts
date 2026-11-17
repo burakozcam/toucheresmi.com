@@ -42,9 +42,9 @@ test("sınav düzenleme: görünürlükler bağımsız değişir, gönderilmeyen
   const {app}=await import("../apps/api/src/server");const {prisma}=await import("../apps/api/src/db");
   const originalFind=prisma.publishedAnswerKey.findUnique,originalTransaction=prisma.$transaction;
   const current:any={id:"publication",publisherId:"pub",grade:8,examName:"Deneme",published:true,showInEvaluation:true,files:[{category:"ANSWER_KEY",storagePath:"unused.pdf",originalFileName:"key.pdf"},{category:"LEARNING_OUTCOMES",storagePath:"unused2.pdf",originalFileName:"outcomes.pdf"}],opticalKey:{questions:parseOpticalKeyRows(rows),penalty:4}};
-  let updates=0;
+  let updates=0,stalePublisher=false;
   prisma.publishedAnswerKey.findUnique=(async()=>current) as any;
-  prisma.$transaction=(async(fn:any)=>fn({$executeRaw:async()=>0,publishedAnswerKey:{findFirst:async()=>null,update:async({data}:any)=>{updates++;assert.equal(data.opticalKey.upsert.update.penalty,4);assert.equal(data.opticalKey.upsert.update.active,true);const{opticalKey,...rest}=data;Object.assign(current,rest);return current;}}})) as any;
+  prisma.$transaction=(async(fn:any)=>fn({$executeRaw:async()=>0,publishedAnswerKey:{findUnique:async()=>stalePublisher?{...current,publisherId:"moved-publisher"}:current,findFirst:async()=>null,update:async({data}:any)=>{updates++;assert.equal(data.opticalKey.upsert.update.penalty,4);assert.equal(data.opticalKey.upsert.update.active,true);const{opticalKey,...rest}=data;Object.assign(current,rest);return current;}}})) as any;
   const handler=(app as any).router.stack.find((x:any)=>x.route?.path==="/api/admin/answer-keys/:id"&&x.route.methods.patch).route.stack.at(-1).handle;
   async function invoke(changes:any){let status=200;await handler({params:{id:"publication"},body:{publisherId:"pub",grade:"8",examName:"Deneme",confirmPublication:"true",...changes},files:{}},{status(n:number){status=n;return this;},json(){}},(e:any)=>{if(e)throw e;});return status;}
   try{
@@ -52,6 +52,7 @@ test("sınav düzenleme: görünürlükler bağımsız değişir, gönderilmeyen
     assert.equal(await invoke({showInEvaluation:"false"}),200);assert.equal(current.published,false);assert.equal(current.showInEvaluation,false);
     assert.equal(await invoke({showInEvaluation:"true"}),200);assert.equal(current.published,false);assert.equal(current.showInEvaluation,true);
     current.files.pop();assert.equal(await invoke({showInEvaluation:"true"}),200);assert.equal(updates,4);
+    stalePublisher=true;assert.equal(await invoke({published:"true"}),409);assert.equal(updates,4);
   }finally{prisma.publishedAnswerKey.findUnique=originalFind;prisma.$transaction=originalTransaction;}
 });
 

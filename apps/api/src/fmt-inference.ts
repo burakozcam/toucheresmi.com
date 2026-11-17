@@ -1,11 +1,13 @@
+import { TXT_MAX_RECORDS, inspectTxt } from "./txt-limits";
 import {readerFamily,recordLayout} from "./optical-readers";
 import { opticalLayoutSchema, type OpticalLayout } from "./optical-core";
 export type FmtCandidate={id:string;name:string;layout:unknown};
 /** Content-only inference; never returns raw fields, filenames or student information. */
 export function inferFmt(text:string,templates:FmtCandidate[]){
  const lines=text.replace(/^\uFEFF/,"").split(/\r\n|\n|\r/);while(lines.at(-1)==="")lines.pop();
- if(!lines.length||lines.length>2000)return {confidence:"failed",message:"FMT tahmini başarısız. Lütfen şablonu manuel seçin.",candidates:[]};
- const sample=lines; // At most 2,000 records: inspect every record, including the final one.
+ if(!lines.length||lines.length>TXT_MAX_RECORDS)return {confidence:"failed",message:"FMT tahmini başarısız. Lütfen şablonu manuel seçin.",candidates:[]};
+ try{inspectTxt(text);}catch{return {confidence:"failed",message:"FMT tahmini başarısız. Lütfen şablonu manuel seçin.",candidates:[]};}
+ const sample=lines; // At most 5,000 records: inspect every record, including the final one.
  const groups=new Map<string,{id:string;name:string;aliases:string[];layout:OpticalLayout}>();
  for(const t of templates){const parsed=opticalLayoutSchema.safeParse(t.layout);if(!parsed.success)continue;const layout=parsed.data;
  const key=readerFamily(layout)?.id??JSON.stringify({width:layout.lineLength,

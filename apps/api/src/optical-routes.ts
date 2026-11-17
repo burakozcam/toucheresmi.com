@@ -1,3 +1,4 @@
+import {inspectTxt} from "./txt-limits";
 import {heavyWorkGuard} from "./heavy-work";
 import {indexResultCodes} from "./public-result-codes";
 import { dealerPermission, schoolScope, authorizeEvaluation, activity, regionAllowed, regionError } from "./dealer-policy";
@@ -233,6 +234,7 @@ opticalRouter.post("/suggest-exams",inferenceLimit,upload.single("file"),wrap(as
  try{archived=input.fileIds?await readArchivedTxts(req.user!,input.fileIds):req.file?[{file:req.file}]:[];if(!archived.length)throw Error("Bir TXT dosyası seçin.");}catch(error){res.status(400).json({error:(error as Error).message});return;}
  const template=await evaluationTemplate(input.templateId);
  if(!template){res.status(404).json({error:"Etkin bir FMT seçin."});return;}
+ for(const item of archived){if(!/\.txt$/i.test(item.file.originalname))throw new SecurityError(400,"TXT dosyası seçin.");inspectTxt(decodeOptical(item.file.buffer));}
  const decoded=archived.map(item=>decodeOptical(item.file.buffer).replace(/[\r\n]+$/g,"")).join("\n");
  const publications=await prisma.publishedAnswerKey.findMany({where:evaluationPublicationWhere,include:{publisher:{select:{name:true}},opticalKey:true},orderBy:[{publisher:{name:"asc"}},{examName:"asc"}]});
  const items=[];let incompatibleCount=0,firstIncompatibleReason="";

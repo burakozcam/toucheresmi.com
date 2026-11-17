@@ -75,7 +75,7 @@ export default function OpticalEvaluation({token,onSaved,canCreateSchool=false}:
    <p className="field-help">Dosyalarınız sunucuda kalır. Yalnız işaretlediğiniz dosyalar değerlendirilir.</p>
   </section>
   {showSchoolForm&&<form className="exam-upload-card inline-school-create" onSubmit={createSchool}><h3>Yeni kurum</h3><label>Kurum adı<input required value={schoolName} onChange={e=>setSchoolName(e.target.value)} maxLength={180}/></label><LocationFields city={schoolCity} district={schoolDistrict} onChange={(city,district)=>{setSchoolCity(city);setSchoolDistrict(district);}}/><button className="button button-navy">Kurumu ekle</button></form>}
-  <details className="exam-upload-help"><summary>ⓘ Sınav nasıl yüklenir?</summary><ol>
+  <details className="exam-upload-help"><summary>ⓘ Sınav nasıl yüklenir?</summary><p>Tek TXT dosyası en fazla 5.000 kayıt satırı / 2 MB olabilir. Satır uzunluğu üst sınırı 4.000 karakterdir; FMT tahmini bütün satırları inceler.</p><ol>
 <li>Bilgisayarınızdan boş olmayan, her biri en fazla 2 MB olan en çok 10 TXT seçin. “TXT’leri sunucuya yükle” dosyaları arşive ekler; henüz değerlendirme yapmaz.</li>
 <li>Sunucu listesinde yeşil dosya henüz değerlendirilmemiştir; gri dosya daha önce değerlendirilmiştir. Renk, dosyanın doğru veya hatalı olduğunu göstermez. Değerlendirmek istediğiniz dosyaların kutularını işaretleyin; aynı dosyayı yeniden seçebilirsiniz.</li>
 <li>Otomatik FMT önerisi satır yapısı ve alan konumlarına bakar. Sınav önerisi en yakın öğrenci cevap dizisini anahtarlarla karşılaştırır. Yüksek yüzde kesin sınav kanıtı veya öğrencinin başarı yüzdesi değildir; yayınevi, sınıf ve sınav adını kontrol edin.</li>

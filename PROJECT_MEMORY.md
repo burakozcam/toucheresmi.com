@@ -1,6 +1,6 @@
 # Kurumsal Sınav — Proje hafızası
 
-Son güncelleme: 17 Kasım 2026 · v1.3.4 · yerel geliştirme. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
+Son güncelleme: 17 Kasım 2026 · v1.3.5 · yerel geliştirme. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
 
 ## Amaç ve mimari
 
@@ -97,3 +97,19 @@ Mevcut plan/kurulum: Veridyen cPanel + Passenger, Neon PostgreSQL, ayrı Next We
 - v1.3.4 son yerel kabul: 245/245 regresyon; API/Web build ve Prisma validate/generate; HTTP 22+7+5 ve tarayıcı 9+6 grup, PDF/ZIP içerik kontrolleri. Test Merkezi digest artık yeni işletim betikleri, paket/lock ve anonim hero görselini de kapsar.
 
 - İş bitiminde bu oturuma ait Web/API test servisleri ve `ks-v134-test` konteyneri durduruldu; sentetik DB/dosyalar silinmedi. Önizleme son kontrolde yerel PDF.js ile gerçek canvas olarak doğrulandı (yerleşik PDF eklentisindeki boş görünüm giderildi).
+
+## v1.3.5 katalog ve öğrenci kodları
+
+- Kaynak rapor `docs/v135-release-report.md`. Yeni migration `20261117220000_v135_catalog_student_portal`: nullable publisher iletişim/açıklama ve 6 yeni katalog/öğrenci erişim tablosu. Eski veriye backfill/silme yok. Production'a uygulanmadı.
+- TXT kayıt/öğrenci üst sınırı 5.000; dosya 2 MB, satır 4.000 karakter. FMT puanlama ve tüm satırları inceleme korunur. Ayrı eski 500 öğrenci tavanı da güncellendi.
+- Publisher transfer ayrı endpoint, önizleme/confirm, stale guard, takvim/isim çakışması, SUPER_ADMIN, transaction. Genel multipart edit bu yolu atlayamaz; içerik/snapshot değişmez. Bayi bölge izinleri yeni yayıneviyle değerlendirilir.
+- StudentPortal akademik yıl+kurum+öğrenci no; 24 karakter/192 bit code, DB yalnız HMAC; JWT purpose/version, yenilemede iptal. Manuel doğrulanmış sonuç grant'leri; numara ile otomatik geçmiş eşleme yok. Revizyonlar kimlik özetiyle izlenir. Kurum yöneticisi, bayi kapsamı ve admin; XLSX dışa aktarım kodları yeniler, bir kez verir. Kurum kodları PDF/XLSX olarak tek seferlik alınır.
+- Mağaza varsayılan kapalı. Status dışında public API/SSR kapalıyken 404; admin hazırlığı açık. Kategori/marka/ürün, tek kategori/ürün; HTTPS görsel URL. Ödeme/sipariş yok. Import tam doğrulama+actor-bound önizleme token+snapshot digest; Serializable transaction, stale/DB hatasında rollback; SIL silmez.
+- Mevcut JSON yayınevi sunum mapper'ı Decimal prototipini kaldırır; mağaza yanıtları mapper'dan önce JSON-native biçime çevrilir, fiyat string kalır. Bu davranışı silmeyin.
+- Yeni tests/e2e/v135-http.cjs ve serve harness yalnız 127.0.0.1:55445/ks_v135 kabul eder; bu çalışma için yeni ks-v135-test konteyneri. Eski test DB'lerini veya production'ı bu scriptlere vermeyin. Sentetik seed/token kanıtları test-results/v135 içinde Git dışındadır.
+- 251/251 offline test ve 14 gerçek HTTP/DB grup. 5.000 sentetik 10 soruluk TXT: tek-aday FMT ~360 ms, parse ~3,13 saniye; gerçek 90/120 soruluk üretim kapasitesi değildir. Mevcut PDF regresyonları korunur. Yeni kaynak/migration/fixture digest'e dahildir.
+- Canlı deployment, production migration, seed/reset, commit/push yapılmadı. Yeni npm bağımlılığı yok; sürüm bump lock dosyasında yalnız root/API/Web manifest alanlarını değiştirir (libvips 1.3.4 bağımlılıkları korunur).
+
+- v1.3.5 son tarayıcı kabulü: 14/14 grup, altı genişlik/tema kombinasyonu, mağaza kapalı/açık, kurum seçimi ve yeni admin ekranları; hareket açık mobilde sonlu oynatma ve yeniden oynatma. Kod PDF A4 çıktısı ayrıca render edilip incelendi.
+
+- İş sonunda bu oturumun 4015 API / 3115 Web test servisleri ve ks-v135-test konteyneri durduruldu. Sentetik DB/dosyalar ve kullanıcı PDF klasörleri silinmedi. Test Merkezi 251/251 ve 14 HTTP + 14 UI kabulünü güncel kaynak özetiyle gösterir.

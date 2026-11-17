@@ -1,0 +1,2 @@
+import {Products,storeData,CatalogPages} from "./catalog";
+export default async function Store({searchParams}:{searchParams:Promise<{page?:string}>}){const {page="1"}=await searchParams,data=await storeData(`/products?page=${encodeURIComponent(page)}`);return <><h1>Mağaza</h1>{data.items.length?<Products items={data.items}/>:<p>Henüz yayımlanmış ürün yok.</p>}<CatalogPages page={data.page} pages={data.pages} path="/magaza"/></>;}

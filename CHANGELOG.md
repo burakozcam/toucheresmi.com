@@ -1,3 +1,14 @@
+# v1.3.5 · 2026-11-17 · yerel geliştirme
+
+- Yayınevi ekleme/iletişim/durum; sınav yayınevi taşıma önizlemesi ve atomik kaydı; mevcut katsayı önizlemesine belirgin bağlantı.
+- TXT 5.000 kayıt/öğrenci; tüm satırlarla aynı FMT algoritması; ortalanmış oran, renkli dolum ve açık ayrıntı düğmeleri.
+- Dosya uzantı/içerik/yapı ve kaynak sınırları; makro/aktif PDF/görsel decode denetimleri.
+- Akademik yıl, doğrulanmış öğrenci sonuç bağlantısı, rastgele ve yalnız özetli kişisel kod; kurum yetkisi, yenileme/iptal, tek seferlik kurum XLSX/PDF çıktısı ve maskeli öğrenci karneleri.
+- Üç özgün erişilebilir tanıtım sahnesi ve istenen metadata başlıkları; dekoratif hero yıldızı kaldırıldı.
+- Varsayılan kapalı mağaza; ürün/kategori/marka yönetimi, public ürün/marka sayfaları ve sayfalama. XLSX doğrulama/önizleme/onay; tek hatada sıfır değişiklik; tek transaction ve eşzamanlılık koruması; toplu yüzde fiyat işlemi.
+- 251 otomatik regresyon; 14 gerçek HTTP/PostgreSQL kabul grubu, API/Web build, Prisma ve yeni boş yerel DB migration zinciri. Ayrıntılı kanıt/sınırlar: `docs/v135-release-report.md`.
+- Yeni migration hazırlandı; üretime uygulanmadı. Ödeme/sipariş/kargo ve canlı hosting kabulü sonraki aşama. Deployment/commit/push yapılmadı.
+
 # v1.3.4 · 2026-11-17 · yerel geliştirme
 
 - Kurumsal kimliği koruyan ana sayfa: gerçek karne üreticisinden anonim görsel, kazanım/geçmiş sonuç tanıtımı, örnek gelişim grafiği ve kaydırma hızından bağımsız viewport animasyonları.

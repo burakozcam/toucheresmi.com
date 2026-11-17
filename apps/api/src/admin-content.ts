@@ -1,3 +1,4 @@
+import {validateSupportedUpload} from "./upload-security";
 import express from "express";
 import multer from "multer";
 import path from "node:path";
@@ -28,11 +29,12 @@ const blogSelect={id:true,title:true,summary:true,image:true,createdAt:true,upda
 contentRouter.get("/api/blog",wrap(async(q,r)=>{const page=Math.max(1,Math.min(10000,Number(q.query.page)||1));const [items,total]=await Promise.all([prisma.blogPost.findMany({where:{published:true},select:blogSelect,orderBy:{createdAt:"desc"},skip:(page-1)*9,take:9}),prisma.blogPost.count({where:{published:true}})]);r.setHeader("Cache-Control","public, max-age=60").json({items,total,page,pages:Math.ceil(total/9)});}));
 contentRouter.get("/api/blog/:id",wrap(async(q,r)=>{const post=await prisma.blogPost.findFirst({where:{id:String(q.params.id),published:true},select:{...blogSelect,content:true}});if(!post){r.status(404).json({error:"Yazı bulunamadı."});return;}r.setHeader("Cache-Control","public, max-age=60").json(post);}));
 const admin=express.Router();admin.use(requireAuth,requireRole(Role.SUPER_ADMIN));
+async function validateBlogImage(image?:string|null){if(!image)return;const match=image.match(/^data:image\/(png|jpeg|webp);base64,(.*)$/)!;await validateSupportedUpload(Buffer.from(match[2],"base64"),`image.${match[1]}`);}
 const postSchema=z.object({title:z.string().trim().min(3).max(160),summary:z.string().trim().min(10).max(360),content:z.string().trim().min(20).max(50000),image:imageSchema,published:z.boolean()});
 admin.get("/blog",wrap(async(q,r)=>{const page=Math.max(1,Math.min(10000,Number(q.query.page)||1));r.json(await prisma.blogPost.findMany({select:{id:true,title:true,published:true,createdAt:true},orderBy:{createdAt:"desc"},skip:(page-1)*50,take:50}));}));
 admin.get("/blog/:id",wrap(async(q,r)=>{const post=await prisma.blogPost.findUnique({where:{id:String(q.params.id)}});if(!post){r.status(404).json({error:"Yazı bulunamadı."});return;}r.json(post);}));
-admin.post("/blog",wrap(async(q,r)=>r.status(201).json(await prisma.blogPost.create({data:{...postSchema.parse(q.body),actorId:q.user!.id}}))));
-admin.patch("/blog/:id",wrap(async(q,r)=>r.json(await prisma.blogPost.update({where:{id:String(q.params.id)},data:postSchema.parse(q.body)}))));
+admin.post("/blog",wrap(async(q,r)=>{const data=postSchema.parse(q.body);await validateBlogImage(data.image);r.status(201).json(await prisma.blogPost.create({data:{...data,actorId:q.user!.id}}));}));
+admin.patch("/blog/:id",wrap(async(q,r)=>{const data=postSchema.parse(q.body);await validateBlogImage(data.image);r.json(await prisma.blogPost.update({where:{id:String(q.params.id)},data}));}));
 admin.delete("/blog/:id",wrap(async(q,r)=>{await prisma.blogPost.delete({where:{id:String(q.params.id)}});r.status(204).end();}));
 const name=z.string().trim().min(1).max(180).refine(v=>!/[\\/\x00-\x1f]/.test(v)&&![".",".."].includes(v));
 admin.get("/files",wrap(async(q,r)=>{
@@ -61,6 +63,7 @@ admin.patch("/folders/:id",wrap(async(q,r)=>{
 admin.delete("/folders/:id",wrap(async(q,r)=>{await prisma.managedFolder.delete({where:{id:String(q.params.id)}});r.status(204).end();}));
 admin.post("/files",upload.single("file"),wrap(async(q,r)=>{
  let saved=false;try{if(!q.file){r.status(400).json({error:"Dosya seçin."});return;}
+ await validateSupportedUpload(await fs.promises.readFile(q.file.path),q.file.originalname);
  const folderId=z.string().nullable().parse(q.body.folderId||null),file=await prisma.managedFile.create({data:{name:safeFilename(uploadFilename(q.file.originalname)),storedName:q.file.filename,size:q.file.size,folderId,actorId:q.user!.id}});saved=true;r.status(201).json({id:file.id,name:file.name,size:file.size});
  }finally{if(!saved&&q.file)await fs.promises.unlink(q.file.path).catch(()=>{});}
 }));

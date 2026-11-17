@@ -16,7 +16,7 @@ test("FMT alan kontrolü çakışma, uzunluk ve yinelenen dersleri adlarıyla bi
 });
 test("FMT örnek TXT tüm satırları inceler; kimlik alanını gizler ve bozuk satırları raporlar",()=>{
   const result=previewFmt(txt,layout7108);assert.equal(result.canSave,true);assert.equal(result.lineCount,4);assert.equal(result.rows[0].fields.id,"00001");assert.equal(result.rows[0].fields.identity,"•••••• (gizlendi)");assert.ok(!JSON.stringify(result).includes("SAMPLE00001"));
-  const bad=txt.split(/\r?\n/);bad[0]="x";bad[1]=bad[1].slice(0,50)+"Z"+bad[1].slice(51);const r=previewFmt(bad.join("\r\n"),layout7108);assert.equal(r.canSave,false);assert.ok(r.errors.some(e=>e.includes("Satır 1")));assert.ok(r.errors.some(e=>e.includes("kitapçık")));assert.throws(()=>previewFmt("",layout7108),/1–2000/);
+  const bad=txt.split(/\r?\n/);bad[0]="x";bad[1]=bad[1].slice(0,50)+"Z"+bad[1].slice(51);const r=previewFmt(bad.join("\r\n"),layout7108);assert.equal(r.canSave,false);assert.ok(r.errors.some(e=>e.includes("Satır 1")));assert.ok(r.errors.some(e=>e.includes("kitapçık")));assert.throws(()=>previewFmt("",layout7108),/1–5.000/);
 });
 test("anahtar şablonu kullanıma hazırdır; C/D içe aktarımı sunucu ve tarayıcıda aynıdır",()=>{
   const rows=structuredClone(keyTemplateRows);rows[1][7]=2;rows[1][8]=1;rows[2][7]=1;rows[2][8]=2;

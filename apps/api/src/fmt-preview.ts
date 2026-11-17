@@ -1,8 +1,10 @@
+import { TXT_MAX_RECORDS, inspectTxt } from "./txt-limits";
 import {recordLayout,readerFamily} from "./optical-readers";
 import { opticalLayoutSchema, type OpticalLayout } from "./optical-core";
 export function previewFmt(txt:string,input:OpticalLayout){
+ inspectTxt(txt);
   const layout=opticalLayoutSchema.parse(input),lines=txt.replace(/^\uFEFF/,"").split(/\r\n|\n|\r/);while(lines.at(-1)==="")lines.pop();
-  if(!lines.length||lines.length>2000)throw new Error("Örnek TXT 1–2000 satır içermeli.");
+  if(!lines.length||lines.length>TXT_MAX_RECORDS)throw new Error("Örnek TXT 1–5.000 satır içermeli.");
   const errors:string[]=[],warnings:string[]=[],lengths=new Map<number,number>();let errorCount=0;
   const fail=(message:string)=>{errorCount++;if(errors.length<30)errors.push(message);};
   const read=(line:string,f?:{start:number;length:number})=>f?line.slice(f.start-1,f.start-1+f.length).trim():"";

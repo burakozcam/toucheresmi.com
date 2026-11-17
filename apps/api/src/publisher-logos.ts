@@ -1,4 +1,5 @@
 import express from "express";
+import {validateSupportedUpload} from "./upload-security";
 import multer from "multer";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -30,8 +31,8 @@ admin.get("/",wrap(async(_q,r)=>{
 }));
 admin.put("/:id",upload.single("logo"),wrap(async(q,r)=>{
  const id=String(q.params.id);if(!await prisma.publisher.findUnique({where:{id},select:{id:true}})){r.status(404).json({error:"Yayınevi bulunamadı."});return;}
- if(!q.file||!["image/png","image/jpeg","image/webp"].includes(q.file.mimetype)){r.status(400).json({error:"PNG, JPEG veya WebP logo seçin."});return;}
- let output;try{output=await optimizePublisherLogo(q.file.buffer);}catch(e){if(e instanceof LogoProcessingUnavailable){r.status(503).json({error:"Logo işleme servisi kullanılamıyor. Sunucu kurulumunu kontrol edin."});return;}r.status(400).json({error:"Görsel açılamadı veya desteklenmiyor. En fazla 5 MB, 20 megapiksel, tek kare PNG/JPEG/WebP kullanın."});return;}
+ if(!q.file||!/\.(png|jpe?g|webp)$/i.test(q.file.originalname)||!["image/png","image/jpeg","image/webp"].includes(q.file.mimetype)){r.status(400).json({error:"PNG, JPEG veya WebP logo seçin."});return;}
+ let output;try{await validateSupportedUpload(q.file.buffer,q.file.originalname);output=await optimizePublisherLogo(q.file.buffer);}catch(e){if(e instanceof LogoProcessingUnavailable){r.status(503).json({error:"Logo işleme servisi kullanılamıyor. Sunucu kurulumunu kontrol edin."});return;}r.status(400).json({error:"Görsel açılamadı veya desteklenmiyor. En fazla 5 MB, 20 megapiksel, tek kare PNG/JPEG/WebP kullanın."});return;}
  const storedName=crypto.randomUUID()+".png",destination=path.join(directory,storedName);
  let committed=false,created=false;
  try{
