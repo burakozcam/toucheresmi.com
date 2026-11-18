@@ -1,5 +1,12 @@
 /** Small local SVG icons: consistent geometry, no icon font or external dependency. */
 const paths:Record<string,string>={
+ "arrow-right":"M4 12h16m-6-6 6 6-6 6",
+ "arrow-left":"M20 12H4m6-6-6 6 6 6",
+ tick:"m5 12 4 4L19 6",
+ arrow:"M5 19 19 5M5 5h14v14",
+ search:"M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z",
+ close:"m5 5 14 14M19 5 5 19",
+ add:"M12 4v16M4 12h16",
  upload:"M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5",
  download:"M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5",
  results:"M4 20V11h4v9m3 0V4h4v16m3 0v-6h3v6M2 20h20",

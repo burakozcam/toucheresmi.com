@@ -1,4 +1,5 @@
 "use client";
+import ActionButton from "./action-button";
 
 import { useEffect, useState } from "react";
 import { API_URL } from "../../lib/api";
@@ -86,17 +87,17 @@ export default function ContactInbox({ token }: { token: string }) {
                 {message.user && <span>Hesap: {message.user.firstName} {message.user.lastName} ({message.user.role})</span>}
               </div>
               <p className="contact-message-body">{message.message}</p>
-              <button type="button" className="button button-quiet" onClick={() => void setRead(message, !message.readAt)}>
+              <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => void setRead(message, !message.readAt)}>
                 {message.readAt ? "Okunmadı olarak işaretle" : "Okundu olarak işaretle"}
-              </button>
+              </ActionButton>
             </article>
           ))}
         </div>
       )}
       <div className="management-pagination">
-        <button type="button" className="button button-quiet" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1}>Önceki</button>
+        <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1}>Önceki</ActionButton>
         <span>Sayfa {page} / {pageCount} · {data?.total ?? 0} mesaj</span>
-        <button type="button" className="button button-quiet" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={page >= pageCount}>Sonraki</button>
+        <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={page >= pageCount}>Sonraki</ActionButton>
       </div>
     </section>
   );

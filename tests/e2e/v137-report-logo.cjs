@@ -1,0 +1,41 @@
+// Synthetic localhost only; no production/student data is used.
+const fs=require('fs'),assert=require('assert/strict'),crypto=require('crypto');
+const db='postgresql://ks135@127.0.0.1:55445/ks_v135';if(process.env.DATABASE_URL&&process.env.DATABASE_URL!==db)throw Error('Disposable localhost DB only');
+Object.assign(process.env,{NODE_ENV:'test',DATABASE_URL:db,JWT_SECRET:'v137-synthetic-signing-key-never-for-production',MFA_ENCRYPTION_KEY:'d4'.repeat(32),TXT_STORAGE_KEY:'v137-synthetic-txt-key-never-for-production',STORAGE_DIR:'/tmp/ks-v137-http',RECAPTCHA_ENABLED:'false',TURNSTILE_ENABLED:'false',WEB_ORIGIN:'http://localhost:3115',RATE_LIMIT_STORE:'memory'});
+const {prisma}=require('../../apps/api/src/db.ts'),{app}=require('../../apps/api/src/server.ts'),{issueSession}=require('../../apps/api/src/auth-sessions.ts'),{opticalSummary}=require('../../apps/api/src/optical-core.ts'),{keyFingerprint}=require('../../apps/api/src/optical-review.ts'),{readPdfText}=require('../../apps/api/lib/pdf-text.cjs'),sharp=require('sharp');
+const out='test-results/v137/report-logo';fs.mkdirSync(out,{recursive:true});const checks=[];let server;
+(async()=>{
+ const oldSeed=JSON.parse(fs.readFileSync('test-results/v137/ui-seed.json')),run=crypto.randomBytes(4).toString('hex');
+ const admin=await prisma.user.findUniqueOrThrow({where:{id:oldSeed.user.id}}),dealer=await prisma.user.findUniqueOrThrow({where:{id:oldSeed.dealerUser.id}});
+ const otherDealer=await prisma.dealer.create({data:{name:'Logo Other '+run}}),other=await prisma.user.create({data:{email:`logo-other-${run}@example.test`,firstName:'Yapay',lastName:'Other',role:'DEALER',dealerId:otherDealer.id,passwordHash:'synthetic-only'}});
+ const [a,d,f]=await Promise.all([issueSession(admin,undefined,{mfaVerifiedAt:new Date()}),issueSession(dealer),issueSession(other)]);
+ const school=await prisma.school.create({data:{name:'Logo Kurumu '+run,duplicateKey:'logo-own-'+run,dealerId:dealer.dealerId}}),school2=await prisma.school.create({data:{name:'Logosuz Diğer Kurum '+run,duplicateKey:'logo-own2-'+run,dealerId:dealer.dealerId}}),foreign=await prisma.school.create({data:{name:'Başka Bayi Kurumu '+run,duplicateKey:'logo-foreign-'+run,dealerId:otherDealer.id}});
+ const questions=[{lesson:'TÜRKÇE',number:1,answer:'A',weight:1,positions:{A:1},column:'A1',outcomeName:'Örnek kazanım'},{lesson:'TÜRKÇE',number:2,answer:'B',weight:1,positions:{A:2},column:'A2',outcomeName:'Örnek kazanım'}];
+ const publication=await prisma.publishedAnswerKey.create({data:{publisherId:oldSeed.publisherId,examName:'Logo Denemesi '+run,grade:8,createdByUserId:admin.id,published:true,showInEvaluation:true,opticalKey:{create:{name:'Logo Key '+run,questions,penalty:3}}},include:{opticalKey:true}}),key=publication.opticalKey,otherKey=await prisma.opticalKey.create({data:{name:'Logo Other Key '+run,questions,penalty:3}});
+ let ownResult;
+ for(const [sch,k]of [[school,key],[school2,key],[foreign,key],[school,otherKey]]){
+  const student={id:'logo-student',name:'Yapay Öğrenci',studentNo:'001',branch:'8-A',school:sch.name,booklets:{TÜRKÇE:'A'},answers:['A','B'],sourceLines:[1]},data={questions,students:[student],warnings:[],lineCount:1},snapshot={data,summary:opticalSummary(data,3),penalty:3,schoolName:sch.name,keyName:k===key?publication.examName:k.name,templateName:'Sentetik',keyFingerprint:keyFingerprint(questions,3)};
+  const r=await prisma.opticalResult.create({data:{schoolId:sch.id,keyId:k.id,templateId:oldSeed.templateId,createdById:dealer.id,filename:'logo-synthetic.txt',snapshot}});if(sch===school&&k===key)ownResult=r;
+ }
+ const before=await prisma.opticalResult.count();
+ server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
+ const route=`/api/optical/result-exams/${key.id}/report-logo`,body={schoolId:school.id,enabled:true};
+ async function req(path,data,token=d.token,method=data?'PUT':'GET'){
+  const r=await fetch(base+path,{method,headers:{Authorization:'Bearer '+token,...(data?{'Content-Type':'application/json'}:{})},body:data?JSON.stringify(data):undefined});
+  const bytes=Buffer.from(await r.arrayBuffer());let result;try{result=JSON.parse(bytes);}catch{result=bytes;}return{status:r.status,data:result};
+ }
+ const ok=(r,n=200)=>assert.equal(r.status,n,JSON.stringify(r.data).slice(0,200)),pass=name=>{checks.push(name);console.log('PASS',name)};
+ const raw=await sharp({create:{width:1000,height:120,channels:4,background:'#237751'}}).composite([{input:Buffer.from('<svg width="1000" height="120"><text x="24" y="85" font-family="sans-serif" font-size="72" fill="white">ÖRNEK OKUL</text></svg>')}]).png().toBuffer(),image='data:image/png;base64,'+raw.toString('base64');
+ ok(await req(route+'?schoolId='+school.id));const saved=await req(route,{...body,image});ok(saved);assert.equal(saved.data.enabled,true);assert.match(saved.data.image,/^data:image\/png;base64,/);pass('Dealer uploads a normalized persistent logo for an owned school/exam');
+ const read=await req(route+'?schoolId='+school.id,undefined,a.token);ok(read);assert.equal(read.data.image,saved.data.image);
+ const notInherited=await req(route+'?schoolId='+school2.id);ok(notInherited);assert.equal(notInherited.data.image,null);const otherExam=await req(`/api/optical/result-exams/${otherKey.id}/report-logo?schoolId=${school.id}`);ok(otherExam);assert.equal(otherExam.data.image,null);pass('Logo survives reload and is isolated by school AND exam');
+ ok(await req(route+'?schoolId='+foreign.id),404);ok(await req(route,{...body,schoolId:foreign.id,image}),404);ok(await req(route,{...body,image},f.token),404);pass('Other dealer cannot read or overwrite the logo');
+ const policy=await prisma.dealer.findUniqueOrThrow({where:{id:dealer.dealerId}});try{await prisma.dealer.update({where:{id:dealer.dealerId},data:{canEditResult:false}});ok(await req(route,{schoolId:school.id,enabled:false}),403);const allowedRead=await req(route+'?schoolId='+school.id);ok(allowedRead);assert.equal(allowedRead.data.canEdit,false);}finally{await prisma.dealer.update({where:{id:dealer.dealerId},data:{canEditResult:policy.canEditResult}});}pass('Existing result-edit permission enforced on logo writes');
+ ok(await req(route,{...body,image:'data:image/svg+xml;base64,PHN2Zy8+'}),400);assert.equal((await req(route+'?schoolId='+school.id)).data.image,saved.data.image);pass('Rejected content does not replace a previously saved logo');
+ const getPdf=()=>req(`/api/optical/result-exams/${key.id}/export?schoolId=${school.id}&kind=cards&templateId=two-page-card&showSiteAddress=false&format=pdf`,undefined,d.token);
+ const pdf=await getPdf();ok(pdf);fs.writeFileSync(out+'/custom-logo.pdf',pdf.data);for(const page of await readPdfText(pdf.data)){const text=page.map(v=>v.text).join(' ');assert.doesNotMatch(text,/kurumsalsinav\.com|KURUMSAL SINAV/);assert.match(text,/Kurumsal Sınav/);}pass('Actual exported PDF replaces header branding and retains platform footer without URL');
+ ok(await req(route,{schoolId:school.id,enabled:false}));const defaultPdf=await getPdf();ok(defaultPdf);fs.writeFileSync(out+'/default-logo.pdf',defaultPdf.data);assert.match((await readPdfText(defaultPdf.data))[0].map(v=>v.text).join(' '),/KURUMSAL SINAV/);ok(await req(route,body));assert.equal((await req(route+'?schoolId='+school.id)).data.image,saved.data.image);pass('Disable/reenable restores default/custom logo without losing uploaded image');
+ assert.equal(await prisma.opticalResult.count(),before);assert.deepEqual((await prisma.opticalResult.findUnique({where:{id:ownResult.id}})).snapshot,ownResult.snapshot);pass('Report branding never rewrites result data or creates revisions');
+ fs.writeFileSync(out+'/ui-seed.json',JSON.stringify({token:d.token,adminToken:a.token,user:{id:dealer.id,email:dealer.email,firstName:dealer.firstName,lastName:dealer.lastName,role:'DEALER'},schoolId:school.id,keyId:key.id,schoolName:school.name,examName:publication.examName,image:saved.data.image}));fs.writeFileSync(out+'/http.json',JSON.stringify({passed:checks.length,checks},null,2));
+ await new Promise(r=>server.close(r));await prisma.$disconnect();
+})().catch(async e=>{console.error(e);if(server)server.close();await prisma.$disconnect();process.exitCode=1;});

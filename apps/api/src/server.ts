@@ -1,3 +1,6 @@
+import {memberActivityRouter} from './member-activity';
+import {searchHistoryRouter} from './search-history';
+import {ownerGameAccess} from './game-access';
 import {studentPortalRouter} from "./student-portal";
 import {storeRouter} from "./store-routes";
 import { publisherTransferRouter } from "./publisher-transfer";
@@ -59,6 +62,20 @@ app.use("/api/admin/bulk-exams",requireAuth,requireRole(Role.SUPER_ADMIN),expres
 app.use("/api/admin/answer-keys/:id/cover",requireAuth,requireRole(Role.SUPER_ADMIN),express.json({limit:"2mb"}));
 app.use("/api/optical/result-exams/:id",requireAuth,express.json({limit:"6mb"}));
 app.use(express.json({ limit: "1mb" }));
+// Audit only stable route templates and record references; no bodies, queries or credentials.
+app.use((request:AuthenticatedRequest,response,next)=>{
+ const path=request.path,method=request.method.toUpperCase();
+ if(!path.startsWith('/api/')||['/api/search-history','/api/activity/navigation'].includes(path)){next();return;}
+ const mutation=['POST','PUT','PATCH','DELETE'].includes(method),read=method==='GET'&&/\/(?:export|download|pdf|result-exams|results|files)(?:\/|$)/.test(path);
+ if(!mutation&&!read){next();return;}
+ response.once('finish',()=>{
+  if(!request.user)return;
+  const route=request.route?.path;if(typeof route!=='string')return;
+  const targetId=Object.values(request.params).find((v):v is string=>typeof v==='string')??null;
+  void recordAudit(request.user.actorAdminId??request.user.id,`${method} ${route}`,response.statusCode<400?'SERVER_SUCCESS':'SERVER_FAILURE',targetId,`Sunucu işlemi ${response.statusCode<400?'tamamlandı':'başarısız'} (HTTP ${response.statusCode}).`);
+ });next();
+});
+
 app.use(examAuthoringRouter);
 // API responses may contain accounts or student results; CDN caching is never implicit.
 app.use("/api",(_req,res,next)=>{res.setHeader("Cache-Control","private, no-store");next();});
@@ -105,31 +122,6 @@ async function recordAudit(
   }
 }
 
-app.use((request: AuthenticatedRequest, response, next) => {
-  const method = request.method.toUpperCase();
-  const isAuditedResource = request.path.startsWith("/api/");
-  if (!["POST", "PUT", "PATCH", "DELETE"].includes(method) || !isAuditedResource) {
-    next();
-    return;
-  }
-  response.on("finish", () => {
-    const readerChange = request.path.startsWith("/api/reader-") || request.path.includes("/publication");
-    if (response.statusCode < 200 || response.statusCode >= 300 || !(request.user?.role === Role.SUPER_ADMIN || request.user?.role === Role.DEALER)) return;
-    const route = request.route?.path;
-    const routePath = typeof route === "string" ? route : request.path;
-    const segments = routePath.split("/").filter(Boolean);
-    const targetType = segments[1] === "admin" ? segments[2] ?? "system" : segments[1] ?? "system";
-    const targetId = Object.values(request.params).find((value) => typeof value === "string") ?? null;
-    void recordAudit(
-      request.user.actorAdminId ?? request.user.id,
-      `${method} ${routePath}`,
-      targetType,
-      targetId,
-      `İşlem tamamlandı (HTTP ${response.statusCode}).`,
-    );
-  });
-  next();
-});
 
 function optionalAuth(request: AuthenticatedRequest, response: express.Response, next: express.NextFunction) {
   if (!request.header("authorization")) {
@@ -325,7 +317,7 @@ app.post("/api/auth/login", async (request, response, next) => {
       response.status(401).json({ error: "E-posta, şifre veya kullanıcı türü hatalı." });
       return;
     }
-    await recordAudit(user.id, "AUTH_LOGIN_SUCCESS", "AUTH", user.id, "Kullanıcı oturumu açıldı.");
+    await recordAudit(user.id, "AUTH_PASSWORD_VERIFIED", "AUTH", user.id, "Parola doğrulandı; oturum için 2FA / cihaz doğrulaması ayrıca denetlenir.");
 
     await completePasswordLogin(user,request,response);
   } catch (error) {
@@ -337,7 +329,7 @@ const profileSelect = { dealerId: true, avatar: true, id: true, email: true, fir
 app.get("/api/account", requireAuth, async (request: AuthenticatedRequest, response, next) => {
   try {
     const account=await prisma.user.findUniqueOrThrow({ where: { id: request.user!.id }, select: profileSelect });
-    response.json({...account,impersonation:request.user!.actorAdminId?{dealerName:(await prisma.dealer.findUnique({where:{id:request.user!.dealerId!},select:{name:true}}))?.name,expiresAt:(await prisma.authSession.findUniqueOrThrow({where:{id:request.user!.sessionId}})).expiresAt}:null});
+    response.json({...account,canPlayGames:ownerGameAccess(account,request.user!.actorAdminId),impersonation:request.user!.actorAdminId?{dealerName:(await prisma.dealer.findUnique({where:{id:request.user!.dealerId!},select:{name:true}}))?.name,expiresAt:(await prisma.authSession.findUniqueOrThrow({where:{id:request.user!.sessionId}})).expiresAt}:null});
   } catch (error) { next(error); }
 });
 const profileSchema = z.object({
@@ -346,6 +338,9 @@ const profileSchema = z.object({
   lastName: z.string().trim().min(2).max(80),
   email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
   phone: z.string().trim().max(30).refine((value) => !value || (/^[+\d\s().-]+$/.test(value) && value.replace(/\D/g, "").length >= 7)),
+});
+app.get("/api/owner/games",requireAuth,async(request:AuthenticatedRequest,response,next)=>{
+ try{const user=await prisma.user.findUnique({where:{id:request.user!.id},select:{id:true,email:true,role:true,active:true}});if(!ownerGameAccess(user,request.user!.actorAdminId)){response.status(404).json({error:"Sayfa bulunamadı."});return;}response.json({allowed:true});}catch(error){next(error);}
 });
 app.patch("/api/account", requireAuth, async (request: AuthenticatedRequest, response, next) => {
   const parsed = profileSchema.safeParse(request.body);
@@ -669,11 +664,11 @@ app.get(
   requireAuth,
   requireRole(Role.SUPER_ADMIN),
   async (request, response, next) => {
-    const page = Math.max(1, Number(request.query.page) || 1);
-    const pageSize = Math.min(100, Math.max(1, Number(request.query.pageSize) || 25));
+    const page = Math.min(100000,Math.max(1, Math.floor(Number(request.query.page) || 1)));
+    const pageSize = Math.min(100, Math.max(1, Math.floor(Number(request.query.pageSize) || 25)));
     const userId = typeof request.query.userId === "string" ? request.query.userId : undefined;
-    const from = typeof request.query.from === "string" ? new Date(`${request.query.from}T00:00:00.000Z`) : undefined;
-    const to = typeof request.query.to === "string" ? new Date(`${request.query.to}T23:59:59.999Z`) : undefined;
+    const from = typeof request.query.from === "string" ? new Date(`${request.query.from}T00:00:00+03:00`) : undefined;
+    const to = typeof request.query.to === "string" ? new Date(`${request.query.to}T23:59:59.999+03:00`) : undefined;
     if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime()))) {
       response.status(400).json({ error: "Tarih aralığını kontrol edin." });
       return;
@@ -693,10 +688,8 @@ app.get(
         }),
         prisma.auditLog.count({ where }),
       ]);
-      response.json({ items, total, page, pageSize });
-    } catch (error) {
-      next(error);
-    }
+      response.json({ items:items.map(item=>({...item,source:item.action==='CLIENT_NAVIGATION'?'CLIENT':'SERVER',outcome:item.targetType==='SERVER_FAILURE'?'Başarısız':item.targetType==='SERVER_SUCCESS'?'Başarılı':'İşlem türüne göre'})), total, page, pageSize });
+    } catch (error) { next(error); }
   },
 );
 
@@ -2010,6 +2003,9 @@ app.delete(
   },
 );
 
+app.use("/api/zero-error-booklets",(_q,r)=>{r.status(404).json({error:"Sayfa bulunamadı."});});
+app.use(memberActivityRouter);
+app.use(searchHistoryRouter);
 app.use(securityRouter);
 app.use(dealerRouter);
 app.use(answerPdfRouter);
@@ -2024,6 +2020,7 @@ app.use("/api", readerRouter);
 
 app.use(
   (error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+    if(error instanceof z.ZodError){response.status(400).json({error:"Gönderilen alanlar geçersiz. Formdaki seçimleri ve dosya biçimini kontrol edin.",code:"VALIDATION_ERROR"});return;}
     if(error instanceof SecurityError){response.status(error.status).json({error:error.message,code:error.code});return;}
     if(error instanceof Prisma.PrismaClientKnownRequestError&&error.code==="P2034"){response.status(409).json({error:"Eşzamanlı işlem nedeniyle kayıt değişti. Önizlemeyi yenileyip tekrar deneyin."});return;}
     if(error instanceof Prisma.PrismaClientKnownRequestError&&error.code==="P2002"){response.status(409).json({error:"Bu kayıt zaten mevcut veya başka işlemle eşzamanlı oluşturuldu."});return;}
@@ -2034,7 +2031,9 @@ app.use(
     }
     response.locals.failureKind = error instanceof Prisma.PrismaClientKnownRequestError || error instanceof Prisma.PrismaClientInitializationError ? "DATABASE_ERROR" : /pdf/i.test(_request.route?.path ?? "") ? "PDF_ERROR" : "SERVER_ERROR";
     console.error("API request failed", { category: error instanceof Prisma.PrismaClientKnownRequestError ? "DATABASE" : "SERVER", route: _request.route?.path ?? "unknown" });
-    response.status(500).json({ error: "Beklenmeyen bir sunucu hatası oluştu." });
+    const requestId=crypto.randomUUID();
+    console.error("API failure reference",{requestId,route:_request.route?.path??"unknown",category:response.locals.failureKind});
+    response.status(500).json({ error: `İşlem sunucuda tamamlanamadı. Tekrar denemeden önce kayıt durumunu kontrol edin. Destek takip kodu: ${requestId}`,code:"INTERNAL_ERROR",requestId });
   },
 );
 

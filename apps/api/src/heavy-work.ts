@@ -1,7 +1,7 @@
 import type {RequestHandler} from "express";
 import type {AuthenticatedRequest} from "./auth";
 /** Bound resident parsing/report jobs per Passenger worker; not a commercial student quota. */
-export function heavyWorkGuard(maxTotal=4,maxPerUser=2):RequestHandler{
+export function heavyWorkGuard(maxTotal=2,maxPerUser=1):RequestHandler{
  let total=0;const users=new Map<string,number>();
  return(q:AuthenticatedRequest,r,n)=>{
   if(!(["/preview","/evaluate","/infer-fmt","/suggest-exams","/templates/preview","/products/import","/products/prices"].includes(q.path)||/\/export$/.test(q.path)||q.path.includes("/re-evaluate")||/\/edit(?:-preview)?$/.test(q.path))){n();return;}

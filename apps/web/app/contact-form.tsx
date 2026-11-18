@@ -1,4 +1,6 @@
 "use client";
+import UiIcon from "./ui-icon";
+
 import HumanVerification from "./human-verification";
 import {getHumanToken} from "../lib/human-token";
 
@@ -84,7 +86,7 @@ export default function ContactForm({ showBrand = false, purpose = "support" }: 
         <HumanVerification key={attempt} action="contact" onToken={setHumanToken}/>
         <div className="contact-form-footer">
           <small>{values.message.length}/{purpose === "answer-key" ? 1900 : 2000} karakter</small>
-          <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Mesajı gönder"} <span>→</span></button>
+          <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Mesajı gönder"} <span><UiIcon name="arrow-right"/></span></button>
         </div>
         {notice && <p className={`contact-notice ${warning ? "contact-notice-warning" : ""}`} role={warning ? "alert" : "status"}>{notice}</p>}
       </form>

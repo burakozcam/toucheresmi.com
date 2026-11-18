@@ -1,4 +1,6 @@
 "use client";
+import UiIcon from "../ui-icon";
+
 
 import Link from "next/link";
 import ThemeToggle from "../theme-toggle";
@@ -10,7 +12,7 @@ export default function ContactPage() {
     <main className="contact-page">
       <header className="contact-header">
         <Link className="brand" href="/"><span className="brand-mark">K</span><span>kurumsal<span className="brand-light">sinav.com</span></span></Link>
-        <div className="header-actions"><ThemeToggle /><Link className="header-link" href="/">← Ana sayfa</Link></div>
+        <div className="header-actions"><ThemeToggle /><Link className="header-link" href="/"><UiIcon name="arrow-left"/> Ana sayfa</Link></div>
       </header>
       <section className="contact-intro">
         <p className="hero-tag">BİZİMLE İLETİŞİME GEÇİN</p>
@@ -28,7 +30,7 @@ export default function ContactPage() {
             referrerPolicy="no-referrer-when-downgrade"
             allowFullScreen
           />
-          <a className="map-link" href="https://www.google.com/maps/search/?api=1&query=Maltepe%2C+Istanbul%2C+Turkey" target="_blank" rel="noreferrer">Google Haritalar'da aç ↗</a>
+          <a className="map-link" href="https://www.google.com/maps/search/?api=1&query=Maltepe%2C+Istanbul%2C+Turkey" target="_blank" rel="noreferrer">Google Haritalar'da aç <UiIcon name="arrow"/></a>
           <a className="support-email" href="/contact#contact-form">destek@kurumsalsinav.com</a>
         </aside>
       </section>

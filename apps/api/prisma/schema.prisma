@@ -146,6 +146,7 @@ model Dealer {
 }
 
 model School {
+  examReportLogos ExamReportLogo[]
   studentPortals StudentPortal[]
   opticalResults OpticalResult[]
   id              String   @id @default(cuid())
@@ -191,6 +192,7 @@ model OpticalTemplate {
 }
 
 model OpticalKey {
+  examReportLogos ExamReportLogo[]
   id String @id @default(cuid())
   name String @unique
   questions Json
@@ -901,4 +903,57 @@ model StudentPortalGrant {
   portal StudentPortal @relation(fields:[portalId], references:[id], onDelete:Cascade)
   result OpticalResult @relation(fields:[resultId], references:[id], onDelete:Restrict)
   @@unique([portalId,resultId])
+}
+
+// Submitted public searches only. No account, address, fingerprint or session identifiers.
+model SearchHistory {
+  id String @id @default(cuid())
+  term String @db.VarChar(120)
+  day String @db.VarChar(10)
+  count Int @default(1)
+  createdAt DateTime @default(now())
+  lastSearchedAt DateTime @default(now())
+  @@unique([day, term])
+  @@index([lastSearchedAt])
+}
+
+// Future question archive. Private storage keys, never public document URLs.
+// Existing exams/results remain immutable; mappings use their historical fingerprint.
+model QuestionArchive {
+  id String @id @default(cuid())
+  examId String
+  publisherId String
+  examVersion String
+  grade Int
+  lesson String
+  session String
+  booklet String
+  originalNumber Int
+  canonicalNumber Int
+  correctAnswer String
+  storageKey String
+  mediaType String
+  contentSha256 String
+  rightsStatus String @default("PENDING")
+  rightsReference String?
+  rightsExpiresAt DateTime?
+  createdAt DateTime @default(now())
+  @@unique([examId, examVersion, lesson, session, booklet, originalNumber], map: "QuestionArchive_source_question_key")
+  @@index([examId, examVersion, lesson, canonicalNumber])
+}
+
+// Optional report branding belongs to an institution's exam, never the global key.
+model ExamReportLogo {
+  id String @id @default(cuid())
+  schoolId String
+  keyId String
+  enabled Boolean @default(true)
+  image String @db.Text
+  updatedById String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  key OpticalKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+  @@unique([schoolId, keyId])
+  @@index([keyId])
 }

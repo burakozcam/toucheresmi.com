@@ -1,5 +1,19 @@
 # v1.3.5 · 2026-11-17 · yerel geliştirme
 
+## v1.3.7 — 18 Kasım 2026 (yerel kabul)
+
+- Ek talep: kurum/sınava özel kalıcı karne logosu; oranlı üst başlık, sağ altta K + Kurumsal Sınav platform imzası, ortada sayfa numarası. Yeni eklemeli logo migration’ı yalnız yerelde doğrulandı.
+
+- Ek talep: karne ayarlarında alttaki kurumsalsinav.com adresini kapatma seçeneği; varsayılan açık, tekli/toplu PDF ve ZIP akışlarında geçerli.
+
+- Sonuç editöründeki düz metin audit açıklamasını JSON sayan render hatası giderildi; eski JSON/metin geçmişi açılır. Okunamayan sonuç boş veriyle yazılmaz; büyük revizyonlar transaction içinde metin snapshot aktarımı kullanır.
+- Altın SVG asma kilit, ortak sahne saatiyle kapanma/ışık; yalnız admin/bayi panellerine anlamlı altı buton tonu ve SVG ikonlar; kompakt yayınevi ekleme, Türk bayrağı ve favicon.ico.
+- İki worker ile sınırlı TXT/FMT/merge/özet hesapları; 5.000 kayıt ve 100–1.000 sentetik oturum yerel ölçümleri.
+- SUPER_ADMIN arama geçmişi (30 gün), üyeye göre sunucu/istemci ayrımlı işlem kayıtları; owner e-postasına özel oyunlar; kapalı soru arşivi altyapısı.
+- İki yeni eklemeli migration; production'a uygulanmadı. Özgün canlı merge vakası/cPanel kapasitesi/otomatik audit temizliği açık kabul sınırlarıdır.
+- Ayrıntı, gerçek testler, ölçümler ve geri dönüş: [v137 raporu](docs/v137-release-report.md).
+
+
 - Yayınevi ekleme/iletişim/durum; sınav yayınevi taşıma önizlemesi ve atomik kaydı; mevcut katsayı önizlemesine belirgin bağlantı.
 - TXT 5.000 kayıt/öğrenci; tüm satırlarla aynı FMT algoritması; ortalanmış oran, renkli dolum ve açık ayrıntı düğmeleri.
 - Dosya uzantı/içerik/yapı ve kaynak sınırları; makro/aktif PDF/görsel decode denetimleri.

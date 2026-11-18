@@ -141,7 +141,7 @@ export default function LoginPage() {
       <div className="login-ambient" aria-hidden="true"><span className="login-ambient-one" /><span className="login-ambient-two" /><span className="login-ambient-three" /></div>
       <header className="auth-header">
         <Link className="brand" href={homeHref}><span className="brand-mark">K</span><span>kurumsal<span className="brand-light">sinav.com</span></span></Link>
-        <div className="header-actions"><ThemeToggle /><Link className="header-link" href="/">← Ana sayfa</Link></div>
+        <div className="header-actions"><ThemeToggle /><Link className="header-link" href="/"><UiIcon name="arrow-left"/> Ana sayfa</Link></div>
       </header>
       <section className="auth-layout">
         <div className="auth-aside">
@@ -149,7 +149,7 @@ export default function LoginPage() {
           <p className="hero-tag">KURUMSAL SINAV PLATFORMU</p>
           <h1>Tek yerden yönetin,<br /><span>güvenle değerlendirin.</span></h1>
           <p>Optik sınav süreçlerinize devam etmek için hesabınızla giriş yapın.</p>
-          <div className="aside-decoration"><span>✓</span> Güvenli oturum <i /> <span>▤</span> Kolay yönetim</div>
+          <div className="aside-decoration"><span><UiIcon name="tick"/></span> Güvenli oturum <i /> <span>▤</span> Kolay yönetim</div>
         </div>
         <section className="login-card">
           <p className="hero-tag">{registering ? "YENİ HESAP" : "HOŞ GELDİNİZ"}</p>
@@ -168,21 +168,21 @@ export default function LoginPage() {
             <label>Telefon<div className="input-wrap"><input name="phone" type="tel" autoComplete="tel" minLength={7} maxLength={30} required /></div></label>
             <label>E-posta<div className="input-wrap"><input name="email" type="email" autoComplete="email" maxLength={254} required /></div></label>
             <label>Şifre <small>(en az 15 karakter)</small><PasswordField name="password" newPassword/></label>
-            <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Üyelik talebi gönder"} <span>→</span></button>
+            <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Üyelik talebi gönder"} <span><UiIcon name="arrow-right"/></span></button>
           </form> : selectedType === "admin" ? null : selectedType !== "institution" ? <form className="login-form" onSubmit={submitLogin}>
             <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>
             <label>Şifre<PasswordField name="password" placeholder="Şifrenizi girin"/></label>
-            <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span>→</span></button>
+            <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span><UiIcon name="arrow-right"/></span></button>
           </form> : <div className="inactive-panel"><span>i</span><p>Bu giriş türü şu anda kullanıma kapalı. Erişim için sistem yöneticisine başvurun.</p></div>}
           {message && <p className={`login-message ${success ? "message-success" : "message-error"}`} role="status">{success ? "✓" : "!"} {message}</p>}
           <p className="field-help">Öğrenci ve veli hesaplarını kurumunuzun bayisi oluşturur; ilk şifrenizi verilen davet bağlantısından belirleyin.</p>
           <p className="login-help">{registering ? "Zaten hesabınız var?" : "Üye olmak mı istiyorsunuz?"} <button type="button" className="auth-switch" onClick={() => { setRegistering(!registering); setMessage(""); setSuccess(false); }}>{registering ? "Giriş yapın" : "Üye ol"}</button></p>
-          <p className="login-help"><Link href="/sonuclar#ogrenci-girisi">Öğrenci ve veli girişi → Sonuçlar</Link></p>
+          <p className="login-help"><Link href="/sonuclar#ogrenci-girisi">Öğrenci ve veli girişi <UiIcon name="arrow-right"/> Sonuçlar</Link></p>
           {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <Link href="/contact#contact-form">Bize ulaşın</Link></p>}
           <div className="admin-login-area"><button type="button" className="button button-quiet" onClick={()=>{setRegistering(false);selectType("admin",true);}}>⚙ Yönetici Girişi</button><p className="field-help">Yalnızca sistem yöneticileri içindir.</p>{selectedType==="admin"&&!registering&&<form className="login-form" onSubmit={submitLogin}>
             <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>
             <label>Şifre<PasswordField name="password" placeholder="Şifrenizi girin"/></label>
-            <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span>→</span></button>
+            <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span><UiIcon name="arrow-right"/></span></button>
           </form>}</div>
         </section>
       </section>

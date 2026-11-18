@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-// The original website SVG is the single brand source; no dealer-supplied artwork is accepted.
+// The original website SVG remains the platform brand source, including the PDF footer.
 const svg = fs.readFileSync(path.join(__dirname,"../assets/branding/kurumsal-sinav.svg"),"utf8");
 export const brandPath = svg.match(/<path[^>]*d="([^"]+)"/)![1];
 const brandColor = svg.match(/<rect[^>]*fill="([^"]+)"/)![1];

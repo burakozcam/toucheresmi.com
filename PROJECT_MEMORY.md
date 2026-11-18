@@ -1,6 +1,6 @@
 # Kurumsal Sınav — Proje hafızası
 
-Son güncelleme: 17 Kasım 2026 · v1.3.5 · yerel geliştirme. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
+Son güncelleme: 18 Kasım 2026 · v1.3.7 · yerel geliştirme. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
 
 ## Amaç ve mimari
 
@@ -113,3 +113,24 @@ Mevcut plan/kurulum: Veridyen cPanel + Passenger, Neon PostgreSQL, ayrı Next We
 - v1.3.5 son tarayıcı kabulü: 14/14 grup, altı genişlik/tema kombinasyonu, mağaza kapalı/açık, kurum seçimi ve yeni admin ekranları; hareket açık mobilde sonlu oynatma ve yeniden oynatma. Kod PDF A4 çıktısı ayrıca render edilip incelendi.
 
 - İş sonunda bu oturumun 4015 API / 3115 Web test servisleri ve ks-v135-test konteyneri durduruldu. Sentetik DB/dosyalar ve kullanıcı PDF klasörleri silinmedi. Test Merkezi 251/251 ve 14 HTTP + 14 UI kabulünü güncel kaynak özetiyle gösterir.
+
+## v1.3.7 yerel değişiklik ve kabul
+
+- Rapor: `docs/v137-release-report.md`. Başlangıç commit’i `0a85371` v1.3.6; manifestlerdeki eski 1.3.5 alanları root/API/Web/lock ile 1.3.7’ye hizalandı. Production, commit ve push işlemi yok.
+- Admin sonuç editörünün kök nedeni audit `summary` düz metinken JSON.parse çağrılmasıydı. `auditSummaryText` sunum katmanında metin/JSON ayrımı yapar. Sonuç okuma `readResultSnapshot` ile nesne/string-JSON’u doğrular; bozuk veri boşlaştırılmaz, 422 döner. Edit revizyonları da metin snapshot yazımıyla aynı Serializable transaction içindedir.
+- CPU işleri en fazla iki process-local lazy worker; kullanıcı başına bir ağır HTTP iş, worker heap 256 MB, 30 sn idle kapanma/60 sn iş üst sınırı. Redis/daemon yok, dağıtık kuyruk değil. Worker arızasında ana thread fallback yok. Gerçek lsnode desteği ve toplam hosting RAM/bağlantı sayısı staging kabulü gerektirir.
+- `SearchHistory` gün/ifade sayımı, yalnız gerçek submit; hassas ifade filtresi, rate limit, 30 gün, SUPER_ADMIN liste/temizleme. Yeni `QuestionArchive` yalnız temel; tüm booklet API kapalı. Session/version/booklet/source/answer/rights tam eşleşir, boş politika UNDECIDED.
+- Member audit mevcut AuditLog üzerinden; CLIENT_NAVIGATION güvenilir sunucu işlemi değildir. Fiziksel audit saklama/temizleme uygulaması eklenmedi: otomatik onay denetimi bu silme adımını reddetti. Mevcut loglar korunuyor.
+- Oyun sahibi kullanıcı tarafından `admin@kurumsalsinav.com` olarak belirlendi. Aktif/doğrudan SUPER_ADMIN oturumu server capability kontrolünden geçer; diğer admin/temsil/bayi/ziyaretçi reddedilir. 404 oyunları izin sonrası mount edilir.
+- Altın SVG kilidin dönüş/oturma/ışığı `--scene-progress` saatiyle; panel ActionButton paleti yalnız `.dashboard[data-management=true]`. FMT dönüştürücü araçlar sonunda; yeni bayi FMT yönetim yetkisi yok.
+- Yeni migration’lar `20261118180000_v137_search_question_archive` ve `20261118183000_v137_archive_index_name`. Yeni boş `ks-v137-test` PostgreSQL 16 konteynerinde 23 migration, son şema diff’i boş. Önceki migration’lar değiştirilmedi.
+- Son regresyon 263/263; yeni HTTP 10 grup, önceki HTTP 14 grup; 4.995 HTTP/rollback ve 5.000 worker hesabı. Gerçek Chromium kanıtları `test-results/v137/ui`; seed/token dosyaları paylaşılmaz. Yerel kapasite koşulları ve sınırlamalar raporda; canlı hosting rakamı değildir.
+- Özgün canlı merge hatasının dosyası/anahtar-parent sürümü sağlanmadı; kesin canlı kök neden bulunmuş sayılmaz. Yerel Web build http://localhost:4015 içerir; canlı HTTPS adresiyle yeniden build gerekir. Test süreçleri/konteyneri iş sonunda durdurulur; sentetik veriler ve kullanıcının PDF’leri silinmez.
+
+- v1.3.7 son durum: 263/263 kaynakla eşleşen Test Merkezi; 11/11 Chromium grubu, disabled geçiş kontrastı dahil. Web/API yerel servisleri ve yalnız ks-v137-test durduruldu; test verileri silinmedi. Özgün TXT/cPanel ve fiziksel audit saklama kabul sınırları raporda açık.
+
+- v1.3.7 PDF footer ek talebi: `showSiteAddress` varsayılan true. Panel export, public-result PDF ve reader PDF doğrulanmış seçenek alır; tüm öğrenci karneleri referenceReportPdf footer’ında yalnız domain metnini atlar, sayfa numarası kalır. Panel/public/reader mevcut karne ayarlarına checkbox ve web karne önizlemesine aynı flag eklendi. Altı şablon × tekli/toplu PDF regresyonu ve Poppler görsel QA, `tests/v134.test.ts` ve `test-results/v137/pdf-footer`. Migration/üretim işlemi yok.
+
+- Sınava özel logo ek talebi: `ExamReportLogo` okul+anahtar unique kaydı, `20261118193000_v137_exam_report_logo` ek migration (yerelde toplam24; production’a uygulanmadı). Admin/bayi `canEditResult` ile PUT, kendi okulunda canExport ile GET; raster2MB/4MP doğrulama ve1200×240pxPNG normalizasyonu (512KB üstünde640×128 fallback) `report-logo-image.ts`. Metadata zenginleştirme yalnız ilgili okul/sınav logosunu PDF’ye yükler; yeni student-portal PDF akışında da okul/anahtar bağlamı taşınır (public JSON’a eklenmez).
+- `ExamReportLogo` panel bileşeni checkbox/file/save/preview; PDF başlığı sabit53pt, customlogo300×31pt alana oranlı sığar. Özel logoda üst platform kilitlenmesi kaldırılır; her sayfanın sağ altında orijinal K+Kurumsal Sınav kalır, .com yok. Pageno altortada; showSiteAddress bağımsız solaltURL. Web karne önizlemesi de panelde bu görseli kullanır.
+- Logo HTTP8/8, gerçek bayi UI4/4, öncekiportalHTTP14/14; geniş/dik/kare PDF renderQA ve Node266/266. Kanıt test-results/v137/report-logo. Başka bayi/kurum/sınavın logosu okunup değiştirilemez; snapshotrevizyonları değişmez. Logo motoru lazy import: modül yoksa API boot’u yerine yükleme503 alır.

@@ -1,3 +1,5 @@
+import {examReportLogoRouter} from "./exam-report-logo";
+import {cpuInfer,cpuReader,cpuMatch,cpuParse,cpuJob} from "./cpu-jobs";
 import {writeResultSnapshot,withResultSnapshots} from "./result-snapshot-storage";
 import {inspectTxt} from "./txt-limits";
 import {heavyWorkGuard} from "./heavy-work";
@@ -63,7 +65,7 @@ opticalRouter.use(async(req:AuthenticatedRequest,res,next)=>{try{
  if(permission)await dealerPermission(req.user!,permission);next();
  }catch(e){next(e);}});
 opticalRouter.use((req:AuthenticatedRequest,res,next)=>{res.on("finish",()=>{if(res.statusCode>=400&&["/evaluate","/preview"].includes(req.path)&&req.user)void activity(prisma,req.user,"EVALUATION_FAILED",{...((req as any).evaluationContext??{}),success:false}).catch(()=>{});});next();});
-opticalRouter.use(resultEditRouter,resultRouter,txtArchiveRouter);
+opticalRouter.use(examReportLogoRouter,resultEditRouter,resultRouter,txtArchiveRouter);
 type Handler = (req: AuthenticatedRequest,res: express.Response)=>Promise<void>;
 const wrap = (handler: Handler): express.RequestHandler => async(req,res,next)=>{
   try {await handler(req as AuthenticatedRequest,res);} catch(error) {
@@ -226,7 +228,7 @@ opticalRouter.post("/infer-fmt",inferenceLimit,upload.single("file"),wrap(async(
  else if(req.file&&/\.txt$/i.test(req.file.originalname))files=[req.file];
  if(!files.length){res.status(400).json({error:"Bir TXT dosyası seçin."});return;}
  const templates=await inferenceTemplates();
- const reports=files.map(file=>{try{return inferFmt(decodeOptical(file.buffer),templates);}catch{return {confidence:"failed",message:"FMT tahmini başarısız. Lütfen şablonu manuel seçin.",candidates:[]};}});
+ const reports=[];for(const file of files)reports.push(await cpuInfer(decodeOptical(file.buffer),templates));
  res.json(reports);
 }));
 opticalRouter.post("/suggest-exams",inferenceLimit,upload.single("file"),wrap(async(req,res)=>{
@@ -245,9 +247,9 @@ opticalRouter.post("/suggest-exams",inferenceLimit,upload.single("file"),wrap(as
   if(!publication.opticalKey)continue;
   try{
    const questions=evaluationQuestions(publication.opticalKey.questions);
-   const match=matchExamAnswers(decoded,opticalLayoutSchema.parse(template.layout),questions);
+   const match=await cpuMatch(decoded,opticalLayoutSchema.parse(template.layout),questions);
    if(match)items.push({id:publication.opticalKey.id,publicationId:publication.id,name:publication.examName,publisher:publication.publisher.name,grade:publication.grade,...match});
-  }catch(error){if(!(error instanceof Error))throw error;incompatibleCount++;firstIncompatibleReason||=error.message;}
+  }catch(error){if(error instanceof SecurityError)throw error;if(!(error instanceof Error))throw error;incompatibleCount++;firstIncompatibleReason||=error.message;}
  }
  items.sort((a,b)=>b.matchPercent-a.matchPercent||b.compared-a.compared||a.name.localeCompare(b.name,"tr"));
  res.json({items:items.slice(0,5),incompatibleCount,firstIncompatibleReason});
@@ -294,14 +296,15 @@ for(const endpoint of ["preview","evaluate"]){
     if(!template || !key){res.status(400).json({error:"Etkin bir FMT ve cevap anahtarı seçin."});return;}
     (req as any).evaluationContext={schoolId:school.id,keyId:key.id,publisherId:key.publication?.publisherId??null,city:school.city,district:school.district};
     let data,decoded="";
-    try {decoded=files.map(file=>decodeOptical(file.buffer,input.encoding).replace(/[\r\n]+$/g,"")).join("\n");let reader=evaluationReader(decoded,opticalLayoutSchema.parse(template.layout),systemEvaluationTemplates(),input.missingBooklet),libraryWarning="";
+    try {decoded=files.map(file=>decodeOptical(file.buffer,input.encoding).replace(/[\r\n]+$/g,"")).join("\n");let reader=await cpuReader(decoded,opticalLayoutSchema.parse(template.layout),systemEvaluationTemplates(),input.missingBooklet),libraryWarning="";
       if(reader.matched<decoded.split(/\r\n|\r|\n/).filter(l=>l.trim()).length){try{
         const alternatives=await prisma.opticalTemplate.findMany({where:{active:true},select:{id:true,name:true,active:true,layout:true}});
-        reader=evaluationReader(decoded,opticalLayoutSchema.parse(template.layout),evaluationTemplateChoices(alternatives),input.missingBooklet);
+        reader=await cpuReader(decoded,opticalLayoutSchema.parse(template.layout),evaluationTemplateChoices(alternatives),input.missingBooklet);
       }catch{libraryWarning="Kayıtlı alternatif FMT listesi alınamadı; seçili ve doğrulanmış sistem düzenleri denendi.";}}
-      data=parseOptical(decoded,reader.layout,evaluationQuestions(key.questions),school.name,{missingBooklet:input.missingBooklet,allowMismatch:true,mergeSessions:input.mergeSessions==="true",hashIdentity:identityHash,encryptIdentity});if(reader.warning||libraryWarning){data.warnings.unshift(...[reader.warning,libraryWarning].filter((w):w is string=>!!w));data.status="completed_with_warnings";}if(!data.students.length){res.status(422).json({error:"Değerlendirilemedi: güvenilir biçimde değerlendirilebilecek kayıt yok. "+data.warnings.slice(0,5).join(" "),status:"failed",diagnostics:data.diagnostics,warnings:data.warnings});return;}}
+      data=await cpuParse(decoded,reader.layout,evaluationQuestions(key.questions),school.name,{missingBooklet:input.missingBooklet,allowMismatch:true,mergeSessions:input.mergeSessions==="true"});if(reader.warning||libraryWarning){data.warnings.unshift(...[reader.warning,libraryWarning].filter((w):w is string=>!!w));data.status="completed_with_warnings";}if(!data.students.length){res.status(422).json({error:"Değerlendirilemedi: güvenilir biçimde değerlendirilebilecek kayıt yok. "+data.warnings.slice(0,5).join(" "),status:"failed",diagnostics:data.diagnostics,warnings:data.warnings});return;}}
     catch(error){
-      const inference=decoded?inferFmt(decoded,systemEvaluationTemplates()):null,best=inference?.candidates[0];
+      if(error instanceof SecurityError)throw error;
+      const inference=decoded?await cpuInfer(decoded,systemEvaluationTemplates()):null,best=inference?.candidates[0];
       const suggested=inference?.confidence==="strong"&&best&&!best.aliases.includes(template.id)&&canonicalJson(opticalLayoutSchema.parse(template.layout))!==canonicalJson(systemEvaluationTemplate(best.id)?.layout)?best:undefined;
       res.status(400).json({status:"failed",error:(error instanceof Error?error.message:"TXT okunamadı.")+(suggested?` İçerik ${suggested.name} ile uyumlu görünüyor. Seçili kayıtlı FMT'nin alan konumlarını kontrol edin veya önerilen sistem FMT'sini açıkça seçip yeniden önizleyin.`:""),...(suggested?{fmtSuggestion:{id:suggested.id,name:suggested.name}}:{})});return;
     }
@@ -312,7 +315,7 @@ for(const endpoint of ["preview","evaluate"]){
     const previousRows=await withResultSnapshots(prisma,await prisma.opticalResult.findMany({where:{schoolId:school.id,keyId:key.id,nextRevision:null},omit:{snapshot:true},orderBy:{createdAt:"desc"}}));
     const replaceKeys=new Set<string>();
     for(const item of archived.filter(item=>evaluatedContext(item,school.id,key.id))){
-      try{const original=parseOptical(decodeOptical(item.file.buffer,input.encoding),opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{missingBooklet:input.missingBooklet,allowMismatch:true,mergeSessions:true,hashIdentity:identityHash});for(const student of original.students){if(student.identityHash)replaceKeys.add(student.identityHash);replaceKeys.add(`${student.branch.split("-")[0]}:${studentNumberKey(student.studentNo??student.id)}`);}}catch(error){res.status(400).json({error:(error as Error).message});return;}
+      try{const original=await cpuParse(decodeOptical(item.file.buffer,input.encoding),opticalLayoutSchema.parse(template.layout),evaluationQuestions(key.questions),school.name,{missingBooklet:input.missingBooklet,allowMismatch:true,mergeSessions:true},false);for(const student of original.students){if(student.identityHash)replaceKeys.add(student.identityHash);replaceKeys.add(`${student.branch.split("-")[0]}:${studentNumberKey(student.studentNo??student.id)}`);}}catch(error){res.status(400).json({error:(error as Error).message});return;}
     }
     const reprocessing=replaceKeys.size>0;
     if(archived.length>1&&input.mergeSessions==="false"){res.status(400).json({error:"Ayrı oturum modunda dosyalar sırayla değerlendirilmelidir."});return;}
@@ -320,8 +323,8 @@ for(const endpoint of ["preview","evaluate"]){
     const separateParent=input.mergeSessions==="false"&&reprocessing?activeRows.find(row=>archived.some(item=>{const context=evaluatedContext(item,school.id,key.id);return context?.id===row.id||context?.seriesId===row.seriesId;})):undefined;
     if(separateParent&&(separateParent.snapshot as any).mergeSessions!==false){res.status(400).json({error:"Bu dosya birleştirilmiş oturumda değerlendirildi. Birleştirme modunu kullanın veya önceki değerlendirmeyi kaldırın."});return;}
     const parent=input.mergeSessions==="true"&&(!duplicate||isDeleted((duplicate as any).snapshot)||reprocessing)?activeRows[0]:separateParent;
-    if(parent&&input.mergeSessions==="true"){try{data=mergeStudentData((parent.snapshot as any).data,data,student=>replaceKeys.has(student.identityHash??"")||replaceKeys.has(`${student.branch.split("-")[0]}:${studentNumberKey(student.studentNo??student.id)}`));}catch(error){res.status(400).json({error:(error as Error).message});return;}}
-    const snapshot={mergeSessions:input.mergeSessions==="true",expectedGrade:key.publication?.grade,keyFingerprint:keyFingerprint(key.questions,key.penalty),data,summary:opticalSummary(data,key.penalty),penalty:key.penalty,schoolName:school.name,templateName:template.name,keyName:key.publication?.examName??key.name};
+    const calculated=await cpuJob<{data:typeof data;summary:ReturnType<typeof opticalSummary>}>({kind:'summary',data,previous:parent&&input.mergeSessions==="true"?(parent.snapshot as any).data:undefined,replaceKeys:[...replaceKeys],penalty:key.penalty});data=calculated.data;
+    const snapshot={mergeSessions:input.mergeSessions==="true",expectedGrade:key.publication?.grade,keyFingerprint:keyFingerprint(key.questions,key.penalty),data,summary:calculated.summary,penalty:key.penalty,schoolName:school.name,templateName:template.name,keyName:key.publication?.examName??key.name};
     const checks=reviewSnapshot(snapshot);
     if(duplicate&&!isDeleted((duplicate as any).snapshot)&&!reprocessing)checks.blockers.push("Bu TXT aynı kurum ve sınav için zaten yüklendi. Sonuç Al ekranından mevcut kaydı açın.");
     const uploadFingerprint=checksum(canonicalJson({schoolId:school.id,fileIds:input.fileIds,template:opticalLayoutSchema.parse(template.layout),key:snapshot.keyFingerprint,uploadChecksum,parent:parent?.id,merged:checksum(canonicalJson(safeSnapshot(snapshot).data))}));

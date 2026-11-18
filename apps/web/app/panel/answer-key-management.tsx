@@ -1,4 +1,7 @@
 "use client";
+import UiIcon from "../ui-icon";
+
+import ActionButton from "./action-button";
 import PublisherTransfer from "./publisher-transfer";
 import CoverEditor from "./cover-editor";
 import AnswerPdfOptions from "../answer-pdf-options";
@@ -203,7 +206,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
       {error && <p className="notice error" role="alert">{error}</p>}
 
       {!readOnly&&view==="list"&&<LegacyKeyLink token={token} publications={records} onSaved={()=>void loadData()}/>}
-      {!readOnly&&<div className="answer-add-tabs"><button className={`button ${view==="list"?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("list");setBulkMode(false);}}>Kayıtları görüntüle</button><button className={`button ${view==="new"&&!bulkMode?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(false);}}>Cevap anahtarı ekle</button><button className="button button-quiet" disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(true);}}>Toplu dosya ekle</button>{onAddExam&&<button className="button button-quiet" disabled={bulkBusy} onClick={onAddExam}>＋ Sınav ekle</button>}</div>}
+      {!readOnly&&<div className="answer-add-tabs"><ActionButton intent="manage" className={`button ${view==="list"?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("list");setBulkMode(false);}}>Kayıtları görüntüle</ActionButton><ActionButton intent="manage" className={`button ${view==="new"&&!bulkMode?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(false);}}>Cevap anahtarı ekle</ActionButton><ActionButton intent="evaluate" className="button button-quiet" disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(true);}}>Toplu dosya ekle</ActionButton>{onAddExam&&<ActionButton intent="manage" className="button button-quiet" disabled={bulkBusy} onClick={onAddExam}><UiIcon name="add"/> Sınav ekle</ActionButton>}</div>}
       {!readOnly && bulkMode && <BulkAnswerKeys records={records} token={token} publishers={publishers} onComplete={() => void loadData()} onBusyChange={setBulkBusy} />}
       {!readOnly && view==="new" && !bulkMode && (
         <form className="answer-key-form" onSubmit={handleSubmit}>
@@ -246,16 +249,16 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
           </div>}
 
 
-          <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Yükleniyor..." : "Cevap anahtarı ekle"}</button>
+          <ActionButton intent="manage" loading={submitting} className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Yükleniyor..." : "Cevap anahtarı ekle"}</ActionButton>
         </form>
       )}
 
       <div className="public-list-panel" hidden={!readOnly&&view!=="list"}>
-        {!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><button className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</button></div>}
+        {!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><ActionButton intent="save" className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</ActionButton></div>}
         <div className="list-header-row">
           <h3>{readOnly ? "Yayımlanan cevap anahtarları" : "Cevap anahtarı kayıtları"}</h3>
           <label className="answer-search prominent-answer-search">
-            <span>⌕ Cevap anahtarlarında ara</span>
+            <span><UiIcon name="search"/> Cevap anahtarlarında ara</span>
             <input type="search" aria-label="Cevap anahtarlarında ara" maxLength={200} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Aranacak sınavı veya cevap anahtarını yazın..." />
           </label>
         </div>
@@ -306,8 +309,8 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                       </div>
                       <div className="download-actions">
                         <label className="checkbox-row" onChange={e=>e.stopPropagation()}><input type="checkbox" checked={editConfirmed} onChange={e=>setEditConfirmed(e.target.checked)}/>Bilgileri, dosyaları ve yayın seçeneklerini kontrol ettim; kaydı onaylıyorum.</label>
-                        <button className="button button-navy" type="submit" disabled={submitting||!editConfirmed}>{submitting?"Kaydediliyor…":"Değişiklikleri kaydet"}</button>
-                        <button className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</button>
+                        <ActionButton intent="save" loading={submitting} className="button button-navy" type="submit" disabled={submitting||!editConfirmed}>{submitting?"Kaydediliyor…":"Değişiklikleri kaydet"}</ActionButton>
+                        <ActionButton intent="manage" className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</ActionButton>
                       </div>
                     </form>
                   )}
@@ -315,14 +318,14 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                   <div className="download-actions">
                     <AnswerPdfOptions id={item.id} name={item.examName} token={readOnly?undefined:token}/>{answerFile && (readOnly
                       ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>
-                      : <button type="button" className="button button-quiet" onClick={() => void downloadFile(answerFile, item)}>Cevap Anahtarını İncele</button>)}
+                      : <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => void downloadFile(answerFile, item)}>Cevap Anahtarını İncele</ActionButton>)}
                     {outcomesFile && (readOnly
                       ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${outcomesFile.id}`} target="_blank" rel="noreferrer">Kazanımı İndir</a>
-                      : <button type="button" className="button button-quiet" onClick={() => void downloadFile(outcomesFile, item)}>Kazanımı İncele</button>)}
+                      : <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => void downloadFile(outcomesFile, item)}>Kazanımı İncele</ActionButton>)}
                     {!readOnly && <>
-                      <button type="button" className="button button-quiet" onClick={() => {setEditing(item);setEditConfirmed(false);setEditingQuestions(null);}}>Bilgi / dosya düzenle</button>{item.opticalKey&&<button type="button" className="button button-quiet" onClick={()=>{setEditing(null);setEditingQuestions(item.opticalKey!.id);}}>Soruları ve kazanımları düzenle</button>}
-                      <button type="button" className="button button-quiet" onClick={() => void setPublished(item, !item.published)}>{item.published ? "Yayından kaldır" : "Yeniden yayımla"}</button>
-                      <button type="button" className="button button-navy danger-button" onClick={() => void deleteRecord(item.id)}>Sil</button>
+                      <ActionButton intent="manage" type="button" className="button button-quiet" onClick={() => {setEditing(item);setEditConfirmed(false);setEditingQuestions(null);}}>Bilgi / dosya düzenle</ActionButton>{item.opticalKey&&<ActionButton intent="manage" type="button" className="button button-quiet" onClick={()=>{setEditing(null);setEditingQuestions(item.opticalKey!.id);}}>Soruları ve kazanımları düzenle</ActionButton>}
+                      <ActionButton intent={item.published?'danger':'save'} type="button" className="button button-quiet" onClick={() => void setPublished(item, !item.published)}>{item.published ? "Yayından kaldır" : "Yeniden yayımla"}</ActionButton>
+                      <ActionButton intent="danger" type="button" className="button button-navy danger-button" onClick={() => void deleteRecord(item.id)}>Sil</ActionButton>
                     </>}
                   </div>
                 </article>

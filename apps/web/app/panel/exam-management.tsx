@@ -1,4 +1,5 @@
 "use client";
+import ActionButton from "./action-button";
 
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
@@ -108,7 +109,7 @@ export default function ExamManagement({ token, onOpenAnswerKeys }: { token: str
         </select></label>
         <label>Sınıf<select value={grade} onChange={event => setGrade(event.target.value)} required>{Array.from({ length: 12 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}. Sınıf</option>)}</select></label>
         <label>Sınav adı<input value={examName} onChange={event => setExamName(event.target.value)} maxLength={180} minLength={2} placeholder="Örn. Türkiye Geneli Deneme 1" required /></label>
-        <button className="button button-navy" type="submit" disabled={submitting || !publisherId}>{submitting ? "Ekleniyor…" : "Sınavı ekle"}</button>
+        <ActionButton intent="manage" className="button button-navy" type="submit" disabled={submitting || !publisherId}>{submitting ? "Ekleniyor…" : "Sınavı ekle"}</ActionButton>
       </form>
 
       <div className="school-list-panel">
@@ -124,7 +125,7 @@ export default function ExamManagement({ token, onOpenAnswerKeys }: { token: str
                   return <article className="exam-list-item" key={exam.id}>
                     <strong>{exam.examName}</strong>
                     <span>{hasAnswerFile ? "Cevap anahtarı dosyası eklendi" : "Cevap anahtarı bekleniyor"}</span>
-                    <button className="button button-quiet" type="button" onClick={() => onOpenAnswerKeys(exam.id)}>{hasAnswerFile ? "Anahtarı düzenle" : "Cevap anahtarı ekle"}</button>
+                    <ActionButton intent="manage" className="button button-quiet" type="button" onClick={() => onOpenAnswerKeys(exam.id)}>{hasAnswerFile ? "Anahtarı düzenle" : "Cevap anahtarı ekle"}</ActionButton>
                   </article>;
                 })}</div>
               </div>

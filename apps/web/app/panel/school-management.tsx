@@ -1,4 +1,5 @@
 "use client";
+import ActionButton from "./action-button";
 
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
@@ -182,7 +183,7 @@ export default function SchoolManagement({ token, role }: { token: string; role:
           {role === "SUPER_ADMIN" && <label>Bayi (isteğe bağlı)<select value={form.dealerId} onChange={(event) => setForm({ ...form, dealerId: event.target.value })}><option value="">Bayi seçilmedi</option>{dealers.map((dealer) => <option key={dealer.id} value={dealer.id}>{dealer.name}</option>)}</select></label>}
         </div>
         <p className="school-duplicate-help">Aynı adlı kurumlar farklı il veya ilçelerde ayrı kayıt olarak eklenebilir.</p>
-        <button className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Kaydediliyor..." : "Kurumu ekle"}</button>
+        <ActionButton intent="manage" loading={submitting} className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Kaydediliyor..." : "Kurumu ekle"}</ActionButton>
       </form>
 
       <div className="school-list-panel">
@@ -208,8 +209,8 @@ export default function SchoolManagement({ token, role }: { token: string; role:
                     <label>Kurum adı<input value={editing.name} onChange={(event) => setEditing({ ...editing, name: event.target.value })} required /></label>
                     <LocationFields city={editing.city??""} district={editing.district??""} onChange={(city,district)=>setEditing({...editing,city,district})}/>
                     <label>Kurum kodu<input value={editing.code ?? ""} onChange={(event) => setEditing({ ...editing, code: event.target.value })} /></label>
-                    <button className="button button-navy" type="submit">Kaydet</button>
-                    <button className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</button>
+                    <ActionButton intent="save" className="button button-navy" type="submit">Kaydet</ActionButton>
+                    <ActionButton intent="manage" className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</ActionButton>
                   </form>
                 ) : (
                   <>
@@ -220,8 +221,8 @@ export default function SchoolManagement({ token, role }: { token: string; role:
                       {role === "SUPER_ADMIN" && <small>Ekleyen: {school.createdBy ? `${school.createdBy.firstName} ${school.createdBy.lastName}` : school.dealer?.name ?? "Bilinmiyor"}{school.dealer ? ` · ${school.dealer.name}` : ""}</small>}
                     </div>
                     {<div className="school-admin-actions">
-                      <button type="button" className="button button-quiet" onClick={() => setEditing(school)}>Düzenle</button>
-                      {role==="SUPER_ADMIN"&&<button type="button" className="button button-quiet" onClick={() => void updateSchool(school.id, { active: !school.active })}>{school.active ? "Pasife al" : "Yeniden aktifleştir"}</button>}
+                      <ActionButton intent="manage" type="button" className="button button-quiet" onClick={() => setEditing(school)}>Düzenle</ActionButton>
+                      {role==="SUPER_ADMIN"&&<ActionButton intent={school.active?'danger':'save'} type="button" className="button button-quiet" onClick={() => void updateSchool(school.id, { active: !school.active })}>{school.active ? "Pasife al" : "Yeniden aktifleştir"}</ActionButton>}
                     </div>}
                   </>
                 )}
@@ -241,7 +242,7 @@ export default function SchoolManagement({ token, role }: { token: string; role:
                 <small>Gönderen: {attempt.submittedBy ? `${attempt.submittedBy.firstName} ${attempt.submittedBy.lastName} · ${attempt.submittedBy.email}` : "Hesap artık mevcut değil"}</small>
                 <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(attempt.createdAt))}</small>
               </div>
-              <button type="button" className="button button-quiet" onClick={() => void markDuplicateAttemptReviewed(attempt.id)}>İncelendi olarak işaretle</button>
+              <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => void markDuplicateAttemptReviewed(attempt.id)}>İncelendi olarak işaretle</ActionButton>
             </article>)}
           </div>
         )}

@@ -31,6 +31,9 @@ async function challengedUser(token: string, purpose: string) {
   if (!user?.active || claims.role !== user.role || claims.credentialVersion !== credentialVersion(user.passwordHash) || user.role === "DEALER" && !user.dealer?.active) throw new SecurityError(401, "Hesap etkin değil veya şifresi değişmiş.");
   return user;
 }
+async function logCompletedLogin(id:string){
+ try{await prisma.auditLog.create({data:{actorUserId:id,actorName:id,action:"AUTH_LOGIN_SUCCESS",targetType:"User",targetId:id,summary:"Kimlik doğrulama tamamlandı ve oturum oluşturuldu."}});}catch{console.error("Completed login audit could not be recorded");}
+}
 export async function completePasswordLogin(user: any, q: express.Request, r: express.Response) {
   if (user.role === "DEALER") { const dealer = user.dealerId ? await prisma.dealer.findUnique({ where: { id: user.dealerId } }) : null; if (!dealer?.active) throw new SecurityError(401, "Bayi hesabı etkin değil."); }
   if (user.role === "SUPER_ADMIN" && !user.twoFactorEnabled) { r.json({ mfaRequired: true, setupRequired: true, challengeToken: challenge(user, true) }); return; }
@@ -38,9 +41,9 @@ export async function completePasswordLogin(user: any, q: express.Request, r: ex
     const token = cookieToken(q), trusted = token && /^[A-Za-z0-9_-]{43}$/.test(token) ? await prisma.trustedDevice.findUnique({ where: { tokenHash: hash(token) } }) : null;
     if (!trusted || trusted.userId !== user.id || trusted.revokedAt || +trusted.expiresAt <= Date.now() || trusted.credentialVersion !== credentialVersion(user.passwordHash)) { r.json({ mfaRequired: true, setupRequired: false, challengeToken: challenge(user, false) }); return; }
     const result = await issueSession(user, q, { trustedDeviceId: trusted.id });
-    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }); r.json(result); return;
+    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }); await logCompletedLogin(user.id);r.json(result); return;
   }
-  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }); r.json(await issueSession(user, q));
+  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });const result=await issueSession(user,q);await logCompletedLogin(user.id);r.json(result);
 }
 securityRouter.use("/api/security", (_q, r, n) => { r.setHeader("Cache-Control", "private, no-store"); r.setHeader("Referrer-Policy", "no-referrer"); n(); });
 securityRouter.use("/api/security/mfa", new RequestLimiter(12, 10 * 60_000, 10_000, "mfa").middleware());

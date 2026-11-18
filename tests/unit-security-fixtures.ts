@@ -21,6 +21,7 @@ beforeEach(async()=>{
  stub(prisma.publicResultCode,"createMany",async({data}:any)=>({count:data.length}));
  stub(prisma.school,"findMany",async()=>[]);
  stub(prisma.school,"findUnique",async()=>({city:null,district:null}));
+ stub(prisma.examReportLogo,"findUnique",async()=>null);
  stub(prisma.opticalKey,"findUnique",async()=>({publication:null}));
  stub(prisma.opticalResult,"findMany",async()=>[]);
  stub(prisma,"$queryRaw",async()=>[]);

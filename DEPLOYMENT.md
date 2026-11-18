@@ -29,3 +29,15 @@ En az son 3 başarılı uygulama artifact'ı, 7 günlük / 4 haftalık korumalı
 Ana sayfa/footer, panel, API health ve Sistem Merkezi v1.3.5 göstermeli. Tarayıcıda yeni oturumla login + gerçek Google reCAPTCHA, rol kapsamı, sınav/anahtar listesi, TXT öneri yükleme/seçim, dört katılım kombinasyonuyla PDF önizleme/tek/toplu/ZIP, Excel ve il/ilçe seçimini kontrol edin. Yeni JS chunk URL'lerinin 200 döndüğünü, eski route-cache karışmadığını doğrulayın; varsa LiteSpeed/CDN public cache temizliği yapın. Özel sonuç/auth yanıtları cache edilmemeli.
 
 Aktarım, başlangıç, sağlık veya kritik smoke başarısızsa bakım modunda iki Passenger kökünü önceki **tam** release'e geri alın; yeniden başlatıp sağlık/login/sonuç erişimini kontrol edin. Yalnız .next değiştirip API'yi yeni bırakmayın. Bu sürümün migration’ı yalnız yeni alan ve tablolar ekler; uygulama geri dönüşünde yeni tabloları/verileri otomatik silmeyin veya DB’yi körlemesine geri yüklemeyin. Yeni yazımlar için geri dönüş planını ayrıca doğrulayın. Sonradan alınan verileri, şifreleme anahtarlarını ve storage'ı silmeyin. Migration içeren geçmiş geçişlerin geri dönüşü ayrı DB planına bağlıdır. Sorunu sır içermeyen işletim kaydına yazın; başarısız artifact'ı kanıt için ayırın.
+
+## v1.3.7 ek önkoşullar
+
+Önce [yerel kabul ve sınırlar](docs/v137-release-report.md) incelenir. Bu oturum production migration/deployment çalıştırmadı.
+
+- İki yeni eklemeli migration staging’de doğrulanmadan kod yayımlanmaz; önceki migration dosyaları değiştirilmez. Yeni tablolar geri dönüşte otomatik DROP edilmez.
+- Worker threads / Passenger süreç sayısı / toplam 4 GB RAM / NPROC / Neon havuzu staging’de ölçülür. İki worker sınırı process bazlıdır; birden fazla lsnode sürecini global sınırlamaz.
+- Özgün canlı TXT merge vakası, gerçek 2FA cihaz/kurtarma ve bayi temsil dönüşü staging kabulüne dahildir.
+- Audit kayıtları otomatik silinmez; kurumun onaylayacağı fiziksel saklama prosedürü ayrıca gerekir. Arama geçmişinin 30 günlük bakımı ilgili istek geldiğinde çalışır; katı fiziksel silme SLA’sı gerekiyorsa yetkili zamanlayıcı planlanır.
+- Test `.next` çıktısı localhost API içerir. Production HTTPS API / mevcut MFA-JWT-TXT anahtarları korunarak Web ve API yeniden build edilir. `cpu-worker.js` dahil API dist ağacı birlikte taşınır.
+
+- Sınava özel karne logosu eki: `20261118193000_v137_exam_report_logo` migration’ı kod yayını öncesinde staging/production işletim sürecinde uygulanmalı. Bu oturum yalnız yerel sentetik DB’de doğruladı; mevcut sonuçlarda backfill/değişiklik yok. Geri dönüşte yeni logo tablosunu silmeyin.

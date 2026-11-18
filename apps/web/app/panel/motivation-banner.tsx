@@ -1,4 +1,6 @@
 "use client";
+import UiIcon from "../ui-icon";
+
 
 import { useEffect, useState } from "react";
 import quotes from "../../data/motivational-quotes.json";
@@ -27,6 +29,6 @@ export default function MotivationBanner({ firstName = "" }: { firstName?: strin
   }
   return <aside className="welcome-motivation-card" aria-label="Panel karşılama alanı">
     <div className="welcome-card-heading"><div><h1>Hoş geldiniz{firstName ? `, ${firstName}` : ""}</h1><p>Sınav süreçlerinizi buradan yönetebilirsiniz.</p></div><div className="welcome-clock"><time>{time}</time><span>{date}</span></div></div>
-    {visible ? <div className="welcome-quote"><span className="motivation-mark" aria-hidden="true">“</span><div><blockquote>{quote.text}</blockquote><p>— {quote.author} <a href={quote.source} target="_blank" rel="noreferrer" title={quote.note}>Kaynak ↗</a></p></div><div className="quote-controls"><button type="button" aria-label="Önceki söz" onClick={() => setQuoteIndex((i) => (i - 1 + quotes.length) % quotes.length)}>←</button><span>{quoteIndex + 1} / {quotes.length}</span><button type="button" aria-label="Sonraki söz" onClick={() => setQuoteIndex((i) => (i + 1) % quotes.length)}>→</button><button type="button" className="quote-close" aria-label="Özlü sözü kapat" onClick={closeQuote}>×</button></div></div> : <button type="button" className="quote-toggle" onClick={() => { setVisible(true); try { sessionStorage.removeItem("kurumsal-motivation-dismissed"); } catch { /* session storage is optional */ } }}>Günün sözünü göster</button>}
+    {visible ? <div className="welcome-quote"><span className="motivation-mark" aria-hidden="true">“</span><div><blockquote>{quote.text}</blockquote><p>— {quote.author} <a href={quote.source} target="_blank" rel="noreferrer" title={quote.note}>Kaynak <UiIcon name="arrow"/></a></p></div><div className="quote-controls"><button type="button" aria-label="Önceki söz" onClick={() => setQuoteIndex((i) => (i - 1 + quotes.length) % quotes.length)}><UiIcon name="arrow-left"/></button><span>{quoteIndex + 1} / {quotes.length}</span><button type="button" aria-label="Sonraki söz" onClick={() => setQuoteIndex((i) => (i + 1) % quotes.length)}><UiIcon name="arrow-right"/></button><button type="button" className="quote-close" aria-label="Özlü sözü kapat" onClick={closeQuote}><UiIcon name="close"/></button></div></div> : <button type="button" className="quote-toggle" onClick={() => { setVisible(true); try { sessionStorage.removeItem("kurumsal-motivation-dismissed"); } catch { /* session storage is optional */ } }}>Günün sözünü göster</button>}
   </aside>;
 }

@@ -1,4 +1,6 @@
 "use client";
+import UiIcon from "./ui-icon";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PublisherLogo from "./publisher-logo";
@@ -26,8 +28,8 @@ export function ProgressReport() {
     return () => observer.disconnect();
   }, []);
   return <section ref={root} className="discover-section" aria-labelledby="discover-title">
-    <div className="discover-copy"><p className="hero-tag">HER NETİN BİR HİKÂYESİ VAR</p><h2 id="discover-title"><b>Bir</b> <b>puandan</b><br /><span><b>çok</b> <b>daha</b> <b>fazlası.</b></span></h2><p>Güçlü olduğun dersleri gör, geliştireceğin kazanımları keşfet. Bir sonraki denemene nereden başlayacağını bil.</p><Link className="button button-navy" href="/sonuclar">Sınav sonucunu öğren ↗</Link></div>
-    <div className="discovery-report"><div className="report-top"><span className="brand-mark">K</span><div><strong>Başarı yolculuğun</strong><small>Temsili karne · gerçek öğrenci verisi değildir</small></div><span className="report-star" aria-hidden="true">✦</span></div><div className="report-score"><strong>72<small> / 90 net</small></strong><span>Her adım ileriye.</span></div><div className="discovery-bars">{[{ name: "Türkçe", net: 17, total: 20 }, { name: "Matematik", net: 16, total: 20 }, { name: "Fen bilimleri", net: 18, total: 20 }].map((d, i) => <div key={d.name} style={{ "--bar-delay": `${i * 140}ms` } as React.CSSProperties}><span>{d.name}</span><span>{d.net} / {d.total}</span><i><b style={{ width: `${d.net / d.total * 100}%` }} /></i></div>)}</div><p className="report-note">↗ Kazanım analiziyle çalışma planını şekillendir.</p></div>
+    <div className="discover-copy"><p className="hero-tag">HER NETİN BİR HİKÂYESİ VAR</p><h2 id="discover-title"><b>Bir</b> <b>puandan</b><br /><span><b>çok</b> <b>daha</b> <b>fazlası.</b></span></h2><p>Güçlü olduğun dersleri gör, geliştireceğin kazanımları keşfet. Bir sonraki denemene nereden başlayacağını bil.</p><Link className="button button-navy" href="/sonuclar">Sınav sonucunu öğren <UiIcon name="arrow"/></Link></div>
+    <div className="discovery-report"><div className="report-top"><span className="brand-mark">K</span><div><strong>Başarı yolculuğun</strong><small>Temsili karne · gerçek öğrenci verisi değildir</small></div><span className="report-star" aria-hidden="true"><UiIcon name="check"/></span></div><div className="report-score"><strong>72<small> / 90 net</small></strong><span>Her adım ileriye.</span></div><div className="discovery-bars">{[{ name: "Türkçe", net: 17, total: 20 }, { name: "Matematik", net: 16, total: 20 }, { name: "Fen bilimleri", net: 18, total: 20 }].map((d, i) => <div key={d.name} style={{ "--bar-delay": `${i * 140}ms` } as React.CSSProperties}><span>{d.name}</span><span>{d.net} / {d.total}</span><i><b style={{ width: `${d.net / d.total * 100}%` }} /></i></div>)}</div><p className="report-note"><UiIcon name="arrow"/> Kazanım analiziyle çalışma planını şekillendir.</p></div>
   </section>;
 }
 

@@ -1,4 +1,6 @@
 "use client";
+import UiIcon from "../ui-icon";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyRecord } from "../../lib/optical";
 
@@ -18,7 +20,7 @@ export default function ExamPicker({exams,value,onChange,disabled=false}:{exams:
   useEffect(()=>{if(open)search.current?.focus();},[open]);
   return <div className="exam-picker" ref={root} onKeyDown={event=>{if(event.key==="Escape"){setOpen(false);trigger.current?.focus();}}}>
     <button ref={trigger} type="button" className="exam-picker-trigger" aria-label="Değerlendirilecek sınav" aria-haspopup="dialog" aria-expanded={open} disabled={disabled} onClick={()=>{setOpen(v=>!v);setQuery("");setExpanded(selected?[selected.publisher?.id??"other"]:[]);}}>
-      <span>{selected?<><small>{selected.publisher?.name??"Diğer sınavlar"}</small><strong>{selected.name}</strong></>:<><small>Yayınevi → sınav</small><strong>Sınav seçin</strong></>}</span><span className="exam-picker-select">Seç <span aria-hidden="true">⌄</span></span>
+      <span>{selected?<><small>{selected.publisher?.name??"Diğer sınavlar"}</small><strong>{selected.name}</strong></>:<><small>Yayınevi <UiIcon name="arrow-right"/> sınav</small><strong>Sınav seçin</strong></>}</span><span className="exam-picker-select">Seç <span aria-hidden="true">⌄</span></span>
     </button>
     {open&&<div className="exam-picker-popover" role="dialog" aria-label="Sınav seçimi">
       <input ref={search} type="search" aria-label="Yayınevi veya sınav ara" placeholder="Yayınevi, sınav adı veya sınıf ara…" value={query} onChange={e=>setQuery(e.target.value)}/>

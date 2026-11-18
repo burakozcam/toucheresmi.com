@@ -1,0 +1,2 @@
+// Geometry reference: https://commons.wikimedia.org/wiki/File:Flag_of_Turkey.svg
+export default function TurkishFlag(){return <svg className="turkish-flag" width="27" height="18" viewBox="0 0 900 600" role="img" aria-label="Türkiye bayrağı"><rect width="900" height="600" fill="#e30a17"/><circle cx="300" cy="300" r="150" fill="#fff"/><circle cx="337.5" cy="300" r="120" fill="#e30a17"/><path d="m417.504 300 135.68-44.08-83.86 115.41V228.67l83.86 115.41Z" fill="#fff"/></svg>;}

@@ -195,3 +195,23 @@ Görsel test dört genişlik/iki tema, bütün sahnelerin tekrar/durdurma/görü
 CPU karşılaştırması için yalnız yerelde `node --import tsx tests/e2e/v136-parser-baseline.cjs` eski okuyucuyu, `QA_READER=current node --import tsx tests/e2e/v136-parser-baseline.cjs` güncel okuyucuyu çalıştırır. Eski okuyucu bu dosyada yaklaşık iki dakika CPU kullanır; canlı sunucuda çalıştırmayın. Ayrıntılar: `docs/v135-quality-followup.md`. İş sonunda yalnız kendi yerel API/Web süreçlerinizi ve test konteynerinizi durdurun. Yerel API adresiyle oluşmuş Web build'ini canlıya taşımayın.
 
 Yalnız API tahmin/kayıt değişikliğinden sonra kısa tarayıcı regresyonu: `V136_UPLOAD_ONLY=1 python3 tests/e2e/v136-ui.py`. Bu koşum beş yükleme kontrolünü `ui/checks-upload.json` dosyasına yazar; tam animasyon kabulünün yerine geçmez ve önceki `ui/checks.json` dosyasını ezmez.
+
+## v1.3.7
+
+Yalnız bu koşuma ait yeni PostgreSQL 16 konteyneri ve `postgresql://ks135@127.0.0.1:55445/ks_v135` sentetik adresi. Eski test DB/kullanıcı verisini yeniden kullanmayın. Yeni migration zincirini yalnız bu boş test DB’ye uygulayın.
+
+- `node --import tsx tests/e2e/v135-http.cjs`: önceki 14 HTTP/DB regresyonu.
+- `node --import tsx tests/e2e/v137-http.cjs`: eski bayi snapshot’ı, edit/koruma, merge A/B, rol/oyun/flag/arama/audit/temsil kabulleri; sentetik UI seed oluşturur.
+- `QA_PHASE=v137 node --max-old-space-size=256 --import tsx tests/e2e/v136-http.cjs`: 4.995 gerçek HTTP/rollback koşumu.
+- `node --max-old-space-size=512 --import tsx tests/e2e/v137-capacity.cjs`: 8 TXT boyutu ve 100/300/500/1000 farklı sentetik öğrenci oturumu; kullanıcı/API aynı süreç ölçülür. Canlıda çalıştırılmaz, hosting kapasitesi sayılmaz.
+- Web’i `NEXT_PUBLIC_API_URL=http://localhost:4015 npm run build` ile üretin; API için `v137-serve.cjs`, Web için `NEXT_PUBLIC_API_URL=http://localhost:4015 API_INTERNAL_URL=http://127.0.0.1:4015 npm run start -w @optik/web -- --hostname 127.0.0.1 -p 3115`.
+- `python3 tests/e2e/v137-ui.py`: gerçek Chromium, tema/kontrast, SVG fazları, ekran dışı pause, yayıncı düğmesi, eski sonuç editörü, owner/ziyaretçi 404.
+
+Kanıtlar `test-results/v137`; seed/token dosyaları paylaşılmaz. İş sonunda yalnız kendi test servislerinizi ve `ks-v137-test` konteynerini durdurun. Bu localhost Web build’i canlıya taşınmaz.
+
+
+### v1.3.7 karne logosu eki
+
+Aynı izole sentetik DB’de logo migration’ını uyguladıktan sonra `node --import tsx tests/e2e/v137-report-logo.cjs` çalışır. Yeni sahte kurum/sınav/diğer bayi fixture’ları oluşturur; logo kaydetme, kurum/sınav izolasyonu, gerçek PDF, devre dışı bırakma ve sonuç snapshot’ını koruma denetimleri yapar. Seed, `test-results/v137/report-logo/ui-seed.json` içindedir; paylaşılmaz.
+
+Web’i yerel4015 API ile build/start ve `v137-serve.cjs` ile API’yi başlattıktan sonra `python3 tests/e2e/v137-report-logo-ui.py` gerçek bayi arayüzünde yükleme/kaydetme/PDF indirme, mobil/tema ve kalıcılığı doğrular. `tests/v134.test.ts` geniş/dik/kare logoları ve hatalı görsel retlerini de içerir. Poppler çıktıları ve sentetik PDF’ler test-results altında; kullanıcının mevcut PDF’leri değiştirilmez. İş sonunda kendi servis/konteynerlerinizi durdurun.

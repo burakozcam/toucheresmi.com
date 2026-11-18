@@ -1,4 +1,6 @@
 "use client";
+import UiIcon from "./ui-icon";
+
 
 import { useEffect, useState } from "react";
 import { EXAM_DATE_SOURCES, LGS_EXAM_DATE, YKS_EXAM_DATE } from "../config/site";
@@ -36,7 +38,7 @@ function Countdown({ date, name, source }: { date: string; name: string; source:
       <div>
         <p className="hero-tag">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "long", timeZone: "Europe/Istanbul" }).format(new Date(`${date}T12:00:00+03:00`)).toLocaleUpperCase("tr-TR")}</p>
         <h2>{name}'ye kalan süre</h2>
-        <p>{name === "YKS" ? "TYT günü esas alınır. AYT / YDT: 20 Haziran 2027. " : ""}Türkiye saatiyle sınav gününün başlangıcına geri sayım. <a href={source} target="_blank" rel="noreferrer">Resmî takvim ↗</a></p>
+        <p>{name === "YKS" ? "TYT günü esas alınır. AYT / YDT: 20 Haziran 2027. " : ""}Türkiye saatiyle sınav gününün başlangıcına geri sayım. <a href={source} target="_blank" rel="noreferrer">Resmî takvim <UiIcon name="arrow"/></a></p>
       </div>
       {remaining.finished ? <strong className="lgs-finished">Sınav tarihi geldi.</strong> : (
         <div className="lgs-units">{units.map(([label, value]) => (

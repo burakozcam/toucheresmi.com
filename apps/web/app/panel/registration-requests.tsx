@@ -1,10 +1,12 @@
 "use client";
+import ActionButton from "./action-button";
 import HumanVerification from "../human-verification";
 import {getHumanToken} from "../../lib/human-token";
 import PasswordField from "../password-field";
 
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import AuditLogManagement from "./audit-log-management";
 import CreateUser from "./create-user";
 import { API_URL } from "../../lib/api";
 
@@ -40,6 +42,7 @@ type MemberRow = {
 };
 
 export default function RegistrationRequests({ token }: { token: string }) {
+  const [activityUser,setActivityUser]=useState<User|null>(null);
   const [humanToken,setHumanToken]=useState("");const [attempt,setAttempt]=useState(0);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -198,6 +201,7 @@ export default function RegistrationRequests({ token }: { token: string }) {
   const pendingCount = registrations.filter((registration) => registration.status === "PENDING").length;
   const statusLabels = { PENDING: "Onay bekliyor", APPROVED: "Onaylandı", REJECTED: "Reddedildi", INACTIVE: "Erişimi kapalı" };
 
+  if(activityUser)return <section><ActionButton intent="neutral" className="button button-quiet" onClick={()=>setActivityUser(null)}>Üyelere dön</ActionButton><h2>{activityUser.firstName} {activityUser.lastName} · İşlem kayıtları</h2><AuditLogManagement key={activityUser.id} token={token} userId={activityUser.id}/></section>;
   return (
     <section className="registration-card">
       <header className="registration-header">
@@ -208,7 +212,7 @@ export default function RegistrationRequests({ token }: { token: string }) {
         </div>
         <div className="registration-header-actions">
           <span>{pendingCount} bekleyen talep</span>
-          <button className="button button-quiet" onClick={() => void loadMembers()} disabled={loading}>Yenile</button>
+          <ActionButton intent="manage" loading={loading} className="button button-quiet" onClick={() => void loadMembers()} disabled={loading}>Yenile</ActionButton>
         </div>
       </header>
       {error && <p className="registration-notice registration-error" role="alert">{error}</p>}
@@ -225,7 +229,7 @@ export default function RegistrationRequests({ token }: { token: string }) {
             <tbody>
               {rows.map((row) => {
                 const user = row.kind === "user" ? users.find((item) => item.id === row.id) : undefined;
-                return (
+  return (
                   <tr key={`${row.kind}-${row.id}`}>
                     <td data-label="Ad Soyad"><strong>{row.firstName} {row.lastName}</strong>{row.phone && <small>{row.phone}</small>}</td>
                     <td data-label="E-posta">{row.email}</td>
@@ -234,25 +238,25 @@ export default function RegistrationRequests({ token }: { token: string }) {
                     <td data-label="İşlemler">
                       <div className="member-actions">
                         {row.kind === "request" && row.status === "PENDING" && <>
-                          <button className="button button-navy" onClick={() => void decide(row.id, "APPROVED")} disabled={pendingId === row.id}>Onayla</button>
-                          <button className="button button-danger" onClick={() => void decide(row.id, "REJECTED")} disabled={pendingId === row.id}>Reddet</button>
+                          <ActionButton intent="save" className="button button-navy" onClick={() => void decide(row.id, "APPROVED")} disabled={pendingId === row.id}>Onayla</ActionButton>
+                          <ActionButton intent="danger" className="button button-danger" onClick={() => void decide(row.id, "REJECTED")} disabled={pendingId === row.id}>Reddet</ActionButton>
                         </>}
-                        {user && <>
+                        {user && <><ActionButton intent="advanced" className="button button-quiet" onClick={()=>setActivityUser(user)}>İşlem kayıtları</ActionButton>
                           {user.active ? <>
-                            <button className="button button-danger" onClick={() => void deleteUser(user)} disabled={pendingId === user.id}>Reddet / Sil</button>
-                            <button className="button button-quiet" onClick={() => void setUserActive(user, false)} disabled={pendingId === user.id}>Erişimi Kapat</button>
+                            <ActionButton intent="danger" className="button button-danger" onClick={() => void deleteUser(user)} disabled={pendingId === user.id}>Reddet / Sil</ActionButton>
+                            <ActionButton intent="danger" className="button button-quiet" onClick={() => void setUserActive(user, false)} disabled={pendingId === user.id}>Erişimi Kapat</ActionButton>
                           </> : <>
-                            <button className="button button-navy" onClick={() => void setUserActive(user, true)} disabled={pendingId === user.id}>Onayla</button>
-                            <button className="button button-danger" onClick={() => void deleteUser(user)} disabled={pendingId === user.id}>Sil</button>
+                            <ActionButton intent="save" className="button button-navy" onClick={() => void setUserActive(user, true)} disabled={pendingId === user.id}>Onayla</ActionButton>
+                            <ActionButton intent="danger" className="button button-danger" onClick={() => void deleteUser(user)} disabled={pendingId === user.id}>Sil</ActionButton>
                           </>}
                           {resetId === user.id ? (
                             <form className="password-reset-form" onSubmit={(event) => void resetPassword(event, user.id)}>
                               <PasswordField name="newPassword" aria-label={`${user.email} için yeni şifre`} newPassword value={newPassword} onChange={event=>setNewPassword(event.target.value)} placeholder="Yeni şifre (15+ karakter)"/>
 <HumanVerification key={attempt} action="password" onToken={setHumanToken}/>
-                              <button className="button button-navy" type="submit" disabled={pendingId === user.id || newPassword.length < 15}>Kaydet</button>
-                              <button className="button button-quiet" type="button" onClick={() => { setResetId(""); setNewPassword(""); }}>İptal</button>
+                              <ActionButton intent="save" className="button button-navy" type="submit" disabled={pendingId === user.id || newPassword.length < 15}>Kaydet</ActionButton>
+                              <ActionButton intent="neutral" className="button button-quiet" type="button" onClick={() => { setResetId(""); setNewPassword(""); }}>İptal</ActionButton>
                             </form>
-                          ) : <button className="button button-quiet" onClick={() => { setResetId(user.id); setNewPassword(""); }} disabled={pendingId === user.id}>Şifre Sıfırla</button>}
+                          ) : <ActionButton intent="danger" className="button button-quiet" onClick={() => { setResetId(user.id); setNewPassword(""); }} disabled={pendingId === user.id}>Şifre Sıfırla</ActionButton>}
                         </>}
                       </div>
                     </td>

@@ -14,16 +14,17 @@ export function referenceReportPdf(view:any,options:ReportOptions):Promise<Buffe
  const doc=new PDFDocument({size:"A4",margin:20,autoFirstPage:false,bufferPages:true,info:{Title:view.keyName,Author:"Kurumsal Sınav"}}),chunks:Buffer[]=[];
  doc.on("data",(b:Buffer)=>chunks.push(b));doc.on("error",reject);doc.on("end",()=>resolve(Buffer.concat(chunks)));
  doc.registerFont("R",path.join(__dirname,"../assets/fonts/LiberationSans-Regular.ttf"));doc.registerFont("B",path.join(__dirname,"../assets/fonts/LiberationSans-Bold.ttf"));
+ const headerLogo=view.examReportLogo?doc.openImage(view.examReportLogo):undefined;
  const W=555.28,L=20,bottom=796,showGeneral=options.showGeneralParticipation!==false,showSchool=options.showSchoolParticipation!==false;
  const summaries=new Map<string,any>(view.summary.map((row:any)=>[row.id,row]));
  const schoolBenchmarks=reportBenchmarks([{data:view.data,summary:view.summary}]);
  let y=0,pageCount=0,current:any;
- const tx=(v:any,x:number,t:number,w:number,size=8,bold=false,color=C.ink)=>{doc.font(bold?"B":"R").fontSize(size).fillColor(color).text(String(v??"—"),x,t,{width:w,lineGap:0});};
+ const tx=(v:any,x:number,t:number,w:number,size=8,bold=false,color=C.ink,align:"left"|"center"="left")=>{doc.font(bold?"B":"R").fontSize(size).fillColor(color).text(String(v??"—"),x,t,{width:w,lineGap:0,align});};
  const ht=(v:any,w:number,size=8,bold=false)=>{doc.font(bold?"B":"R").fontSize(size);return doc.heightOfString(String(v??"—"),{width:w,lineGap:0});};
  const box=(x:number,t:number,w:number,h:number,fill=C.pale)=>doc.roundedRect(x,t,w,h,6).fillAndStroke(fill,C.line);
  function icon(x:number,t:number) {drawBrandLogo(doc,x,t-11,28);}
 
- function page(continuation=false){doc.addPage();pageCount++;doc.roundedRect(L,12,W,53,8).fill(C.ink);icon(32,31);tx("KURUMSAL SINAV",69,22,280,19,true,"#ffffff");tx("ÖĞRENCİ SONUÇ BELGESİ",69,45,280,8,false,"#ffffff");tx(view.keyName,365,23,198,10,true,"#ffffff");y=76;if(continuation){tx(`${current.name} · Devam sayfası: içerik kaybı olmadan sürdürüldü.`,L,y,W,8,true);y+=22;}}
+ function page(continuation=false){doc.addPage();pageCount++;doc.roundedRect(L,12,W,53,8).fill(C.ink);if(headerLogo){const image=headerLogo,scale=Math.min(300/image.width,31/image.height),width=image.width*scale,height=image.height*scale;doc.roundedRect(30,17,width+8,35,4).fill('#ffffff');doc.image(headerLogo,34,19+(31-height)/2,{width,height});tx("ÖĞRENCİ SONUÇ BELGESİ",32,55,300,6.5,false,"#ffffff");}else{icon(32,31);tx("KURUMSAL SINAV",69,22,280,19,true,"#ffffff");tx("ÖĞRENCİ SONUÇ BELGESİ",69,45,280,8,false,"#ffffff");}tx(view.keyName,365,23,198,10,true,"#ffffff");y=76;if(continuation){tx(`${current.name} · Devam sayfası: içerik kaybı olmadan sürdürüldü.`,L,y,W,8,true);y+=22;}}
  function ensure(h:number){if(y+h>bottom)page(true);}
  function heading(label:string,x=L,w=W,t=y,color=C.pale){box(x,t,w,25,color);tx(label,x+10,t+6,w-20,11,true);return t+31;}
  function badge(v:number,x:number,t:number,w:number){doc.roundedRect(x,t,w,12,5).fill(v>=70?C.green:v>=40?C.yellow:C.red);tx(`${w<24?'':'%'}${n(v,0)}`,x+2,t+2,w-4,7,true);}
@@ -72,6 +73,6 @@ export function referenceReportPdf(view:any,options:ReportOptions):Promise<Buffe
   }
  }
 
- try{for(const s of selectedStudents(view,options)){current=s;const start=pageCount;summary(s);if(options.templateId!=='summary-card')details(s);const total=pageCount-start;for(let i=0;i<total;i++){doc.switchToPage(start+i);doc.moveTo(L,808).lineTo(L+W,808).strokeColor(C.line).stroke();tx('kurumsalsinav.com',L+5,811,160,8);tx(`${i+1}/${total}`,L+W-40,811,35,8,true);}doc.switchToPage(pageCount-1);doc.flushPages();}}
+ try{for(const s of selectedStudents(view,options)){current=s;const start=pageCount;summary(s);if(options.templateId!=='summary-card')details(s);const total=pageCount-start;for(let i=0;i<total;i++){doc.switchToPage(start+i);doc.moveTo(L,808).lineTo(L+W,808).strokeColor(C.line).stroke();if(options.showSiteAddress!==false)tx('kurumsalsinav.com',L+5,811,160,8);tx(`${i+1}/${total}`,L+W/2-18,812,36,8,true,C.ink,"center");drawBrandLogo(doc,L+W-110,810,12);tx("Kurumsal Sınav",L+W-93,812,88,8,true);}doc.switchToPage(pageCount-1);doc.flushPages();}}
  catch(error){doc.end();reject(error);return;}doc.end();
 });}

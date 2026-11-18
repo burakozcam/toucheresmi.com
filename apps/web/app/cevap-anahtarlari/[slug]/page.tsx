@@ -1,3 +1,4 @@
+import UiIcon from "../../ui-icon";
 import PublisherLogo from "../../publisher-logo";
 import AnswerPdfOptions from "../../answer-pdf-options";
 import type { Metadata } from "next";
@@ -120,8 +121,8 @@ export default async function AnswerKeyDetailPage({
         </div>
       </article>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
-      <section className="evaluation-promo"><div><h2>Cevaplarından bir karne oluştur.</h2><p>Excel şablonunu doldur, doğru ve yanlışlarını kontrol et; öğrenci ve şube sonuçlarını al.</p></div><Link className="button button-navy" href="/sinav-degerlendir">Sınav Değerlendir →</Link></section>
-      {related.length > 0 && <section className="related-exams"><div className="catalog-section-title"><h2>Aynı yayınevinden diğer denemeler</h2><Link href={`/cevap-anahtarlari?publisherId=${encodeURIComponent(item.publisher.id)}`}>Yayınevi kataloğu →</Link></div><div className="book-showcase">{related.map(exam => <Link className="showcase-book" href={answerKeyPath(exam)} key={exam.id}><ExamCover item={exam}/><strong>{exam.examName}</strong><span>{exam.grade}. Sınıf · {exam.publisher.name}</span></Link>)}</div></section>}
+      <section className="evaluation-promo"><div><h2>Cevaplarından bir karne oluştur.</h2><p>Excel şablonunu doldur, doğru ve yanlışlarını kontrol et; öğrenci ve şube sonuçlarını al.</p></div><Link className="button button-navy" href="/sinav-degerlendir">Sınav Değerlendir <UiIcon name="arrow-right"/></Link></section>
+      {related.length > 0 && <section className="related-exams"><div className="catalog-section-title"><h2>Aynı yayınevinden diğer denemeler</h2><Link href={`/cevap-anahtarlari?publisherId=${encodeURIComponent(item.publisher.id)}`}>Yayınevi kataloğu <UiIcon name="arrow-right"/></Link></div><div className="book-showcase">{related.map(exam => <Link className="showcase-book" href={answerKeyPath(exam)} key={exam.id}><ExamCover item={exam}/><strong>{exam.examName}</strong><span>{exam.grade}. Sınıf · {exam.publisher.name}</span></Link>)}</div></section>}
       <SiteFooter />
     </main>
   );

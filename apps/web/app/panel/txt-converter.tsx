@@ -1,4 +1,7 @@
 "use client";
+import UiIcon from "../ui-icon";
+
+import ActionButton from "./action-button";
 import { useEffect, useState } from "react";
 import FmtGuess from "./fmt-guess";
 import { API_URL } from "../../lib/api";
@@ -31,14 +34,14 @@ export default function TxtConverter({token}:{token:string}){
       {file&&<FmtGuess token={token} file={file} onSelect={id=>{setSourceId(id);invalidate();}}/>}
       {sourceId&&sourceId===targetId&&<p className="field-help">Kaynak ve hedef aynı; dosya aynı yerleşimde kalır. Seçtiğiniz çıktı kodlaması ve satır sonu uygulanır.</p>}
       {!!target&&!!source&&<><h3>Ders eşleştirmeleri</h3><div className="optical-form">{target.layout.lessons.map(t=><label key={t.name}>Hedef: {t.name} · {t.length} karakter<select aria-label={`${t.name} kaynak dersi`} disabled={busy} value={lessonMap[t.name]??""} onChange={e=>{setLessonMap({...lessonMap,[t.name]:e.target.value});invalidate();}}><option value="">Boş bırak</option>{source.layout.lessons.map(s=><option key={s.name} value={s.name}>{s.name} · {s.length} karakter</option>)}</select></label>)}</div></>}
-      <button className="button button-navy" disabled={busy||!file||!source||!target} onClick={()=>void run()}>{busy?"Kontrol ediliyor…":"Dönüşümü kontrol et ve önizle"}</button><p className="field-help">Dosya yalnızca dönüşüm isteği sırasında işlenir, sunucuda saklanmaz. Sığmayan ad, numara veya işaretli cevaplar kesilmez; hata olarak gösterilir.</p>
+      <ActionButton intent="advanced" loading={busy} className="button button-navy" disabled={busy||!file||!source||!target} onClick={()=>void run()}>{busy?"Kontrol ediliyor…":"Dönüşümü kontrol et ve önizle"}</ActionButton><p className="field-help">Dosya yalnızca dönüşüm isteği sırasında işlenir, sunucuda saklanmaz. Sığmayan ad, numara veya işaretli cevaplar kesilmez; hata olarak gösterilir.</p>
     </>}
-    {report&&<section className="studio-card"><h3>Dönüşüm kontrolü</h3><div className="converter-metrics"><span><strong>{report.sourceLines} → {report.outputLines}</strong>satır</span><span><strong>{report.sourceWidth} → {report.targetWidth}</strong>karakter / satır</span><span><strong>{report.errorCount}</strong>hata</span><span><strong>{report.lossCount}</strong>aktarılmayacak alan</span></div>
+    {report&&<section className="studio-card"><h3>Dönüşüm kontrolü</h3><div className="converter-metrics"><span><strong>{report.sourceLines} <UiIcon name="arrow-right"/> {report.outputLines}</strong>satır</span><span><strong>{report.sourceWidth} <UiIcon name="arrow-right"/> {report.targetWidth}</strong>karakter / satır</span><span><strong>{report.errorCount}</strong>hata</span><span><strong>{report.lossCount}</strong>aktarılmayacak alan</span></div>
       {!!report.issues.length&&<div className="table-scroll converter-issues"><table className="result-table"><thead><tr><th>Satır</th><th>Alan</th><th>Tür</th><th>Açıklama</th></tr></thead><tbody>{report.issues.map((i,n)=><tr key={n}><td>{i.line||"Genel"}</td><td>{i.field}</td><td>{({error:"Hata",loss:"Veri kaybı",warning:"Uyarı"})[i.kind]}</td><td>{i.message}</td></tr>)}</tbody></table></div>}{report.issuesTruncated&&<p className="field-help">İlk 1000 kayıt gösteriliyor; sayaçlar tüm satırları kapsar.</p>}
-      <button className="button button-quiet" onClick={exportReport}>Kontrol raporunu CSV indir</button>
+      <ActionButton intent="manage" className="button button-quiet" onClick={exportReport}>Kontrol raporunu CSV indir</ActionButton>
       <div className="converter-previews"><div><h4>Kaynak · ilk 3 satır</h4><pre>{preview(report.sourcePreview,source?.layout)}</pre></div><div><h4>Hedef · ilk 3 satır</h4><pre>{preview(report.outputPreview,target?.layout)}</pre></div></div><p className="field-help">Tanımlı TC/Tel alanları yalnızca önizlemede gizlenir. İndirilen dosyada aktarılabilir bilgiler korunur.</p>
       {report.lossCount>0&&<label className="checkbox-row"><input type="checkbox" checked={allowLoss} disabled={busy} onChange={e=>{setAllowLoss(e.target.checked);setChecked(false);}}/>Raporda belirtilen alanların hedefe aktarılmayacağını kabul ediyorum.</label>}
-      <label className="checkbox-row"><input type="checkbox" checked={checked} disabled={busy||report.errorCount>0||report.lossCount>0&&!allowLoss} onChange={e=>setChecked(e.target.checked)}/>Hedef formatı, eşleştirmeleri ve kontrol raporunu inceledim.</label><button className="button button-navy" disabled={busy||!checked||report.errorCount>0||report.lossCount>0&&!allowLoss} onClick={()=>void run(true)}>Dönüştürülmüş TXT’yi indir</button>
+      <label className="checkbox-row"><input type="checkbox" checked={checked} disabled={busy||report.errorCount>0||report.lossCount>0&&!allowLoss} onChange={e=>setChecked(e.target.checked)}/>Hedef formatı, eşleştirmeleri ve kontrol raporunu inceledim.</label><ActionButton intent="advanced" loading={busy} className="button button-navy" disabled={busy||!checked||report.errorCount>0||report.lossCount>0&&!allowLoss} onClick={()=>void run(true)}>Dönüştürülmüş TXT’yi indir</ActionButton>
     </section>}
   </section>;
 }
