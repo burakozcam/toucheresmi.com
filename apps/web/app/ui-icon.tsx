@@ -1,5 +1,7 @@
 /** Small local SVG icons: consistent geometry, no icon font or external dependency. */
 const paths:Record<string,string>={
+ bolt:"M13 2 4 14h7l-1 8 10-13h-7l0-7Z",
+ cpu:"M6 6h12v12H6V6Zm3 3h6v6H9V9ZM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4",
  "arrow-right":"M4 12h16m-6-6 6 6-6 6",
  "arrow-left":"M20 12H4m6-6-6 6 6 6",
  tick:"m5 12 4 4L19 6",
@@ -35,5 +37,5 @@ const paths:Record<string,string>={
  sun:"M12 3V1m0 22v-2M3 12H1m22 0h-2M5 5 3 3m18 18-2-2M5 19l-2 2M21 3l-2 2M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z",
  moon:"M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z",
 };
-const aliases:Record<string,string>={exam:"upload",'exam-records':'document','data-delete':'trash','fmt-share':'share','fmt-download':'download','fmt-upload':'sliders','school-add':'school',publishers:'book','answer-keys':'key',students:'users','txt-converter':'convert','exam-schedule':'calendar',blocks:'grid',rebuilder:'list','pdf-tools':'pdf','system-users':'users','test-center':'check','publisher-logos':'image','system-center':'activity',blog:'pencil',files:'folder','contact-inbox':'mail','audit-logs':'list',account:'settings'};
+const aliases:Record<string,string>={'result-editor':'pencil','share-links':'share',exam:"upload",'exam-records':'document','data-delete':'trash','fmt-share':'share','fmt-download':'download','fmt-upload':'sliders','school-add':'school',publishers:'book','answer-keys':'key',students:'users','txt-converter':'convert','exam-schedule':'calendar',blocks:'grid',rebuilder:'list','pdf-tools':'pdf','system-users':'users','test-center':'check','publisher-logos':'image','system-center':'activity',blog:'pencil',files:'folder','contact-inbox':'mail','audit-logs':'list',account:'settings'};
 export default function UiIcon({name,className=""}:{name:string;className?:string}){return <svg className={`ui-icon ${className}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[aliases[name]??name]??paths.grid}/></svg>;}

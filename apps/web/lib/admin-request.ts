@@ -1,6 +1,6 @@
 import { API_URL } from "./api";
-export async function adminRequest<T=any>(token:string,path:string,method="GET",body?:unknown):Promise<T>{
- const response=await fetch(`${API_URL}/api/admin${path}`,{method,headers:{Authorization:`Bearer ${token}`,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
+export async function adminRequest<T=any>(token:string,path:string,method="GET",body?:unknown,signal?:AbortSignal):Promise<T>{
+ const response=await fetch(`${API_URL}/api/admin${path}`,{method,signal,headers:{Authorization:`Bearer ${token}`,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
  if(response.status===204)return undefined as T;
  const result=await response.json();if(!response.ok)throw new Error(result.error??"İşlem tamamlanamadı.");return result;
 }

@@ -1,6 +1,6 @@
 # Kurumsal Sınav — Proje hafızası
 
-Son güncelleme: 18 Kasım 2026 · v1.3.7 · yerel geliştirme. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
+Son güncelleme: 18 Kasım 2026 · v1.3.8 · yerel geliştirme. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
 
 ## Amaç ve mimari
 
@@ -13,8 +13,8 @@ npm workspaces: `apps/web` Next.js App Router/React/TypeScript; `apps/api` Expre
 - Next.js 15, React 19, Express 5, Prisma 6, Zod, SheetJS, PDFKit, Sharp, yerel Tesseract WASM/OCR.
 - JWT HS256 + DB oturumu; yeni parolalar scrypt, eski bcrypt uyumluluğu; TOTP, şifreli MFA sırrı, tek kullanımlık kurtarma, güvenilir cihaz.
 - Testler: `node:test`/tsx, gerçek localhost PostgreSQL/HTTP, Python Playwright/Chromium, PDF.js/Poppler.
-- Kurulum sözleşmesi Node >=20.9; önerilen Node 22. v1.3.3 bu ortamda Node 24.22.1 ile doğrulandı. Shell varsayılan Node 18.19.1 desteklenmez; Sharp testleri bu sürümde başarısız olur.
-- Bu çalışma ortamındaki uyumlu Node dizini: `/home/burak/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin`. Gerektiğinde PATH başına ekleyin; proje için makineye özgü yol sabitlemeyin.
+- Kurulum sözleşmesi Node >=20.9; önerilen Node 22. v1.3.3 bu ortamda Node 24.22.1 ile doğrulandı. Eski oturumun Node 18.19.1 sürümü desteklenmez; Sharp testleri bu sürümde başarısız olur. v1.3.8 son kabulü Node 22.23.5 ile yapıldı.
+- Bu oturumdaki hedef Node 22 dizini: `/home/burak/.nvm/versions/node/v22.23.5/bin`. Cache runtime dizini artık Node 24 içerebilir; önce `node -v` doğrulayın. Gerektiğinde PATH başına ekleyin; uygulama koduna makineye özgü yol sabitlemeyin.
 - Temel komutlar: `npm test`, `npm run test:report`, `npm run build`, `npm run db:generate`; `prisma validate --schema apps/api/prisma/schema.prisma`.
 - `.env`, API `.env`, Web `.env.local` ve hosting ortamı desteklenir. Sırları okumadan/yazdırmadan mevcut örnek değişken adlarını `.env.example` üzerinden inceleyin. `NEXT_PUBLIC_*` değişkenlerine sır koymayın.
 
@@ -134,3 +134,19 @@ Mevcut plan/kurulum: Veridyen cPanel + Passenger, Neon PostgreSQL, ayrı Next We
 - Sınava özel logo ek talebi: `ExamReportLogo` okul+anahtar unique kaydı, `20261118193000_v137_exam_report_logo` ek migration (yerelde toplam24; production’a uygulanmadı). Admin/bayi `canEditResult` ile PUT, kendi okulunda canExport ile GET; raster2MB/4MP doğrulama ve1200×240pxPNG normalizasyonu (512KB üstünde640×128 fallback) `report-logo-image.ts`. Metadata zenginleştirme yalnız ilgili okul/sınav logosunu PDF’ye yükler; yeni student-portal PDF akışında da okul/anahtar bağlamı taşınır (public JSON’a eklenmez).
 - `ExamReportLogo` panel bileşeni checkbox/file/save/preview; PDF başlığı sabit53pt, customlogo300×31pt alana oranlı sığar. Özel logoda üst platform kilitlenmesi kaldırılır; her sayfanın sağ altında orijinal K+Kurumsal Sınav kalır, .com yok. Pageno altortada; showSiteAddress bağımsız solaltURL. Web karne önizlemesi de panelde bu görseli kullanır.
 - Logo HTTP8/8, gerçek bayi UI4/4, öncekiportalHTTP14/14; geniş/dik/kare PDF renderQA ve Node266/266. Kanıt test-results/v137/report-logo. Başka bayi/kurum/sınavın logosu okunup değiştirilemez; snapshotrevizyonları değişmez. Logo motoru lazy import: modül yoksa API boot’u yerine yükleme503 alır.
+
+
+## v1.3.8 çalışma alanı ve kabul sözleşmesi
+
+- Rapor: `docs/v138-release-report.md`; başlangıç/canlı referans `43330b7`. Root/API/Web/lock sürümleri 1.3.8. Yeni migration yok, mevcut 24 dosya değişmedi. Production/commit/push yok; kullanıcının önceden untracked PDF'leri korunuyor.
+- Tema varsayılan light, root head betiği yalnız kayıtlı dark uygular; sistem tercihi kullanılmaz. PDF iframe aynı origin parent'tan tema ve görünür yükseklik alır; modal açılışı araç alanını görünür yapar. CSP gevşetilmedi. PDF.js mevcut yerel 4.10.38, jsPDF 2.5.1/AutoTable 3.8.4 yerel aynı sürümler; Tailwind 3.4.17 statik utility CSS. Lisanslar vendor altında.
+- `fmt-share` ve `fmt-download` aynı bileşen. `fmt-display-library.ts` byte/layout/active/publisher/grade/validation eşliğiyle muhafazakâr sunum tekilleştirir; DB referansları değişmez. Aynı FMT adları birleştirme gerekçesi değildir. Yazım yolları advisory lock 1387108 kullanır. Tekli tekrar kontrolü yayınevi/sınıf/kaynak, özgün bayt, yerleşim ve doğrulama bağlamını korur; farklı kapsam/okuyucu/kodlama yeni kaydı engellemez. İndirme ortak helper, paylaşım mevcut bileşen.
+- `/deletion-browser`: yetkili okul ID'lerinden DB agregasyonu, 25 kayıt/düzey; snapshot öğrenci dizisi uygulamaya çekilmez. JSON string/bozuk veriyi ayırır. `pg_input_is_valid` nedeniyle PostgreSQL 16+ staging kontrolü gerekir. `/api/shares/browser`: DB filtreleme/sayfalama; eski API ve public tokenlar korunur.
+- CPU `readParse` normalde okuyucu+parse tek aktarım; eşleşme eksikse parse alternatif liste sonrasına ertelenir. Çekirdek algoritma değişmedi. `resource-admission.ts`: ortak özel storage/same host altında hard-link tabanlı iki yuva, PID/start-time ile ölü süreç kurtarma; 1 GiB süreç RSS kabul tavanı. `CPU_ACCOUNT_PROC_MEMORY=true` ancak `/proc` UID'nin gerçek CloudLinux hesabını temsil ettiği doğrulanınca açılır; varsayılan kapalı. Host RAM/CPU hesabın kotası sayılmaz. Kalıcı kuyruk/job-resume yok.
+- 5.000 satır/TXT, 2 MB, 4.000 karakter korunur. Büyük ayrı oturum karşılaştırması iki dosyanın mevcut sıralı parse/merge akışıdır; tek istekte >5.000 ham satır destekleniyor denmez. 10.000 PDF kontrol kaydı arayüz testidir, gerçek PDF kapasitesi değildir.
+- 150 özgün söz/10 kategori; eski 50 kaynaklı ifade `verified-quotes.json` arşivinde. Kayıtlı sıra ilerler, API yok; saat 30 sn güncellenir. Ana sayfa 9 modülü kullanıcı işlevlerine göre sayar, servis/process sayısı değildir; akademik gelişim motoru ve kapalı kitapçık sayılmaz.
+- Yeni izole konteyner `ks-v138-test`, eski harness uyumu için localhost 55445/ks_v135. Önceki konteynerler kullanılmadı. Tarayıcı koşucu `v138-browser-acceptance.cjs` kendi 4015 API/3115 Web servislerini açıp kapatır. Kaynak digest yeni web/data ve jsPDF varlıklarını kapsar; v138 acceptance kanıtı yalnız aynı digest'te kullanılabilir.
+- Ölçüm ve doğrulamanın son sayıları raporda ve Test Merkezi JSON'dadır. Worker benchmark'ı gerçek 43330b7 havuzuyla aynı çekirdeği karşılaştırır; 24 sonuç hash'i eşliği zorunlu. HTTP sorgu sayıları eşzamanlı normal probe/audit'i de içeren süreç farkıdır. Yerel kapasite hosting taahhüdü değildir.
+
+- v1.3.8 kaynak sınırı aktif CPU işleri içindir. Süreç başına 30 sn idle havuz devam eder; toplam resident worker sayısı global iki sanılmamalı. LVE belleği ve Passenger process sayısı staging kabulünde birlikte ölçülür.
+- Son yerel kabul: Node 22.23.5 ile 269/269 regresyon, 24 birebir performans karşılaştırması, güncel HTTP/tarayıcı grupları, 62 ekran/tema kontrast görünümü (0 bulgu), gerçek PDF/XLSX/ZIP ve derlenmiş worker/paket kontrolleri geçti. Ayrıntılar `docs/v138-release-report.md` içinde. Test Merkezi ve derlenmiş kopyası güncel kaynak özetiyle eşleşir. Yalnız `ks-v138-test` durduruldu; sentetik DB ve kullanıcının önceki PDF dosyaları silinmedi. Commit/push/dağıtım ve production DB işlemi yapılmadı.

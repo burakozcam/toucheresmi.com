@@ -1,0 +1,6 @@
+(function(){
+function apply(theme,height){document.documentElement.dataset.theme=theme==='dark'?'dark':'light';if(Number.isFinite(height)&&height>0)document.documentElement.style.setProperty('--tool-host-height',height+'px');}
+if(parent!==window){document.documentElement.classList.add('embedded-tool');try{apply(parent.document.documentElement.dataset.theme,parent.innerHeight);}catch(e){apply('light');}}
+window.addEventListener('message',function(e){if(e.source===parent&&e.origin===location.origin&&e.data&&e.data.type==='kurumsal-tool-theme')apply(e.data.theme,e.data.viewportHeight);});
+document.addEventListener('DOMContentLoaded',function(){var paths=['M12 3v18M3 12h18','M6 3h12v18H6zM9 8h6M9 12h6M9 16h4','M3 3h18v18H3zM3 17l6-6 4 4 3-3 5 5','M4 4h16v16H4zM8 8h8M8 12h8M8 16h5'];document.querySelectorAll('.tab-icon,.drop-icon').forEach(function(el,i){el.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+paths[i%paths.length]+'"/></svg>';});});
+})();

@@ -1,4 +1,17 @@
-# v1.3.5 · 2026-11-17 · yerel geliştirme
+# KurumsalSınav değişiklik günlüğü
+
+## v1.3.8 — 18 Kasım 2026 (yerel geliştirme ve kabul)
+
+- İlk ziyarette aydınlık tema; kaydedilmiş koyu tercihi boyama öncesinde koruyan tema açılışı. Daha okunaklı yardımcı metin/TXT listesi, kompakt karşılama/rapor ayarları ve aynı hizada PDF araç çubuğu.
+- İşlem anlamına göre menü ikon/aktif çizgi renkleri; Sınav Verilerini Düzenle ve FMT Dönüştürücü yeni gruplarında, ayrı Paylaşım Yönetimi.
+- FMT Paylaş ve İndir ortak ekranı; eski bölüm/link/API uyumluluğu. İçerik/yerleşim/durum/kapsam doğrulamalı sunum tekilleştirmesi; referans veya kayıt silme yok. Tekli/toplu kayıt yollarında ortak kilit ve tekrar kontrolü.
+- Temaya bağlı PDF araçları/tarama, yerel PDF.js/jsPDF ve statik Tailwind CSS; CSP gevşetilmedi. Özetle açılan, 50 satırlık sayfalı ve erişilebilir ZIP kontrol penceresi, şüpheli kayıtlar için açık inceleme/onay.
+- Veri Silme'de DB sayımlı, yetkili yayınevi → sınav → kurum → kayıt ağacı; sunucu araması/sayfalama. Paylaşım bağlantılarında açılır detaylar ve sunucu tarafı 25 kayıtlık sayfalama.
+- TXT okuyucu+parse tek worker çağrısı; ortak depolu süreçler arasında iki atomik iş yuvası ve bellek kabul kontrolü. Sabit yavaşlatma, satır örnekleme veya kalıcı kuyruk iddiası yok. Değerlendirme motoru ve mevcut 5.000 kayıt/TXT sınırı korunur.
+- Ana sayfada örnek karneye geçiş, 8 px süzülme ve kaynakla doğrulanmış 9 işlevsel modül animasyonu; görünürlük ve reduced-motion kuralları. 150 özgün eğitim sözü, eski kaynaklı söz arşivinin korunması.
+- Sistem Merkezi yalnız açık/görünürken yenilenir; hazır Test Merkezi raporu ve güncel kaynak digest'i. Yeni DB migration/rol/daemon/npm bağımlılığı yok.
+- Gerçek ölçümler, test sayıları, hosting önkoşulları ve sınırlar: [v1.3.8 sürüm raporu](docs/v138-release-report.md). Commit/push/production işlemi yapılmadı.
+
 
 ## v1.3.7 — 18 Kasım 2026 (yerel kabul)
 

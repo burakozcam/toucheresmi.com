@@ -28,7 +28,7 @@ with sync_playwright() as p:
  assert all(url.startswith(base) or url.startswith('blob:') for url in network),network
  checks.append(f'local WASM OCR: {result["text"]}, confidence {result["confidence"]}')
  page.evaluate("window.reviewResult=null;void PdfRegionOcr.review([{page:0,value:'1029',confidence:30}]).then(r=>window.reviewResult=r)")
- page.get_by_role('textbox',name='Sayfa 1 çıktı adı').fill('10295');page.get_by_role('button',name='Kontrol ettim · ZIP hazırla').click();page.wait_for_function('window.reviewResult')
+ page.locator('.pdf-review summary').click();page.get_by_role('textbox',name='Sayfa 1 çıktı adı').fill('10295');page.get_by_label('Sayfa 1 eşleşmesini kontrol ettim',exact=True).check();page.locator('.pdf-review>label input').check();page.get_by_role('button',name='Kontrol ettim · ZIP hazırla').click();page.wait_for_function('window.reviewResult')
  assert page.evaluate('reviewResult[0].value')=='10295';checks.append('low-confidence editable review')
  assert not errors,errors
  print(json.dumps({'passed':checks,'javascriptErrors':errors},ensure_ascii=False,indent=2));browser.close()

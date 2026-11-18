@@ -1,3 +1,4 @@
+import {spawnSync} from 'node:child_process';
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -62,8 +63,10 @@ test("sayısal ekleme iframe içindeki engellenen native onaya bağlı değildir
 test("liste, PDF aracı ve statik önizleme betikleri sözdizimi açısından geçerlidir", () => {
   for (const path of ["../apps/web/public/rebuilder.html", "../rebuilder.html", "../apps/web/public/araclar/pdf-tools.html", "../index.html"]) {
     const html = fs.readFileSync(new URL(path, import.meta.url), "utf8");
-    for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
-      if (match[1].trim()) assert.doesNotThrow(() => new vm.Script(match[1]), path);
+    for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+      if (!match[2].trim()) continue;
+      if (/type=["']module["']/.test(match[1])) {const result=spawnSync(process.execPath,["--input-type=module","--check"],{input:match[2],encoding:"utf8"});assert.equal(result.status,0,result.stderr);}
+      else assert.doesNotThrow(() => new vm.Script(match[2]), path);
     }
   }
 });

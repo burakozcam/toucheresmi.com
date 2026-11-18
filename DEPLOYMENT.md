@@ -1,6 +1,6 @@
 # KurumsalSınav dağıtım prosedürü
 
-Bu belge v1.3.5 içindir. Yeni migration ve modül kabul adımları için [v1.3.5 raporunu](docs/v135-release-report.md) birlikte okuyun. Canlıya aktarım operatörün kontrollü işlemidir; bu geliştirme çalışması dağıtım yapmaz. Mevcut cPanel / CloudLinux / LiteSpeed / Passenger, Node.js 22 ve Neon korunur. Sunucuda rsync ve pg_dump gerektiren adım yoktur.
+Bu belge v1.3.8 içindir. Güncel kabul ve sınırlar için [v1.3.8 raporunu](docs/v138-release-report.md), önceki migration adımları için v1.3.5/v1.3.7 raporlarını birlikte okuyun. Canlıya aktarım operatörün kontrollü işlemidir; bu geliştirme çalışması dağıtım yapmaz. Mevcut cPanel / CloudLinux / LiteSpeed / Passenger, Node.js 22 ve Neon korunur. Sunucuda rsync ve pg_dump gerektiren adım yoktur.
 
 ## Hazırlık ve kabul
 
@@ -26,7 +26,7 @@ En az son 3 başarılı uygulama artifact'ı, 7 günlük / 4 haftalık korumalı
 
 ## Aktivasyon sonrası ve başarısızlık
 
-Ana sayfa/footer, panel, API health ve Sistem Merkezi v1.3.5 göstermeli. Tarayıcıda yeni oturumla login + gerçek Google reCAPTCHA, rol kapsamı, sınav/anahtar listesi, TXT öneri yükleme/seçim, dört katılım kombinasyonuyla PDF önizleme/tek/toplu/ZIP, Excel ve il/ilçe seçimini kontrol edin. Yeni JS chunk URL'lerinin 200 döndüğünü, eski route-cache karışmadığını doğrulayın; varsa LiteSpeed/CDN public cache temizliği yapın. Özel sonuç/auth yanıtları cache edilmemeli.
+Ana sayfa/footer, panel, API health ve Sistem Merkezi v1.3.8 göstermeli. Tarayıcıda yeni oturumla login + gerçek Google reCAPTCHA, rol kapsamı, sınav/anahtar listesi, TXT öneri yükleme/seçim, dört katılım kombinasyonuyla PDF önizleme/tek/toplu/ZIP, Excel ve il/ilçe seçimini kontrol edin. Yeni JS chunk URL'lerinin 200 döndüğünü, eski route-cache karışmadığını doğrulayın; varsa LiteSpeed/CDN public cache temizliği yapın. Özel sonuç/auth yanıtları cache edilmemeli.
 
 Aktarım, başlangıç, sağlık veya kritik smoke başarısızsa bakım modunda iki Passenger kökünü önceki **tam** release'e geri alın; yeniden başlatıp sağlık/login/sonuç erişimini kontrol edin. Yalnız .next değiştirip API'yi yeni bırakmayın. Bu sürümün migration’ı yalnız yeni alan ve tablolar ekler; uygulama geri dönüşünde yeni tabloları/verileri otomatik silmeyin veya DB’yi körlemesine geri yüklemeyin. Yeni yazımlar için geri dönüş planını ayrıca doğrulayın. Sonradan alınan verileri, şifreleme anahtarlarını ve storage'ı silmeyin. Migration içeren geçmiş geçişlerin geri dönüşü ayrı DB planına bağlıdır. Sorunu sır içermeyen işletim kaydına yazın; başarısız artifact'ı kanıt için ayırın.
 
@@ -41,3 +41,16 @@ Aktarım, başlangıç, sağlık veya kritik smoke başarısızsa bakım modunda
 - Test `.next` çıktısı localhost API içerir. Production HTTPS API / mevcut MFA-JWT-TXT anahtarları korunarak Web ve API yeniden build edilir. `cpu-worker.js` dahil API dist ağacı birlikte taşınır.
 
 - Sınava özel karne logosu eki: `20261118193000_v137_exam_report_logo` migration’ı kod yayını öncesinde staging/production işletim sürecinde uygulanmalı. Bu oturum yalnız yerel sentetik DB’de doğruladı; mevcut sonuçlarda backfill/değişiklik yok. Geri dönüşte yeni logo tablosunu silmeyin.
+
+
+## v1.3.8 ek önkoşullar
+
+- Bu sürümde yeni migration yok. Eksiksiz v1.3.7 kurulumundan geçişte DB değişikliği gerekmez. PostgreSQL 16+ ve `SELECT pg_input_is_valid('{}','jsonb');` işlev kullanılabilirliği staging'de doğrulanır; yeni Veri Silme sorgusu bunu kullanır.
+- Doğrulanmış hosting üst sınırları: paylaşımlı CPU %2000, RAM 4 GB, NPROC 250, EP 50, I/O 50 MB/sn, IOPS 1024. Bunlar fiziksel sunucu kaynakları veya ayrılmış çekirdek garantisi değildir.
+- Tüm API/lsnode süreçleri aynı host ve UID altında, release dizininden bağımsız aynı **mutlak özel STORAGE_DIR** kullanmalı. `.cpu-admission` yazma ve aynı dosya sisteminde hard-link izinleri test edilir. İki global yuva yalnız bu koşullarda ortaktır. Staging'de süreç sonlandırma/yeniden başlatma ve ölü PID kurtarma testi yapılır. Aktif süreç varken kilitler silinmez.
+- `CPU_ACCOUNT_PROC_MEMORY` varsayılan kapalıdır. `/proc` görünürlüğünün hosting hesabındaki UID süreçlerini doğru temsil ettiği doğrulanmadan açılmaz. Açıldığında UID RSS toplamı muhafazakâr kabul göstergesidir; CloudLinux LVE değildir. Süreç bazlı 1 GiB RSS kabul kontrolü ve iki iş yuvası zaten etkindir. PDF/Excel/sonuç tamponları ayrıca ölçülmelidir; çok sayıda Passenger süreci güvenli kapasite sayılmaz.
+- Kalıcı job kuyruğu yoktur; tarayıcı/Passenger sonlandırmasından sonra tamamlanma garantisi verilmez. Başarısız/bağlantısı kesilmiş değerlendirmede yeniden göndermeden önce arşiv ve kayıtlı sonuç kontrol edilir. Mevcut atomik yazım ve önizleme mühürleri korunur.
+- Web `public/vendor/jspdf*`, lisansları, `public/araclar/pdf-utilities.css`, `tool-theme.*`, PDF.js modül/worker ve OCR build varlıkları eksiksiz taşınır. CSP'ye dış CDN veya unsafe-eval eklenmez. Örnek yerel API adresiyle alınan artifact canlıya kopyalanmaz.
+- İki temada admin/bayi paneli, eski FMT linkleri, TXT öneri/oturum birleştirme, PDF kesme/ZIP ve karne önizleme/indirme smoke yapılır. Geri dönüşte Web/API birlikte 43330b7 artifact'larına döner; DB/storage/anahtarlar ve kullanıcı kayıtları silinmez.
+
+Aktif CPU işi için iki ortak yuva, bütün lsnode süreçlerindeki resident/idle worker toplamını ikiyle sınırlayan bir process yöneticisi değildir. Süreç başına 30 saniyelik idle havuz korunur; Passenger/lsnode process sayısı ve toplam RSS bu nedenle birlikte ölçülür.

@@ -4,11 +4,10 @@ import UiIcon from "./ui-icon";
 import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("kurumsal-theme");
-    const useDark = savedTheme ? savedTheme === "dark" : true;
+    const useDark = document.documentElement.dataset.theme === "dark";
     setDark(useDark);
     document.documentElement.dataset.theme = useDark ? "dark" : "light";
   }, []);
@@ -17,7 +16,7 @@ export default function ThemeToggle() {
     const nextDark = !dark;
     setDark(nextDark);
     document.documentElement.dataset.theme = nextDark ? "dark" : "light";
-    window.localStorage.setItem("kurumsal-theme", nextDark ? "dark" : "light");
+    try { window.localStorage.setItem("kurumsal-theme", nextDark ? "dark" : "light"); } catch { /* Theme remains usable without storage. */ }
   }
 
   return (

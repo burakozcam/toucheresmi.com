@@ -3,19 +3,15 @@ import ActionButton from "./action-button";
 import { useEffect, useState } from "react";
 import fmtLibrary from "../../../api/assets/templates/catalog.json";
 import FmtShareControls from "./fmt-share-controls";
-import { API_URL } from "../../lib/api";
+import {downloadOpticalFile} from "../../lib/optical-download";
 import { opticalRequest } from "../../lib/optical-api";
 import type { TemplateRecord } from "../../lib/optical";
 
-export async function downloadFmt(token: string, template: Pick<TemplateRecord, "id" | "name">) {
-  const r = await fetch(`${API_URL}/api/optical/templates/${encodeURIComponent(template.id)}/download`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
-  if (!r.ok) { const data = await r.json(); throw new Error(data.error ?? "FMT indirilemedi."); }
-  const url = URL.createObjectURL(await r.blob()), link = document.createElement("a"); link.href = url; link.download = template.name.replace(/[\\/:*?"<>|\x00-\x1f]/g, "-").replace(/\.fmt$/i, "") + ".fmt"; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+export async function downloadFmt(token:string,template:Pick<TemplateRecord,"id"|"name">){
+ return downloadOpticalFile(token,`/templates/${encodeURIComponent(template.id)}/download`,template.name.replace(/\.fmt$/i,"")+".fmt");
 }
-export async function downloadFmtExample(token: string, code: string) {
-  const r = await fetch(`${API_URL}/api/optical/templates/examples/${code}/download`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!r.ok) throw new Error("FMT indirilemedi.");
-  const url = URL.createObjectURL(await r.blob()), a = document.createElement("a"); a.href = url; a.download = fmtLibrary.find((entry) => entry.code === code)?.downloadName ?? `${code}.fmt`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+export async function downloadFmtExample(token:string,code:string){
+ return downloadOpticalFile(token,`/templates/examples/${encodeURIComponent(code)}/download`,fmtLibrary.find(entry=>entry.code===code)?.downloadName??`${code}.fmt`);
 }
 export default function FmtDownloads({ token }: { token: string }) {
   const [items, setItems] = useState<TemplateRecord[]>([]), [error, setError] = useState(""), [loading, setLoading] = useState(true), [busy, setBusy] = useState("");

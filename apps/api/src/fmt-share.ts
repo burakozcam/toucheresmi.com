@@ -5,7 +5,7 @@ import {evaluationQuestions} from "./optical-catalog";
 import {createAnswerKeyPdf} from "./answer-key-pdf";
 import express from "express";
 import crypto from "node:crypto";
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "./db";
 import { requireAuth,type AuthenticatedRequest } from "./auth";
@@ -84,6 +84,23 @@ for(const action of ["view","download"]){fmtShareRouter.post(`/api/public/fmt-sh
 
 // Common management for existing FMT links and protected answer PDFs.
 const managementGuards=[requireAuth,manager];
+fmtShareRouter.get("/api/shares/browser",...managementGuards,wrap(async(q,r)=>{
+ const input=z.object({page:z.coerce.number().int().min(1).max(100000).default(1),category:z.enum(["","FMT","PDF","MEMBERSHIP"]).default(""),status:z.enum(["","active","expired","used","revoked"]).default(""),search:z.string().max(100).default("")}).parse(q.query);
+ const owner=q.user!.role===Role.SUPER_ADMIN?Prisma.sql`TRUE`:Prisma.sql`f."createdById"=${q.user!.id}`;
+ const legacy=q.user!.role===Role.SUPER_ADMIN?Prisma.sql`SELECT 'invite:'||u.id AS id,(u."firstName"||' '||u."lastName") AS name,'MEMBERSHIP' AS category,'Admin' AS creator,u."createdAt",CASE WHEN u."setupExpiresAt">NOW() THEN 'active' ELSE 'expired' END AS status FROM "User" u WHERE u."setupTokenHash" IS NOT NULL AND NOT EXISTS(SELECT 1 FROM "FmtShare" f WHERE f.category='MEMBERSHIP' AND f."targetId"=u.id)`:Prisma.sql`SELECT NULL::text AS id,NULL::text AS name,NULL::text AS category,NULL::text AS creator,NULL::timestamp AS "createdAt",NULL::text AS status WHERE FALSE`;
+ const filters=[Prisma.sql`TRUE`];if(input.category)filters.push(Prisma.sql`category=${input.category}`);if(input.status)filters.push(Prisma.sql`status=${input.status}`);if(input.search)filters.push(Prisma.sql`position(lower(${input.search}) in lower(name||' '||creator))>0`);
+ const selected=await prisma.$queryRaw<Array<{id:string;total:number}>>(Prisma.sql`WITH links AS (
+ SELECT f.id,COALESCE(f.name,'FMT paylaşımı') AS name,f.category,CASE WHEN c.role='SUPER_ADMIN' THEN 'Admin' ELSE COALESCE(c."firstName"||' '||c."lastName",'Kullanıcı') END AS creator,f."createdAt",CASE WHEN f."usedAt" IS NOT NULL THEN 'used' WHEN f."revokedAt" IS NOT NULL OR (f.category='MEMBERSHIP' AND (t.id IS NULL OR NOT t.active OR t."setupTokenHash" IS DISTINCT FROM f."tokenHash")) THEN 'revoked' WHEN f."expiresAt"<=NOW() THEN 'expired' ELSE 'active' END AS status
+ FROM "FmtShare" f LEFT JOIN "User" c ON c.id=f."createdById" LEFT JOIN "User" t ON t.id=f."targetId" WHERE ${owner} UNION ALL ${legacy})
+ SELECT id,COUNT(*) OVER()::int AS total FROM links WHERE ${Prisma.join(filters,' AND ')} ORDER BY "createdAt" DESC,id LIMIT 25 OFFSET ${(input.page-1)*25}`);
+ const shares=await prisma.fmtShare.findMany({where:{id:{in:selected.filter(s=>!s.id.startsWith('invite:')).map(s=>s.id)},...(q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id})}});
+ const users=await prisma.user.findMany({where:{id:{in:[...shares.map(s=>s.createdById),...shares.flatMap(s=>s.targetId?[s.targetId]:[]),...selected.filter(s=>s.id.startsWith('invite:')).map(s=>s.id.slice(7))]}},select:{id:true,firstName:true,lastName:true,role:true,active:true,setupTokenHash:true,setupExpiresAt:true,createdAt:true}}),byId=new Map(users.map(u=>[u.id,u]));
+ const rows=selected.map(({id})=>{if(id.startsWith('invite:')){const u=byId.get(id.slice(7))!;return {id,name:`${u.firstName} ${u.lastName}`,category:'MEMBERSHIP',creator:'Admin',createdAt:u.createdAt,expiresAt:u.setupExpiresAt,status:u.setupExpiresAt&&u.setupExpiresAt>new Date()?'active':'expired',url:null,views:0,downloads:0,lastAccessAt:null};}
+ const s=shares.find(s=>s.id===id)!,creator=byId.get(s.createdById),target=s.targetId?byId.get(s.targetId):null;let url:string|null=null;
+ try{if(s.tokenEncrypted)url=`${env.WEB_ORIGIN}/${s.category==='MEMBERSHIP'?'hesap-kur':`${s.category==='PDF'?'pdf-paylasim':'fmt-paylasim'}/${s.id}`}#${decryptShareToken(s.tokenEncrypted)}`;}catch{}
+ return {id:s.id,name:s.name??'FMT paylaşımı',category:s.category,creator:creator?.role===Role.SUPER_ADMIN?'Admin':creator?`${creator.firstName} ${creator.lastName}`:'Kullanıcı',createdAt:s.createdAt,expiresAt:s.expiresAt,status:s.usedAt?'used':s.revokedAt||s.category==='MEMBERSHIP'&&(!target?.active||target.setupTokenHash!==s.tokenHash)?'revoked':s.expiresAt&&s.expiresAt<=new Date()?'expired':'active',url,views:s.views,downloads:s.downloads,lastAccessAt:s.lastAccessAt};});
+ r.json({rows,total:selected[0]?.total??0,page:input.page});
+}));
 fmtShareRouter.get("/api/shares",...managementGuards,wrap(async(q,r)=>{
  const shares=await prisma.fmtShare.findMany({where:q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id},orderBy:{createdAt:"desc"},take:500});
  const creatorIds=[...new Set([...shares.map(s=>s.createdById),...shares.flatMap(s=>s.category==="MEMBERSHIP"&&s.targetId?[s.targetId]:[])])];

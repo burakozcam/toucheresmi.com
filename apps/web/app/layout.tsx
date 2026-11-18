@@ -35,7 +35,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="tr" data-theme="dark">
+    <html lang="tr" data-theme="light" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{__html: "try{document.documentElement.dataset.theme=localStorage.getItem('kurumsal-theme')==='dark'?'dark':'light'}catch(e){}"}}/></head>
       <body><AnalyticsConsent/><VisitorTracker/><SplashScreen />{children}</body>
     </html>
   );

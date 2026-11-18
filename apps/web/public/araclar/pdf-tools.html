@@ -11,8 +11,7 @@
   <script src="/vendor/ocr/tesseract.min.js"></script>
   <script src="pdf-region-ocr.js"></script>
   <script>if (window.parent !== window) document.documentElement.classList.add("embedded-tool");</script>
-  <script>tailwind = { config: { corePlugins: { preflight: false }, darkMode: "class" } };</script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="pdf-utilities.css">
   <style>
     * { box-sizing: border-box; }
     html.embedded-tool, html.embedded-tool body { overflow: hidden; }
@@ -70,7 +69,7 @@
       .pdf-dropzone { min-height: 180px; padding: 18px; }
     }
   </style>
-</head>
+<link rel="stylesheet" href="tool-theme.css"><script src="tool-theme.js"></script></head>
 <body class="pdf-tools">
   <main id="pdf-main">
     <section class="pdf-hero">
@@ -117,12 +116,19 @@
   <footer class="pdf-footer py-5"><div class="pdf-shell flex flex-wrap justify-between gap-3"><span class="font-bold text-slate-300">kurumsalsinav.com</span><span>PDF Düzenleyici</span></div></footer>
 
   <script src="/vendor/pdf-lib.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
   <script src="/vendor/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+  <script src="/vendor/jspdf.umd.min.js"></script>
+  <script src="/vendor/jspdf.plugin.autotable.min.js"></script>
   <script src="/vendor/jszip.min.js"></script>
-  <script>
+  <script type="module">
+    import * as pdfjsLib from '/vendor/pdfjs/pdf.min.mjs';
+    window.pdfjsLib=pdfjsLib;
+    pdfjsLib.GlobalWorkerOptions.workerSrc='/vendor/pdfjs/pdf.worker.min.mjs';
+    function renderTextLayer({textContent,container,viewport,textDivs}){
+      const layer=new pdfjsLib.TextLayer({textContentSource:textContent,container,viewport});
+      return {promise:layer.render().then(()=>{textDivs.push(...layer.textDivs);})};
+    }
     (function () {
       "use strict";
       var definitions = {
@@ -153,7 +159,7 @@
       var splitTextPageNumber = 1;
       var splitTextAnchor = null;
       var splitTextRenderId = 0;
-      if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
 
       function setStatus(message, kind) {
         status.textContent = message;
@@ -276,7 +282,7 @@
         document.getElementById("action-label").textContent = definition.action;
         document.getElementById("drop-title").textContent = definition.drop;
         document.getElementById("drop-description").textContent = definition.hint;
-        document.getElementById("drop-icon").textContent = definition.icon;
+        document.getElementById("drop-icon").innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>';
         var note = document.getElementById("tool-note");
         note.textContent = definition.note || "";
         note.hidden = !definition.note;
@@ -348,7 +354,7 @@
           if (renderId !== splitTextRenderId) return;
           var textContent = await page.getTextContent();
           var textDivs = [];
-          await pdfjsLib.renderTextLayer({ textContent: textContent, container: layer, viewport: viewport, textDivs: textDivs }).promise;
+          await renderTextLayer({ textContent: textContent, container: layer, viewport: viewport, textDivs: textDivs }).promise;
           if (renderId !== splitTextRenderId) return;
           wrap.hidden = false;
           empty.hidden = true;
@@ -389,7 +395,7 @@
         document.body.appendChild(layer);
         try {
           var divs = [];
-          await pdfjsLib.renderTextLayer({ textContent: { items: items, styles: styles }, container: layer, viewport: viewport, textDivs: divs }).promise;
+          await renderTextLayer({ textContent: { items: items, styles: styles }, container: layer, viewport: viewport, textDivs: divs }).promise;
           if (document.fonts) await document.fonts.ready;
           return PdfTextSelection.extractEntries(PdfTextSelection.readEntries(layer, divs), anchor);
         } finally { layer.remove(); }

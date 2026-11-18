@@ -39,8 +39,8 @@ test("belge taramada şeffaflık beyaz zemine, tonlar gerçek siyah beyaza çevr
   const pixels = new Uint8ClampedArray([0, 0, 0, 255, 230, 230, 230, 255, 0, 0, 0, 0]);
   const processed = scanPixels(pixels, "bw", 165, 35); assert.deepEqual([...processed], [0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255]);
 });
-test("50 ayrı sözün kişi, kaynak ve çeviri bilgileri bulunur", () => {
-  const q = JSON.parse(fs.readFileSync(new URL("../apps/web/data/motivational-quotes.json", import.meta.url), "utf8")); assert.equal(q.length, 50); assert.equal(new Set(q.map((x: any) => x.text)).size, 50); assert.ok(q.every((x: any) => x.author && x.note && /^https:\/\//.test(x.source)));
+test("En az 150 ayrı eğitim sözü özgün veya kaynaklı olarak sunulur", () => {
+  const q = JSON.parse(fs.readFileSync(new URL("../apps/web/data/motivational-quotes.json", import.meta.url), "utf8")); assert.ok(q.length >= 150); assert.equal(new Set(q.map((x: any) => x.text)).size, q.length); assert.ok(q.every((x: any) => x.author && x.note && (x.author === "KurumsalSınav" || /^https:\/\//.test(x.source))));
 });
 test("Excel takvim şablonunda gerçek hücre seçim kuralları bulunur", async () => {
   const require = createRequire(import.meta.url); const XLSX = require("../apps/web/public/vendor/xlsx.full.min.js"); const JSZip = require("../apps/web/public/vendor/jszip.min.js");

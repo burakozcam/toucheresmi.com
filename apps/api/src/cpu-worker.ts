@@ -11,6 +11,7 @@ parentPort!.on('message',(job:CpuJob)=>{
  try{
   let value:unknown;
   switch(job.kind){
+   case 'readParse':{const reader=evaluationReader(job.text,job.selected,job.templates,job.options.missingBooklet),data=job.deferOnUnmatched&&reader.matched<job.text.split(/\r\n|\r|\n/).filter(l=>l.trim()).length?null:parseOptical(job.text,reader.layout,job.questions,job.school,{...job.options,hashIdentity:identityHash,encryptIdentity});value={reader,data};break;}
    case 'infer':value=inferFmt(job.text,job.templates);break;
    case 'reader':value=evaluationReader(job.text,job.selected,job.templates,job.missingBooklet);break;
    case 'match':value=matchExamAnswers(job.text,job.layout,job.questions);break;
