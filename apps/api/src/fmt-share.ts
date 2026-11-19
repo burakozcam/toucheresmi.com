@@ -1,3 +1,4 @@
+import {shareWindowInput,shareWindow} from './share-window';
 import fs from "node:fs";
 import path from "node:path";
 import {encryptShareToken,decryptShareToken,validShare} from "./share-security";
@@ -23,22 +24,22 @@ export const shareHash=(token:string)=>crypto.createHash("sha256").update(token)
 export const hasFmt=(t:{originalFmt:string;originalBase64?:string|null})=>{const text=t.originalBase64?decodeOptical(Buffer.from(t.originalBase64,"base64")):t.originalFmt;return !!text?.trim()&&!/^\s*[\[{]/.test(text);};
 export const fmtShareRouter=express.Router();
 type Handler=(q:AuthenticatedRequest,r:express.Response)=>Promise<void>;
-const wrap=(fn:Handler):express.RequestHandler=>async(q,r,n)=>{try{r.setHeader("Cache-Control","private, no-store");r.setHeader("Referrer-Policy","no-referrer");await fn(q as AuthenticatedRequest,r);}catch(e){if(e instanceof z.ZodError){r.status(400).json({error:"Paylaşım bilgileri geçersiz."});return;}n(e);}};
+const wrap=(fn:Handler):express.RequestHandler=>async(q,r,n)=>{try{r.setHeader("Cache-Control","private, no-store");r.setHeader("Referrer-Policy","no-referrer");await fn(q as AuthenticatedRequest,r);}catch(e){if(e instanceof Error&&e.message.startsWith("Bitiş tarihi")){r.status(400).json({error:e.message});return;}if(e instanceof z.ZodError){r.status(400).json({error:"Paylaşım bilgileri geçersiz."});return;}n(e);}};
 const manager:express.RequestHandler=(q:AuthenticatedRequest,r,n)=>{if(![Role.SUPER_ADMIN,Role.DEALER].includes(q.user!.role as any)){r.status(403).json({error:"Paylaşım için bayi veya yönetici hesabı gerekir."});return;}n();};
 const limit=new RequestLimiter(90,10*60_000).middleware();
 type FileRef={id:string;name:string;example?:boolean};
-const bundleInput=z.object({duration:z.enum(Object.keys(shareDurations) as [keyof typeof shareDurations,...Array<keyof typeof shareDurations>]),templateIds:z.array(z.string().min(1)).max(30).default([]),exampleCodes:z.array(z.enum(fmtLibraryCodes as [string,...string[]])).max(fmtLibraryCodes.length).default([])});
+const bundleInput=z.object({duration:z.enum(Object.keys(shareDurations) as [keyof typeof shareDurations,...Array<keyof typeof shareDurations>]),templateIds:z.array(z.string().min(1)).max(30).default([]),exampleCodes:z.array(z.enum(fmtLibraryCodes as [string,...string[]])).max(fmtLibraryCodes.length).default([])}).merge(shareWindowInput);
 fmtShareRouter.post("/api/optical/fmt-shares",requireAuth,manager,limit,wrap(async(q,r)=>{
  const input=bundleInput.parse(q.body),ids=[...new Set(input.templateIds)],codes=[...new Set(input.exampleCodes)];
  if(!ids.length&&!codes.length){r.status(400).json({error:"En az bir FMT seçin."});return;}
  const templates=ids.length?await prisma.opticalTemplate.findMany({where:{id:{in:ids},active:true}}):[];
  if(templates.length!==ids.length||templates.some(t=>!hasFmt(t))){r.status(400).json({error:"Seçilen özgün FMT dosyalarından biri kullanılamıyor."});return;}
  const fileRefs:FileRef[]=[...codes.map(id=>({id:`example:${id}`,name:findLibraryFmt(id)!.name,example:true})),...templates.map(t=>({id:t.id,name:t.name}))];
- const token=crypto.randomBytes(32).toString("base64url"),share=await prisma.fmtShare.create({data:{templateId:null,fileRefs,name:fileRefs.map(f=>f.name).join(" + "),createdById:q.user!.id,tokenHash:shareHash(token),tokenEncrypted:encryptShareToken(token),expiresAt:shareExpiry(input.duration)}});
- r.status(201).json({id:share.id,url:`${env.WEB_ORIGIN}/fmt-paylasim/${share.id}#${token}`,expiresAt:share.expiresAt});
+ const token=crypto.randomBytes(32).toString("base64url"),share=await prisma.fmtShare.create({data:{templateId:null,fileRefs,name:fileRefs.map(f=>f.name).join(" + "),createdById:q.user!.id,tokenHash:shareHash(token),tokenEncrypted:encryptShareToken(token),...shareWindow(input,start=>shareExpiry(input.duration,start))}});
+ r.status(201).json({id:share.id,url:`${env.WEB_ORIGIN}/fmt-paylasim/${share.id}#${token}`,startsAt:share.startsAt,expiresAt:share.expiresAt});
 }));
 fmtShareRouter.get("/api/optical/fmt-shares",requireAuth,manager,wrap(async(q,r)=>{
- r.json(await prisma.fmtShare.findMany({where:{category:"FMT",...(q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id})},select:{id:true,createdAt:true,expiresAt:true,revokedAt:true},orderBy:{createdAt:"desc"},take:100}));
+ r.json(await prisma.fmtShare.findMany({where:{category:"FMT",...(q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id})},select:{id:true,createdAt:true,startsAt:true,expiresAt:true,revokedAt:true},orderBy:{createdAt:"desc"},take:100}));
 }));
 async function shareFiles(share:{fileRefs:unknown;template?:{id:string;name:string;active:boolean;originalFmt:string;originalBase64?:string|null}|null}):Promise<Array<{id:string;name:string;bytes:Buffer;downloadName?:string}>>{
  if(!share.fileRefs)return share.template?.active&&hasFmt(share.template)?[{id:share.template.id,name:share.template.name,bytes:fmtBytes(share.template.originalFmt,share.template.originalBase64)}]:[];
@@ -52,14 +53,14 @@ async function shareFiles(share:{fileRefs:unknown;template?:{id:string;name:stri
  return files;
 }
 fmtShareRouter.post("/api/optical/templates/:id/shares",requireAuth,manager,limit,wrap(async(q,r)=>{
- const {duration}=z.object({duration:z.enum(Object.keys(shareDurations) as [keyof typeof shareDurations,...Array<keyof typeof shareDurations>])}).parse(q.body);
+ const input=z.object({duration:z.enum(Object.keys(shareDurations) as [keyof typeof shareDurations,...Array<keyof typeof shareDurations>])}).merge(shareWindowInput).parse(q.body);
  const template=await prisma.opticalTemplate.findFirst({where:{id:String(q.params.id),active:true}});
  if(!template||!hasFmt(template)){r.status(404).json({error:"Paylaşılabilir özgün ve etkin FMT bulunamadı."});return;}
- const token=crypto.randomBytes(32).toString("base64url"),share=await prisma.fmtShare.create({data:{templateId:template.id,name:template.name,createdById:q.user!.id,tokenHash:shareHash(token),tokenEncrypted:encryptShareToken(token),expiresAt:shareExpiry(duration)}});
- const url=`${env.WEB_ORIGIN}/fmt-paylasim/${share.id}#${token}`;r.status(201).json({id:share.id,url,expiresAt:share.expiresAt});
+ const token=crypto.randomBytes(32).toString("base64url"),share=await prisma.fmtShare.create({data:{templateId:template.id,name:template.name,createdById:q.user!.id,tokenHash:shareHash(token),tokenEncrypted:encryptShareToken(token),...shareWindow(input,start=>shareExpiry(input.duration,start))}});
+ const url=`${env.WEB_ORIGIN}/fmt-paylasim/${share.id}#${token}`;r.status(201).json({id:share.id,url,startsAt:share.startsAt,expiresAt:share.expiresAt});
 }));
 fmtShareRouter.get("/api/optical/templates/:id/shares",requireAuth,manager,wrap(async(q,r)=>{
- r.json(await prisma.fmtShare.findMany({where:{templateId:String(q.params.id),...(q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id})},select:{id:true,createdAt:true,expiresAt:true,revokedAt:true},orderBy:{createdAt:"desc"},take:100}));
+ r.json(await prisma.fmtShare.findMany({where:{templateId:String(q.params.id),...(q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id})},select:{id:true,createdAt:true,startsAt:true,expiresAt:true,revokedAt:true},orderBy:{createdAt:"desc"},take:100}));
 }));
 fmtShareRouter.delete("/api/optical/fmt-shares/:id",requireAuth,manager,wrap(async(q,r)=>{
  const result=await prisma.fmtShare.updateMany({where:{id:String(q.params.id),category:"FMT",...(q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id}),revokedAt:null},data:{revokedAt:new Date()}});
@@ -67,12 +68,12 @@ fmtShareRouter.delete("/api/optical/fmt-shares/:id",requireAuth,manager,wrap(asy
 }));
 // The public metadata contains only expiry, never the token, file name, or contents.
 fmtShareRouter.get("/api/public/fmt-shares/:id/info",limit,wrap(async(q,r)=>{
- const share=await prisma.fmtShare.findFirst({where:{id:String(q.params.id),revokedAt:null,category:"FMT",OR:[{expiresAt:null},{expiresAt:{gt:new Date()}}]},include:{template:true}});
+ const share=await prisma.fmtShare.findFirst({where:{id:String(q.params.id),revokedAt:null,category:"FMT",AND:[{OR:[{startsAt:null},{startsAt:{lte:new Date()}}]},{OR:[{expiresAt:null},{expiresAt:{gt:new Date()}}]}]},include:{template:true}});
  if(!share||!(await shareFiles(share)).length){r.status(410).json({error:"Paylaşım sona ermiş, iptal edilmiş veya bulunamıyor."});return;}r.json({expiresAt:share.expiresAt});
 }));
 for(const action of ["view","download"]){fmtShareRouter.post(`/api/public/fmt-shares/:id/${action}`,limit,wrap(async(q,r)=>{
  const {token,fileId}=z.object({token:z.string().regex(/^[A-Za-z0-9_-]{43}$/),fileId:z.string().optional()}).parse(q.body);
- const share=await prisma.fmtShare.findFirst({where:{id:String(q.params.id),tokenHash:shareHash(token),revokedAt:null,category:"FMT",OR:[{expiresAt:null},{expiresAt:{gt:new Date()}}]},include:{template:true}});
+ const share=await prisma.fmtShare.findFirst({where:{id:String(q.params.id),tokenHash:shareHash(token),revokedAt:null,category:"FMT",AND:[{OR:[{startsAt:null},{startsAt:{lte:new Date()}}]},{OR:[{expiresAt:null},{expiresAt:{gt:new Date()}}]}]},include:{template:true}});
  const files=share?await shareFiles(share):[];
  if(!share||!files.length){r.status(410).json({error:"Paylaşım süresi dolmuş, iptal edilmiş veya bağlantı geçersiz."});return;}
  if(action==="view"){await prisma.fmtShare.update({where:{id:share.id},data:{views:{increment:1},lastAccessAt:new Date()}});r.json({name:files.map(f=>f.name).join(" + "),files:files.map(({id,name,downloadName})=>({id,name,...(downloadName?{downloadName}:{})})),expiresAt:share.expiresAt});return;}
@@ -85,12 +86,12 @@ for(const action of ["view","download"]){fmtShareRouter.post(`/api/public/fmt-sh
 // Common management for existing FMT links and protected answer PDFs.
 const managementGuards=[requireAuth,manager];
 fmtShareRouter.get("/api/shares/browser",...managementGuards,wrap(async(q,r)=>{
- const input=z.object({page:z.coerce.number().int().min(1).max(100000).default(1),category:z.enum(["","FMT","PDF","MEMBERSHIP"]).default(""),status:z.enum(["","active","expired","used","revoked"]).default(""),search:z.string().max(100).default("")}).parse(q.query);
+ const input=z.object({page:z.coerce.number().int().min(1).max(100000).default(1),category:z.enum(["","FMT","PDF","MEMBERSHIP"]).default(""),status:z.enum(["","scheduled","active","expired","used","revoked"]).default(""),search:z.string().max(100).default("")}).parse(q.query);
  const owner=q.user!.role===Role.SUPER_ADMIN?Prisma.sql`TRUE`:Prisma.sql`f."createdById"=${q.user!.id}`;
  const legacy=q.user!.role===Role.SUPER_ADMIN?Prisma.sql`SELECT 'invite:'||u.id AS id,(u."firstName"||' '||u."lastName") AS name,'MEMBERSHIP' AS category,'Admin' AS creator,u."createdAt",CASE WHEN u."setupExpiresAt">NOW() THEN 'active' ELSE 'expired' END AS status FROM "User" u WHERE u."setupTokenHash" IS NOT NULL AND NOT EXISTS(SELECT 1 FROM "FmtShare" f WHERE f.category='MEMBERSHIP' AND f."targetId"=u.id)`:Prisma.sql`SELECT NULL::text AS id,NULL::text AS name,NULL::text AS category,NULL::text AS creator,NULL::timestamp AS "createdAt",NULL::text AS status WHERE FALSE`;
  const filters=[Prisma.sql`TRUE`];if(input.category)filters.push(Prisma.sql`category=${input.category}`);if(input.status)filters.push(Prisma.sql`status=${input.status}`);if(input.search)filters.push(Prisma.sql`position(lower(${input.search}) in lower(name||' '||creator))>0`);
  const selected=await prisma.$queryRaw<Array<{id:string;total:number}>>(Prisma.sql`WITH links AS (
- SELECT f.id,COALESCE(f.name,'FMT paylaşımı') AS name,f.category,CASE WHEN c.role='SUPER_ADMIN' THEN 'Admin' ELSE COALESCE(c."firstName"||' '||c."lastName",'Kullanıcı') END AS creator,f."createdAt",CASE WHEN f."usedAt" IS NOT NULL THEN 'used' WHEN f."revokedAt" IS NOT NULL OR (f.category='MEMBERSHIP' AND (t.id IS NULL OR NOT t.active OR t."setupTokenHash" IS DISTINCT FROM f."tokenHash")) THEN 'revoked' WHEN f."expiresAt"<=NOW() THEN 'expired' ELSE 'active' END AS status
+ SELECT f.id,COALESCE(f.name,'FMT paylaşımı') AS name,f.category,CASE WHEN c.role='SUPER_ADMIN' THEN 'Admin' ELSE COALESCE(c."firstName"||' '||c."lastName",'Kullanıcı') END AS creator,f."createdAt",CASE WHEN f."usedAt" IS NOT NULL THEN 'used' WHEN f."revokedAt" IS NOT NULL OR (f.category='MEMBERSHIP' AND (t.id IS NULL OR NOT t.active OR t."setupTokenHash" IS DISTINCT FROM f."tokenHash")) THEN 'revoked' WHEN f."expiresAt"<=NOW() THEN 'expired' WHEN f."startsAt">NOW() THEN 'scheduled' ELSE 'active' END AS status
  FROM "FmtShare" f LEFT JOIN "User" c ON c.id=f."createdById" LEFT JOIN "User" t ON t.id=f."targetId" WHERE ${owner} UNION ALL ${legacy})
  SELECT id,COUNT(*) OVER()::int AS total FROM links WHERE ${Prisma.join(filters,' AND ')} ORDER BY "createdAt" DESC,id LIMIT 25 OFFSET ${(input.page-1)*25}`);
  const shares=await prisma.fmtShare.findMany({where:{id:{in:selected.filter(s=>!s.id.startsWith('invite:')).map(s=>s.id)},...(q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id})}});
@@ -98,7 +99,7 @@ fmtShareRouter.get("/api/shares/browser",...managementGuards,wrap(async(q,r)=>{
  const rows=selected.map(({id})=>{if(id.startsWith('invite:')){const u=byId.get(id.slice(7))!;return {id,name:`${u.firstName} ${u.lastName}`,category:'MEMBERSHIP',creator:'Admin',createdAt:u.createdAt,expiresAt:u.setupExpiresAt,status:u.setupExpiresAt&&u.setupExpiresAt>new Date()?'active':'expired',url:null,views:0,downloads:0,lastAccessAt:null};}
  const s=shares.find(s=>s.id===id)!,creator=byId.get(s.createdById),target=s.targetId?byId.get(s.targetId):null;let url:string|null=null;
  try{if(s.tokenEncrypted)url=`${env.WEB_ORIGIN}/${s.category==='MEMBERSHIP'?'hesap-kur':`${s.category==='PDF'?'pdf-paylasim':'fmt-paylasim'}/${s.id}`}#${decryptShareToken(s.tokenEncrypted)}`;}catch{}
- return {id:s.id,name:s.name??'FMT paylaşımı',category:s.category,creator:creator?.role===Role.SUPER_ADMIN?'Admin':creator?`${creator.firstName} ${creator.lastName}`:'Kullanıcı',createdAt:s.createdAt,expiresAt:s.expiresAt,status:s.usedAt?'used':s.revokedAt||s.category==='MEMBERSHIP'&&(!target?.active||target.setupTokenHash!==s.tokenHash)?'revoked':s.expiresAt&&s.expiresAt<=new Date()?'expired':'active',url,views:s.views,downloads:s.downloads,lastAccessAt:s.lastAccessAt};});
+ return {id:s.id,name:s.name??'FMT paylaşımı',category:s.category,creator:creator?.role===Role.SUPER_ADMIN?'Admin':creator?`${creator.firstName} ${creator.lastName}`:'Kullanıcı',createdAt:s.createdAt,startsAt:s.startsAt,expiresAt:s.expiresAt,status:s.usedAt?'used':s.revokedAt||s.category==='MEMBERSHIP'&&(!target?.active||target.setupTokenHash!==s.tokenHash)?'revoked':s.expiresAt&&s.expiresAt<=new Date()?'expired':s.startsAt&&s.startsAt>new Date()?'scheduled':'active',url,views:s.views,downloads:s.downloads,lastAccessAt:s.lastAccessAt};});
  r.json({rows,total:selected[0]?.total??0,page:input.page});
 }));
 fmtShareRouter.get("/api/shares",...managementGuards,wrap(async(q,r)=>{
@@ -106,10 +107,10 @@ fmtShareRouter.get("/api/shares",...managementGuards,wrap(async(q,r)=>{
  const creatorIds=[...new Set([...shares.map(s=>s.createdById),...shares.flatMap(s=>s.category==="MEMBERSHIP"&&s.targetId?[s.targetId]:[])])];
  const creators=await prisma.user.findMany({where:{id:{in:creatorIds}},select:{id:true,firstName:true,lastName:true,role:true,active:true,setupTokenHash:true}});
  const rows=shares.map(s=>{const creator=creators.find(c=>c.id===s.createdById),target=s.category==="MEMBERSHIP"?creators.find(c=>c.id===s.targetId):null,invalidInvite=s.category==="MEMBERSHIP"&&(!target?.active||target.setupTokenHash!==s.tokenHash);let url:null|string=null;try{if(s.tokenEncrypted)url=`${env.WEB_ORIGIN}/${s.category==="MEMBERSHIP"?"hesap-kur":`${s.category==="PDF"?"pdf-paylasim":"fmt-paylasim"}/${s.id}`}#${decryptShareToken(s.tokenEncrypted)}`;}catch{/* Key rotation: retain revocation capability. */}
- return {...s,tokenHash:undefined,tokenEncrypted:undefined,url,name:s.name??(s.fileRefs as FileRef[]|null)?.map(f=>f.name).join(" + ")??"FMT paylaşımı",creator:creator?.role===Role.SUPER_ADMIN?"Admin":creator?`${creator.firstName} ${creator.lastName}`:"Kullanıcı",status:s.usedAt?"used":s.revokedAt||invalidInvite?"revoked":s.expiresAt&&s.expiresAt<=new Date()?"expired":"active"};});
+ return {...s,tokenHash:undefined,tokenEncrypted:undefined,url,name:s.name??(s.fileRefs as FileRef[]|null)?.map(f=>f.name).join(" + ")??"FMT paylaşımı",creator:creator?.role===Role.SUPER_ADMIN?"Admin":creator?`${creator.firstName} ${creator.lastName}`:"Kullanıcı",status:s.usedAt?"used":s.revokedAt||invalidInvite?"revoked":s.expiresAt&&s.expiresAt<=new Date()?"expired":s.startsAt&&s.startsAt>new Date()?"scheduled":"active"};});
  if(q.user!.role===Role.SUPER_ADMIN){const invites=await prisma.user.findMany({where:{setupTokenHash:{not:null}},select:{id:true,firstName:true,lastName:true,createdAt:true,setupExpiresAt:true,setupTokenHash:true,mustChangePassword:true},take:500,orderBy:{createdAt:"desc"}});
  // Only pending invitations have sufficient provenance in legacy user records.
- for(const u of invites.filter(u=>u.setupTokenHash&&!shares.some(s=>s.category==="MEMBERSHIP"&&s.targetId===u.id)))rows.push({id:`invite:${u.id}`,name:`${u.firstName} ${u.lastName}`,category:"MEMBERSHIP",usedAt:null,createdById:"",creator:"Admin",createdAt:u.createdAt,expiresAt:u.setupExpiresAt,revokedAt:null,status:u.setupExpiresAt&&u.setupExpiresAt>new Date()?"active":"expired",url:null,views:0,downloads:0,lastAccessAt:null,targetId:u.id,templateId:null,fileRefs:null,tokenHash:undefined,tokenEncrypted:undefined});
+ for(const u of invites.filter(u=>u.setupTokenHash&&!shares.some(s=>s.category==="MEMBERSHIP"&&s.targetId===u.id)))rows.push({id:`invite:${u.id}`,name:`${u.firstName} ${u.lastName}`,category:"MEMBERSHIP",startsAt:null,usedAt:null,createdById:"",creator:"Admin",createdAt:u.createdAt,expiresAt:u.setupExpiresAt,revokedAt:null,status:u.setupExpiresAt&&u.setupExpiresAt>new Date()?"active":"expired",url:null,views:0,downloads:0,lastAccessAt:null,targetId:u.id,templateId:null,fileRefs:null,tokenHash:undefined,tokenEncrypted:undefined});
  }
  r.json(rows);
 }));
@@ -137,24 +138,24 @@ fmtShareRouter.patch("/api/shares/:id",...managementGuards,wrap(async(q,r)=>{
   if(!result.count){r.status(409).json({error:"Davet artık kullanılamıyor."});return;}r.json({ok:true});return;
  }
  const expiry=input.expiresAt===undefined?undefined:input.expiresAt===null?null:new Date(input.expiresAt);
- if(expiry&&expiry<=new Date()){r.status(400).json({error:"Gelecekte bir tarih seçin."});return;}
+ if(expiry&&+expiry<=Math.max(Date.now(),+(managed.startsAt??new Date()))){r.status(400).json({error:"Gelecekte bir tarih seçin."});return;}
  const result=await prisma.fmtShare.updateMany({where:{id,...(q.user!.role===Role.SUPER_ADMIN?{}:{createdById:q.user!.id})},data:{...(expiry!==undefined?{expiresAt:expiry}:{}),...(input.revoked!==undefined?{revokedAt:input.revoked?new Date():null}:{})}});
  if(!result.count){r.status(404).json({error:"Bağlantı bulunamadı."});return;}r.json({ok:true});
 }));
 fmtShareRouter.post("/api/answer-keys/:id/shares",...managementGuards,limit,wrap(async(q,r)=>{
- const input=z.object({expiresAt:z.string().datetime().nullable()}).parse(q.body),expiresAt=input.expiresAt?new Date(input.expiresAt):null;
+ const input=shareWindowInput.extend({durationDays:z.number().int().min(1).max(365).default(7)}).parse(q.body),{startsAt,expiresAt}=shareWindow(input,start=>new Date(+start+input.durationDays*86400_000));
  if(expiresAt&&expiresAt<=new Date()){r.status(400).json({error:"Gelecekte bir tarih seçin."});return;}
  const publication=await prisma.publishedAnswerKey.findFirst({where:{id:String(q.params.id),...(q.user!.role===Role.SUPER_ADMIN?{}:{published:true})},include:{opticalKey:true,files:{where:{category:"ANSWER_KEY"},orderBy:{createdAt:"desc"}}}});
  if(!publication){r.status(404).json({error:"Sınav bulunamadı."});return;}if(!pdfSource(publication)){r.status(409).json({error:"Paylaşılabilir cevap anahtarı PDF veya soru verisi yok."});return;}
- const token=crypto.randomBytes(32).toString("base64url"),share=await prisma.fmtShare.create({data:{category:"PDF",targetId:publication.id,name:publication.examName,createdById:q.user!.id,tokenHash:shareHash(token),tokenEncrypted:encryptShareToken(token),expiresAt}});
- r.status(201).json({id:share.id,url:`${env.WEB_ORIGIN}/pdf-paylasim/${share.id}#${token}`,expiresAt});
+ const token=crypto.randomBytes(32).toString("base64url"),share=await prisma.fmtShare.create({data:{category:"PDF",targetId:publication.id,name:publication.examName,createdById:q.user!.id,tokenHash:shareHash(token),tokenEncrypted:encryptShareToken(token),startsAt,expiresAt}});
+ r.status(201).json({id:share.id,url:`${env.WEB_ORIGIN}/pdf-paylasim/${share.id}#${token}`,startsAt,expiresAt});
 }));
 for(const action of ["view","download"]){fmtShareRouter.post(`/api/public/pdf-shares/:id/${action}`,limit,wrap(async(q,r)=>{
  const {token}=z.object({token:z.string().regex(/^[A-Za-z0-9_-]{43}$/)}).parse(q.body);
  const share=await prisma.fmtShare.findFirst({where:{id:String(q.params.id),category:"PDF",tokenHash:shareHash(token)}});
  if(!validShare(share)){r.status(410).json({error:"Bağlantı geçersiz, iptal edilmiş veya süresi dolmuş."});return;}
  const publication=await prisma.publishedAnswerKey.findUnique({where:{id:share!.targetId!},include:{opticalKey:true,publisher:true,files:{where:{category:"ANSWER_KEY"},orderBy:{createdAt:"desc"}}}});
- if(!publication){r.status(410).json({error:"Cevap anahtarı artık kullanılamıyor."});return;}
+ if(!publication||!publication.published||publication.publishedAt>new Date()||!publication.publisher.active){r.status(410).json({error:"Cevap anahtarı artık kullanılamıyor."});return;}
  const source=pdfSource(publication);
  if(!source){r.status(410).json({error:"Cevap anahtarı artık kullanılamıyor."});return;}
  if(action==="view"){await prisma.fmtShare.update({where:{id:share!.id},data:{lastAccessAt:new Date(),views:{increment:1}}});r.json({name:share!.name,expiresAt:share!.expiresAt});return;}

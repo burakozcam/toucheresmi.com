@@ -444,6 +444,7 @@ model PublishedAnswerKey {
   publisher Publisher       @relation(fields: [publisherId], references: [id], onDelete: Restrict)
   createdBy User            @relation("PublishedAnswerKeyCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   files     AnswerKeyFile[]
+  announcements Announcement[]
   scheduleEntries ExamScheduleEntry[]
 
   @@index([published, createdAt])
@@ -562,6 +563,7 @@ model PublisherAlias {
 
 model FmtShare {
   id String @id @default(cuid())
+  startsAt DateTime?
   tokenHash String @unique
   templateId String?
   fileRefs Json?
@@ -581,6 +583,58 @@ model FmtShare {
   downloads Int @default(0)
   lastAccessAt DateTime?
 
+}
+
+model Announcement {
+  id String @id @default(cuid())
+  category String
+  title String
+  summary String
+  content String @db.Text
+  startsAt DateTime
+  endsAt DateTime?
+  state String @default("ACTIVE")
+  audience String @default("ALL")
+  priority Int @default(0)
+  pinned Boolean @default(false)
+  section String?
+  source String @default("MANUAL")
+  sourceEvent String? @unique
+  publicationId String?
+  publication PublishedAnswerKey? @relation(fields:[publicationId],references:[id],onDelete:SetNull)
+  releaseDate DateTime?
+  createdById String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  targets AnnouncementTarget[]
+  reads AnnouncementRead[]
+  @@index([state, startsAt, endsAt])
+  @@index([category, state, startsAt])
+  @@index([publicationId])
+}
+
+model AnnouncementTarget {
+  announcementId String
+  targetId String
+  announcement Announcement @relation(fields:[announcementId],references:[id],onDelete:Cascade)
+  @@id([announcementId,targetId])
+  @@index([targetId,announcementId])
+}
+
+model AnnouncementRead {
+  announcementId String
+  userId String
+  readAt DateTime @default(now())
+  announcement Announcement @relation(fields:[announcementId],references:[id],onDelete:Cascade)
+  @@id([announcementId,userId])
+}
+
+model AnnouncementAutomation {
+  kind String @id
+  enabled Boolean @default(false)
+  audience String @default("ALL")
+  targetIds String[] @default([])
+  updatedAt DateTime @updatedAt
 }
 
 model SystemEvent {

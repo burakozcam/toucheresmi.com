@@ -1,6 +1,6 @@
 # Kurumsal Sınav — Proje hafızası
 
-Son güncelleme: 18 Kasım 2026 · v1.3.8 · yerel geliştirme. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
+Son güncelleme: 19 Kasım 2026 · v1.3.9 yerel çalışma · tam sürüm kabulü henüz verilmedi. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
 
 ## Amaç ve mimari
 
@@ -150,3 +150,25 @@ Mevcut plan/kurulum: Veridyen cPanel + Passenger, Neon PostgreSQL, ayrı Next We
 
 - v1.3.8 kaynak sınırı aktif CPU işleri içindir. Süreç başına 30 sn idle havuz devam eder; toplam resident worker sayısı global iki sanılmamalı. LVE belleği ve Passenger process sayısı staging kabulünde birlikte ölçülür.
 - Son yerel kabul: Node 22.23.5 ile 269/269 regresyon, 24 birebir performans karşılaştırması, güncel HTTP/tarayıcı grupları, 62 ekran/tema kontrast görünümü (0 bulgu), gerçek PDF/XLSX/ZIP ve derlenmiş worker/paket kontrolleri geçti. Ayrıntılar `docs/v138-release-report.md` içinde. Test Merkezi ve derlenmiş kopyası güncel kaynak özetiyle eşleşir. Yalnız `ks-v138-test` durduruldu; sentetik DB ve kullanıcının önceki PDF dosyaları silinmedi. Commit/push/dağıtım ve production DB işlemi yapılmadı.
+
+
+## v1.3.9 kesinti sonrası durum
+
+- Başlangıç `eee6727`; ayrıntılı denetim/teslim kaydı `docs/v139-release-report.md`, devam noktası `docs/v139-progress.md`. **Yardım sistemi eksiksiz kabul edilmedi; canlıya hazır denmemeli.** Mevcut kullanıcı PDF dosyaları korunur.
+- Duyuru modeli/API/yönetim/ana sayfa, açık onaylı idempotent geçmiş importu; zamanlanmış FMT/PDF paylaşımı, kategori bazlı SQL listeler; yalnız ana sayfada karşılama, birleşik PDF merkezi ve 200–380 px menü kaynakta var.
+- Yeni migration `20261119210000_v139_announcements_scheduled_shares`: eklemeli duyuru tabloları + nullable FmtShare.startsAt. Yalnız sentetik `ks-v139-test`, 127.0.0.1:55449/ks_v139 üzerinde kullanıldı. Canlıya uygulanmadı; prod migration/seed/reset/db push/migrate dev/deploy yasak talimatı sürer.
+- ZIP tek istek/ortak view, değişmez font baytları ve istek kapsamlı özet/öğrenci indeksleri kullanır. Özel diske STORE ZIP, bir PDF tamponu, v138 ortak CPU lease, iptalde temizlik. İlerleme ham ikili çerçeve; terminal boyut doğrulaması olmadan başarı yok. Tarayıcı tamamlanan ZIP'i Blob olarak tutar. Kurum/sonuç/logo için global cache yok.
+- Kaydedilmiş 22 sentetik performans örneğinde 6 öğrenci iki sayfa 0,886 → 0,670 sn, 60 → 10 sorgu; 500 öğrenci 80,495 → 38,163 sn, 5.010 → 10 sorgu. Özgün canlı dakikalar süren vaka yeniden üretilemedi. Alt aşamaların tamamı ve kontrollü paralellik henüz ölçülmedi. Gerçek hosting kapasitesi iddiası değildir.
+- Kesinti sonrası 278/278 çevrimdışı regresyon (269 eski + 9 yeni), 20 gerçek yerel HTTP grubu, 8 Chromium grubu, Prisma validate, API/Web production build başarılı. Test kaynak digest'i eşleşir. Node 22.23.5, test runner heap 512 MB; uygulamanın RSS/CPU kabul eşikleri azaltılmadı. Çalıştırılmayan eski entegrasyon betikleri başarılı işaretlenmez.
+- Yardım motoru lazy yüklenir; sentetik animasyon ve gerçek tur kayıt başlatmaz. 84 dosyada 709 JSX/Link kontrol şablonu envantere kayıtlı, 21 etiket incelemesi bekler. Bu rakam tekil ayrıntılı açıklama tamamlanma sayısı değildir. PDF HTML/JS ve sandbox Sınav Listesi Düzenleyici iç kontrolleri, her koşullu/rol durumunun anlamlı anlatımı ve özel animasyon kabulü eksiktir. Bayi yardımında admin kontrollerinin çıkmaması test edildi.
+- Yardım geliştirme kuralı: yeni kullanıcı kontrolünde kararlı yardım hedefi, işleme özel açıklama/önkoşul/uyarı ve ilgili rol/akış güncellenir; `scripts/help-inventory.cjs` açıkça çalıştırılır. Envanter eşleşmesi, içerik kalitesi testinin yerine geçmez.
+- Bu oturum commit/push/deploy veya canlı veri işlemi yapmadı. Localhost API ile Web build canlıya kopyalanmaz. Sonraki adım raporun açık kabul maddeleri, özellikle eksiksiz yardım ve tam performans ölçüm matrisidir.
+
+
+## v1.3.9 ana sayfa denetimi eki
+
+- Tüm gerçek ana sayfa sahneleri v139 kaynaklarıyla denetlendi; ayrıntı `docs/v139-release-report.md` → “Ana Sayfa Tanıtım ve Animasyon Denetimi”. Yanlış otomatik sınavlar arası kazanım anlatımı tek sınav analizine çevrildi; 2.000 kişilik kapasite sayacı kaldırıldı.
+- 12 işlevsel alan, 10 ürün sahnesi; kompakt PDF kartı mevcut araç satırındadır. Duyuru 7 gün/geçmiş, paylaşım başlangıç/aktif/bitiş, güvenli yardım akışı tamamlandı. Bu, bütün panel yardımının eksiksiz olduğu anlamına gelmez.
+- Altın kilit ve bayrak kaynakları değişmedi. Teknik test/kaynak/kapasite sayıları müşteriye pazarlanmaz. ZIP karne tanıtımı eklenmez. `v139-home.cjs/.py` gerçek Chromium + sentetik public API kullanır, DB gerektirmez.
+
+- Ana sayfa ekinin son kabulü: 27/27 Chromium grubu temiz çıkış, 278/278 regresyon, Web build; 10 sahne/12 işlevsel alan. Görünüm başına 99 kontrast örneği geçti. Manifest gzip +1.202 bayt (%1,02); gerçek hosting performans vaadi değil. Detay ve kanıtlar sürüm raporundadır.

@@ -103,13 +103,13 @@ export default function ExamManagement({ token, onOpenAnswerKeys }: { token: str
       <form className="exam-form" onSubmit={createExam}>
         <h2>Yeni sınav</h2>
         <p>Yayınevi ve sınıfı seçip sınav adını ekleyin. Sonraki adımda bu kayda cevap anahtarı bağlanır.</p>
-        <label>Yayınevi<select value={publisherId} onChange={event => setPublisherId(event.target.value)} required>
+        <label>Yayınevi<select data-help-id="panel-exam-management-1" value={publisherId} onChange={event => setPublisherId(event.target.value)} required>
           <option value="">Yayınevi seçin</option>
           {publishers.filter(publisher => publisher.active).map(publisher => <option key={publisher.id} value={publisher.id}>{publisher.name}</option>)}
         </select></label>
-        <label>Sınıf<select value={grade} onChange={event => setGrade(event.target.value)} required>{Array.from({ length: 12 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}. Sınıf</option>)}</select></label>
-        <label>Sınav adı<input value={examName} onChange={event => setExamName(event.target.value)} maxLength={180} minLength={2} placeholder="Örn. Türkiye Geneli Deneme 1" required /></label>
-        <ActionButton intent="manage" className="button button-navy" type="submit" disabled={submitting || !publisherId}>{submitting ? "Ekleniyor…" : "Sınavı ekle"}</ActionButton>
+        <label>Sınıf<select data-help-id="panel-exam-management-2" value={grade} onChange={event => setGrade(event.target.value)} required>{Array.from({ length: 12 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}. Sınıf</option>)}</select></label>
+        <label>Sınav adı<input data-help-id="panel-exam-management-3" value={examName} onChange={event => setExamName(event.target.value)} maxLength={180} minLength={2} placeholder="Örn. Türkiye Geneli Deneme 1" required /></label>
+        <ActionButton data-help-id="panel-exam-management-4" intent="manage" className="button button-navy" type="submit" disabled={submitting || !publisherId}>{submitting ? "Ekleniyor…" : "Sınavı ekle"}</ActionButton>
       </form>
 
       <div className="school-list-panel">
@@ -125,7 +125,7 @@ export default function ExamManagement({ token, onOpenAnswerKeys }: { token: str
                   return <article className="exam-list-item" key={exam.id}>
                     <strong>{exam.examName}</strong>
                     <span>{hasAnswerFile ? "Cevap anahtarı dosyası eklendi" : "Cevap anahtarı bekleniyor"}</span>
-                    <ActionButton intent="manage" className="button button-quiet" type="button" onClick={() => onOpenAnswerKeys(exam.id)}>{hasAnswerFile ? "Anahtarı düzenle" : "Cevap anahtarı ekle"}</ActionButton>
+                    <ActionButton data-help-id="panel-exam-management-5" intent="manage" className="button button-quiet" type="button" onClick={() => onOpenAnswerKeys(exam.id)}>{hasAnswerFile ? "Anahtarı düzenle" : "Cevap anahtarı ekle"}</ActionButton>
                   </article>;
                 })}</div>
               </div>

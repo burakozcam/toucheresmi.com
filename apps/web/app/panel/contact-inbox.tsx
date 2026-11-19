@@ -83,11 +83,11 @@ export default function ContactInbox({ token }: { token: string }) {
               </div>
               <div className="contact-message-meta">
                 <span>{message.email}</span>
-                {message.phone && <a href={`tel:${encodeURIComponent(message.phone)}`}>{message.phone}</a>}
+                {message.phone && <a data-help-id="panel-contact-inbox-1" href={`tel:${encodeURIComponent(message.phone)}`}>{message.phone}</a>}
                 {message.user && <span>Hesap: {message.user.firstName} {message.user.lastName} ({message.user.role})</span>}
               </div>
               <p className="contact-message-body">{message.message}</p>
-              <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => void setRead(message, !message.readAt)}>
+              <ActionButton data-help-id="panel-contact-inbox-2" intent="neutral" type="button" className="button button-quiet" onClick={() => void setRead(message, !message.readAt)}>
                 {message.readAt ? "Okunmadı olarak işaretle" : "Okundu olarak işaretle"}
               </ActionButton>
             </article>
@@ -95,9 +95,9 @@ export default function ContactInbox({ token }: { token: string }) {
         </div>
       )}
       <div className="management-pagination">
-        <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1}>Önceki</ActionButton>
+        <ActionButton data-help-id="panel-contact-inbox-3" intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1}>Önceki</ActionButton>
         <span>Sayfa {page} / {pageCount} · {data?.total ?? 0} mesaj</span>
-        <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={page >= pageCount}>Sonraki</ActionButton>
+        <ActionButton data-help-id="panel-contact-inbox-4" intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={page >= pageCount}>Sonraki</ActionButton>
       </div>
     </section>
   );

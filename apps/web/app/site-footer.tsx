@@ -15,7 +15,7 @@ export default function SiteFooter() {
         <Link href="/sinav-degerlendir">Sınav Değerlendir</Link>
         <Link href="/sinav-takvimi">Sınav Takvimi</Link>
         <Link href="/verilerinizin-guvenligi">Verilerinizin Güvenliği</Link>
-        <Link href="/pdf-duzenleyici">PDF Düzenleyici</Link>
+        <Link href="/pdf-duzenleyici">PDF ve Belge Araçları</Link>
         <Link href="/contact">İletişim</Link>
         <a href="/contact#contact-form">destek@kurumsalsinav.com</a>
         <ConsentPreferences/>

@@ -6,4 +6,4 @@ export default function MatchMeter({percent,label}:{percent:number;label:string}
  const hue=value<=50?value*.9:45+(value-50)*1.9;
  return <div className="confidence-meter" role="meter" aria-label={`${label} eşleşme oranı`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(target)}><i style={{width:`${value}%`,backgroundColor:`hsl(${hue} 65% 42%)`}}/><strong>%{Math.round(target)}</strong></div>;
 }
-export function MatchDetails({children}:{children:React.ReactNode}){const [open,setOpen]=useState(false);return <details open={open} onToggle={e=>setOpen(e.currentTarget.open)}><summary>{open?"Detayları gizle":"Detayları göster"}</summary>{children}</details>;}
+export function MatchDetails({children}:{children:React.ReactNode}){const [open,setOpen]=useState(false);return <details open={open} onToggle={e=>setOpen(e.currentTarget.open)}><summary data-help-id="panel-match-meter-1">{open?"Detayları gizle":"Detayları göster"}</summary>{children}</details>;}

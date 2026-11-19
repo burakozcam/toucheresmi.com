@@ -1,6 +1,6 @@
 # KurumsalSınav dağıtım prosedürü
 
-Bu belge v1.3.8 içindir. Güncel kabul ve sınırlar için [v1.3.8 raporunu](docs/v138-release-report.md), önceki migration adımları için v1.3.5/v1.3.7 raporlarını birlikte okuyun. Canlıya aktarım operatörün kontrollü işlemidir; bu geliştirme çalışması dağıtım yapmaz. Mevcut cPanel / CloudLinux / LiteSpeed / Passenger, Node.js 22 ve Neon korunur. Sunucuda rsync ve pg_dump gerektiren adım yoktur.
+Bu belge v1.3.9 yerel çalışmasının geçiş önkoşullarını da içerir. v1.3.9 tam kabulü henüz verilmedi; [açık kabul maddelerini](docs/v139-release-report.md) kapatmadan yayımlamayın. Önceki kabul ve sınırlar için [v1.3.8 raporunu](docs/v138-release-report.md), önceki migration adımları için v1.3.5/v1.3.7 raporlarını birlikte okuyun. Canlıya aktarım operatörün kontrollü işlemidir; bu geliştirme çalışması dağıtım yapmaz. Mevcut cPanel / CloudLinux / LiteSpeed / Passenger, Node.js 22 ve Neon korunur. Sunucuda rsync ve pg_dump gerektiren adım yoktur.
 
 ## Hazırlık ve kabul
 
@@ -54,3 +54,13 @@ Aktarım, başlangıç, sağlık veya kritik smoke başarısızsa bakım modunda
 - İki temada admin/bayi paneli, eski FMT linkleri, TXT öneri/oturum birleştirme, PDF kesme/ZIP ve karne önizleme/indirme smoke yapılır. Geri dönüşte Web/API birlikte 43330b7 artifact'larına döner; DB/storage/anahtarlar ve kullanıcı kayıtları silinmez.
 
 Aktif CPU işi için iki ortak yuva, bütün lsnode süreçlerindeki resident/idle worker toplamını ikiyle sınırlayan bir process yöneticisi değildir. Süreç başına 30 saniyelik idle havuz korunur; Passenger/lsnode process sayısı ve toplam RSS bu nedenle birlikte ölçülür.
+
+
+## v1.3.9 ek önkoşullar — kabul açık
+
+- `docs/v139-release-report.md` yardım kapsamı, görsel kabul ve performans ölçümü açıkları kapanmadan sürüm etkinleştirilmez. Başarılı yerel test/build tek başına yayın onayı değildir.
+- Yeni eklemeli `20261119210000_v139_announcements_scheduled_shares` migration staging'de ve yedek/geri dönüş planıyla operatör tarafından değerlendirilir. Bu geliştirme oturumu canlı migration çalıştırmaz. Yeni tablolar olmadan API/Web etkinleştirilmez; eski migration dosyaları değiştirilmez.
+- Özel STORAGE_DIR altında `report-temp` için 0700 dizin/0600 dosya ve mevcut `.cpu-admission` ortak host/UID koşulları doğrulanır. Proxy buffering/timeouts ile ZIP ilerleme/indirme/iptal ve çoklu lsnode RAM toplamı staging'de ölçülür. Zorla sonlandırılmış süreçlerin özel geçici dosyaları için güvenli saklama/temizlik prosedürü belirlenir.
+- Geçmiş duyuru importu otomatik seed değildir; yetkili yönetici Duyurular ekranından açıkça başlatır. Sürüm duyurusu için otomasyon ve ayrıca admin onayı gerekir; migration/build/commit yayın olayı sayılmaz.
+- Yeni alan eski paylaşımlarda null başlangıçtır. Eski bağlantı, zamanlanmış FMT/PDF doğrudan indirme, bayi hedef izolasyonu ve yedi günlük duyuru sınırları staging'de sınanır.
+- Yerel Web build localhost API adresi taşır; gerçek HTTPS API adresiyle temiz artifact oluşturulur. Başarısız aktivasyonda Web/API birlikte `eee6727` v1.3.8 artifact'ına döner. Yeni tablolar/başlangıç alanı, kullanıcı verileri, storage ve anahtarlar otomatik silinmez.

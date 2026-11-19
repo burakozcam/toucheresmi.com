@@ -8,7 +8,7 @@ test('v126 PDF paylaşımı: token, süre, iptal, indirme ve sayaç; genel dosya
  const token='p'.repeat(43),share:any={id:'link',category:'PDF',targetId:'key',tokenHash:shareHash(token),revokedAt:null,expiresAt:new Date(Date.now()+10000),views:0,downloads:0};
  prisma.fmtShare.findFirst=(async({where}:any)=>where.tokenHash===share.tokenHash?share:null)as any;
  prisma.fmtShare.update=(async({data}:any)=>{share.views+=data.views?.increment??0;share.downloads+=data.downloads?.increment??0;return share;})as any;
- prisma.publishedAnswerKey.findUnique=(async()=>({examName:'Anonim sınav',grade:8,publisher:{name:'Özdebir'},opticalKey:{questions:[{lesson:'TÜRKÇE',number:1,answer:'A',weight:1,positions:{A:1}}]}}))as any;
+ prisma.publishedAnswerKey.findUnique=(async()=>({examName:'Anonim sınav',published:true,publishedAt:new Date(0),grade:8,publisher:{name:'Özdebir',active:true},opticalKey:{questions:[{lesson:'TÜRKÇE',number:1,answer:'A',weight:1,positions:{A:1}}]}}))as any;
  try{
   for(const action of ['view','download']){
    const handler=route(fmtShareRouter,`/api/public/pdf-shares/:id/${action}`,'post');
@@ -43,7 +43,7 @@ test('v126 eski yüklenmiş cevap PDF güvenli depolamadan paylaşılır; depo d
  const originals=[prisma.fmtShare.findFirst,prisma.fmtShare.update,prisma.publishedAnswerKey.findUnique];const directory=path.resolve(env.STORAGE_DIR,'answer-keys','v126-anonymous-test');fs.mkdirSync(directory,{recursive:true});const location=path.join(directory,'key.pdf');fs.writeFileSync(location,'%PDF-1.4\n% anonymous test only');
  let storedPath=location;const token='z'.repeat(43);
  prisma.fmtShare.findFirst=(async({where}:any)=>where.tokenHash===shareHash(token)?{id:'link',targetId:'key',revokedAt:null,expiresAt:null}:null)as any;prisma.fmtShare.update=(async()=>({}))as any;
- prisma.publishedAnswerKey.findUnique=(async()=>({examName:'Anonim',grade:8,publisher:{name:'Test'},opticalKey:null,files:[{storagePath:storedPath,originalFileName:'key.pdf'}]}))as any;
+ prisma.publishedAnswerKey.findUnique=(async()=>({examName:'Anonim',published:true,publishedAt:new Date(0),grade:8,publisher:{name:'Test',active:true},opticalKey:null,files:[{storagePath:storedPath,originalFileName:'key.pdf'}]}))as any;
  try{const handler=route(fmtShareRouter,'/api/public/pdf-shares/:id/download','post');const downloaded=await invoke(handler,{token});assert.equal(downloaded.status,200);assert.equal(downloaded.result.toString(),fs.readFileSync(location,'utf8'));storedPath='/tmp/outside-private-store.pdf';assert.equal((await invoke(handler,{token})).status,410);}
  finally{[prisma.fmtShare.findFirst,prisma.fmtShare.update,prisma.publishedAnswerKey.findUnique]=originals as any;fs.rmSync(directory,{recursive:true,force:true});}
 });

@@ -12,6 +12,7 @@ const PDFDocument=require("pdfkit");
 export type ReportView=any;
 export type ReportOptions={kind:"cards"|"school"|"classes";order:"score"|"name";hideIdentity:boolean;branch?:string;grade?:string;templateId?:string;studentId?:string;showGeneralParticipation?:boolean;showSchoolParticipation?:boolean;showSiteAddress?:boolean};
 export function selectedStudents(view:ReportView,options:ReportOptions):OpticalStudent[]{
+ if(options.studentId&&view.reportResources?.students){const s=view.reportResources.students.get(options.studentId);return s&&(!options.grade||resultGrade(s.branch)===options.grade)&&(!options.branch||s.branch===options.branch)?[s]:[];}
  const scores=new Map<string,number|null>(view.summary.map((row:any)=>[row.id,row.score]));
  return view.data.students.filter((s:OpticalStudent)=>(!options.grade||resultGrade(s.branch)===options.grade)&&(!options.branch||s.branch===options.branch)&&(!options.studentId||s.id===options.studentId)).sort((a:OpticalStudent,b:OpticalStudent)=>options.order==="name"?a.name.localeCompare(b.name,"tr"):((scores.get(b.id)??0)-(scores.get(a.id)??0)||a.name.localeCompare(b.name,"tr")));
 }

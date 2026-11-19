@@ -1,3 +1,4 @@
+import {AnnouncementDiscovery,HelpDiscovery,ScheduledShareDiscovery,PdfDiscovery} from './feature-discovery';
 import SystemArchitecture from './system-architecture';
 import UiIcon from "./ui-icon";
 import HomeSearch from "./home-search";
@@ -7,7 +8,7 @@ import Link from "next/link";
 
 import {LiveReport,SecurityScene,InferenceScene,AcademicProgress,BatchScene} from "./home-demos";
 import ExamCover from "./exam-cover";
-import { PublisherRibbon, ProgressReport, ScrollStory, HomeEffects } from "./home-motion";
+import { PublisherRibbon, HomeEffects } from "./home-motion";
 import ThemeToggle from "./theme-toggle";
 import SiteFooter from "./site-footer";
 import BlogPreview from "./blog-preview";
@@ -41,7 +42,7 @@ export default async function Home() {
     <LiveReport/><SecurityScene/><AcademicProgress/>
 
     <section className="institution-section" id="kurumlar"><div><p className="hero-tag">KURUMLARA ÖZEL</p><h2>Arkasında güçlü<br />bir sistem var.</h2><p>Birbiriyle koordineli çalışan değerlendirme, analiz, raporlama ve güvenlik modülleri. Karmaşık işlemler, sade bir kullanıcı deneyimi.</p><div className="hero-buttons"><Link className="button" href="/contact">Birlikte çalışalım <UiIcon name="arrow"/></Link><Link className="institution-login" href="/login">Kurum girişi <UiIcon name="arrow-right"/></Link></div></div><SystemArchitecture/></section>
-    <InferenceScene/><BatchScene/><section className="home-tool-links" aria-label="Öğrenci araçları"><Link href="/sinav-takvimi"><span>01 / PLANLA</span><strong>Bir sonraki denemen<br /> ne zaman?</strong><small>Sınav takvimine git <UiIcon name="arrow"/></small></Link><Link href="/sinav-degerlendir"><span>02 / DEĞERLENDİR</span><strong>Cevapların elinde.<br /> Karneni oluştur.</strong><small>Sınav değerlendirmeyi aç <UiIcon name="arrow"/></small></Link><Link href="/pdf-duzenleyici"><span>03 / HAZIRLA</span><strong>Dosyaların da<br /> sınava hazır olsun.</strong><small>PDF araçlarını keşfet <UiIcon name="arrow"/></small></Link></section>
+    <InferenceScene/><BatchScene/><AnnouncementDiscovery/><HelpDiscovery/><ScheduledShareDiscovery/><section className="home-tool-links" aria-label="Öğrenci araçları"><Link href="/sinav-takvimi"><span>01 / PLANLA</span><strong>Bir sonraki denemen<br /> ne zaman?</strong><small>Sınav takvimine git <UiIcon name="arrow"/></small></Link><Link href="/sinav-degerlendir"><span>02 / DEĞERLENDİR</span><strong>Cevapların elinde.<br /> Karneni oluştur.</strong><small>Sınav değerlendirmeyi aç <UiIcon name="arrow"/></small></Link><PdfDiscovery/></section>
     <BlogPreview/><SiteFooter/>
   </main>;
 }

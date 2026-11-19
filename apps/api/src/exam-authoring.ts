@@ -1,3 +1,4 @@
+import {announceAnswerKey} from './announcements';
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
@@ -33,6 +34,7 @@ examAuthoringRouter.post('/api/admin/bulk-exams',async(request:AuthenticatedRequ
     const x=require('xlsx'),book=x.utils.book_new(),rows=[['DERS','A SORU NO','B SORU NO','C SORU NO','D SORU NO','DOĞRU CEVAP','KATSAYI','KAZANIM KODU','KAZANIM METNİ'],...questions.map(q=>[q.lesson,q.number,q.positions.B??'',q.positions.C??'',q.positions.D??'',q.answer,q.weight??'',q.outcomeCode??'',q.outcomeName??''])];x.utils.book_append_sheet(book,x.utils.aoa_to_sheet(rows),'Sınav');const buffer=x.write(book,{type:'buffer',bookType:'xlsx'});
     const records=['ANSWER_KEY','LEARNING_OUTCOMES'].map(category=>{const filename=category==='ANSWER_KEY'?'cevap-anahtari.xlsx':'kazanimlar.xlsx',storagePath=path.join(directory,filename);fs.writeFileSync(storagePath,buffer,{mode:0o600});files.push(storagePath);return{category:category as 'ANSWER_KEY'|'LEARNING_OUTCOMES',storagePath,storedFileName:filename,originalFileName:filename,mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',size:buffer.length};});
     const publication=await tx.publishedAnswerKey.create({data:{id,publisherId:input.publisherId,examName:input.examName,grade:input.grade,examDate:new Date(input.examDate),coverImage,published:input.published,showInEvaluation:input.showInEvaluation,createdByUserId:request.user!.id,files:{create:records},opticalKey:{create:{name:`${publisher.name} / ${input.examName} / ${id}`,questions:questions as unknown as Prisma.InputJsonValue,penalty:input.penalty,active:true}}}});
+    await announceAnswerKey(tx, publication.id);
     await tx.auditLog.create({data:{actorUserId:request.user!.id,actorName:request.user!.id,action:'BULK_EXAM_CREATE',targetType:'PublishedAnswerKey',targetId:publication.id,summary:JSON.stringify({clientId:input.clientId,questionCount:questions.length})}});return publication;
    });committed=true;results.push({index,clientId:input.clientId,status:'success',id:result.id});
   }catch(error){results.push({index,clientId:(raw as any)?.clientId,status:'error',error:error instanceof z.ZodError?error.issues[0]?.message:error instanceof Error?error.message:'Sınav kaydedilemedi.'});}

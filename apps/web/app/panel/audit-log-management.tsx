@@ -88,14 +88,14 @@ export default function AuditLogManagement({ token, userId="" }: { token: string
       {error && <p className="notice error" role="alert">{error}</p>}
       <form className="audit-filter-form" onSubmit={applyFilters}>
         <label>Kullanıcı
-          <select value={filters.userId} onChange={(event) => setFilters({ ...filters, userId: event.target.value })}>
+          <select data-help-id="panel-audit-log-management-1" value={filters.userId} onChange={(event) => setFilters({ ...filters, userId: event.target.value })}>
             <option value="">Tüm kullanıcılar</option>
             {users.map((user) => <option value={user.id} key={user.id}>{user.firstName} {user.lastName} · {user.email}</option>)}
           </select>
         </label>
-        <label>Başlangıç tarihi<input type="date" value={filters.from} onChange={(event) => setFilters({ ...filters, from: event.target.value })} /></label>
-        <label>Bitiş tarihi<input type="date" value={filters.to} onChange={(event) => setFilters({ ...filters, to: event.target.value })} /></label>
-        <ActionButton intent="manage" className="button button-navy" type="submit">Filtrele</ActionButton>
+        <label>Başlangıç tarihi<input data-help-id="panel-audit-log-management-2" type="date" value={filters.from} onChange={(event) => setFilters({ ...filters, from: event.target.value })} /></label>
+        <label>Bitiş tarihi<input data-help-id="panel-audit-log-management-3" type="date" value={filters.to} onChange={(event) => setFilters({ ...filters, to: event.target.value })} /></label>
+        <ActionButton data-help-id="panel-audit-log-management-4" intent="manage" className="button button-navy" type="submit">Filtrele</ActionButton>
       </form>
       {!data ? <p className="empty-state">Kayıtlar yükleniyor...</p> : grouped.size === 0 ? (
         <p className="empty-state">Seçilen ölçütlerde işlem kaydı bulunamadı.</p>
@@ -103,7 +103,7 @@ export default function AuditLogManagement({ token, userId="" }: { token: string
         <div className="audit-user-groups">
           {[...grouped].map(([actorName, logs]) => (
             <details className="audit-user-group" key={actorName} open={!!userId}>
-              <summary>{actorName} — {logs.length} işlem</summary>
+              <summary data-help-id="panel-audit-log-management-5">{actorName} — {logs.length} işlem</summary>
               <div className="audit-log-list">{logs.map((log) => (
                 <article className="audit-log-row" key={log.id}>
                   <strong>{actionLabel(log.action)}</strong><small>{log.source==="CLIENT"?"İstemci bildirimi · doğrulanmış işlem değildir":"Sunucu kaydı"} · {log.outcome}</small>
@@ -117,9 +117,9 @@ export default function AuditLogManagement({ token, userId="" }: { token: string
         </div>
       )}
       <div className="management-pagination">
-        <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1}>Önceki</ActionButton>
+        <ActionButton data-help-id="panel-audit-log-management-6" intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1}>Önceki</ActionButton>
         <span>Sayfa {page} / {pageCount} · {data?.total ?? 0} işlem</span>
-        <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={page >= pageCount}>Sonraki</ActionButton>
+        <ActionButton data-help-id="panel-audit-log-management-7" intent="neutral" type="button" className="button button-quiet" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={page >= pageCount}>Sonraki</ActionButton>
       </div>
     </section>
   );

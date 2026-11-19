@@ -1,3 +1,4 @@
+import {announcementRouter,announceAnswerKey} from './announcements';
 import {memberActivityRouter} from './member-activity';
 import {searchHistoryRouter} from './search-history';
 import {ownerGameAccess} from './game-access';
@@ -1950,6 +1951,7 @@ const saveAnswerKey: express.RequestHandler[] = [
             });
             await transaction.answerKeyFile.createMany({ data: replacementFiles });
           }
+          if(isNew||!current.published||!current.opticalKey?.active&&!current.files.some(f=>f.category==='ANSWER_KEY'))await announceAnswerKey(transaction, record.id);
           return record;
         });
         replacementCommitted = true;
@@ -2013,6 +2015,7 @@ app.use(publisherLogoRouter);
 app.use(systemRouter);
 app.use(testCenterRouter);
 app.use(contentRouter);
+app.use(announcementRouter);
 app.use(fmtShareRouter);
 app.use("/api/optical", opticalRouter);
 app.use("/api/public-results", publicResultsRouter);

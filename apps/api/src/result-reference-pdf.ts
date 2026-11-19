@@ -1,3 +1,4 @@
+import {reportFonts} from './report-resources';
 import {drawBrandLogo} from "./brand-logo";
 import path from "node:path";
 import {selectedStudents,type ReportOptions} from "./result-pdf";
@@ -13,11 +14,11 @@ const score=(v:any)=>v==null?"Hesaplanmadı":v.toLocaleString("tr-TR",{minimumFr
 export function referenceReportPdf(view:any,options:ReportOptions):Promise<Buffer>{return new Promise((resolve,reject)=>{
  const doc=new PDFDocument({size:"A4",margin:20,autoFirstPage:false,bufferPages:true,info:{Title:view.keyName,Author:"Kurumsal Sınav"}}),chunks:Buffer[]=[];
  doc.on("data",(b:Buffer)=>chunks.push(b));doc.on("error",reject);doc.on("end",()=>resolve(Buffer.concat(chunks)));
- doc.registerFont("R",path.join(__dirname,"../assets/fonts/LiberationSans-Regular.ttf"));doc.registerFont("B",path.join(__dirname,"../assets/fonts/LiberationSans-Bold.ttf"));
+ const fonts=reportFonts();doc.registerFont("R",fonts.regular);doc.registerFont("B",fonts.bold);
  const headerLogo=view.examReportLogo?doc.openImage(view.examReportLogo):undefined;
  const W=555.28,L=20,bottom=796,showGeneral=options.showGeneralParticipation!==false,showSchool=options.showSchoolParticipation!==false;
- const summaries=new Map<string,any>(view.summary.map((row:any)=>[row.id,row]));
- const schoolBenchmarks=reportBenchmarks([{data:view.data,summary:view.summary}]);
+ const summaries:Map<string,any>=view.reportResources?.summaries??new Map<string,any>(view.summary.map((row:any)=>[row.id,row]));
+ const schoolBenchmarks=view.reportResources?.schoolBenchmarks??reportBenchmarks([{data:view.data,summary:view.summary}]);
  let y=0,pageCount=0,current:any;
  const tx=(v:any,x:number,t:number,w:number,size=8,bold=false,color=C.ink,align:"left"|"center"="left")=>{doc.font(bold?"B":"R").fontSize(size).fillColor(color).text(String(v??"—"),x,t,{width:w,lineGap:0,align});};
  const ht=(v:any,w:number,size=8,bold=false)=>{doc.font(bold?"B":"R").fontSize(size);return doc.heightOfString(String(v??"—"),{width:w,lineGap:0});};

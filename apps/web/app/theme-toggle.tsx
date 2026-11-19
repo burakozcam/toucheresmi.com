@@ -20,7 +20,7 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button className="theme-toggle" data-mode={dark ? "dark" : "light"} onClick={toggleTheme} type="button" aria-label={dark ? "Aydınlık moda geç" : "Karanlık moda geç"}>
+    <button data-help-id="theme-toggle-1" className="theme-toggle" data-mode={dark ? "dark" : "light"} onClick={toggleTheme} type="button" aria-label={dark ? "Aydınlık moda geç" : "Karanlık moda geç"}>
       <span className="theme-icon" aria-hidden="true"><UiIcon name={dark?"sun":"moon"}/></span>
       <span className="theme-label">{dark ? "Aydınlık" : "Karanlık"}</span>
     </button>

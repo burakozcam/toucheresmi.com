@@ -206,22 +206,22 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
       {error && <p className="notice error" role="alert">{error}</p>}
 
       {!readOnly&&view==="list"&&<LegacyKeyLink token={token} publications={records} onSaved={()=>void loadData()}/>}
-      {!readOnly&&<div className="answer-add-tabs"><ActionButton intent="manage" className={`button ${view==="list"?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("list");setBulkMode(false);}}>Kayıtları görüntüle</ActionButton><ActionButton intent="manage" className={`button ${view==="new"&&!bulkMode?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(false);}}>Cevap anahtarı ekle</ActionButton><ActionButton intent="evaluate" className="button button-quiet" disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(true);}}>Toplu dosya ekle</ActionButton>{onAddExam&&<ActionButton intent="manage" className="button button-quiet" disabled={bulkBusy} onClick={onAddExam}><UiIcon name="add"/> Sınav ekle</ActionButton>}</div>}
+      {!readOnly&&<div className="answer-add-tabs"><ActionButton data-help-id="panel-answer-key-management-1" intent="manage" className={`button ${view==="list"?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("list");setBulkMode(false);}}>Kayıtları görüntüle</ActionButton><ActionButton data-help-id="panel-answer-key-management-2" intent="manage" className={`button ${view==="new"&&!bulkMode?"button-navy":"button-quiet"}`} disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(false);}}>Cevap anahtarı ekle</ActionButton><ActionButton data-help-id="panel-answer-key-management-3" intent="evaluate" className="button button-quiet" disabled={bulkBusy} onClick={()=>{setView("new");setBulkMode(true);}}>Toplu dosya ekle</ActionButton>{onAddExam&&<ActionButton data-help-id="panel-answer-key-management-4" intent="manage" className="button button-quiet" disabled={bulkBusy} onClick={onAddExam}><UiIcon name="add"/> Sınav ekle</ActionButton>}</div>}
       {!readOnly && bulkMode && <BulkAnswerKeys records={records} token={token} publishers={publishers} onComplete={() => void loadData()} onBusyChange={setBulkBusy} />}
       {!readOnly && view==="new" && !bulkMode && (
         <form className="answer-key-form" onSubmit={handleSubmit}>
-          <label>Mevcut sınava ekle (isteğe bağlı)<select aria-label="Cevap anahtarının sınav kaydı" value={targetPublicationId} disabled={submitting} onChange={e=>{const id=e.target.value;setTargetPublicationId(id);const item=records.find(r=>r.id===id);if(item)setForm({publisherId:item.publisherId,grade:String(item.grade),examName:item.examName,published:item.published,showInEvaluation:item.showInEvaluation,penalty:item.opticalKey?.penalty??3,publishedAt:item.publishedAt.slice(0,10)});}}><option value="">Yeni sınav kaydı oluştur</option>{groupedRecords.map(group=><optgroup key={group.publisher.id} label={group.publisher.name}>{[...group.records].sort((a,b)=>a.grade-b.grade||a.examName.localeCompare(b.examName,"tr")).map(item=><option key={item.id} value={item.id}>{item.grade}. Sınıf · {item.examName}</option>)}</optgroup>)}</select></label>
+          <label>Mevcut sınava ekle (isteğe bağlı)<select data-help-id="panel-answer-key-management-5" aria-label="Cevap anahtarının sınav kaydı" value={targetPublicationId} disabled={submitting} onChange={e=>{const id=e.target.value;setTargetPublicationId(id);const item=records.find(r=>r.id===id);if(item)setForm({publisherId:item.publisherId,grade:String(item.grade),examName:item.examName,published:item.published,showInEvaluation:item.showInEvaluation,penalty:item.opticalKey?.penalty??3,publishedAt:item.publishedAt.slice(0,10)});}}><option value="">Yeni sınav kaydı oluştur</option>{groupedRecords.map(group=><optgroup key={group.publisher.id} label={group.publisher.name}>{[...group.records].sort((a,b)=>a.grade-b.grade||a.examName.localeCompare(b.examName,"tr")).map(item=><option key={item.id} value={item.id}>{item.grade}. Sınıf · {item.examName}</option>)}</optgroup>)}</select></label>
           {!targetPublicationId&&<p className="field-help">Önceden sınav eklemeniz gerekmez. Yayınevi, sınıf ve sınav adını girin; kaydettiğinizde sınav ve anahtar birlikte oluşturulur. Aynı adlı boş sınav kaydı varsa korunarak kullanılır.</p>}
           {targetPublicationId&&<p className="notice">Mevcut sınav güncellenecek; yeni mükerrer sınav oluşturulmayacak. Önceki sonuç kopyaları korunur.</p>}
           <div className="two-column-fields">
             <div className="publisher-select-field">
               Yayınevi
-                <input type="hidden" name="publisherId" value={form.publisherId} />
+                <input data-help-id="panel-answer-key-management-6" type="hidden" name="publisherId" value={form.publisherId} />
                 <PublisherSelect publishers={publishers.filter((publisher) => publisher.active)} value={form.publisherId} onChange={(publisherId) => setForm((current) => ({ ...current, publisherId }))} />
               </div>
             <label>
               Sınıf
-              <select name="grade" value={form.grade} onChange={(event) => setForm((current) => ({ ...current, grade: event.target.value }))} required>
+              <select data-help-id="panel-answer-key-management-7" name="grade" value={form.grade} onChange={(event) => setForm((current) => ({ ...current, grade: event.target.value }))} required>
                 {[1,2,3,4,5,6,7,8,9,10,11,12].map((grade) => <option key={grade} value={String(grade)}>{grade}. Sınıf</option>)}
               </select>
             </label>
@@ -229,37 +229,37 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
 
           <label>
             Sınav / deneme adı
-            <input name="examName" value={form.examName} onChange={(event) => setForm((current) => ({ ...current, examName: event.target.value }))} placeholder="Türkiye Geneli Deneme 1" required />
+            <input data-help-id="panel-answer-key-management-8" name="examName" value={form.examName} onChange={(event) => setForm((current) => ({ ...current, examName: event.target.value }))} placeholder="Türkiye Geneli Deneme 1" required />
           </label>
 
-          <label>Yayın tarihi<input type="date" name="publishedAt" value={form.publishedAt} onChange={(event) => setForm((current) => ({ ...current, publishedAt: event.target.value }))} required /></label>
+          <label>Yayın tarihi<input data-help-id="panel-answer-key-management-9" type="date" name="publishedAt" value={form.publishedAt} onChange={(event) => setForm((current) => ({ ...current, publishedAt: event.target.value }))} required /></label>
 
           <label className="checkbox-row">
-            <input type="checkbox" name="published" checked={form.published} onChange={(event) => setForm((current) => ({ ...current, published: event.target.checked }))} />
+            <input data-help-id="panel-answer-key-management-10" type="checkbox" name="published" checked={form.published} onChange={(event) => setForm((current) => ({ ...current, published: event.target.checked }))} />
             Ana sayfadaki Cevap Anahtarları bölümünde yayımla
           </label>
 
           <p className="field-help">Cevap anahtarı eklenen her sınav, Sınav Değerlendir ekranında yayınevinin altında otomatik listelenir.</p>
-          <label>Değerlendirme kuralı<select name="penalty" value={form.penalty} onChange={e=>setForm({...form,penalty:Number(e.target.value)})}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
+          <label>Değerlendirme kuralı<select data-help-id="panel-answer-key-management-11" name="penalty" value={form.penalty} onChange={e=>setForm({...form,penalty:Number(e.target.value)})}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
           <p className="field-help">Doğru cevapları içeren kazanım dosyası tek başına yeterlidir; cevap PDF’si onaylanan tablodan oluşturulur. Format seçimi kazanım dosyasının kaynağını belirtir.</p>
-          <label>Veri giriş yöntemi<select aria-label="Cevap anahtarı giriş yöntemi" value={entryMethod} onChange={e=>setEntryMethod(e.target.value)}><option value="file">Kazanım dosyasından / hazır PDF</option><option value="manual">Elle soru ve kazanım gir</option></select></label>
+          <label>Veri giriş yöntemi<select data-help-id="panel-answer-key-management-12" aria-label="Cevap anahtarı giriş yöntemi" value={entryMethod} onChange={e=>setEntryMethod(e.target.value)}><option value="file">Kazanım dosyasından / hazır PDF</option><option value="manual">Elle soru ve kazanım gir</option></select></label>
           {entryMethod==="manual"?<ManualKeyEntry publisher={publishers.find(p=>p.id===form.publisherId)?.name} grade={Number(form.grade)} disabled={submitting} context={targetPublicationId+JSON.stringify(form)} onReview={setManualReview}/>:          <div className="file-upload-grid">
             <AnswerArchiveFileInput key={`answer-${uploadReset}`} label="Cevap Anahtarı" disabled={submitting} onChange={setAnswerFileKey}/>
             <AnswerKeyFileInput publisher={publishers.find(p=>p.id===form.publisherId)?.name} grade={Number(form.grade)} token={token} key={uploadReset} disabled={submitting} reviewContext={targetPublicationId+JSON.stringify(form)+answerFileKey}  onExamName={examName=>setForm(current=>current.examName.trim()?current:{...current,examName})}/>
           </div>}
 
 
-          <ActionButton intent="manage" loading={submitting} className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Yükleniyor..." : "Cevap anahtarı ekle"}</ActionButton>
+          <ActionButton data-help-id="panel-answer-key-management-13" intent="manage" loading={submitting} className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Yükleniyor..." : "Cevap anahtarı ekle"}</ActionButton>
         </form>
       )}
 
       <div className="public-list-panel" hidden={!readOnly&&view!=="list"}>
-        {!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><ActionButton intent="save" className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</ActionButton></div>}
+        {!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input data-help-id="panel-answer-key-management-14" type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><ActionButton data-help-id="panel-answer-key-management-15" intent="save" className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</ActionButton></div>}
         <div className="list-header-row">
           <h3>{readOnly ? "Yayımlanan cevap anahtarları" : "Cevap anahtarı kayıtları"}</h3>
           <label className="answer-search prominent-answer-search">
             <span><UiIcon name="search"/> Cevap anahtarlarında ara</span>
-            <input type="search" aria-label="Cevap anahtarlarında ara" maxLength={200} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Aranacak sınavı veya cevap anahtarını yazın..." />
+            <input data-help-id="panel-answer-key-management-16" type="search" aria-label="Cevap anahtarlarında ara" maxLength={200} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Aranacak sınavı veya cevap anahtarını yazın..." />
           </label>
         </div>
 
@@ -272,7 +272,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
               const outcomesFile = item.files.find((file) => file.category === "LEARNING_OUTCOMES");
               return (
                 <article className={`answer-key-card ${editing?.id===item.id||editingQuestions===item.opticalKey?.id?"answer-key-card-editing":""}`} key={item.id}>
-                  {!readOnly&&<label className="checkbox-row answer-row-select"><input type="checkbox" aria-label={`${item.examName} kaydını seç`} checked={selectedIds.includes(item.id)} onChange={e=>setSelectedIds(current=>e.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))}/>Toplu işlem için seç</label>}
+                  {!readOnly&&<label className="checkbox-row answer-row-select"><input data-help-id="panel-answer-key-management-17" type="checkbox" aria-label={`${item.examName} kaydını seç`} checked={selectedIds.includes(item.id)} onChange={e=>setSelectedIds(current=>e.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))}/>Toplu işlem için seç</label>}
                   <div className="answer-key-header">
                     <span className="badge">{item.grade}. Sınıf</span>
                     <span className="status-dot">Ana sayfa: {item.published ? "Görünür" : "Gizli"} · Değerlendirme: {item.opticalKey ? "Anahtar kayıtlı" : "Cevap eşleştirmesi gerekli"}</span>
@@ -280,7 +280,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                   <h4>{item.examName}</h4>{!readOnly && <small className="publication-id">Takvim eşleştirme ID: <code>{item.id}</code></small>}
                   <p>{item.publisher.name}</p>
                   <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
-                  {!readOnly&&<div className="answer-inline-publication"><label className="checkbox-row"><input type="checkbox" checked={item.published} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,e.target.checked,item.showInEvaluation)}/>Cevap Anahtarları sayfasında göster</label></div>}
+                  {!readOnly&&<div className="answer-inline-publication"><label className="checkbox-row"><input data-help-id="panel-answer-key-management-18" type="checkbox" checked={item.published} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,e.target.checked,item.showInEvaluation)}/>Cevap Anahtarları sayfasında göster</label></div>}
                   {!readOnly&&<CoverEditor token={token} id={item.id} initial={item.coverImage} onImage={image=>setRecords(current=>current.map(row=>row.id===item.id?{...row,coverImage:image}:row))}/>}
                   {!readOnly&&<PublisherTransfer token={token} record={item} publishers={publishers} onSaved={()=>{setEditing(null);void loadData();}}/>}
                   {!readOnly && editing?.id === item.id && (
@@ -293,39 +293,39 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                       formData.set("confirmPublication","true");
                       void saveRecord(item.id, formData);
                     }}>
-                      <input type="hidden" name="publisherId" value={editing.publisherId} />
-                      <label>Yayınevi<input readOnly value={editing.publisher.name}/><small>Bağlantıyı “Sınavın yayınevini değiştir” alanından önizleyerek değiştirebilirsiniz.</small></label>
+                      <input data-help-id="panel-answer-key-management-19" type="hidden" name="publisherId" value={editing.publisherId} />
+                      <label>Yayınevi<input data-help-id="panel-answer-key-management-20" readOnly value={editing.publisher.name}/><small>Bağlantıyı “Sınavın yayınevini değiştir” alanından önizleyerek değiştirebilirsiniz.</small></label>
                       <div className="two-column-fields">
-                        <label>Sınıf<select name="grade" value={String(editing.grade)} onChange={(event) => setEditing({ ...editing, grade: Number(event.target.value) })}>{[1,2,3,4,5,6,7,8,9,10,11,12].map((grade) => <option key={grade} value={String(grade)}>{grade}. Sınıf</option>)}</select></label>
-                        <label>Yayın tarihi<input type="date" name="publishedAt" value={editing.publishedAt.slice(0, 10)} onChange={(event) => setEditing({ ...editing, publishedAt: event.target.value })} required /></label>
+                        <label>Sınıf<select data-help-id="panel-answer-key-management-21" name="grade" value={String(editing.grade)} onChange={(event) => setEditing({ ...editing, grade: Number(event.target.value) })}>{[1,2,3,4,5,6,7,8,9,10,11,12].map((grade) => <option key={grade} value={String(grade)}>{grade}. Sınıf</option>)}</select></label>
+                        <label>Yayın tarihi<input data-help-id="panel-answer-key-management-22" type="date" name="publishedAt" value={editing.publishedAt.slice(0, 10)} onChange={(event) => setEditing({ ...editing, publishedAt: event.target.value })} required /></label>
                       </div>
-                      <label>Sınav / deneme adı<input name="examName" value={editing.examName} onChange={(event) => setEditing({ ...editing, examName: event.target.value })} required maxLength={180} /></label>
-                      <label className="checkbox-row"><input type="checkbox" name="published" checked={editing.published} onChange={(event) => setEditing({ ...editing, published: event.target.checked })} />Ana sayfadaki Cevap Anahtarları bölümünde yayımla</label>
+                      <label>Sınav / deneme adı<input data-help-id="panel-answer-key-management-23" name="examName" value={editing.examName} onChange={(event) => setEditing({ ...editing, examName: event.target.value })} required maxLength={180} /></label>
+                      <label className="checkbox-row"><input data-help-id="panel-answer-key-management-24" type="checkbox" name="published" checked={editing.published} onChange={(event) => setEditing({ ...editing, published: event.target.checked })} />Ana sayfadaki Cevap Anahtarları bölümünde yayımla</label>
                       <p className="field-help">Bu sınav, cevap anahtarıyla birlikte Sınav Değerlendir ekranında otomatik listelenir.</p>
-                      <label>Değerlendirme kuralı<select name="penalty" defaultValue={editing.opticalKey?.penalty??3}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
+                      <label>Değerlendirme kuralı<select data-help-id="panel-answer-key-management-25" name="penalty" defaultValue={editing.opticalKey?.penalty??3}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
                       <div className="file-upload-grid">
                         <AnswerArchiveFileInput label="Yeni cevap anahtarı dosyası" disabled={submitting} onChange={setAnswerFileKey}/>
                         <AnswerKeyFileInput token={token} label="Yeni kazanım dosyası" disabled={submitting} reviewContext={JSON.stringify(editing)+answerFileKey}/>
                       </div>
                       <div className="download-actions">
-                        <label className="checkbox-row" onChange={e=>e.stopPropagation()}><input type="checkbox" checked={editConfirmed} onChange={e=>setEditConfirmed(e.target.checked)}/>Bilgileri, dosyaları ve yayın seçeneklerini kontrol ettim; kaydı onaylıyorum.</label>
-                        <ActionButton intent="save" loading={submitting} className="button button-navy" type="submit" disabled={submitting||!editConfirmed}>{submitting?"Kaydediliyor…":"Değişiklikleri kaydet"}</ActionButton>
-                        <ActionButton intent="manage" className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</ActionButton>
+                        <label className="checkbox-row" onChange={e=>e.stopPropagation()}><input data-help-id="panel-answer-key-management-26" type="checkbox" checked={editConfirmed} onChange={e=>setEditConfirmed(e.target.checked)}/>Bilgileri, dosyaları ve yayın seçeneklerini kontrol ettim; kaydı onaylıyorum.</label>
+                        <ActionButton data-help-id="panel-answer-key-management-27" intent="save" loading={submitting} className="button button-navy" type="submit" disabled={submitting||!editConfirmed}>{submitting?"Kaydediliyor…":"Değişiklikleri kaydet"}</ActionButton>
+                        <ActionButton data-help-id="panel-answer-key-management-28" intent="manage" className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</ActionButton>
                       </div>
                     </form>
                   )}
                   {!readOnly&&editingQuestions===item.opticalKey?.id&&item.opticalKey&&<StoredKeyEditor token={token} keyId={item.opticalKey.id} onClose={()=>setEditingQuestions(null)} onSaved={()=>{setEditingQuestions(null);setNotice("Anahtar ve PDF güncellendi.");void loadData();}}/>}
                   <div className="download-actions">
                     <AnswerPdfOptions id={item.id} name={item.examName} token={readOnly?undefined:token}/>{answerFile && (readOnly
-                      ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>
-                      : <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => void downloadFile(answerFile, item)}>Cevap Anahtarını İncele</ActionButton>)}
+                      ? <a data-help-id="panel-answer-key-management-29" className="button button-quiet" href={`${API_URL}/api/answer-key-files/${answerFile.id}`} target="_blank" rel="noreferrer">Cevap Anahtarını İndir</a>
+                      : <ActionButton data-help-id="panel-answer-key-management-30" intent="neutral" type="button" className="button button-quiet" onClick={() => void downloadFile(answerFile, item)}>Cevap Anahtarını İncele</ActionButton>)}
                     {outcomesFile && (readOnly
-                      ? <a className="button button-quiet" href={`${API_URL}/api/answer-key-files/${outcomesFile.id}`} target="_blank" rel="noreferrer">Kazanımı İndir</a>
-                      : <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => void downloadFile(outcomesFile, item)}>Kazanımı İncele</ActionButton>)}
+                      ? <a data-help-id="panel-answer-key-management-31" className="button button-quiet" href={`${API_URL}/api/answer-key-files/${outcomesFile.id}`} target="_blank" rel="noreferrer">Kazanımı İndir</a>
+                      : <ActionButton data-help-id="panel-answer-key-management-32" intent="neutral" type="button" className="button button-quiet" onClick={() => void downloadFile(outcomesFile, item)}>Kazanımı İncele</ActionButton>)}
                     {!readOnly && <>
-                      <ActionButton intent="manage" type="button" className="button button-quiet" onClick={() => {setEditing(item);setEditConfirmed(false);setEditingQuestions(null);}}>Bilgi / dosya düzenle</ActionButton>{item.opticalKey&&<ActionButton intent="manage" type="button" className="button button-quiet" onClick={()=>{setEditing(null);setEditingQuestions(item.opticalKey!.id);}}>Soruları ve kazanımları düzenle</ActionButton>}
-                      <ActionButton intent={item.published?'danger':'save'} type="button" className="button button-quiet" onClick={() => void setPublished(item, !item.published)}>{item.published ? "Yayından kaldır" : "Yeniden yayımla"}</ActionButton>
-                      <ActionButton intent="danger" type="button" className="button button-navy danger-button" onClick={() => void deleteRecord(item.id)}>Sil</ActionButton>
+                      <ActionButton data-help-id="panel-answer-key-management-33" intent="manage" type="button" className="button button-quiet" onClick={() => {setEditing(item);setEditConfirmed(false);setEditingQuestions(null);}}>Bilgi / dosya düzenle</ActionButton>{item.opticalKey&&<ActionButton data-help-id="panel-answer-key-management-34" intent="manage" type="button" className="button button-quiet" onClick={()=>{setEditing(null);setEditingQuestions(item.opticalKey!.id);}}>Soruları ve kazanımları düzenle</ActionButton>}
+                      <ActionButton data-help-id="panel-answer-key-management-35" intent={item.published?'danger':'save'} type="button" className="button button-quiet" onClick={() => void setPublished(item, !item.published)}>{item.published ? "Yayından kaldır" : "Yeniden yayımla"}</ActionButton>
+                      <ActionButton data-help-id="panel-answer-key-management-36" intent="danger" type="button" className="button button-navy danger-button" onClick={() => void deleteRecord(item.id)}>Sil</ActionButton>
                     </>}
                   </div>
                 </article>

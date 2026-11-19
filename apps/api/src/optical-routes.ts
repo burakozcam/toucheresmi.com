@@ -1,3 +1,4 @@
+import {announceFmt} from './announcements';
 import {fmtDisplayLibrary} from './fmt-display-library';
 import {examReportLogoRouter} from "./exam-report-logo";
 import {cpuInfer,cpuReader,cpuMatch,cpuParse,cpuJob} from "./cpu-jobs";
@@ -126,7 +127,8 @@ opticalRouter.post("/templates",admin,wrap(async(req,res)=>{
    const existing=await tx.opticalTemplate.findMany({where:{publisherId:record.publisherId??null,grade:record.grade??null,sourceFormat:record.sourceFormat??null},select:{id:true,originalFmt:true,originalBase64:true,layout:true,validation:true}});
    const duplicate=existing.some(t=>{if(!t.originalFmt||!fmtBytes(t.originalFmt,t.originalBase64).equals(fmtBytes(record.originalFmt,record.originalBase64))||!sameExecutableLayout(t.layout,record.layout))return false;const system=systemEvaluationTemplate(t.id);return !!system&&sameExecutableLayout(t.layout,system.layout)||validationIdentity(t.validation)===validationIdentity(validation);});
    if(duplicate)throw new SecurityError(409,"Aynı dosya, yerleşim ve doğrulama bu yayınevi/sınıf için zaten kayıtlı. Mevcut FMT’yi kullanın.","FMT_DUPLICATE");
-   return tx.opticalTemplate.create({data:{...record,validation:{...validation,verifiedAt:new Date().toISOString()} as unknown as Prisma.InputJsonValue,layout:data.layout as Prisma.InputJsonValue}});
+   const saved=await tx.opticalTemplate.create({data:{...record,validation:{...validation,verifiedAt:new Date().toISOString()} as unknown as Prisma.InputJsonValue,layout:data.layout as Prisma.InputJsonValue}});
+   await announceFmt(tx,saved.id,req.user!.id);return saved;
   });
   res.status(201).json(created);
 }));
@@ -140,7 +142,7 @@ opticalRouter.post("/templates/bulk",admin,wrap(async(req,res)=>{
     const saved=await tx.opticalTemplate.findMany({select:{name:true,originalFmt:true,layout:true}});
     const duplicate=templates.find(t=>saved.some(s=>s.originalFmt&&fmtContentIdentity(s)===fmtContentIdentity(t)));
     if(duplicate)return{error:`${duplicate.name}: aynı FMT içeriği ve TXT yerleşimi zaten kayıtlı; mevcut şablonu kullanın.`};
-    const created=[];for(const t of templates){const {verification,...data}=t;created.push(await tx.opticalTemplate.create({data:{...data,validation:{readerName:verification!.readerName,readerConfirmed:true,encoding:verification!.encoding,verifiedAt:new Date().toISOString(),coordinates:inspectFmtCoordinates(t.originalFmt,t.layout)} as unknown as Prisma.InputJsonValue,layout:t.layout as Prisma.InputJsonValue}}));}return{created};
+    const created=[];for(const t of templates){const {verification,...data}=t;created.push(await tx.opticalTemplate.create({data:{...data,validation:{readerName:verification!.readerName,readerConfirmed:true,encoding:verification!.encoding,verifiedAt:new Date().toISOString(),coordinates:inspectFmtCoordinates(t.originalFmt,t.layout)} as unknown as Prisma.InputJsonValue,layout:t.layout as Prisma.InputJsonValue}}));}for(const item of created)await announceFmt(tx,item.id,req.user!.id);return{created};
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   if("error"in outcome){res.status(409).json({error:outcome.error});return;}res.status(201).json(outcome.created);
 }));
@@ -160,7 +162,7 @@ opticalRouter.post("/templates/bulk-rows",admin,wrap(async(req,res)=>{
  if(saved.some(row=>row.name.toLocaleLowerCase("tr-TR")===t.name.toLocaleLowerCase("tr-TR")))return{error:"Bu isimde FMT zaten kayıtlı."};
  if(saved.some(row=>row.originalFmt&&fmtContentIdentity(row)===fmtContentIdentity(t)))return{error:"Aynı FMT içeriği ve yerleşimi zaten kayıtlı."};
  const {verification,...data}=t;
- const record=await tx.opticalTemplate.create({data:{...data,sourceFormat:source,layout:t.layout as Prisma.InputJsonValue,validation:{readerName:v.data.readerName,readerConfirmed:true,encoding:v.data.encoding,verifiedAt:new Date().toISOString(),coordinates:inspectFmtCoordinates(t.originalFmt,t.layout)} as unknown as Prisma.InputJsonValue}});return{id:record.id,name:record.name};
+ const record=await tx.opticalTemplate.create({data:{...data,sourceFormat:source,layout:t.layout as Prisma.InputJsonValue,validation:{readerName:v.data.readerName,readerConfirmed:true,encoding:v.data.encoding,verifiedAt:new Date().toISOString(),coordinates:inspectFmtCoordinates(t.originalFmt,t.layout)} as unknown as Prisma.InputJsonValue}});await announceFmt(tx,record.id,req.user!.id);return{id:record.id,name:record.name};
  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
  results.push("error"in result?{index,status:"error",error:result.error}:{index,status:"success",...result});
  }catch{results.push({index,status:"error",error:"Kayıt tamamlanamadı. Listeyi yenileyip tekrar kontrol edin; başarılı satırlar korunur."});}

@@ -177,20 +177,20 @@ export default function SchoolManagement({ token, role }: { token: string; role:
           <small>Sistem hesabınızı otomatik olarak askıya almaz; şüpheli tekrar girişimleri yönetici incelemesi için kaydedilir.</small>
         </div>}
         <div className="two-column-fields">
-          <label>Kurum adı<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} maxLength={180} required /></label>
+          <label>Kurum adı<input data-help-id="panel-school-management-1" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} maxLength={180} required /></label>
           <LocationFields city={form.city} district={form.district} onChange={(city,district)=>setForm({...form,city,district})}/>
-          <label>Kurum kodu (isteğe bağlı)<input value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} maxLength={80} /></label>
-          {role === "SUPER_ADMIN" && <label>Bayi (isteğe bağlı)<select value={form.dealerId} onChange={(event) => setForm({ ...form, dealerId: event.target.value })}><option value="">Bayi seçilmedi</option>{dealers.map((dealer) => <option key={dealer.id} value={dealer.id}>{dealer.name}</option>)}</select></label>}
+          <label>Kurum kodu (isteğe bağlı)<input data-help-id="panel-school-management-2" value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} maxLength={80} /></label>
+          {role === "SUPER_ADMIN" && <label>Bayi (isteğe bağlı)<select data-help-id="panel-school-management-3" value={form.dealerId} onChange={(event) => setForm({ ...form, dealerId: event.target.value })}><option value="">Bayi seçilmedi</option>{dealers.map((dealer) => <option key={dealer.id} value={dealer.id}>{dealer.name}</option>)}</select></label>}
         </div>
         <p className="school-duplicate-help">Aynı adlı kurumlar farklı il veya ilçelerde ayrı kayıt olarak eklenebilir.</p>
-        <ActionButton intent="manage" loading={submitting} className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Kaydediliyor..." : "Kurumu ekle"}</ActionButton>
+        <ActionButton data-help-id="panel-school-management-4" intent="manage" loading={submitting} className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Kaydediliyor..." : "Kurumu ekle"}</ActionButton>
       </form>
 
       <div className="school-list-panel">
         <div className="list-header-row">
           <h3>{role === "SUPER_ADMIN" ? "Tüm kurumlar" : "Eklediğiniz kurumlar"}</h3>
-          <label className="search-field compact-search"><span>Kurum ara</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Ad, il, ilçe veya bayi..." /></label>
-          <label className="school-status-filter"><span>Durum</span><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Tümü</option><option value="active">Aktif</option><option value="inactive">Pasif</option></select></label>
+          <label className="search-field compact-search"><span>Kurum ara</span><input data-help-id="panel-school-management-5" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Ad, il, ilçe veya bayi..." /></label>
+          <label className="school-status-filter"><span>Durum</span><select data-help-id="panel-school-management-6" value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Tümü</option><option value="active">Aktif</option><option value="inactive">Pasif</option></select></label>
         </div>
         {loading ? <p className="empty-state">Kurumlar yükleniyor...</p> : visibleSchools.length === 0 ? <p className="empty-state">Arama kriterlerine uygun kurum bulunamadı.</p> : (
           <div className="school-list">
@@ -206,11 +206,11 @@ export default function SchoolManagement({ token, role }: { token: string; role:
                       code: editing.code ?? "",
                     });
                   }}>
-                    <label>Kurum adı<input value={editing.name} onChange={(event) => setEditing({ ...editing, name: event.target.value })} required /></label>
+                    <label>Kurum adı<input data-help-id="panel-school-management-7" value={editing.name} onChange={(event) => setEditing({ ...editing, name: event.target.value })} required /></label>
                     <LocationFields city={editing.city??""} district={editing.district??""} onChange={(city,district)=>setEditing({...editing,city,district})}/>
-                    <label>Kurum kodu<input value={editing.code ?? ""} onChange={(event) => setEditing({ ...editing, code: event.target.value })} /></label>
-                    <ActionButton intent="save" className="button button-navy" type="submit">Kaydet</ActionButton>
-                    <ActionButton intent="manage" className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</ActionButton>
+                    <label>Kurum kodu<input data-help-id="panel-school-management-8" value={editing.code ?? ""} onChange={(event) => setEditing({ ...editing, code: event.target.value })} /></label>
+                    <ActionButton data-help-id="panel-school-management-9" intent="save" className="button button-navy" type="submit">Kaydet</ActionButton>
+                    <ActionButton data-help-id="panel-school-management-10" intent="manage" className="button button-quiet" type="button" onClick={() => setEditing(null)}>Vazgeç</ActionButton>
                   </form>
                 ) : (
                   <>
@@ -221,8 +221,8 @@ export default function SchoolManagement({ token, role }: { token: string; role:
                       {role === "SUPER_ADMIN" && <small>Ekleyen: {school.createdBy ? `${school.createdBy.firstName} ${school.createdBy.lastName}` : school.dealer?.name ?? "Bilinmiyor"}{school.dealer ? ` · ${school.dealer.name}` : ""}</small>}
                     </div>
                     {<div className="school-admin-actions">
-                      <ActionButton intent="manage" type="button" className="button button-quiet" onClick={() => setEditing(school)}>Düzenle</ActionButton>
-                      {role==="SUPER_ADMIN"&&<ActionButton intent={school.active?'danger':'save'} type="button" className="button button-quiet" onClick={() => void updateSchool(school.id, { active: !school.active })}>{school.active ? "Pasife al" : "Yeniden aktifleştir"}</ActionButton>}
+                      <ActionButton data-help-id="panel-school-management-11" intent="manage" type="button" className="button button-quiet" onClick={() => setEditing(school)}>Düzenle</ActionButton>
+                      {role==="SUPER_ADMIN"&&<ActionButton data-help-id="panel-school-management-12" intent={school.active?'danger':'save'} type="button" className="button button-quiet" onClick={() => void updateSchool(school.id, { active: !school.active })}>{school.active ? "Pasife al" : "Yeniden aktifleştir"}</ActionButton>}
                     </div>}
                   </>
                 )}
@@ -242,7 +242,7 @@ export default function SchoolManagement({ token, role }: { token: string; role:
                 <small>Gönderen: {attempt.submittedBy ? `${attempt.submittedBy.firstName} ${attempt.submittedBy.lastName} · ${attempt.submittedBy.email}` : "Hesap artık mevcut değil"}</small>
                 <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(attempt.createdAt))}</small>
               </div>
-              <ActionButton intent="neutral" type="button" className="button button-quiet" onClick={() => void markDuplicateAttemptReviewed(attempt.id)}>İncelendi olarak işaretle</ActionButton>
+              <ActionButton data-help-id="panel-school-management-13" intent="neutral" type="button" className="button button-quiet" onClick={() => void markDuplicateAttemptReviewed(attempt.id)}>İncelendi olarak işaretle</ActionButton>
             </article>)}
           </div>
         )}

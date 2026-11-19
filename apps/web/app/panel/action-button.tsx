@@ -6,7 +6,7 @@ const icons:Record<ActionIntent,string>={evaluate:'check',advanced:'sliders',dan
 type Props=ButtonHTMLAttributes<HTMLButtonElement>&{intent?:ActionIntent;loading?:boolean};
 /** Presentation only: callers keep their handlers, disabled conditions and role checks. */
 const ActionButton=forwardRef<HTMLButtonElement,Props>(function ActionButton({intent='neutral',loading=false,children,...props},ref){
- return <button {...props} ref={ref} data-intent={intent} aria-busy={loading||undefined}>
+ return <button data-help-id="panel-action-button-1" {...props} ref={ref} data-intent={intent} aria-busy={loading||undefined}>
   {loading?<span className="action-spinner" aria-hidden="true"/>:intent!=='neutral'&&!hasIcon(children)?<UiIcon name={icons[intent]}/>:null}{children}
  </button>;
 });

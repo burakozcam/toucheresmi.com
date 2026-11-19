@@ -1,3 +1,15 @@
+# v1.3.9 · 2026-11-19 · yerel çalışma, kabul açık
+
+- Ana sayfanın bütün tanıtımları denetlendi: gerçek tek sınav kazanım analizi, kapasite sayacı olmadan toplu raporlama, 12 işlevsel alan; duyuru/paylaşım yaşam döngüsü ve kompakt birleşik PDF merkezi önizlemesi. Kilit/bayrak korunur; bütün yardımın eksiksizliği veya canlı hız garantisi iddia edilmez.
+
+- Duyuru merkezi, hedefleme/yayın yaşam döngüsü, cevap anahtarı otomasyonu ve yönetici onaylı geçmiş sürüm içe aktarımı.
+- Zamanlanmış FMT/cevap anahtarı PDF paylaşımları ve kategori bazlı sayfalı bağlantı yönetimi.
+- Öğrenci başına ayrı PDF ZIP için tek istek/ortak hazırlık, özel geçici dosya ve doğrulanan ilerleme akışı.
+- Birleşik PDF ve Belge Araçları merkezi, yalnız panel ana sayfasında karşılama, ayarlanabilir menü ve üç yeni tanıtım sahnesi.
+- Ortak yardım/animasyon/tur altyapısı ve 709 kontrol şablonu envanteri. **Bütün kontrollerin ayrıntılı yardım kabulü tamamlanmadı.**
+- Kesinti sonrası 278/278 regresyon, 20 yerel HTTP grubu, 8 Chromium grubu, Prisma validate ve API/Web build başarılı. Açık ölçüm/kapsam maddeleri: `docs/v139-release-report.md`.
+- Yeni eklemeli migration hazır; canlı DB/deploy/commit/push işlemi yapılmadı. Sürüm canlıya hazır olarak işaretlenmez.
+
 # KurumsalSınav değişiklik günlüğü
 
 ## v1.3.8 — 18 Kasım 2026 (yerel geliştirme ve kabul)

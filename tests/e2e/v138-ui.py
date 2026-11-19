@@ -23,9 +23,9 @@ with sync_playwright() as p:
    page.set_viewport_size({'width':width,'height':1000});page.evaluate('(t)=>{localStorage.setItem("kurumsal-theme",t);document.documentElement.dataset.theme=t}',theme)
    page.goto('http://localhost:3115',wait_until='networkidle');assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    page.screenshot(path=str(out/f'home-{theme}-{width}.png'),full_page=True)
-   system=page.locator('.system-architecture');system.scroll_into_view_if_needed();assert system.locator('.architecture-module').count()==9
+   system=page.locator('.system-architecture');system.scroll_into_view_if_needed();assert system.locator('.architecture-module').count()==12
    assert all(n.is_visible() for n in system.locator('.architecture-module').all());system.screenshot(path=str(out/f'architecture-{theme}-{width}.png'))
- check('Home, all nine modules and layout fit desktop/mobile in both themes')
+ check('Home, all twelve functional areas and layout fit desktop/mobile in both themes')
  page.set_viewport_size({'width':1440,'height':1000});page.emulate_media(reduced_motion='reduce');page.reload(wait_until='networkidle');report=page.locator('.demo-report');report.scroll_into_view_if_needed();page.wait_for_timeout(150);assert report.locator('.scene-mini-report').get_attribute('data-visible')=='true';report.screenshot(path=str(out/'report-final.png'))
  for report_width in [1440,390]:
   page.set_viewport_size({'width':report_width,'height':1000});report.scroll_into_view_if_needed();note=report.locator('.scene-mini-report>small').bounding_box();footer=report.locator('.scene-footer').bounding_box();assert note['y']+note['height']<=footer['y'],(report_width,note,footer);report.screenshot(path=str(out/f'report-final-{report_width}.png'))

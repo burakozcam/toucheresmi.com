@@ -6,6 +6,7 @@ let undo:Array<()=>void>=[];
 beforeEach(async()=>{
  const {prisma}=await import("../apps/api/src/db");let dealerId="dealer-1";
  function stub(object:any,key:string,fn:any){const original=object[key];object[key]=fn;undo.push(()=>object[key]=original);}
+ stub(prisma.announcementAutomation,"findUnique",async()=>({kind:"FMT",enabled:false,audience:"ALL",targetIds:[]}));
  stub(prisma.dealer,"findUnique",async({where}:any)=>{dealerId=where.id;return{id:where.id,active:true,restrictedRegions:false,regions:[],dailyStudentLimit:null,canCreateSchool:true,canEditSchool:true,canEvaluate:true,canDeleteResult:true,canEditResult:true,canReevaluate:true,canExport:true};});
  stub(prisma.user,"findUnique",async()=>({id:"unit-user",active:true,role:"DEALER",dealerId,passwordHash:"unit-hash"}));
  stub(prisma.user,"update",async({where,data}:any)=>({id:where.id,...data}));

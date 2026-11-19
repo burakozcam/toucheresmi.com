@@ -82,7 +82,7 @@ export default function Calendar() {
     <section className="calendar-card" aria-label="Takvim">
       <header className="calendar-header">
         <div><p className="hero-tag">TAKVİM</p><h2>{monthNames[month.getMonth()]} {month.getFullYear()}</h2></div>
-        <div className="calendar-nav"><button onClick={() => shiftMonth(-1)} aria-label="Önceki ay">‹</button><button onClick={() => setMonth(new Date(today.getFullYear(), today.getMonth(), 1))}>Bugün</button><button onClick={() => shiftMonth(1)} aria-label="Sonraki ay">›</button></div>
+        <div className="calendar-nav"><button data-help-id="panel-calendar-1" onClick={() => shiftMonth(-1)} aria-label="Önceki ay">‹</button><button data-help-id="panel-calendar-2" onClick={() => setMonth(new Date(today.getFullYear(), today.getMonth(), 1))}>Bugün</button><button data-help-id="panel-calendar-3" onClick={() => shiftMonth(1)} aria-label="Sonraki ay">›</button></div>
       </header>
       <div className="calendar-grid">
         {weekdays.map((day) => <span className="calendar-weekday" key={day}>{day}</span>)}

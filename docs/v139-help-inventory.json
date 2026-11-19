@@ -1,0 +1,364 @@
+{
+  "files": [
+    {
+      "file": "panel/account-security.tsx",
+      "controls": 8
+    },
+    {
+      "file": "panel/action-button.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/announcements.tsx",
+      "controls": 42
+    },
+    {
+      "file": "panel/answer-archive-file-input.tsx",
+      "controls": 2
+    },
+    {
+      "file": "panel/answer-key-file-input.tsx",
+      "controls": 9
+    },
+    {
+      "file": "panel/answer-key-management.tsx",
+      "controls": 36
+    },
+    {
+      "file": "panel/audit-log-management.tsx",
+      "controls": 7
+    },
+    {
+      "file": "panel/blog-management.tsx",
+      "controls": 12
+    },
+    {
+      "file": "panel/bulk-answer-keys.tsx",
+      "controls": 13
+    },
+    {
+      "file": "panel/bulk-exams.tsx",
+      "controls": 18
+    },
+    {
+      "file": "panel/calendar.tsx",
+      "controls": 3
+    },
+    {
+      "file": "panel/coefficient-choice.tsx",
+      "controls": 3
+    },
+    {
+      "file": "panel/coefficient-help.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/coefficient-profiles.tsx",
+      "controls": 7
+    },
+    {
+      "file": "panel/contact-inbox.tsx",
+      "controls": 4
+    },
+    {
+      "file": "panel/cover-editor.tsx",
+      "controls": 8
+    },
+    {
+      "file": "panel/create-user.tsx",
+      "controls": 7
+    },
+    {
+      "file": "panel/data-grid.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/dealer-activities.tsx",
+      "controls": 6
+    },
+    {
+      "file": "panel/dealer-management.tsx",
+      "controls": 23
+    },
+    {
+      "file": "panel/dealer-status.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/exam-management.tsx",
+      "controls": 5
+    },
+    {
+      "file": "panel/exam-picker.tsx",
+      "controls": 4
+    },
+    {
+      "file": "panel/exam-report-logo.tsx",
+      "controls": 3
+    },
+    {
+      "file": "panel/exam-results.tsx",
+      "controls": 22
+    },
+    {
+      "file": "panel/exam-workspace.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/file-management.tsx",
+      "controls": 27
+    },
+    {
+      "file": "panel/fmt-bulk-upload.tsx",
+      "controls": 22
+    },
+    {
+      "file": "panel/fmt-downloads.tsx",
+      "controls": 2
+    },
+    {
+      "file": "panel/fmt-guess.tsx",
+      "controls": 3
+    },
+    {
+      "file": "panel/fmt-manager.tsx",
+      "controls": 6
+    },
+    {
+      "file": "panel/fmt-mapping-table.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/fmt-sample-preview.tsx",
+      "controls": 5
+    },
+    {
+      "file": "panel/fmt-share-controls.tsx",
+      "controls": 7
+    },
+    {
+      "file": "panel/fmt-sharing.tsx",
+      "controls": 4
+    },
+    {
+      "file": "panel/layout.tsx",
+      "controls": 0
+    },
+    {
+      "file": "panel/legacy-key-link.tsx",
+      "controls": 3
+    },
+    {
+      "file": "panel/manual-key-entry.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/match-meter.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/motivation-banner.tsx",
+      "controls": 5
+    },
+    {
+      "file": "panel/optical-admin.tsx",
+      "controls": 22
+    },
+    {
+      "file": "panel/optical-analysis.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/optical-checks.tsx",
+      "controls": 1
+    },
+    {
+      "file": "panel/optical-evaluation.tsx",
+      "controls": 18
+    },
+    {
+      "file": "panel/optical-key-editor.tsx",
+      "controls": 20
+    },
+    {
+      "file": "panel/optical-layout-editor.tsx",
+      "controls": 12
+    },
+    {
+      "file": "panel/optical-revisions.tsx",
+      "controls": 8
+    },
+    {
+      "file": "panel/page.tsx",
+      "controls": 23
+    },
+    {
+      "file": "panel/password-setup.tsx",
+      "controls": 2
+    },
+    {
+      "file": "panel/pdf-share-controls.tsx",
+      "controls": 7
+    },
+    {
+      "file": "panel/publication-definition.tsx",
+      "controls": 5
+    },
+    {
+      "file": "panel/publisher-logos.tsx",
+      "controls": 9
+    },
+    {
+      "file": "panel/publisher-management.tsx",
+      "controls": 20
+    },
+    {
+      "file": "panel/publisher-select.tsx",
+      "controls": 0
+    },
+    {
+      "file": "panel/publisher-transfer.tsx",
+      "controls": 4
+    },
+    {
+      "file": "panel/reader-accounts.tsx",
+      "controls": 14
+    },
+    {
+      "file": "panel/registration-requests.tsx",
+      "controls": 12
+    },
+    {
+      "file": "panel/report-preview.tsx",
+      "controls": 2
+    },
+    {
+      "file": "panel/result-deletion.tsx",
+      "controls": 9
+    },
+    {
+      "file": "panel/result-editor.tsx",
+      "controls": 13
+    },
+    {
+      "file": "panel/schedule-import.tsx",
+      "controls": 31
+    },
+    {
+      "file": "panel/schedule-management.tsx",
+      "controls": 26
+    },
+    {
+      "file": "panel/school-location-select.tsx",
+      "controls": 3
+    },
+    {
+      "file": "panel/school-management.tsx",
+      "controls": 13
+    },
+    {
+      "file": "panel/scoring-settings.tsx",
+      "controls": 3
+    },
+    {
+      "file": "panel/search-history.tsx",
+      "controls": 6
+    },
+    {
+      "file": "panel/searchable-select.tsx",
+      "controls": 3
+    },
+    {
+      "file": "panel/share-links.tsx",
+      "controls": 15
+    },
+    {
+      "file": "panel/share-schedule.tsx",
+      "controls": 4
+    },
+    {
+      "file": "panel/stored-key-editor.tsx",
+      "controls": 4
+    },
+    {
+      "file": "panel/student-code-management.tsx",
+      "controls": 7
+    },
+    {
+      "file": "panel/system-center.tsx",
+      "controls": 8
+    },
+    {
+      "file": "panel/test-center.tsx",
+      "controls": 2
+    },
+    {
+      "file": "panel/txt-converter.tsx",
+      "controls": 12
+    },
+    {
+      "file": "pdf-duzenleyici/editor.tsx",
+      "controls": 1
+    },
+    {
+      "file": "pdf-duzenleyici/scanner.tsx",
+      "controls": 14
+    },
+    {
+      "file": "location-fields.tsx",
+      "controls": 2
+    },
+    {
+      "file": "password-field.tsx",
+      "controls": 2
+    },
+    {
+      "file": "report-type-buttons.tsx",
+      "controls": 1
+    },
+    {
+      "file": "answer-pdf-options.tsx",
+      "controls": 4
+    },
+    {
+      "file": "sinav-takvimi/schedule-calendar.tsx",
+      "controls": 10
+    },
+    {
+      "file": "sinav-degerlendir/report-card.tsx",
+      "controls": 0
+    },
+    {
+      "file": "theme-toggle.tsx",
+      "controls": 1
+    },
+    {
+      "file": "human-verification.tsx",
+      "controls": 1
+    }
+  ],
+  "total": 709,
+  "needsLabelReview": [
+    "panel-announcements-37",
+    "panel-announcements-38",
+    "panel-answer-key-file-input-6",
+    "panel-answer-key-file-input-7",
+    "panel-answer-key-file-input-8",
+    "panel-answer-key-file-input-9",
+    "panel-bulk-answer-keys-9",
+    "panel-bulk-answer-keys-10",
+    "panel-contact-inbox-1",
+    "panel-dealer-management-18",
+    "panel-exam-workspace-1",
+    "panel-file-management-2",
+    "panel-file-management-6",
+    "panel-optical-key-editor-12",
+    "panel-optical-key-editor-13",
+    "panel-schedule-import-25",
+    "panel-schedule-management-15",
+    "panel-searchable-select-3",
+    "panel-system-center-2",
+    "pdf-duzenleyici-editor-1",
+    "sinav-takvimi-schedule-calendar-7"
+  ]
+}

@@ -209,13 +209,13 @@ export default function PublisherManagement({ token, role }: { token: string; ro
       {notice && <p className="notice success" role="status">{notice}</p>}
       {error && <p className="notice error" role="alert">{error}</p>}
 
-      <div className="publisher-controls">{role==="SUPER_ADMIN"&&<ActionButton intent="manage" className="button button-navy" onClick={()=>setCreating(v=>!v)}><UiIcon name="add"/> Yayınevi Ekle</ActionButton>}
+      <div className="publisher-controls">{role==="SUPER_ADMIN"&&<ActionButton data-help-id="panel-publisher-management-1" intent="manage" className="button button-navy" onClick={()=>setCreating(v=>!v)}><UiIcon name="add"/> Yayınevi Ekle</ActionButton>}
         <label className="search-field">
           <span>Arama</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Yayınevi ara..." />
+          <input data-help-id="panel-publisher-management-2" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Yayınevi ara..." />
         </label>
         {role !== "SUPER_ADMIN" && (
-          <ActionButton intent="manage" type="button" className="button button-navy" onClick={() => document.getElementById("publisher-request-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+          <ActionButton data-help-id="panel-publisher-management-3" intent="manage" type="button" className="button button-navy" onClick={() => document.getElementById("publisher-request-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
             Yayınevi ekleme talebi gönder
           </ActionButton>
         )}
@@ -236,19 +236,19 @@ export default function PublisherManagement({ token, role }: { token: string; ro
                       const data=new FormData(event.currentTarget);
                       void updatePublisher(publisher, { name: editingPublisherName,description:String(data.get("description")??""),email:String(data.get("email")??""),phone:String(data.get("phone")??"") });
                     }}>
-                      <input aria-label="Yayınevi adı" value={editingPublisherName} onChange={(event) => setEditingPublisherName(event.target.value)} maxLength={180} required />
-                      <label>Açıklama<textarea name="description" defaultValue={publisher.description??""} maxLength={1000}/></label><label>E-posta<input name="email" type="email" defaultValue={publisher.email??""} maxLength={254}/></label><label>Telefon<input name="phone" defaultValue={publisher.phone??""} maxLength={40}/></label><ActionButton intent="save" className="button button-navy" type="submit">Kaydet</ActionButton>
-                      <ActionButton intent="manage" className="button button-quiet" type="button" onClick={() => setEditingPublisherId("")}>Vazgeç</ActionButton>
+                      <input data-help-id="panel-publisher-management-4" aria-label="Yayınevi adı" value={editingPublisherName} onChange={(event) => setEditingPublisherName(event.target.value)} maxLength={180} required />
+                      <label>Açıklama<textarea data-help-id="panel-publisher-management-5" name="description" defaultValue={publisher.description??""} maxLength={1000}/></label><label>E-posta<input data-help-id="panel-publisher-management-6" name="email" type="email" defaultValue={publisher.email??""} maxLength={254}/></label><label>Telefon<input data-help-id="panel-publisher-management-7" name="phone" defaultValue={publisher.phone??""} maxLength={40}/></label><ActionButton data-help-id="panel-publisher-management-8" intent="save" className="button button-navy" type="submit">Kaydet</ActionButton>
+                      <ActionButton data-help-id="panel-publisher-management-9" intent="manage" className="button button-quiet" type="button" onClick={() => setEditingPublisherId("")}>Vazgeç</ActionButton>
                     </form>
                   ) : <strong>{publisher.name}</strong>}
                   <small>{publisher.active ? "Aktif" : "Pasif"}</small>
                   {role === "SUPER_ADMIN" && editingPublisherId !== publisher.id && (
                     <div className="publisher-admin-actions">
-                      <ActionButton intent="manage" type="button" className="button button-quiet" onClick={() => { setEditingPublisherId(publisher.id); setEditingPublisherName(publisher.name); }}>Düzenle</ActionButton>
-                      <ActionButton intent={publisher.active?'danger':'save'} type="button" className="button button-quiet" onClick={() => void updatePublisher(publisher, { active: !publisher.active })}>
+                      <ActionButton data-help-id="panel-publisher-management-10" intent="manage" type="button" className="button button-quiet" onClick={() => { setEditingPublisherId(publisher.id); setEditingPublisherName(publisher.name); }}>Düzenle</ActionButton>
+                      <ActionButton data-help-id="panel-publisher-management-11" intent={publisher.active?'danger':'save'} type="button" className="button button-quiet" onClick={() => void updatePublisher(publisher, { active: !publisher.active })}>
                         {publisher.active ? "Pasife al" : "Yeniden aktifleştir"}
                       </ActionButton>
-                      <ActionButton intent="danger" type="button" className="button button-quiet" onClick={() => void deletePublisher(publisher)} disabled={deletingPublisherId === publisher.id}>
+                      <ActionButton data-help-id="panel-publisher-management-12" intent="danger" type="button" className="button button-quiet" onClick={() => void deletePublisher(publisher)} disabled={deletingPublisherId === publisher.id}>
                         {deletingPublisherId === publisher.id ? "Siliniyor..." : "Sil"}
                       </ActionButton>
                     </div>
@@ -264,13 +264,13 @@ export default function PublisherManagement({ token, role }: { token: string; ro
             <h3>{role==="SUPER_ADMIN"?"Yeni yayınevi":"Yayınevi ekleme talebi"}</h3>
             <label>
               Yayınevi adı
-              <input value={publisherName} onChange={(event) => setPublisherName(event.target.value)} maxLength={180} placeholder="Örn. A Plus" required />
+              <input data-help-id="panel-publisher-management-13" value={publisherName} onChange={(event) => setPublisherName(event.target.value)} maxLength={180} placeholder="Örn. A Plus" required />
             </label>
             <label>
               Açıklama
-              <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} maxLength={1000} placeholder="İsteğe bağlı açıklama" />
+              <textarea data-help-id="panel-publisher-management-14" value={description} onChange={(event) => setDescription(event.target.value)} rows={4} maxLength={1000} placeholder="İsteğe bağlı açıklama" />
             </label>
-            {role==="SUPER_ADMIN"&&<><label>E-posta<input type="email" maxLength={254} value={contact.email} onChange={e=>setContact({...contact,email:e.target.value})}/></label><label>Telefon<input maxLength={40} value={contact.phone} onChange={e=>setContact({...contact,phone:e.target.value})}/></label><label className="checkbox-row"><input type="checkbox" checked={contact.active} onChange={e=>setContact({...contact,active:e.target.checked})}/>Aktif</label><p>Logoyu oluşturduktan sonra Yayınevi Logoları bölümünden ekleyebilirsiniz.</p></>}<ActionButton intent="save" loading={submitting} className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : role==="SUPER_ADMIN"?"Yayınevini kaydet":"Talebi gönder"}</ActionButton>
+            {role==="SUPER_ADMIN"&&<><label>E-posta<input data-help-id="panel-publisher-management-15" type="email" maxLength={254} value={contact.email} onChange={e=>setContact({...contact,email:e.target.value})}/></label><label>Telefon<input data-help-id="panel-publisher-management-16" maxLength={40} value={contact.phone} onChange={e=>setContact({...contact,phone:e.target.value})}/></label><label className="checkbox-row"><input data-help-id="panel-publisher-management-17" type="checkbox" checked={contact.active} onChange={e=>setContact({...contact,active:e.target.checked})}/>Aktif</label><p>Logoyu oluşturduktan sonra Yayınevi Logoları bölümünden ekleyebilirsiniz.</p></>}<ActionButton data-help-id="panel-publisher-management-18" intent="save" loading={submitting} className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : role==="SUPER_ADMIN"?"Yayınevini kaydet":"Talebi gönder"}</ActionButton>
           </form>
         )}
       </div>
@@ -318,8 +318,8 @@ export default function PublisherManagement({ token, role }: { token: string; ro
                     <div><dt>Durum</dt><dd>{request.status}</dd></div>
                   </dl>
                   <div className="request-actions">
-                    <ActionButton intent="save" type="button" className="button button-navy" onClick={() => void updateRequestStatus(request.id, "APPROVED")}>Onayla</ActionButton>
-                    <ActionButton intent="danger" type="button" className="button button-quiet" onClick={() => void updateRequestStatus(request.id, "REJECTED")}>Reddet</ActionButton>
+                    <ActionButton data-help-id="panel-publisher-management-19" intent="save" type="button" className="button button-navy" onClick={() => void updateRequestStatus(request.id, "APPROVED")}>Onayla</ActionButton>
+                    <ActionButton data-help-id="panel-publisher-management-20" intent="danger" type="button" className="button button-quiet" onClick={() => void updateRequestStatus(request.id, "REJECTED")}>Reddet</ActionButton>
                   </div>
                 </article>
               ))}
