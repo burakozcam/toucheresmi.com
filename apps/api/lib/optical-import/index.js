@@ -14,7 +14,15 @@ function parseWorkbook(sheets,format="auto",options={}){
   for(let i=index+1;i<sheet.rows.length;i++){const row=sheet.rows[i];if(row.every(v=>!String(v??"").trim())||/^H Bütün cevaplar doğru kabul edildi\./i.test(String(row[0]??"")))continue;const label=`${sheet.name} satır ${i+1}`;let q;
         const nartest=head[0]==="TEST KODU";
       if(nartest){const lesson=lessonName(row[1]),number=Number(row[2]);q={lesson,number,answer:answer(row[4]),weight:weightFor(lesson),positions:{A:number},outcomeCode:String(row[5]??"").trim(),outcomeName:String(row[7]??"").trim()};if(String(row[3]??"").trim())q.positions.B=Number(row[3]);}
-      else{const at=(...names)=>{const c=head.findIndex(h=>names.includes(h));return c<0?undefined:row[c];},lesson=lessonName(at("DERS")),number=Number(at("A SORU NO","A SORU","SORU NO"));q={lesson,number,answer:answer(at("DOĞRU CEVAP","CEVAP")),weight:String(at("KATSAYI","KATSAYI / AĞIRLIK")??"").trim()?Number(at("KATSAYI","KATSAYI / AĞIRLIK")):null,positions:{A:number},outcomeCode:String(at("KAZANIM KODU")??"").trim(),outcomeName:String(at("KAZANIM METNİ","KAZANIM METNI","KAZANIM AÇIKLAMASI","KAZANIM","KAZANIM-1")??"").trim()};for(const b of ["B","C","D"]){const value=at(`${b} SORU NO`,`${b} SORU`);if(String(value??"").trim())q.positions[b]=Number(value);}q.source=sourceRow("general",sheet,i);}
+      else{const at=(...names)=>{const c=head.findIndex(h=>names.includes(h));return c<0?undefined:row[c];},lesson=lessonName(at("DERS")),number=Number(at("A SORU NO","A SORU","SORU NO"));q={lesson,number,answer:answer(at("DOĞRU CEVAP","CEVAP")),weight:String(at("KATSAYI","KATSAYI / AĞIRLIK")??"").trim()?Number(at("KATSAYI","KATSAYI / AĞIRLIK")):null,positions:{A:number},outcomeCode:String(at("KAZANIM KODU")??"").trim(),outcomeName:String(at("KAZANIM METNİ","KAZANIM METNI","KAZANIM AÇIKLAMASI","KAZANIM","KAZANIM-1")??"").trim()};for(const b of ["B","C","D"]){const value=at(`${b} SORU NO`,`${b} SORU`);if(String(value??"").trim())q.positions[b]=Number(value);}q.source=sourceRow("general",sheet,i);
+       const originalLesson=at("KURUMSALSINAV DERS ADI");if(String(originalLesson??'').trim())q.lesson=String(originalLesson).trim();
+       const base=at("BAŞLANGIÇ PUANI"),multiple=at("ÇOKLU İŞARET"),choices=at("SEÇENEK SAYISI"),source=at("KAYNAK SATIR (JSON)");
+       if(String(base??'').trim())q.scoreBase=Number(base);
+       if(String(multiple??'').trim())q.multipleMark=String(multiple).trim();
+       if(String(choices??'').trim())q.optionCount=Number(choices);
+       if(String(source??'').trim()){try{q.source=JSON.parse(String(source));}catch{issues.push(`${label}: kaynak satır JSON bilgisi geçersiz.`);}}
+       if(q.scoreBase!==undefined&&(!Number.isFinite(q.scoreBase)||q.scoreBase<0||q.scoreBase>500)||q.multipleMark!==undefined&&!['blank','wrong'].includes(q.multipleMark)||q.optionCount!==undefined&&![3,4,5].includes(q.optionCount))issues.push(`${label}: puan profili veya seçenek sayısı geçersiz.`);
+}
 
   try{basic(q,label);}catch(e){issues.push(e.message);}questions.push(q);if(questions.length>300)throw new Error("Cevap anahtarı en fazla 300 soru içerebilir.");
   }

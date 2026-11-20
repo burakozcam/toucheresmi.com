@@ -40,7 +40,7 @@ export function reEvaluate(snapshot:Snapshot,questions:unknown,penalty:number):S
   if(next.length!==old.length||next.some(q=>!oldIndex.has(identity(q))))throw new Error("Ders veya soru sayısı değişmiş. Özgün TXT’yi yeniden yükleyin.");
   const students=snapshot.data.students.map(s=>{
     const raw=new Map<string,string>();
-    old.forEach((q,i)=>{const book=s.booklets[q.lesson];if(!book)return;const pos=q.positions?.[book];if(!pos)throw new Error("Eski kayıtta kitapçık eşleştirmesi yok. TXT’yi yeniden yükleyin.");raw.set(`${q.lesson}\0${pos}`,s.answers[i]);});
+    old.forEach((q,i)=>{const book=s.booklets[q.lesson];if(!book){if(s.answers[i])throw new Error("Kaynak cevap için kitapçık bilgisi yok. Özgün TXT’yi kontrol edin.");return;}const pos=q.positions?.[book];if(!pos)throw new Error("Eski kayıtta kitapçık eşleştirmesi yok. TXT’yi yeniden yükleyin.");raw.set(`${q.lesson}\0${pos}`,s.answers[i]);});
     return {...s,answers:next.map(q=>{const book=s.booklets[q.lesson];if(!book)return "";if(!q.positions[book])throw new Error(`${book} kitapçığı yeni anahtarda yok. TXT’yi yeniden yükleyin.`);return raw.get(`${q.lesson}\0${q.positions[book]}`)??"";})};
   });
   const data={...snapshot.data,students,questions:next.map(q=>({...q,column:`${q.lesson} | ${q.number}`}))};

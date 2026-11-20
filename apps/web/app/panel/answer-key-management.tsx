@@ -1,4 +1,5 @@
 "use client";
+import {useOperationGuard} from "../../lib/use-operation-guard";
 import UiIcon from "../ui-icon";
 
 import ActionButton from "./action-button";
@@ -38,6 +39,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
   const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [records, setRecords] = useState<AnswerKeyRecord[]>([]);
   const [query, setQuery] = useState("");
+  const [gradeFilter,setGradeFilter]=useState(''),[publisherFilter,setPublisherFilter]=useState('');
   const [view,setView]=useState<"list"|"new">("list"),[entryMethod,setEntryMethod]=useState("file"),[manualReview,setManualReview]=useState<ManualReview|null>(null),[editingQuestions,setEditingQuestions]=useState<string|null>(null);
   const [targetPublicationId,setTargetPublicationId]=useState(initialPublicationId);
   const [selectedIds,setSelectedIds]=useState<string[]>([]),[bulkWorking,setBulkWorking]=useState(false);
@@ -53,10 +55,11 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
   const [error, setError] = useState("");
   const [form, setForm] = useState({ publisherId: "", grade: "8", examName: "", published: false, showInEvaluation: false, penalty: 3, publishedAt: new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Istanbul"}).format(new Date()) });
 
+  useOperationGuard(submitting||bulkBusy||bulkWorking);
   const filteredRecords = useMemo(() => {
     const value = query.trim().toLocaleLowerCase("tr-TR");
-    return [...records].filter((entry) => !value || `${entry.examName} ${entry.publisher.name}`.toLocaleLowerCase("tr-TR").includes(value));
-  }, [query, records]);
+    return [...records].filter(entry=>(!gradeFilter||entry.grade===Number(gradeFilter))&&(!publisherFilter||entry.publisherId===publisherFilter)).filter((entry) => !value || `${entry.examName} ${entry.publisher.name}`.toLocaleLowerCase("tr-TR").includes(value));
+  }, [query, records,gradeFilter,publisherFilter]);
   const groupedRecords = useMemo(() => {
     const groups = new Map<string, { publisher: Publisher; records: AnswerKeyRecord[] }>();
     for (const record of filteredRecords) {
@@ -243,7 +246,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
           <label>Değerlendirme kuralı<select data-help-id="panel-answer-key-management-11" name="penalty" value={form.penalty} onChange={e=>setForm({...form,penalty:Number(e.target.value)})}><option value={0}>Yanlış doğruyu götürmez</option><option value={3}>3 yanlış 1 doğru</option><option value={4}>4 yanlış 1 doğru</option></select></label>
           <p className="field-help">Doğru cevapları içeren kazanım dosyası tek başına yeterlidir; cevap PDF’si onaylanan tablodan oluşturulur. Format seçimi kazanım dosyasının kaynağını belirtir.</p>
           <label>Veri giriş yöntemi<select data-help-id="panel-answer-key-management-12" aria-label="Cevap anahtarı giriş yöntemi" value={entryMethod} onChange={e=>setEntryMethod(e.target.value)}><option value="file">Kazanım dosyasından / hazır PDF</option><option value="manual">Elle soru ve kazanım gir</option></select></label>
-          {entryMethod==="manual"?<ManualKeyEntry publisher={publishers.find(p=>p.id===form.publisherId)?.name} grade={Number(form.grade)} disabled={submitting} context={targetPublicationId+JSON.stringify(form)} onReview={setManualReview}/>:          <div className="file-upload-grid">
+          {entryMethod==="manual"?<ManualKeyEntry token={token} publisher={publishers.find(p=>p.id===form.publisherId)?.name} grade={Number(form.grade)} disabled={submitting} context={targetPublicationId+JSON.stringify(form)} onReview={setManualReview}/>:          <div className="file-upload-grid">
             <AnswerArchiveFileInput key={`answer-${uploadReset}`} label="Cevap Anahtarı" disabled={submitting} onChange={setAnswerFileKey}/>
             <AnswerKeyFileInput publisher={publishers.find(p=>p.id===form.publisherId)?.name} grade={Number(form.grade)} token={token} key={uploadReset} disabled={submitting} reviewContext={targetPublicationId+JSON.stringify(form)+answerFileKey}  onExamName={examName=>setForm(current=>current.examName.trim()?current:{...current,examName})}/>
           </div>}
@@ -254,7 +257,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
       )}
 
       <div className="public-list-panel" hidden={!readOnly&&view!=="list"}>
-        {!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input data-help-id="panel-answer-key-management-14" type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><ActionButton data-help-id="panel-answer-key-management-15" intent="save" className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</ActionButton></div>}
+        <div className="studio-actions"><label>Sınıf<select data-help-id="panel-answer-key-management-14x" value={gradeFilter} onChange={e=>setGradeFilter(e.target.value)}><option value="">Tüm sınıflar</option>{[...new Set(records.map(r=>r.grade))].sort((a,b)=>a-b).map(g=><option key={g} value={g}>{g}. Sınıf</option>)}</select></label><label>Yayınevi<select data-help-id="panel-answer-key-management-15x" value={publisherFilter} onChange={e=>setPublisherFilter(e.target.value)}><option value="">Tüm yayınevleri</option>{publishers.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><span>{filteredRecords.length} / {records.length} kayıt</span></div>{!readOnly&&<div className="answer-bulk-controls"><label className="checkbox-row"><input data-help-id="panel-answer-key-management-14" type="checkbox" checked={filteredRecords.length>0&&filteredRecords.every(r=>selectedIds.includes(r.id))} onChange={e=>setSelectedIds(e.target.checked?filteredRecords.map(r=>r.id):[])}/>Görünen kayıtları seç</label><span>{selectedIds.length} kayıt seçili</span><ActionButton data-help-id="panel-answer-key-management-15" intent="save" className="button button-quiet" disabled={!selectedIds.length||bulkWorking} onClick={()=>void applyBulk(true,undefined)}>Cevap Anahtarları sayfasında yayımla</ActionButton></div>}
         <div className="list-header-row">
           <h3>{readOnly ? "Yayımlanan cevap anahtarları" : "Cevap anahtarı kayıtları"}</h3>
           <label className="answer-search prominent-answer-search">
@@ -277,7 +280,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                     <span className="badge">{item.grade}. Sınıf</span>
                     <span className="status-dot">Ana sayfa: {item.published ? "Görünür" : "Gizli"} · Değerlendirme: {item.opticalKey ? "Anahtar kayıtlı" : "Cevap eşleştirmesi gerekli"}</span>
                   </div>
-                  <h4>{item.examName}</h4>{!readOnly && <small className="publication-id">Takvim eşleştirme ID: <code>{item.id}</code></small>}
+                  <h4>{item.examName}</h4>{!readOnly && <details className="publication-id"><summary data-help-id="panel-answer-key-management-20x">Teknik ayrıntılar</summary>Takvim eşleştirme ID: <code>{item.id}</code></details>}
                   <p>{item.publisher.name}</p>
                   <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
                   {!readOnly&&<div className="answer-inline-publication"><label className="checkbox-row"><input data-help-id="panel-answer-key-management-18" type="checkbox" checked={item.published} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,e.target.checked,item.showInEvaluation)}/>Cevap Anahtarları sayfasında göster</label></div>}

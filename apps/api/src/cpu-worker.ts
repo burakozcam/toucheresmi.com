@@ -1,3 +1,4 @@
+import {reEvaluate} from './optical-review';
 import {parentPort} from 'node:worker_threads';
 import type {CpuJob} from './cpu-jobs';
 import {inferFmt} from './fmt-inference';
@@ -11,6 +12,7 @@ parentPort!.on('message',(job:CpuJob)=>{
  try{
   let value:unknown;
   switch(job.kind){
+   case 'reevaluate':value=reEvaluate(job.snapshot,job.questions,job.penalty);break;
    case 'readParse':{const reader=evaluationReader(job.text,job.selected,job.templates,job.options.missingBooklet),data=job.deferOnUnmatched&&reader.matched<job.text.split(/\r\n|\r|\n/).filter(l=>l.trim()).length?null:parseOptical(job.text,reader.layout,job.questions,job.school,{...job.options,hashIdentity:identityHash,encryptIdentity});value={reader,data};break;}
    case 'infer':value=inferFmt(job.text,job.templates);break;
    case 'reader':value=evaluationReader(job.text,job.selected,job.templates,job.missingBooklet);break;

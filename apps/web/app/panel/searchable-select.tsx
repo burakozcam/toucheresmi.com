@@ -53,7 +53,7 @@ export default function SearchableSelect({
   }
 
   return <div className="publisher-select searchable-select" ref={root} onKeyDown={event=>{if(event.key==="Escape"){event.preventDefault();setOpen(false);trigger.current?.focus();}}}>
-    <button data-help-id="panel-searchable-select-1" ref={trigger} type="button" className="publisher-select-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onClick={() => { setOpen((isOpen) => !isOpen); setQuery(""); setActiveIndex(0); }}>
+    <button data-help-id="panel-searchable-select-1" data-help-label="Aranabilir seçim listesini aç" ref={trigger} type="button" className="publisher-select-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onClick={() => { setOpen((isOpen) => !isOpen); setQuery(""); setActiveIndex(0); }}>
       <span>{selected ? <>{selected.label}{selected.detail && <small>{selected.detail}</small>}</> : label}</span><span aria-hidden="true">⌄</span>
     </button>
     {open && <div className="publisher-select-popover">

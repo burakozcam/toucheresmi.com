@@ -1,3 +1,8 @@
+import {auditMaintenanceRouter} from './audit-maintenance';
+import {exportRouter} from './exports';
+import {recordKeyRevision,revisionFingerprint} from './key-revision';
+import {keyFingerprint} from './optical-review';
+import {publisherPage} from './publisher-pagination';
 import {announcementRouter,announceAnswerKey} from './announcements';
 import {memberActivityRouter} from './member-activity';
 import {searchHistoryRouter} from './search-history';
@@ -55,7 +60,7 @@ if(env.TRUST_PROXY_CIDRS)app.set("trust proxy",env.TRUST_PROXY_CIDRS.split(",").
 app.use((_q,r,n)=>{r.setHeader("Cache-Control","private, no-store");r.setHeader("X-Content-Type-Options","nosniff");r.setHeader("X-Frame-Options","DENY");r.setHeader("Referrer-Policy","no-referrer");r.setHeader("Content-Security-Policy","default-src 'none'; frame-ancestors 'none'");if(process.env.NODE_ENV==="production")r.setHeader("Strict-Transport-Security","max-age=31536000");n();});
 app.use((q,r,n)=>{if(["POST","PUT","PATCH","DELETE"].includes(q.method)&&q.header("origin")&&q.header("origin")!==env.WEB_ORIGIN){r.status(403).json({error:"İstek kaynağına izin verilmiyor."});return;}n();});
 app.use(systemObserver);
-app.use(cors({ origin: env.WEB_ORIGIN, credentials: true, exposedHeaders: ["Content-Disposition"] }));
+app.use(cors({ origin: env.WEB_ORIGIN, credentials: true, exposedHeaders: ["Content-Disposition","X-Audit-Archive","X-Audit-Sha256"] }));
 app.use("/api/admin/exam-schedule", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "20mb" }));
 app.use("/api/optical/templates/bulk-rows", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
 app.use("/api/optical/templates/bulk", requireAuth, requireRole(Role.SUPER_ADMIN), express.json({ limit: "8mb" }));
@@ -67,7 +72,7 @@ app.use(express.json({ limit: "1mb" }));
 app.use((request:AuthenticatedRequest,response,next)=>{
  const path=request.path,method=request.method.toUpperCase();
  if(!path.startsWith('/api/')||['/api/search-history','/api/activity/navigation'].includes(path)){next();return;}
- const mutation=['POST','PUT','PATCH','DELETE'].includes(method),read=method==='GET'&&/\/(?:export|download|pdf|result-exams|results|files)(?:\/|$)/.test(path);
+ const mutation=['POST','PUT','PATCH','DELETE'].includes(method),read=method==='GET'&&/\/(?:export|download|pdf)(?:\/|$)/.test(path);
  if(!mutation&&!read){next();return;}
  response.once('finish',()=>{
   if(!request.user)return;
@@ -932,6 +937,7 @@ app.patch(
 
 app.get("/api/publishers", async (_request, response, next) => {
   try {
+    if(_request.query.page!==undefined){const p=publisherPage(_request.query,false,normalizePublisherName);const [rows,total]=await Promise.all([prisma.publisher.findMany({where:p.where,take:p.take,skip:p.skip,orderBy:[{name:'asc'},{id:'asc'}],select:{id:true,name:true,active:true,createdAt:true,updatedAt:true}}),prisma.publisher.count({where:p.where})]);response.json({rows,total,page:p.page,pageSize:p.pageSize});return;}
     const publishers = await prisma.publisher.findMany({
       where: { active: true },
       orderBy: { name: "asc" },
@@ -1180,6 +1186,7 @@ app.get(
   requireRole(Role.SUPER_ADMIN),
   async (_request: AuthenticatedRequest, response, next) => {
     try {
+      if(_request.query.page!==undefined){const p=publisherPage(_request.query,true,normalizePublisherName);const [rows,total]=await Promise.all([prisma.publisher.findMany({where:p.where,take:p.take,skip:p.skip,orderBy:[{name:'asc'},{id:'asc'}],select:{id:true,name:true,active:true,description:true,email:true,phone:true,createdAt:true,updatedAt:true}}),prisma.publisher.count({where:p.where})]);response.json({rows,total,page:p.page,pageSize:p.pageSize});return;}
       const publishers = await prisma.publisher.findMany({
         orderBy: { name: "asc" },
         select: { id: true, name: true, normalizedName: true, active: true, description:true, email:true, phone:true, createdAt: true, updatedAt: true },
@@ -1933,13 +1940,21 @@ const saveAnswerKey: express.RequestHandler[] = [
           if(duplicate)throw Object.assign(new Error("Aynı yayınevi ve sınıfta bu sınav zaten var. Mevcut sınavı seçin."),{status:409});
           // A second automatic request must never replace a key saved after its initial lookup.
           if(automatic&&!isNew){const latest=await transaction.publishedAnswerKey.findUnique({where:{id:answerKeyId},include:{opticalKey:true,files:true}});if(latest?.opticalKey||latest?.files.length)throw Object.assign(new Error("Sınava başka bir işlemde anahtar eklendi. Mevcut sınavı seçerek güncelleyin."),{status:409});}
+          if(current.opticalKey&&evaluation){
+            const latestKey=await transaction.opticalKey.findUnique({where:{id:current.opticalKey.id}});
+            if(!latestKey||revisionFingerprint(latestKey.questions,latestKey.penalty)!==revisionFingerprint(current.opticalKey.questions,current.opticalKey.penalty))throw Object.assign(new Error('Anahtar değişti. Güncel kaydı yeniden açın.'),{status:409});
+            if(keyFingerprint(evaluation,penalty)!==revisionFingerprint(latestKey.questions,latestKey.penalty)){
+              if(await transaction.opticalResult.count({where:{keyId:latestKey.id}}))throw Object.assign(new Error('Değerlendirilmiş sınavın cevaplarını Sorular / kazanımlar editöründen değişiklik özeti ve ONAYLA ile güncelleyin.'),{status:409});
+              await recordKeyRevision(transaction,latestKey,{questions:evaluation,penalty},request.user!.id,'Dosya önizlemesi onaylanarak güncellendi');
+            }
+          }
           const data = {
               publisherId: parsed.data.publisherId,
               grade: parsed.data.grade,
               examName: parsed.data.examName.trim(),
               published: parsed.data.published??current.published,
               showInEvaluation,
-              ...(evaluation ? {opticalKey:{upsert:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:true},update:{questions:evaluation as Prisma.InputJsonValue,penalty,active:true}}}} : current.opticalKey ? {opticalKey:{update:{active:false,questions:[]}}} : {}),
+              ...(evaluation ? {opticalKey:{upsert:{create:{name:`${parsed.data.examName.trim()} · ${answerKeyId}`,questions:evaluation as Prisma.InputJsonValue,penalty,active:true},update:{questions:evaluation as Prisma.InputJsonValue,penalty,active:true}}}} : current.opticalKey ? {opticalKey:{update:{active:false}}} : {}),
               ...(parsed.data.publishedAt ? { publishedAt: parsed.data.publishedAt } : {}),
             };
           const record = isNew
@@ -2016,6 +2031,8 @@ app.use(systemRouter);
 app.use(testCenterRouter);
 app.use(contentRouter);
 app.use(announcementRouter);
+app.use(exportRouter);
+app.use(auditMaintenanceRouter);
 app.use(fmtShareRouter);
 app.use("/api/optical", opticalRouter);
 app.use("/api/public-results", publicResultsRouter);

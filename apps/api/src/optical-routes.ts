@@ -1,3 +1,6 @@
+import {batchReevaluationRouter} from './batch-reevaluation';
+import {examStructure,builtinExamTemplates} from './exam-template-core';
+import {recordKeyRevision,requireKeyConfirmation,revisionFingerprint} from './key-revision';
 import {announceFmt} from './announcements';
 import {fmtDisplayLibrary} from './fmt-display-library';
 import {examReportLogoRouter} from "./exam-report-logo";
@@ -67,7 +70,7 @@ opticalRouter.use(async(req:AuthenticatedRequest,res,next)=>{try{
  if(permission)await dealerPermission(req.user!,permission);next();
  }catch(e){next(e);}});
 opticalRouter.use((req:AuthenticatedRequest,res,next)=>{res.on("finish",()=>{if(res.statusCode>=400&&["/evaluate","/preview"].includes(req.path)&&req.user)void activity(prisma,req.user,"EVALUATION_FAILED",{...((req as any).evaluationContext??{}),success:false}).catch(()=>{});});next();});
-opticalRouter.use(examReportLogoRouter,resultEditRouter,resultRouter,txtArchiveRouter);
+opticalRouter.use(batchReevaluationRouter,examReportLogoRouter,resultEditRouter,resultRouter,txtArchiveRouter);
 type Handler = (req: AuthenticatedRequest,res: express.Response)=>Promise<void>;
 const wrap = (handler: Handler): express.RequestHandler => async(req,res,next)=>{
   try {await handler(req as AuthenticatedRequest,res);} catch(error) {
@@ -85,11 +88,18 @@ const admin = requireRole(Role.SUPER_ADMIN);
 const scope = (req: AuthenticatedRequest): Prisma.SchoolWhereInput => schoolScope(req.user!);
 const idParam = (req: AuthenticatedRequest)=>String(req.params.id ?? "");
 
+opticalRouter.get('/exam-templates',admin,wrap(async(req,res)=>{
+ const saved=await prisma.opticalExamTemplate.findMany({where:{createdById:req.user!.id},orderBy:{createdAt:'desc'},take:100});res.json([...builtinExamTemplates,...saved]);
+}));
+opticalRouter.post('/exam-templates',admin,wrap(async(req,res)=>{
+ const input=z.object({name:z.string().trim().min(2).max(120),structure:examStructure}).parse(req.body);
+ const record=await prisma.$transaction(async tx=>{const record=await tx.opticalExamTemplate.create({data:{name:input.name,structure:input.structure,createdById:req.user!.id}});await tx.auditLog.create({data:{actorUserId:req.user!.id,actorName:req.user!.id,action:'EXAM_TEMPLATE_CREATE',targetType:'OpticalExamTemplate',targetId:record.id,summary:'Değişmez sınav yapısı kaydedildi; FMT ve geçmiş sınavlar değişmedi.'}});return record;});res.status(201).json(record);
+}));
 opticalRouter.get("/templates", wrap(async(req,res)=>{
   res.json(await prisma.opticalTemplate.findMany({where:req.user!.role===Role.SUPER_ADMIN?{}:{active:true},include:{publisher:{select:{id:true,name:true}}},orderBy:{createdAt:"desc"}}));
 }));
 opticalRouter.get("/fmt-library",wrap(async(req,res)=>{
- const saved=await prisma.opticalTemplate.findMany({where:req.user!.role===Role.SUPER_ADMIN?{}:{active:true},orderBy:{createdAt:"desc"}});
+ const saved=await prisma.opticalTemplate.findMany({where:req.user!.role===Role.SUPER_ADMIN?{}:{active:true},include:{publisher:{select:{id:true,name:true}}},orderBy:{createdAt:"desc"}});
  res.json(fmtDisplayLibrary(saved));
 }));
 opticalRouter.get("/evaluation-templates", wrap(async(_req,res)=>{
@@ -187,7 +197,8 @@ opticalRouter.get("/keys",wrap(async(req,res)=>{
 opticalRouter.get("/keys/:id",admin,wrap(async(req,res)=>{
   const key=await prisma.opticalKey.findUnique({where:{id:idParam(req)},include:{publication:{select:{examName:true}}}});
   if(!key){res.status(404).json({error:"Cevap anahtarı bulunamadı."});return;}
-  res.json({...key,name:key.publication?.examName??key.name,fingerprint:keyFingerprint(key.questions,key.penalty)});
+  const groups=await prisma.opticalResult.groupBy({by:['schoolId'],where:{keyId:key.id,nextRevision:null},_count:{_all:true}});
+  res.json({...key,name:key.publication?.examName??key.name,fingerprint:revisionFingerprint(key.questions,key.penalty),impact:{resultCount:groups.reduce((n,g)=>n+g._count._all,0),schoolCount:groups.length}});
 }));
 opticalRouter.post("/keys",admin,wrap(async(req,res)=>{
   const data=z.object({name:z.string().trim().min(2).max(180),penalty:z.union([z.literal(0),z.literal(3),z.literal(4)]),confirmImport:z.literal(true),questions:opticalQuestionsSchema,publicationId:z.string().min(1).optional()}).parse(req.body);
@@ -198,7 +209,7 @@ opticalRouter.post("/keys",admin,wrap(async(req,res)=>{
   res.status(201).json(await prisma.opticalKey.create({data:{...keyData,questions:data.questions as Prisma.InputJsonValue}}));
 }));
 opticalRouter.patch("/keys/:id",admin,wrap(async(req,res)=>{
-  const input=z.object({active:z.boolean().optional(),publicationId:z.string().min(1).optional(),questions:opticalQuestionsSchema.optional(),penalty:z.union([z.literal(0),z.literal(3),z.literal(4)]).optional(),confirmImport:z.boolean().optional(),expectedFingerprint:z.string().optional()}).refine(d=>d.active!==undefined||d.publicationId!==undefined||d.questions!==undefined||d.penalty!==undefined).parse(req.body);
+  const input=z.object({active:z.boolean().optional(),publicationId:z.string().min(1).optional(),questions:opticalQuestionsSchema.optional(),penalty:z.union([z.literal(0),z.literal(3),z.literal(4)]).optional(),confirmImport:z.boolean().optional(),expectedFingerprint:z.string().optional(),confirmation:z.string().max(20).optional(),reason:z.string().trim().max(1000).optional()}).refine(d=>d.active!==undefined||d.publicationId!==undefined||d.questions!==undefined||d.penalty!==undefined).parse(req.body);
   if(input.publicationId&&!await prisma.publishedAnswerKey.findUnique({where:{id:input.publicationId}})){res.status(400).json({error:"Arşivdeki sınav bulunamadı."});return;}
   const contentChange=input.questions!==undefined||input.penalty!==undefined;
   if(contentChange&&!input.confirmImport){res.status(400).json({error:"Tam önizlemeyi inceleyip anahtar değişikliğini onaylayın."});return;}
@@ -207,9 +218,10 @@ opticalRouter.patch("/keys/:id",admin,wrap(async(req,res)=>{
     const current=await tx.opticalKey.findUnique({where:{id:idParam(req)}});
     if(!current)return{status:404,error:"Cevap anahtarı bulunamadı."};
     if(input.publicationId&&current.publicationId&&input.publicationId!==current.publicationId)return{status:409,error:"Bu anahtar zaten bir sınava bağlı. Farklı sınav için yeni anahtar oluşturun."};
-    if(contentChange&&input.expectedFingerprint!==keyFingerprint(current.questions,current.penalty))return{status:409,error:"Anahtar başka bir işlemde değişti. Güncel kaydı yeniden açın."};
+    if(contentChange&&input.expectedFingerprint!==revisionFingerprint(current.questions,current.penalty))return{status:409,error:"Anahtar başka bir işlemde değişti. Güncel kaydı yeniden açın."};
     if((current.publicationId||input.publicationId)&&input.questions){try{evaluationQuestions(input.questions);}catch(e){return {status:400,error:(e as Error).message};}}
-    const {expectedFingerprint,confirmImport,...data}=input;
+    if(contentChange){const count=await tx.opticalResult.count({where:{keyId:current.id}});requireKeyConfirmation(count>0,input.confirmation,input.reason);await recordKeyRevision(tx,current,{questions:input.questions??current.questions,penalty:input.penalty??current.penalty},req.user!.id,input.reason??'Yönetici anahtar düzenlemesi');}
+    const {expectedFingerprint,confirmImport,confirmation,reason,...data}=input;
     const key=await tx.opticalKey.update({where:{id:idParam(req)},data:{...data,...(data.questions?{questions:data.questions as Prisma.InputJsonValue}:{})}});
     if(contentChange&&key.publicationId){
       const publication=await tx.publishedAnswerKey.findUnique({where:{id:key.publicationId},include:{publisher:true}});
@@ -467,7 +479,7 @@ for(const mode of ["preview","save"]){opticalRouter.post(`/results/:id/re-evalua
   let next:Snapshot;try{next=reEvaluate(item.snapshot as unknown as Snapshot,evaluationQuestions(key.questions),key.penalty);next.expectedGrade=key.publication?.grade??next.expectedGrade;next.keyName=key.publication?.examName??key.name;}catch(e){res.status(400).json({error:(e as Error).message});return;}
   const checks=reviewSnapshot(next),changes=scoreChanges(item.snapshot as unknown as Snapshot,next),fingerprint=keyFingerprint(key.questions,key.penalty);
   if(mode==="preview"){res.json({checks,changes,changedCount:changes.filter(c=>c.changed).length,previewToken:seal("reevaluate",req.user!.id,item.id,fingerprint)});return;}
-  const input=z.object({previewToken:z.string(),confirm:z.literal(true)}).parse(req.body);
+  const input=z.object({previewToken:z.string(),confirm:z.literal(true),confirmation:z.literal("ONAYLA")}).parse(req.body);
   if(!validSeal(input.previewToken,"reevaluate",req.user!.id,item.id,fingerprint)){res.status(409).json({error:"Önizleme eskidi veya cevap anahtarı değişti. Yeniden önizleyin."});return;}
   if(checks.blockers.length){res.status(409).json({error:checks.blockers.join(" ")});return;}
   const saved=await prisma.$transaction(async tx=>{

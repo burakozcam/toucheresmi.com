@@ -1,21 +1,22 @@
 "use client";
+import dynamic from "next/dynamic";
 import HelpLauncher from "./help-launcher";
 import Announcements from "./announcements";
 import SidebarResize from "./sidebar-resize";
-import OwnerArcade from "../owner-arcade";
+const OwnerArcade=dynamic(()=>import("../owner-arcade"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 import ActionButton from "./action-button";
-import DealerManagement from "./dealer-management";
-import DealerActivities from "./dealer-activities";
+const DealerManagement=dynamic(()=>import("./dealer-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const DealerActivities=dynamic(()=>import("./dealer-activities"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 import DealerStatus from "./dealer-status";
-import AccountSecurity from "./account-security";
-import ExamWorkspace from "./exam-workspace";
+const AccountSecurity=dynamic(()=>import("./account-security"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const ExamWorkspace=dynamic(()=>import("./exam-workspace"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 import BulkExams from "./bulk-exams";
-import ResultEditor from "./result-editor";
+const ResultEditor=dynamic(()=>import("./result-editor"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 import UiIcon from "../ui-icon";
-import PublisherLogos from "./publisher-logos";
-import SystemCenter from "./system-center";
-import BlogManagement from "./blog-management";
-import FileManagement from "./file-management";
+const PublisherLogos=dynamic(()=>import("./publisher-logos"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const SystemCenter=dynamic(()=>import("./system-center"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const BlogManagement=dynamic(()=>import("./blog-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const FileManagement=dynamic(()=>import("./file-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 import { readProfileImage } from "../../lib/admin-request";
 import ReleaseMark from "../release-mark";
 
@@ -25,36 +26,42 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import ThemeToggle from "../theme-toggle";
 import PasswordSetup from "./password-setup";
-import PdfEditor from "../pdf-duzenleyici/editor";
-import ScheduleManagement from "./schedule-management";
-import Calendar from "../sinav-takvimi/schedule-calendar";
-import StudentCodeManagement from "./student-code-management";
-import StoreManagement from "./store-management";
-import PublisherManagement from "./publisher-management";
-import AnswerKeyManagement from "./answer-key-management";
-import RegistrationRequests from "./registration-requests";
-import SchoolManagement from "./school-management";
-import TestCenter from "./test-center";
-import ExamManagement from "./exam-management";
-import FmtManager from "./fmt-manager";
-import OpticalEvaluation from "./optical-evaluation";
-import ExamResults from "./exam-results";
-import ResultDeletion from "./result-deletion";
+const PdfEditor=dynamic(()=>import("../pdf-duzenleyici/editor"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const ScheduleManagement=dynamic(()=>import("./schedule-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const Calendar=dynamic(()=>import("../sinav-takvimi/schedule-calendar"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const StudentCodeManagement=dynamic(()=>import("./student-code-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const StoreManagement=dynamic(()=>import("./store-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const PublisherManagement=dynamic(()=>import("./publisher-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const AnswerKeyManagement=dynamic(()=>import("./answer-key-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const RegistrationRequests=dynamic(()=>import("./registration-requests"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const SchoolManagement=dynamic(()=>import("./school-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const TestCenter=dynamic(()=>import("./test-center"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const ExamManagement=dynamic(()=>import("./exam-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const FmtManager=dynamic(()=>import("./fmt-manager"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const OpticalEvaluation=dynamic(()=>import("./optical-evaluation"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const ExamResults=dynamic(()=>import("./exam-results"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const ResultDeletion=dynamic(()=>import("./result-deletion"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 
-import ShareLinks from "./share-links";
-import FmtSharing from "./fmt-sharing";
-import ReaderAccounts from "./reader-accounts";
-import TxtConverter from "./txt-converter";
+const ShareLinks=dynamic(()=>import("./share-links"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const FmtSharing=dynamic(()=>import("./fmt-sharing"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const ReaderAccounts=dynamic(()=>import("./reader-accounts"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const TxtConverter=dynamic(()=>import("./txt-converter"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 import MotivationBanner from "./motivation-banner";
-import ContactInbox from "./contact-inbox";
-import SearchHistory from "./search-history";
-import AuditLogManagement from "./audit-log-management";
+const ContactInbox=dynamic(()=>import("./contact-inbox"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const SearchHistory=dynamic(()=>import("./search-history"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
+const AuditLogManagement=dynamic(()=>import("./audit-log-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 import { API_URL } from "../../lib/api";
 
-type Section = "announcements" | "search-history" | "student-codes" | "store" | "dealers" | "dealer-activities" | "bulk-exams" | "result-editor" | "share-links" | "test-center" | "welcome" | "publisher-logos" | "system-center" | "blog" | "files" | "fmt-share" | "txt-converter" | "fmt-download" | "optical-keys" | "exam-records" | "data-delete" | "results" | "exam" | "fmt-upload" | "fmt-edit" | "fmt-delete" | "school-add" | "school-edit" | "school-delete" | "students" | "calendar" | "bird" | "snake" | "blocks" | "exam-schedule" | "rebuilder" | "pdf-tools" | "publishers" | "publisher-requests" | "answer-keys" | "system-users" | "contact-inbox" | "audit-logs" | "account";
+const ReevaluationCenter=dynamic(()=>import("./reevaluation-center"),{loading:()=> <p role="status">Yeniden değerlendirme yükleniyor…</p>});
+const ExportCenter=dynamic(()=>import("./export-center"),{loading:()=> <p role="status">Dışa Aktarım Merkezi yükleniyor…</p>});
+const BackupCenter=dynamic(()=>import("./backup-center"));
+type Section = "export-center" | "backup-center" | "reevaluate" | "announcements" | "search-history" | "student-codes" | "store" | "dealers" | "dealer-activities" | "bulk-exams" | "result-editor" | "share-links" | "test-center" | "welcome" | "publisher-logos" | "system-center" | "blog" | "files" | "fmt-share" | "txt-converter" | "fmt-download" | "optical-keys" | "exam-records" | "data-delete" | "results" | "exam" | "fmt-upload" | "fmt-edit" | "fmt-delete" | "school-add" | "school-edit" | "school-delete" | "students" | "calendar" | "bird" | "snake" | "blocks" | "exam-schedule" | "rebuilder" | "pdf-tools" | "publishers" | "publisher-requests" | "answer-keys" | "system-users" | "contact-inbox" | "audit-logs" | "account";
 type AuthUser = { canPlayGames?:boolean; impersonation?:{dealerName:string;expiresAt:string}|null; avatar?: string | null; id: string; email: string; firstName: string; lastName: string; phone?: string | null; mustChangePassword?: boolean; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" | "PARENT" };
 
 const pages: Record<Section, { title: string; eyebrow: string; description: string; action: string }> = {
+ "export-center":{title:"Dışa Aktarım Merkezi",eyebrow:"SİSTEM MERKEZİ",description:"Yetkili verilerin kapsamını kontrol ederek dosyalarınızı indirin.",action:""},
+ "backup-center":{title:"Yedekleme ve Sürüm Kurtarma Merkezi",eyebrow:"SİSTEM MERKEZİ",description:"Gelecek sürümler için hazırlık.",action:""},
+ reevaluate:{title:"Tekrar Değerlendir",eyebrow:"SINAV İŞLEMLERİ",description:"Mevcut sonuç sürümünü açın; güncel anahtarla önizleyip ONAYLA ile yeni sürüm oluşturun.",action:""},
  "search-history":{title:"Arama Geçmişi",eyebrow:"YÖNETİM",description:"Gönderilen aramalar ve en çok aranan ifadeler; son 30 gün.",action:""},
  dealers:{title:"Bayiler",eyebrow:"BAYİ YÖNETİMİ",description:"Hesaplar, işlem yetkileri, yayınevi bölgeleri ve günlük öğrenci kotaları.",action:""},
  "dealer-activities":{title:"Bayi Faaliyetleri",eyebrow:"İŞLEM TAKİBİ",description:"Değerlendirme, düzenleme, silme ve rapor işlemlerini inceleyin.",action:""},
@@ -102,7 +109,7 @@ const pages: Record<Section, { title: string; eyebrow: string; description: stri
 };
 
 const groups: { title: string; items: { id: Section; label: string; icon: string }[] }[] = [
-  { title: "SINAV İŞLEMLERİ", items: [{ id: "exam", label: "Sınav Değerlendir", icon: "⇧" }, { id: "results", label: "Sınav Sonuçları", icon: "▥" }, { id: "exam-records", label: "Sınav ve Cevap Anahtarı Yönetimi", icon: "＋" },{id:"result-editor",label:"Sınav Verilerini Düzenle",icon:"pencil"},{id:"data-delete",label:"Veri Silme",icon:"⌫"}] },
+  { title: "SINAV İŞLEMLERİ", items: [{ id: "exam", label: "Sınav Değerlendir", icon: "⇧" }, { id: "results", label: "Sınav Sonuçları", icon: "▥" },{id:"reevaluate",label:"Tekrar Değerlendir",icon:"refresh"}, { id: "exam-records", label: "Sınav ve Cevap Anahtarı Yönetimi", icon: "＋" },{id:"result-editor",label:"Sınav Verilerini Düzenle",icon:"pencil"},{id:"data-delete",label:"Veri Silme",icon:"⌫"}] },
   { title: "FMT YÖNETİMİ", items: [{id:"fmt-share",label:"FMT Paylaş ve İndir",icon:"share"},{id:"fmt-upload",label:"FMT Yönetimi",icon:"sliders"},{id:"txt-converter",label:"FMT Dönüştürücü",icon:"convert"}] },
   { title: "PAYLAŞIM YÖNETİMİ", items: [{id:"share-links",label:"Paylaşım Bağlantıları",icon:"share"}] },
   { title: "KURUM YÖNETİMİ", items: [{ id: "school-add", label: "Kurum Yönetimi", icon: "＋" }] },
@@ -113,7 +120,7 @@ const groups: { title: string; items: { id: Section; label: string; icon: string
   { title: "SİSTEM KULLANICILARI", items: [{id:"dealers",label:"Bayiler",icon:"♙"},{id:"dealer-activities",label:"Bayi Faaliyetleri",icon:"≡"},{ id: "system-users", label: "Üye Kayıtları", icon: "♙" }] },
   {title:"ÖĞRENCİ ERİŞİMİ",items:[{id:"student-codes",label:"Öğrenci Erişim Kodları",icon:"▣"}]},
   {title:"MAĞAZA",items:[{id:"store",label:"Mağaza",icon:"▣"}]},
-  { title: "YÖNETİM", items: [{id:"search-history",label:"Arama Geçmişi",icon:"search"},{id:"test-center",label:"Test Merkezi",icon:"✓"},{id:"publisher-logos",label:"Yayınevi Logoları",icon:"▣"},{id:"system-center",label:"Sistem Merkezi",icon:"◈"},{id:"blog",label:"Blog",icon:"✎"},{id:"files",label:"Dosya Yönetimi",icon:"▣"},{ id: "contact-inbox", label: "Gelen Kutusu", icon: "✉" }, { id: "audit-logs", label: "İşlem Kayıtları", icon: "≡" }, { id: "exam-schedule", label: "Sınav Takvimi", icon: "▦" }] },
+  { title: "YÖNETİM", items: [{id:"search-history",label:"Arama Geçmişi",icon:"search"},{id:"test-center",label:"Test Merkezi",icon:"✓"},{id:"publisher-logos",label:"Yayınevi Logoları",icon:"▣"},{id:"system-center",label:"Sistem Merkezi",icon:"◈"},{id:"export-center",label:"Dışa Aktarım Merkezi",icon:"download"},{id:"backup-center",label:"Yedekleme ve Sürüm Kurtarma Merkezi",icon:"shield"},{id:"blog",label:"Blog",icon:"✎"},{id:"files",label:"Dosya Yönetimi",icon:"▣"},{ id: "contact-inbox", label: "Gelen Kutusu", icon: "✉" }, { id: "audit-logs", label: "İşlem Kayıtları", icon: "≡" }, { id: "exam-schedule", label: "Sınav Takvimi", icon: "▦" }] },
   { title: "HESAP", items: [{ id: "account", label: "Hesap Ayarları", icon: "⚙" }] },
 ];
 
@@ -124,7 +131,7 @@ export default function PanelPage() {
   const [resultSelection,setResultSelection]=useState<{schoolId:string;keyId:string}>();
   const [answerKeyTargetId,setAnswerKeyTargetId]=useState("");
   const [section, updateSection] = useState<Section>("welcome");
-  const setSection=(next:Section)=>{if(section==="pdf-tools"&&next!==section&&document.querySelector(".pdf-editor iframe,.document-scanner")&&!confirm("PDF çalışma alanından ayrılınca düzenlemeler kapanacak. Belgelerinizi indirdiniz mi?"))return;updateSection(next);};
+  const setSection=(next:Section)=>{if(next!==section&&!window.dispatchEvent(new Event('ks-panel-before-navigate',{cancelable:true})))return;if(section==="pdf-tools"&&next!==section&&document.querySelector(".pdf-editor iframe,.document-scanner")&&!confirm("PDF çalışma alanından ayrılınca düzenlemeler kapanacak. Belgelerinizi indirdiniz mi?"))return;updateSection(next);};
   const [authorized, setAuthorized] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState({ firstName: "", lastName: "", email: "", phone: "", avatar: null as string | null });
@@ -138,7 +145,7 @@ export default function PanelPage() {
   const rebuilderFrame = useRef<HTMLIFrameElement>(null);
   const pdfToolsFrame = useRef<HTMLIFrameElement>(null);
 
-  useEffect(()=>{if(!authorized||!authToken)return;void fetch(`${API_URL}/api/activity/navigation`,{method:'POST',headers:{Authorization:`Bearer ${authToken}`,'Content-Type':'application/json'},body:JSON.stringify({section}),keepalive:true}).catch(()=>{});},[section,authorized,authToken]);
+
   useEffect(() => {
     if (authCheckStarted.current) return;
     authCheckStarted.current = true;
@@ -213,6 +220,7 @@ export default function PanelPage() {
   }, [section]);
 
   async function logout(returnToAdmin=false) {
+    if(!window.dispatchEvent(new Event('ks-panel-before-navigate',{cancelable:true})))return;
     try{const r=await fetch(`${API_URL}/api/security/logout`,{method:"POST",headers:{Authorization:`Bearer ${authToken}`}});if(!r.ok&&r.status!==401)throw Error();}catch{setProfileNotice("Sunucu oturumu sonlandırılamadı. Yeniden deneyin.");return;}
 
     window.sessionStorage.removeItem("kurumsal-auth-token");
@@ -251,7 +259,7 @@ export default function PanelPage() {
             const items = group.items.filter(item=>item.id!=="announcements"||["SUPER_ADMIN","DEALER"].includes(authUser?.role??"")).filter(item=>!["bird","snake","blocks"].includes(item.id)||authUser?.canPlayGames).filter(item=>item.id!=="student-codes"||["SUPER_ADMIN","DEALER","SCHOOL_ADMIN"].includes(authUser?.role??"")).filter((item) => !["share-links", "fmt-upload", "fmt-edit", "fmt-delete", "optical-keys"].includes(item.id) || authUser?.role === "SUPER_ADMIN").filter((item) =>
               !["school-edit", "school-delete"].includes(item.id) || authUser?.role === "SUPER_ADMIN"
             ).filter((item) =>
-              !["school-add", "results", "exam", "data-delete", "students", "fmt-share", "fmt-download", "txt-converter"].includes(item.id) || authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER"
+              !["school-add", "results", "reevaluate", "exam", "data-delete", "students", "fmt-share", "fmt-download", "txt-converter"].includes(item.id) || authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER"
             ).filter((item) => (!["exam-records","bulk-exams"].includes(item.id) || authUser?.role === "SUPER_ADMIN") && !(item.id==="answer-keys"&&authUser?.role==="SUPER_ADMIN"));
             return items.length > 0 && <div className="nav-group" key={group.title}>
               <p>{group.title}</p>
@@ -262,16 +270,16 @@ export default function PanelPage() {
         <div className="sidebar-bottom"><div className="support-box"><span>?</span><p><strong>Yardıma mı ihtiyacınız var?</strong><small>Destek ekibimize ulaşın.</small></p><Link data-help-id="panel-page-5x" href="/contact#contact-form"><UiIcon name="arrow-right"/></Link></div><ActionButton data-help-id="panel-page-5" intent="neutral" className="logout-button" onClick={()=>void logout()}><span>↪</span> Güvenli çıkış yap</ActionButton></div>
       </aside>
       <section className="dashboard-main">
-        <header className="dashboard-header"><button data-help-id="panel-page-6" className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç">☰</button><div className="breadcrumbs">Yönetim Paneli <span>/</span> <strong>{activePage.title}</strong></div><div className="dashboard-actions"><ThemeToggle /><ActionButton data-help-id="panel-page-7" intent="neutral" type="button" className="header-avatar profile-avatar-button" aria-label="Hesap ayarlarını aç" onClick={() => setSection("account")}>{profile.avatar ? <img src={profile.avatar} alt="Profil fotoğrafı"/> : profile.firstName.slice(0, 1).toUpperCase() || "B"}</ActionButton><button data-help-id="panel-page-8" className="header-logout" onClick={()=>void logout()}>Çıkış Yap <span>↪</span></button></div></header>
+        <header className="dashboard-header"><button data-help-id="panel-page-6" className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç">☰</button><div className="breadcrumbs">Yönetim Paneli <span>/</span> <strong>{activePage.title}</strong></div><div className="dashboard-actions"><ThemeToggle /><ActionButton data-help-id="panel-page-7" intent="neutral" type="button" className="header-avatar profile-avatar-button" aria-label="Hesap ayarlarını aç" onClick={() => setSection("account")}>{profile.avatar ? <img src={profile.avatar} alt="Profil fotoğrafı"/> : profile.firstName.slice(0, 1).toUpperCase() || "B"}</ActionButton><button data-help-id="panel-page-8" className="header-logout" onClick={()=>void logout()}>Güvenli Çıkış Yap <span>↪</span></button></div></header>
         <div className="dashboard-content">
           <HelpLauncher section={section} title={activePage.title} role={authUser?.role??"DEALER"}/>
           {authUser?.impersonation&&<aside className="impersonation-banner" role="status"><strong>Şu anda {authUser.impersonation.dealerName} hesabını yönetici olarak görüntülüyorsunuz.</strong><span>Bitiş: {new Date(authUser.impersonation.expiresAt).toLocaleTimeString("tr-TR")}</span><ActionButton data-help-id="panel-page-9" intent="manage" className="button button-navy" onClick={()=>void logout(true)}>Admin Paneline Dön</ActionButton></aside>}
           {authUser?.role==="DEALER"&&<DealerStatus token={authToken}/>}
 
           {section==="welcome"&&<><MotivationBanner firstName={profile.firstName}/>{["SUPER_ADMIN","DEALER"].includes(authUser?.role??"")&&<Announcements token={authToken} compact onNavigate={s=>setSection(s as Section)}/>}</>}
-          {!["welcome","bird","snake"].includes(section) && <div className="page-title"><div>{activePage.eyebrow && <p className="hero-tag">{activePage.eyebrow}</p>}<h1>{activePage.title}</h1>{activePage.description && <p>{activePage.description}</p>}</div>{!["announcements","search-history","store","dealers","dealer-activities","result-editor","bulk-exams","test-center", "publisher-logos", "system-center", "blog", "files", "fmt-share", "txt-converter", "students", "fmt-download", "results", "exam", "exam-records", "data-delete", "fmt-upload", "fmt-edit", "fmt-delete", "optical-keys", "account", "calendar", "bird", "snake", "blocks", "exam-schedule", "rebuilder", "pdf-tools", "system-users", "contact-inbox", "audit-logs", "publishers", "publisher-requests", "answer-keys"].includes(section) && <ActionButton data-help-id="panel-page-10" intent="manage" className="button button-navy" onClick={() => document.getElementById("main-action")?.click()}><span><UiIcon name="add"/></span> {activePage.action}</ActionButton>}</div>}
+          {!["welcome","bird","snake"].includes(section) && <div className="page-title"><div>{activePage.eyebrow && <p className="hero-tag">{activePage.eyebrow}</p>}<h1>{activePage.title}</h1>{activePage.description && <p>{activePage.description}</p>}</div>{activePage.action&&!["student-codes","announcements","search-history","store","dealers","dealer-activities","result-editor","bulk-exams","test-center", "publisher-logos", "system-center", "blog", "files", "fmt-share", "txt-converter", "students", "fmt-download", "results", "exam", "exam-records", "data-delete", "fmt-upload", "fmt-edit", "fmt-delete", "optical-keys", "account", "calendar", "bird", "snake", "blocks", "exam-schedule", "rebuilder", "pdf-tools", "system-users", "contact-inbox", "audit-logs", "publishers", "publisher-requests", "answer-keys"].includes(section) && <ActionButton data-help-id="panel-page-10" intent="manage" className="button button-navy" onClick={() => document.getElementById("main-action")?.click()}><span><UiIcon name="add"/></span> {activePage.action}</ActionButton>}</div>}
           {logoutNotice && <div className="logout-toast" role="status">{logoutNotice}</div>}
-          {section === "announcements" && ["SUPER_ADMIN","DEALER"].includes(authUser?.role??"") ? <Announcements token={authToken} admin={authUser?.role==="SUPER_ADMIN"} onNavigate={s=>setSection(s as Section)}/> : section === "search-history" && authUser?.role === "SUPER_ADMIN" ? <SearchHistory token={authToken}/> : section === "student-codes" && ["SUPER_ADMIN","DEALER","SCHOOL_ADMIN"].includes(authUser?.role??"") ? <StudentCodeManagement token={authToken}/> : section === "store" && authUser?.role === "SUPER_ADMIN" ? <StoreManagement token={authToken}/> : section === "dealers" && authUser?.role === "SUPER_ADMIN" ? <DealerManagement token={authToken}/> : section === "dealer-activities" && authUser?.role === "SUPER_ADMIN" ? <DealerActivities token={authToken}/> : section === "welcome" ? <section className="management-panel panel-welcome"><div className="welcome-cards"><article><h3>Görüş ve öneriler</h3><p>İstek ve geri bildirimlerinizi bize iletin.</p><Link data-help-id="panel-page-12x" href="/contact">İletişime geçin <UiIcon name="arrow"/></Link></article><article><h3>Değerlendirilebilir yayınlar</h3><p>Sistemde bulunan yayınları ve değerlendirme durumlarını görüntüleyin.</p><button data-help-id="panel-page-11" onClick={()=>setSection("publishers")}>Yayınevlerini görüntüle <UiIcon name="arrow"/></button></article><article><h3>Cevap anahtarları</h3><p>Yayımlanmış sınav cevap anahtarlarını inceleyin.</p><Link data-help-id="panel-page-14x" href="/cevap-anahtarlari">Cevap anahtarlarını aç <UiIcon name="arrow"/></Link></article><article><h3>Sınav takvimi</h3><p>Yayınevlerinin sınav tarihlerini ve kapsam bilgilerini inceleyin.</p><Link data-help-id="panel-page-15x" href="/sinav-takvimi">Takvimi aç <UiIcon name="arrow"/></Link></article></div></section> : section === "publisher-logos" && authUser?.role === "SUPER_ADMIN" ? <PublisherLogos token={authToken}/> : section === "test-center" && authUser?.role === "SUPER_ADMIN" ? <TestCenter token={authToken}/> : section === "system-center" && authUser?.role === "SUPER_ADMIN" ? <SystemCenter token={authToken}/> : section === "blog" && authUser?.role === "SUPER_ADMIN" ? <BlogManagement token={authToken}/> : section === "files" && authUser?.role === "SUPER_ADMIN" ? <FileManagement token={authToken}/> : section === "share-links" && authUser?.role === "SUPER_ADMIN" ? <ShareLinks token={authToken}/> : section === "bulk-exams" && authUser?.role === "SUPER_ADMIN" ? <ExamWorkspace token={authToken} initialMode="bulk"/> : section === "result-editor" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ResultEditor token={authToken}/> : (section === "fmt-share" || section === "fmt-download") ? <FmtSharing token={authToken} /> : section === "txt-converter" ? <TxtConverter token={authToken} /> : section === "students" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ReaderAccounts token={authToken} /> : ["fmt-upload", "fmt-edit", "fmt-delete", "optical-keys"].includes(section) && authUser?.role === "SUPER_ADMIN" ? <FmtManager token={authToken} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} canCreateSchool={authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER"} screen="upload" onSaved={(id,schoolId,keyId)=>{window.dispatchEvent(new Event("ks-dealer-usage-changed"));setSavedOpticalId(id);setResultSelection({schoolId,keyId});setSection("results");}} /> : section === "results" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ExamResults token={authToken} initialSelection={resultSelection}/> : section === "data-delete" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ResultDeletion token={authToken}/> : section === "exam-schedule" && authUser?.role === "SUPER_ADMIN" ? <ScheduleManagement token={authToken} /> : section === "contact-inbox" && authUser?.role === "SUPER_ADMIN" ? <ContactInbox token={authToken} /> : section === "audit-logs" && authUser?.role === "SUPER_ADMIN" ? <AuditLogManagement token={authToken}/> : section === "account" ? <section className="account-card">
+          {section === "announcements" && ["SUPER_ADMIN","DEALER"].includes(authUser?.role??"") ? <Announcements token={authToken} admin={authUser?.role==="SUPER_ADMIN"} onNavigate={s=>setSection(s as Section)}/> : section === "search-history" && authUser?.role === "SUPER_ADMIN" ? <SearchHistory token={authToken}/> : section === "student-codes" && ["SUPER_ADMIN","DEALER","SCHOOL_ADMIN"].includes(authUser?.role??"") ? <StudentCodeManagement token={authToken}/> : section === "store" && authUser?.role === "SUPER_ADMIN" ? <StoreManagement token={authToken}/> : section === "dealers" && authUser?.role === "SUPER_ADMIN" ? <DealerManagement token={authToken}/> : section === "dealer-activities" && authUser?.role === "SUPER_ADMIN" ? <DealerActivities token={authToken}/> : section === "welcome" ? <section className="management-panel panel-welcome"><div className="welcome-cards"><article><h3>Görüş ve öneriler</h3><p>İstek ve geri bildirimlerinizi bize iletin.</p><Link data-help-id="panel-page-12x" href="/contact">İletişime geçin <UiIcon name="arrow"/></Link></article><article><h3>Değerlendirilebilir yayınlar</h3><p>Sistemde bulunan yayınları ve değerlendirme durumlarını görüntüleyin.</p><button data-help-id="panel-page-11" onClick={()=>setSection("publishers")}>Yayınevlerini görüntüle <UiIcon name="arrow"/></button></article><article><h3>Cevap anahtarları</h3><p>Yayımlanmış sınav cevap anahtarlarını inceleyin.</p><Link data-help-id="panel-page-14x" href="/cevap-anahtarlari">Cevap anahtarlarını aç <UiIcon name="arrow"/></Link></article><article><h3>Sınav takvimi</h3><p>Yayınevlerinin sınav tarihlerini ve kapsam bilgilerini inceleyin.</p><Link data-help-id="panel-page-15x" href="/sinav-takvimi">Takvimi aç <UiIcon name="arrow"/></Link></article></div></section> : section === "publisher-logos" && authUser?.role === "SUPER_ADMIN" ? <PublisherLogos token={authToken}/> : section === "test-center" && authUser?.role === "SUPER_ADMIN" ? <TestCenter token={authToken}/> : section === "backup-center" && authUser?.role === "SUPER_ADMIN" ? <BackupCenter/> : section === "export-center" && authUser?.role === "SUPER_ADMIN" ? <ExportCenter token={authToken}/> : section === "system-center" && authUser?.role === "SUPER_ADMIN" ? <SystemCenter token={authToken}/> : section === "blog" && authUser?.role === "SUPER_ADMIN" ? <BlogManagement token={authToken}/> : section === "files" && authUser?.role === "SUPER_ADMIN" ? <FileManagement token={authToken}/> : section === "share-links" && authUser?.role === "SUPER_ADMIN" ? <ShareLinks token={authToken}/> : section === "bulk-exams" && authUser?.role === "SUPER_ADMIN" ? <ExamWorkspace token={authToken} initialMode="bulk"/> : section === "result-editor" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ResultEditor token={authToken}/> : (section === "fmt-share" || section === "fmt-download") ? <FmtSharing token={authToken} /> : section === "txt-converter" ? <TxtConverter token={authToken} /> : section === "students" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ReaderAccounts token={authToken} /> : ["fmt-upload", "fmt-edit", "fmt-delete", "optical-keys"].includes(section) && authUser?.role === "SUPER_ADMIN" ? <FmtManager token={authToken} /> : section === "exam" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <OpticalEvaluation token={authToken} canCreateSchool={authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER"} screen="upload" onSaved={(id,schoolId,keyId)=>{window.dispatchEvent(new Event("ks-dealer-usage-changed"));setSavedOpticalId(id);setResultSelection({schoolId,keyId});setSection("results");}} /> : section === "reevaluate" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ReevaluationCenter token={authToken} admin={authUser?.role==='SUPER_ADMIN'}/> : section === "results" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ExamResults token={authToken} initialSelection={resultSelection}/> : section === "data-delete" && (authUser?.role === "SUPER_ADMIN" || authUser?.role === "DEALER") ? <ResultDeletion token={authToken}/> : section === "exam-schedule" && authUser?.role === "SUPER_ADMIN" ? <ScheduleManagement token={authToken} /> : section === "contact-inbox" && authUser?.role === "SUPER_ADMIN" ? <ContactInbox token={authToken} /> : section === "audit-logs" && authUser?.role === "SUPER_ADMIN" ? <AuditLogManagement token={authToken} onExport={()=>setSection("export-center")}/> : section === "account" ? <section className="account-card">
             <form className="account-form" onSubmit={saveProfile}>
               <div className="account-avatar">{profile.avatar ? <img src={profile.avatar} alt="Profil fotoğrafı"/> : profile.firstName.slice(0, 1).toUpperCase() || "B"}</div>
               <div className="account-fields"><label>Profil fotoğrafı · PNG / JPEG / WebP<input data-help-id="panel-page-12" type="file" accept="image/png,image/jpeg,image/webp" disabled={profileSaving} onChange={async e=>{const file=e.target.files?.[0];if(file)try{const avatar=await readProfileImage(file);setProfile(v=>({...v,avatar}));setProfileNotice("Fotoğraf hazır; bilgileri kaydederek hesabınıza ekleyin.");}catch(err){setProfileNotice((err as Error).message);}}}/></label>{profile.avatar&&<ActionButton data-help-id="panel-page-13" intent="neutral" type="button" className="button button-quiet" onClick={()=>setProfile({...profile,avatar:null})}>Fotoğrafı kaldır</ActionButton>}

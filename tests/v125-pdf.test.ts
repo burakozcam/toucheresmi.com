@@ -9,7 +9,7 @@ const questions=layout.lessons.flatMap(l=>Array.from({length:["SOSYAL","DİN","�
 async function pdfModule(){process.env.DATABASE_URL??="postgresql://test:test@127.0.0.1:1/test";process.env.JWT_SECRET??="v125-pdf-test-secret-at-least-32-characters";return import("../apps/api/src/result-pdf");}
 test("v125 90 soruluk tam / eksik oturum: 1, 2, kazanımlı PDF ve Excel ekranla aynı sonuçları kullanır",async()=>{
  const {reportPdf,reportExcelRows}=await pdfModule(),{readPdfText}=require("../apps/api/lib/pdf-text.cjs");
- fs.mkdirSync("output/pdf/v126",{recursive:true});
+ fs.mkdirSync("test-results/regression-pdfs/v126",{recursive:true});
  for(const [label,source]of [["complete",first+"\n"+second],["missing",first]]){
   const data=parseOptical(source,layout,questions,"Anonim Kurum",{allowMismatch:true}),summary=opticalSummary(data,3),s=data.students[0],view:any={data,summary,keyName:"Özdebir · v1.2.6 Test Karnesi",schoolName:"Anonim Kurum",penalty:3,generalCount:1,rankings:{[s.id]:{generalRank:summary[0].score===null?null:1,schoolRank:summary[0].score===null?null:1,classRank:summary[0].score===null?null:1,generalCount:1,schoolCount:1,classCount:1}}};
   assert.deepEqual(evaluate(data.questions,s,3),summary[0].lessons);
@@ -20,7 +20,7 @@ test("v125 90 soruluk tam / eksik oturum: 1, 2, kazanımlı PDF ve Excel ekranla
    const bytes=await reportPdf(view,{kind:"cards",hideIdentity:true,order:"name",templateId}),pages=await readPdfText(bytes),text=pages.flat().map((v:any)=>v.text).join(" ");
    assert.equal(pages.length,count);assert.ok(!/[\x00]|NaN|undefined/.test(text));assert.ok(text.includes(s.name));
    if(label==="missing")assert.match(text,/Eksik oturum|Oturum yok/);
-   fs.writeFileSync(`output/pdf/v126/${label}-${templateId}.pdf`,bytes);
+   fs.writeFileSync(`test-results/regression-pdfs/v126/${label}-${templateId}.pdf`,bytes);
   }
  }
 });

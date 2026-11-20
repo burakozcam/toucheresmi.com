@@ -10,7 +10,7 @@
   <script src="pdf-text-recovery.js"></script>
   <script src="/vendor/ocr/tesseract.min.js"></script>
   <script src="pdf-region-ocr.js"></script>
-  <script>if (window.parent !== window) document.documentElement.classList.add("embedded-tool");</script>
+  <script>if (window.parent !== window) {document.documentElement.classList.add("embedded-tool");if(new URLSearchParams(location.search).get("embedded")==="1")document.documentElement.classList.add("central-tool-grid");}</script>
   <link rel="stylesheet" href="pdf-utilities.css">
   <style>
     * { box-sizing: border-box; }
@@ -21,6 +21,7 @@
     .pdf-hero::before { position: absolute; inset: -160px 15% auto; height: 340px; border-radius: 50%; background: rgba(80,125,190,.14); filter: blur(100px); content: ""; pointer-events: none; }
     .pdf-hero > * { position: relative; }
     .pdf-shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    html.central-tool-grid .pdf-tool-tabs { display:none!important; }
     .pdf-tool-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
     .pdf-tool-tab { min-height: 104px; padding: 14px 12px; border: 1px solid #29364c; border-radius: 12px; color: #9caac0; background: #17243a; text-align: left; transition: .18s ease; }
     .pdf-tool-tab:hover, .pdf-tool-tab[aria-selected="true"] { border-color: #587eb8; color: #e1e9f5; background: linear-gradient(145deg, #243653, #17243a); box-shadow: 0 10px 32px rgba(0,0,0,.16); }
@@ -468,6 +469,13 @@
         return groups.size + " farklı değer için PDF hazırlandı; " + (splitTextDocument.numPages - unmatchedPages.length) + " sayfa eşleşti" + (unmatchedPages.length ? ", " + unmatchedPages.length + " sayfa eşleşmedi (ZIP'e eklendi)." : ".");
       }
 
+      if (new URLSearchParams(location.search).get('embedded') === '1' && window.parent !== window) {
+        document.querySelector('.pdf-tool-tabs').hidden = true;
+        window.addEventListener('message', function(event) {
+          if (event.source !== window.parent || event.origin !== location.origin || event.data?.type !== 'kurumsal-select-tool') return;
+          if (tabButtons.some(function(button){return button.dataset.tool === event.data.tool;})) { if(activeTool !== event.data.tool) selectTool(event.data.tool); }
+        });
+      }
       tabButtons.forEach(function (button, index) {
         button.addEventListener("click", function () { selectTool(button.dataset.tool); });
         button.addEventListener("keydown", function (event) {

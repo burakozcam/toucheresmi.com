@@ -7,7 +7,9 @@ import type {OpticalData,OpticalLayout,OpticalQuestion} from './optical-core';
 import type {inferFmt} from './fmt-inference';
 import type {evaluationReader} from './evaluation-reader';
 import type {matchExamAnswers} from './optical-exam-matching';
+import type {Snapshot} from './optical-review';
 export type CpuJob=
+ |{kind:'reevaluate';snapshot:Snapshot;questions:OpticalQuestion[];penalty:number}
  |{kind:'readParse';deferOnUnmatched?:boolean;text:string;selected:OpticalLayout;templates:Parameters<typeof evaluationReader>[2];questions:OpticalQuestion[];school:string;options:{missingBooklet?:'A'|'B'|'C'|'D';allowMismatch?:boolean;mergeSessions?:boolean}}
  |{kind:'infer';text:string;templates:Parameters<typeof inferFmt>[1]}
  |{kind:'reader';text:string;selected:OpticalLayout;templates:Parameters<typeof evaluationReader>[2];missingBooklet?:string}

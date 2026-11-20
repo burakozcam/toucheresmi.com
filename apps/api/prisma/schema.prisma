@@ -1011,3 +1011,13 @@ model ExamReportLogo {
   @@unique([schoolId, keyId])
   @@index([keyId])
 }
+
+// Immutable structures are copied into OpticalKey.questions; old exams never follow later edits.
+model OpticalExamTemplate {
+  id String @id @default(cuid())
+  name String
+  structure Json
+  createdById String
+  createdAt DateTime @default(now())
+  @@index([createdById, createdAt])
+}

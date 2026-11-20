@@ -1,0 +1,3 @@
+const db='postgresql://ks140@127.0.0.1:55450/ks_v140';if(process.env.DATABASE_URL&&process.env.DATABASE_URL!==db)throw Error('Exclusive v140 localhost DB required');
+Object.assign(process.env,{NODE_ENV:'test',DATABASE_URL:db,JWT_SECRET:'v140-synthetic-signing-key-never-for-production',MFA_ENCRYPTION_KEY:'e6'.repeat(32),TXT_STORAGE_KEY:'v140-synthetic-txt-key-never-for-production',STORAGE_DIR:'/tmp/ks-v140-http',RECAPTCHA_ENABLED:'false',TURNSTILE_ENABLED:'false',WEB_ORIGIN:'http://localhost:3120',RATE_LIMIT_STORE:'memory'});
+require('../../apps/api/src/server.ts').app.listen(4020,'127.0.0.1',()=>console.log('v140 synthetic API :4020'));

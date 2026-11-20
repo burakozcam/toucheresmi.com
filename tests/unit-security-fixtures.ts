@@ -25,6 +25,8 @@ beforeEach(async()=>{
  stub(prisma.examReportLogo,"findUnique",async()=>null);
  stub(prisma.opticalKey,"findUnique",async()=>({publication:null}));
  stub(prisma.opticalResult,"findMany",async()=>[]);
+ stub(prisma.opticalResult,"count",async()=>0);
+ stub(prisma.auditLog,"create",async({data}:any)=>({id:"unit-audit",...data}));
  stub(prisma,"$queryRaw",async()=>[]);
 });
 afterEach(()=>{for(const restore of undo.reverse())restore();undo=[];});

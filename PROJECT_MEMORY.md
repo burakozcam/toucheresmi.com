@@ -1,6 +1,6 @@
 # Kurumsal Sınav — Proje hafızası
 
-Son güncelleme: 19 Kasım 2026 · v1.3.9 yerel çalışma · tam sürüm kabulü henüz verilmedi. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
+Son güncelleme: 20 Kasım 2026 · v1.4.0 yerel çalışma · üretim kabulü açık. Son rapor: `docs/v140-release-report.md`; devam kaydı `docs/v139-progress.md` son bölümü. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
 
 ## Amaç ve mimari
 
@@ -172,3 +172,18 @@ Mevcut plan/kurulum: Veridyen cPanel + Passenger, Neon PostgreSQL, ayrı Next We
 - Altın kilit ve bayrak kaynakları değişmedi. Teknik test/kaynak/kapasite sayıları müşteriye pazarlanmaz. ZIP karne tanıtımı eklenmez. `v139-home.cjs/.py` gerçek Chromium + sentetik public API kullanır, DB gerektirmez.
 
 - Ana sayfa ekinin son kabulü: 27/27 Chromium grubu temiz çıkış, 278/278 regresyon, Web build; 10 sahne/12 işlevsel alan. Görünüm başına 99 kontrast örneği geçti. Manifest gzip +1.202 bayt (%1,02); gerçek hosting performans vaadi değil. Detay ve kanıtlar sürüm raporundadır.
+
+
+## v1.4.0 — yerel uygulama ve önemli devam kuralları
+
+- Kaynak rapor `docs/v140-release-report.md`; çalışma kaydı yeni kopya yerine `docs/v139-progress.md` içine eklendi. Başlangıçta tracked kullanıcı değişikliği yoktu. Canlı DB/deploy/duyuru/commit/push yok.
+- Duyuruların 30 belgeli sürüm/RC kataloğu `sourceEvent` ile idempotent arşivlenir; pasif/silinmiş kayıtlar ve doğrulanmamış tarih korunur. Yeni release1.4.0 yalnız ayrı admin onayıyla yayımlanır.
+- Rehber canlı kayıt etiketini okumaz; kaynak metadata ID/varyantına göre tekilleştirir. Envanter etiketi sıfır boş olabilir; bu bütün koşullu işlev açıklamalarının kabul edildiği anlamına gelmez.
+- Admin/bayi FMT listesi ortak; PDF üç çalışma alanı+sekiz araç aynı kart grid'inde. Gömülü PDF kartları çiftlenmez; açılan alan korunur. Öğrenci PDF ZIP tanıtımı yok.
+- Yeni additive migration `20261120120000_v140_exam_structures`: değişmez kişisel soru yapıları. FMT fiziksel yerleşiminden ayrıdır. Eski sınavlar yeni şablona bağlanmaz. Yalnız yeni `ks-v140-test`, localhost55450/ks_v140 üzerinde uygulandı; diğer test/production DB'leri kullanılmadı.
+- Optik editör 30 satır/memo, 3/4/5 seçenek, A–D çapraz/görünüm ve mevcut Excel modelini kullanır. İlk dokuz kolon sabit; opsiyonel metadata kolonları scoreBase/multipleMark/optionCount/özgün ders/source'ı korur. Eski anahtarların satır toleransı korunur; yeni açık optik yapılarda FMT kapasitesi aşılamaz.
+- Anahtar revision AuditLog'a eski/yeni JSON/fingerprint+gerekçe olarak transaction içinde yazılır; temizlenmez. Değerlendirilmiş anahtarda ONAYLA zorunlu, multipart bypass engelli. Eski boş anahtar güvenle tamamlanabilir.
+- Batch re-evaluate mevcut motor/worker ile en fazla100 yükleme/5000 öğrenci kaydı; bütün kapsam tek transaction, hata tümünü geri alır. Eski sürümler/öğrenci düzenlemeleri/TXT kullanımları korunur. Yeni öğrenci yayını kapalıdır. Sonuçlara stale anahtar durumu eklenir; eski revizyon raporu başlığında belirtilir.
+- Merkezî exports SUPER_ADMIN; CSV/XLSX güvenliği, imzalı kapsam+digest, özgün TXT/FMT ve manifest. Audit önizlemesi asOf ile kendi loglarından korunur. Tam audit arşivi mevcut TXT anahtarıyla özel dizinde şifrelenir; indirme SHA ve ONAYLA olmadan temizlik olmaz, süresi dolan en çok100 kayıt. Anahtar revision/cleanup süresiz korunur. Audit cron'u yok; mevcut teknik SystemEvent/analytics timer'ı korunur.
+- Eski PDF testleri ilk koşumda output/pdf/v126 ve v130 örneklerini yeniden yazdı. Başlangıç yedeği bulunamadı; önceki baytlar korunmuş/geri yüklenmiş sayılmaz. Kullanıcı bilgilendirildi. Bu üç test artık test-results/regression-pdfs kullanır. Bundan sonra output altına yazan testleri çalıştırmadan hedef yollarını inceleyin. Özgün TXT/FMT ve canlı veriler etkilenmedi.
+- Şablonda keyfi oturum dağılımı/TYT/AYT, bazı isimle seçiciler, yıl alanı olmayan katalog yıl filtreleri, sınırsız streaming, bütün koşullu yardım/tema kabulü ve canlı hosting performansı açık. Yedekleme merkezi yalnız hazırlık sayfasıdır. Son test sayıları ve süreç kapanışı rapor teslim ekindedir.

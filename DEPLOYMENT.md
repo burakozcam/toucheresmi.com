@@ -1,6 +1,6 @@
 # KurumsalSınav dağıtım prosedürü
 
-Bu belge v1.3.9 yerel çalışmasının geçiş önkoşullarını da içerir. v1.3.9 tam kabulü henüz verilmedi; [açık kabul maddelerini](docs/v139-release-report.md) kapatmadan yayımlamayın. Önceki kabul ve sınırlar için [v1.3.8 raporunu](docs/v138-release-report.md), önceki migration adımları için v1.3.5/v1.3.7 raporlarını birlikte okuyun. Canlıya aktarım operatörün kontrollü işlemidir; bu geliştirme çalışması dağıtım yapmaz. Mevcut cPanel / CloudLinux / LiteSpeed / Passenger, Node.js 22 ve Neon korunur. Sunucuda rsync ve pg_dump gerektiren adım yoktur.
+Bu belge v1.4.0 yerel çalışmasının geçiş önkoşullarını da içerir. Yeni kapsam ve açık kabul maddeleri için [v1.4.0 raporunu](docs/v140-release-report.md) okuyun. `20261120120000_v140_exam_structures` canlıya uygulanmadı. v1.3.9 tam kabulü henüz verilmedi; [açık kabul maddelerini](docs/v139-release-report.md) kapatmadan yayımlamayın. Önceki kabul ve sınırlar için [v1.3.8 raporunu](docs/v138-release-report.md), önceki migration adımları için v1.3.5/v1.3.7 raporlarını birlikte okuyun. Canlıya aktarım operatörün kontrollü işlemidir; bu geliştirme çalışması dağıtım yapmaz. Mevcut cPanel / CloudLinux / LiteSpeed / Passenger, Node.js 22 ve Neon korunur. Sunucuda rsync ve pg_dump gerektiren adım yoktur.
 
 ## Hazırlık ve kabul
 
@@ -64,3 +64,14 @@ Aktif CPU işi için iki ortak yuva, bütün lsnode süreçlerindeki resident/id
 - Geçmiş duyuru importu otomatik seed değildir; yetkili yönetici Duyurular ekranından açıkça başlatır. Sürüm duyurusu için otomasyon ve ayrıca admin onayı gerekir; migration/build/commit yayın olayı sayılmaz.
 - Yeni alan eski paylaşımlarda null başlangıçtır. Eski bağlantı, zamanlanmış FMT/PDF doğrudan indirme, bayi hedef izolasyonu ve yedi günlük duyuru sınırları staging'de sınanır.
 - Yerel Web build localhost API adresi taşır; gerçek HTTPS API adresiyle temiz artifact oluşturulur. Başarısız aktivasyonda Web/API birlikte `eee6727` v1.3.8 artifact'ına döner. Yeni tablolar/başlangıç alanı, kullanıcı verileri, storage ve anahtarlar otomatik silinmez.
+
+
+## v1.4.0 ek geçiş koşulları
+
+- Eklemeli `OpticalExamTemplate` migration'ı yeni bir tablo ekler; mevcut sınavlara şablon bağlamaz. Önce staging'de doğrulayın.
+- Yerel kabul build'i `http://localhost:4020` kullanır. Üretimde gerçek HTTPS API adresiyle Web yeniden build edilmelidir.
+- Audit dışa aktarım/temizlik arşivleri özel `STORAGE_DIR/audit-archives` altındadır; mevcut TXT_STORAGE_KEY korunmalıdır. Arşivler otomatik silinmez. Disk ve bağımsız yedek politikası gereklidir.
+- `AUDIT_RETENTION_*_DAYS` opsiyoneldir; varsayılan operasyon sürelerini kısaltmadan uzatır. Anahtar revizyonları ve temizlik denetimi korunur. Süreleri kurumsal/yasal politikayla doğrulayın.
+- Audit otomatik silme cron'u kurulmadı; uygulamadaki teknik SystemEvent/analytics bakımıyla karıştırmayın. Gelecekte Türkiye 04.00 için hosting saat dilimi ve güvenilir cron ayrıca doğrulanır.
+- Dışa aktarım ve yeniden değerlendirme kapasite sınırları, açık kapsam ve test yan etkisi [sürüm raporundadır](docs/v140-release-report.md). Bu sürüm otomatik yedekleme/geri yükleme sunmaz; yalnız hazırlık sayfası ekler.
+- v1.4.0 yayın duyurusu ve deployment ayrı operatör onayı gerektirir; burada yapılmadı.

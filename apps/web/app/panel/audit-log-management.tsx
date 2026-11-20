@@ -19,7 +19,9 @@ type AuditLog = {
 type AdminUser = { id: string; firstName: string; lastName: string; email: string };
 type AuditResponse = { items: AuditLog[]; total: number; page: number; pageSize: number };
 
-export default function AuditLogManagement({ token, userId="" }: { token: string;userId?:string }) {
+export default function AuditLogManagement({ token, userId="",onExport }: { token: string;userId?:string;onExport?:()=>void }) {
+  const [maintenance,setMaintenance]=useState<any>(null);
+  useEffect(()=>{const c=new AbortController();void fetch(`${API_URL}/api/admin/audit-maintenance`,{headers:{Authorization:`Bearer ${token}`},signal:c.signal}).then(async r=>{const v=await r.json();if(!r.ok)throw Error(v.error??'Bakım bilgileri alınamadı.');setMaintenance(v);}).catch(e=>{if(!c.signal.aborted)setError(e.message);});return()=>c.abort();},[token]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [data, setData] = useState<AuditResponse | null>(null);
   const [page, setPage] = useState(1);
@@ -83,8 +85,7 @@ export default function AuditLogManagement({ token, userId="" }: { token: string
   const pageCount = Math.max(1, Math.ceil((data?.total ?? 0) / (data?.pageSize ?? 25)));
 
   return (
-    <section className="management-panel">
-      <header className="panel-header"><div><p className="hero-tag">SİSTEM GÜVENLİĞİ</p></div></header>
+    <section className="management-panel">{maintenance&&<section className="audit-maintenance"><h3>Saklama ve bakım</h3><p>{maintenance.total} kayıt · {maintenance.eligible} süresi dolmuş kayıt · tablo ve indeksler {(maintenance.storageBytes/1048576).toFixed(2)} MB.</p><p>{maintenance.automaticMaintenance.note}</p><p>Son başarılı temizlik: {maintenance.lastSuccess?new Date(maintenance.lastSuccess.createdAt).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'}):'Kayıt yok'}. Son başarısız temizlik: {maintenance.lastFailure?new Date(maintenance.lastFailure.createdAt).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'}):'Kayıt yok'}. {maintenance.lastFailure?.summary}</p><details><summary data-help-id="panel-audit-log-management-1x">Saklama politikası ve kayıt dağılımı</summary><p>Yasal süre iddiası değildir; ortam ayarlarıyla uzatılabilir. Anahtar revizyonları ve temizlik denetimi süresiz korunur.</p>{Object.entries(maintenance.policy).map(([key,value])=><p key={key}>{key}: {String(value)} gün</p>)}{maintenance.byAction.map((v:any)=><p key={v.action}>{v.action}: {v.count}</p>)}</details>{onExport&&<button data-help-id="panel-audit-log-management-2x" className="button button-quiet" onClick={onExport}>Dışa Aktarım Merkezi’ni aç</button>}</section>}
       {error && <p className="notice error" role="alert">{error}</p>}
       <form className="audit-filter-form" onSubmit={applyFilters}>
         <label>Kullanıcı

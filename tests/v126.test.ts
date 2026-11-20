@@ -63,5 +63,5 @@ test('v126 gerçek O8126 referansının anonim PDF ve Excel çıktısı 471,550 
  const {reportPdf,reportExcelRows}=await import('../apps/api/src/result-pdf'),{readPdfText}=require('../apps/api/lib/pdf-text.cjs');
  const bytes=await reportPdf(view,{kind:'cards',hideIdentity:true,order:'name',templateId:'summary-card'}),text=(await readPdfText(bytes)).flat().map((r:any)=>r.text).join(' ');
  assert.match(text,/471,550/);assert.equal(summary[0].net,82);const rows=reportExcelRows(view,{kind:'cards',hideIdentity:true,order:'name'});assert.equal(rows[1][rows[0].indexOf('Puan')],summary[0].score);
- fs.mkdirSync('output/pdf/v126',{recursive:true});fs.writeFileSync('output/pdf/v126/o8126-anonymous-reference-card.pdf',bytes);
+ fs.mkdirSync('test-results/regression-pdfs/v126',{recursive:true});fs.writeFileSync('test-results/regression-pdfs/v126/o8126-anonymous-reference-card.pdf',bytes);
 });

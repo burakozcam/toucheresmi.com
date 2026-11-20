@@ -44,20 +44,20 @@ export default function PublisherManagement({ token, role }: { token: string; ro
   const [submitting, setSubmitting] = useState(false);
 
   const filteredPublishers = useMemo(() => {
-    const value = query.trim().toLocaleLowerCase("tr-TR");
-    return [...publishers].filter((publisher) =>
-      !value || publisher.name.toLocaleLowerCase("tr-TR").includes(value),
-    ).sort((left, right) => left.name.localeCompare(right.name, "tr-TR"));
-  }, [publishers, query]);
+    return publishers;
+  }, [publishers]);
+  const [page,setPage]=useState(1),[total,setTotal]=useState(0),[applied,setApplied]=useState(''),[loading,setLoading]=useState(true);
+  useEffect(()=>{const timer=setTimeout(()=>{setApplied(query.trim());setPage(1);},250);return()=>clearTimeout(timer);},[query]);
 
-  const loadData = async () => {
+  const loadData = async (signal?:AbortSignal) => {
+    setLoading(true);
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
       const [publisherResponse, requestResponse] = await Promise.all([
         role === "SUPER_ADMIN"
-          ? fetch(`${API_URL}/api/admin/publishers`, { headers })
-          : fetch(`${API_URL}/api/publishers`, { headers }),
+          ? fetch(`${API_URL}/api/admin/publishers?${new URLSearchParams({page:String(page),pageSize:"25",search:applied})}`, { headers,signal })
+          : fetch(`${API_URL}/api/publishers?${new URLSearchParams({page:String(page),pageSize:"25",search:applied})}`, { headers,signal }),
         role === "SUPER_ADMIN"
           ? fetch(`${API_URL}/api/admin/publisher-requests`, { headers })
           : fetch(`${API_URL}/api/publisher-requests`, { headers }),
@@ -68,7 +68,7 @@ export default function PublisherManagement({ token, role }: { token: string; ro
         requestResponse.json() as Promise<PublisherRequest[] | { error?: string }>,
       ]);
 
-      if (!publisherResponse.ok || !Array.isArray(publisherData)) {
+      if (!publisherResponse.ok || !Array.isArray((publisherData as any).rows)) {
         throw new Error((publisherData as { error?: string })?.error ?? "Yayınevleri yüklenemedi.");
       }
 
@@ -76,16 +76,18 @@ export default function PublisherManagement({ token, role }: { token: string; ro
         throw new Error((requestData as { error?: string })?.error ?? "Talep listesi yüklenemedi.");
       }
 
-      setPublishers(publisherData);
+      if(signal?.aborted)return;
+      setPublishers((publisherData as any).rows);setTotal((publisherData as any).total);
       setRequests(requestData);
     } catch (loadError) {
+      if(signal?.aborted)return;
       setError(loadError instanceof Error ? loadError.message : "Yayınevi verisi yüklenemedi.");
-    }
+    }finally{if(!signal?.aborted)setLoading(false);}
   };
 
   useEffect(() => {
-    void loadData();
-  }, [token]);
+    const c=new AbortController();void loadData(c.signal);return()=>c.abort();
+  }, [token,role,page,applied]);
 
   async function submitPublisherRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -223,9 +225,9 @@ export default function PublisherManagement({ token, role }: { token: string; ro
 
       <div className="publisher-grid">
         <div className="publisher-list-panel">
-          <h3>Kayıtlı yayınevleri</h3>
-          {filteredPublishers.length === 0 ? (
-            <p className="empty-state">Arama kriterine uyan yayınevi bulunamadı.</p>
+          <h3>Kayıtlı yayınevleri</h3><nav className="studio-actions" aria-label="Yayınevi sayfaları"><button data-help-id="panel-publisher-management-4x" disabled={loading||page<=1} onClick={()=>setPage(p=>p-1)}>Önceki</button><span>{total} kayıt · {page} / {Math.max(1,Math.ceil(total/25))} · bu sayfada {publishers.length}</span><button data-help-id="panel-publisher-management-5x" disabled={loading||page*25>=total} onClick={()=>setPage(p=>p+1)}>Sonraki</button></nav>
+          {loading?<p role="status">Yayınevleri yükleniyor…</p>:filteredPublishers.length === 0 ? (
+            <p className="empty-state">{applied?"Arama kriterine uyan yayınevi bulunamadı.":"Henüz kayıtlı yayınevi yok."}</p>
           ) : (
             <div className="publisher-list">
               {filteredPublishers.map((publisher) => (

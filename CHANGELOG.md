@@ -1,3 +1,15 @@
+# v1.4.0 · 2026-11-20 · yerel geliştirme, üretim kabulü açık
+
+- Duyuru kayıt geri bildirimi ve tekrar kilidi, 30 belgeli geçmiş sürüm/RC için sayımlı idempotent arşiv aktarımı.
+- Kaynak metadata'sından benzersiz rehber işlevleri, varsayılan lazy animasyon, güvenli tur, birleşik 11 PDF kartı ve mobil Yardım/çerez hizası.
+- Ortak kompakt FMT listesi/gerçek filtreler, cevap anahtarı filtreleri, hizalama/login/çıkış düzeni, on çift renkli palet.
+- Gerçek SQL yayınevi sayfalaması, bölüm/çalışma alanı code splitting, kararlı açıklama şeritleri.
+- Mevcut optik editörde cevap baloncukları, seçenek/kitapçık görünümü, değişmez soru yapısı şablonları, semantik Excel aktarımı ve açık FMT kapasite kontrolü.
+- Korunan anahtar revizyonları, gerçek değişiklik özeti/ONAYLA, eski sonuç durumu ve mevcut motorla kapsamı atomik yeniden değerlendirme.
+- Merkezi dışa aktarım, SHA manifestli özgün arşivler; arşiv/hash/saklama doğrulamalı ayrı audit temizliği. Normal gezinme kalıcı denetim üretmez.
+- Yedekleme ve Sürüm Kurtarma Merkezi yalnız menü/hazırlık sayfasıdır; otomatik yedekleme/geri yükleme eklenmedi.
+- Yeni eklemeli migration yalnız izole test DB'sinde doğrulandı. Canlı migration/yayın/deploy/commit/push yapılmadı. Kabul kapsamı, eksikler ve test PDF yan etkisi: [v1.4.0 raporu](docs/v140-release-report.md).
+
 # v1.3.9 · 2026-11-19 · yerel çalışma, kabul açık
 
 - Ana sayfanın bütün tanıtımları denetlendi: gerçek tek sınav kazanım analizi, kapasite sayacı olmadan toplu raporlama, 12 işlevsel alan; duyuru/paylaşım yaşam döngüsü ve kompakt birleşik PDF merkezi önizlemesi. Kilit/bayrak korunur; bütün yardımın eksiksizliği veya canlı hız garantisi iddia edilmez.

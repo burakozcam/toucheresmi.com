@@ -20,6 +20,7 @@ export function questionProblems(questions:OpticalQuestion[],requireOutcomes=fal
   for(const q of questions){const label=`${q.lesson||"Ders yok"} / A ${q.number}`;
     if(!q.lesson.trim()||q.lesson.length>80)errors.push(`${label}: ders adı gerekli (en fazla 80 karakter).`);
     if(!Number.isInteger(q.number)||q.number<1||q.positions.A!==q.number)errors.push(`${label}: A soru numarası pozitif tam sayı olmalı.`);
+    if(q.optionCount&&"ABCDE".includes(q.answer)&&"ABCDE".indexOf(q.answer)>=q.optionCount)errors.push(`${label}: cevap seçenek sayısını aşıyor.`);
     if(!/^[ABCDEHX]$/.test(q.answer))errors.push(`${label}: cevap A–E, H veya X olmalı.`);
     if(q.weight!==null&&(!Number.isFinite(q.weight)||q.weight<=0||q.weight>100))errors.push(`${label}: katsayı 0’dan büyük, en fazla 100 olmalı.`);
     if((q.outcomeCode?.length??0)>80||(q.outcomeName?.length??0)>1000)errors.push(`${label}: kazanım kodu en fazla 80, metni 1000 karakter olabilir.`);

@@ -36,12 +36,14 @@ export const layout8050:OpticalLayout={
 export const opticalQuestionSchema = z.object({
   source:z.object({system:z.enum(["f","o","general"]),sheet:z.string().max(100),row:z.number().int().positive(),columns:z.array(z.string()).max(50),values:z.array(z.union([z.string(),z.number(),z.boolean(),z.null()])).max(50)}).optional(),
   lesson: z.string().trim().min(1).max(80), number: z.number().int().min(1).max(300), answer: z.string().regex(/^[ABCDEHXT]$/).transform(v=>v==="T"?"H":v),
+  optionCount:z.union([z.literal(3),z.literal(4),z.literal(5)]).optional(),
   multipleMark:z.enum(["wrong","blank"]).optional(),
   scoreBase:z.number().finite().min(0).max(500).optional(),
   weight: z.number().positive().max(100).nullable().default(null), positions: z.record(z.string().regex(/^[A-D]$/), z.number().int().min(1).max(300)),
   outcomeCode: z.string().max(80).optional(), outcomeName: z.string().max(1000).optional(),
 });
 export const opticalQuestionsSchema = z.array(opticalQuestionSchema).min(1).max(300).superRefine((qs, ctx) => {
+  if(qs.some(q=>q.optionCount&&'ABCDE'.includes(q.answer)&&'ABCDE'.indexOf(q.answer)>=q.optionCount))ctx.addIssue({code:'custom',message:'Doğru cevap tanımlanan seçenek sayısını aşıyor.'});
   if(qs.some(q=>q.scoreBase!==qs[0].scoreBase))ctx.addIssue({code:"custom",message:"Başlangıç puanı tüm sorularda tutarlı olmalıdır."});
   const lessons = [...new Set(qs.map(q => q.lesson))];
   const books = Object.keys(qs[0]?.positions ?? {}).sort().join("");
@@ -75,6 +77,15 @@ export function parseOptical(txt: string, inputLayout: OpticalLayout, inputQuest
   const mismatch = (message: string) => { if (!options.allowMismatch) throw new Error(message); warnings.push(message); };
   const sourceLayout = opticalLayoutSchema.parse(inputLayout);
   const questionLessons = [...new Set(questions.map(q => q.lesson))];
+  // Explicit optical structures must fit the physical reader fields, even when
+  // the legacy per-line warning policy is enabled. Historical keys keep that policy.
+  if(questions.some(q=>q.optionCount!==undefined)){
+    const family=readerFamily(sourceLayout),layouts=family?family.records.map(record=>record.layout):[sourceLayout];
+    for(const lesson of questionLessons){const capacity=Math.max(0,...layouts.flatMap(layout=>layout.lessons.filter(field=>lessonIdentity(field.name)===lessonIdentity(lesson)).map(field=>field.length))),count=questions.filter(q=>q.lesson===lesson).length;
+      if(count>capacity)throw new Error(`${lesson}: özel optik yapı ${count} soru bekliyor; FMT alan kapasitesi ${capacity}. Uyumlu FMT oluşturun veya mevcut eşleştirmeyi düzeltin. Eksik cevap üretilmedi.`);
+    }
+  }
+
   if (new Set(questionLessons.map(lessonIdentity)).size !== questionLessons.length) throw new Error("Cevap anahtarında aynı derse ait birden fazla ad var. Ders adlarını düzeltin.");
   // Keep the key's lesson labels in the saved snapshot and report; only map TXT fields.
   const layout = opticalLayoutSchema.parse({...sourceLayout, lessons: sourceLayout.lessons.map(l => ({...l,

@@ -1,3 +1,4 @@
+import {keyFingerprint} from "./optical-review";
 import {createReadStream} from 'node:fs';
 import {reportFrame,writeReportFrame} from './report-frames';
 import fs from 'node:fs/promises';
@@ -41,7 +42,8 @@ export async function examView(schoolId:string,keyId:string,publishedOnly=false,
  mark("benchmarks");
  // Exact ranks/participation are allowed; suppress small cross-institution means that can expose a peer's score.
  const safeMean=(value:any)=>value.count>=5&&cohorts.length>=2?value:{...value,score:null,lessons:{}};
- return {...view,keyId,rankings,generalCount,benchmarks:{all:safeMean(benchmarks.all),grades:Object.fromEntries(Object.entries(benchmarks.grades).map(([g,v])=>[g,safeMean(v)]))}};
+ const currentKey=await prisma.opticalKey.findUnique({where:{id:keyId},select:{questions:true,penalty:true}});let stale=true;try{stale=!currentKey||keyFingerprint(currentKey.questions,currentKey.penalty)!==view.keyFingerprint;}catch{}
+ return {...view,keyId,answerKeyStatus:{stale,resultFingerprint:view.keyFingerprint},rankings,generalCount,benchmarks:{all:safeMean(benchmarks.all),grades:Object.fromEntries(Object.entries(benchmarks.grades).map(([g,v])=>[g,safeMean(v)]))}};
 }
 resultRouter.get("/report-templates",(_req,res)=>{res.json(reportTemplates);});
 async function allowed(req:AuthenticatedRequest,schoolId:string){return prisma.school.findFirst({where:{id:schoolId,...scope(req)},select:{id:true}});}
@@ -57,7 +59,7 @@ resultRouter.get("/result-exams/:id/access-codes",wrap(async(req,res)=>{
  res.setHeader("Cache-Control","private, no-store");res.json(view.data.students.map(s=>({studentId:s.id,name:s.name,studentNo:s.studentNo,branch:s.branch,accessCode:studentReportAccessCode(schoolId,keyId,s)})));
 }));
 const optionsSchema=z.object({schoolId:z.string().min(1),kind:z.enum(["cards","school","classes"]).default("cards"),order:z.enum(["score","name"]).default("score"),showSiteAddress:z.enum(["true","false"]).default("true"),showSchoolParticipation:z.enum(["true","false"]).default("true"),showGeneralParticipation:z.enum(["true","false"]).default("true"),hideIdentity:z.enum(["true","false"]).default("true"),grade:z.string().regex(/^\d{1,2}$/).optional(),templateId:z.string().optional(),branch:z.string().optional(),studentId:z.string().optional(),progress:z.enum(["frames"]).optional(),format:z.enum(["pdf","xlsx","zip"]).default("pdf")});
-resultRouter.get("/result-exams/:id/export",wrap(async(req,res)=>{const input=optionsSchema.parse(req.query);if(!await allowed(req,input.schoolId)){res.status(403).json({error:"Kurum erişimi yok."});return;}const view=await examView(input.schoolId,String(req.params.id));if(!view){res.status(404).json({error:"Sonuç bulunamadı."});return;}await dealerPermission(req.user!,"canExport");reportTemplate(input.kind,input.templateId);const options:ReportOptions={...input,showSiteAddress:input.showSiteAddress==="true",showSchoolParticipation:input.showSchoolParticipation==="true",showGeneralParticipation:input.showGeneralParticipation==="true",hideIdentity:input.hideIdentity==="true"};if(!selectedStudents(view,options).length){res.status(400).json({error:"Seçilen öğrenci veya sınıf için sonuç yok."});return;}res.setHeader("Cache-Control","private, no-store");
+resultRouter.get("/result-exams/:id/export",wrap(async(req,res)=>{const input=optionsSchema.parse(req.query);if(!await allowed(req,input.schoolId)){res.status(403).json({error:"Kurum erişimi yok."});return;}const view=await examView(input.schoolId,String(req.params.id));if(!view){res.status(404).json({error:"Sonuç bulunamadı."});return;}if(view.answerKeyStatus.stale)view.keyName+=' · Önceki cevap anahtarı revizyonu';await dealerPermission(req.user!,"canExport");reportTemplate(input.kind,input.templateId);const options:ReportOptions={...input,showSiteAddress:input.showSiteAddress==="true",showSchoolParticipation:input.showSchoolParticipation==="true",showGeneralParticipation:input.showGeneralParticipation==="true",hideIdentity:input.hideIdentity==="true"};if(!selectedStudents(view,options).length){res.status(400).json({error:"Seçilen öğrenci veya sınıf için sonuç yok."});return;}res.setHeader("Cache-Control","private, no-store");
  if(input.format==="zip"){
   if(input.kind!=="cards"){res.status(400).json({error:"ZIP yalnız öğrenci karneleri için kullanılabilir."});return;}
   const controller=new AbortController();const abort=()=>controller.abort();res.once("close",abort);

@@ -56,7 +56,7 @@ test("sonuç sürümleri API: eski anlık kopya korunur, önizleme bağlanır, y
   patch(prisma.studentResultAccess,"createMany",async({data}:any)=>{copied=data;return{count:data.length};});
   async function invoke(path:string,id="v1",body:any={},userId="manager"){
     const handler=(opticalRouter as any).stack.find((l:any)=>l.route?.path===path).route.stack.at(-1).handle;let status=200,response:any;
-    await handler({params:{id},query:{},body,user:{id:userId,role:"DEALER",dealerId:"dealer"}},{status(n:number){status=n;return this;},json(v:any){response=v;}},(e:any)=>{if(e)throw e;});return{status,body:response};
+    await handler({params:{id},query:{},body:{confirmation:"ONAYLA",...body},user:{id:userId,role:"DEALER",dealerId:"dealer"}},{status(n:number){status=n;return this;},json(v:any){response=v;}},(e:any)=>{if(e)throw e;});return{status,body:response};
   }
   try{
     assert.equal((await invoke("/results/:id/publication","v1",{published:true})).status,409);
