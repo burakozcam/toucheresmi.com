@@ -24,7 +24,7 @@ import crypto from "node:crypto";
 import { canonicalJson } from "./canonical-json";
 import { env } from "./config";
 import { checksum, keyFingerprint, reviewSnapshot, reEvaluate, scoreChanges, type Snapshot } from "./optical-review";
-import { analyzeSnapshot } from "./optical-analysis";
+import { examQuality } from "./exam-quality";
 import multer from "multer";
 import { Prisma, Role } from "@prisma/client";
 import { z } from "zod";
@@ -439,7 +439,7 @@ function validSeal(token:string,kind:string,userId:string,resultId:string,finger
 async function currentResult(req:AuthenticatedRequest){return prisma.opticalResult.findFirst({where:{id:idParam(req),school:scope(req)},include:{key:true,nextRevision:{select:{id:true}}}});}
 opticalRouter.get("/results/:id/analysis",wrap(async(req,res)=>{
   const item=await currentResult(req);if(!item||isDeleted(item.snapshot)){res.status(404).json({error:"Sonuç bulunamadı veya yetkiniz yok."});return;}
-  res.json(analyzeSnapshot(item.snapshot as unknown as Snapshot,typeof req.query.branch==="string"?req.query.branch:undefined));
+  res.json(examQuality(item.snapshot as unknown as Snapshot,typeof req.query.branch==="string"?req.query.branch:undefined));
 }));
 opticalRouter.get("/results/:id/checks",wrap(async(req,res)=>{
   const item=await currentResult(req);if(!item||isDeleted(item.snapshot)){res.status(404).json({error:"Sonuç bulunamadı veya yetkiniz yok."});return;}

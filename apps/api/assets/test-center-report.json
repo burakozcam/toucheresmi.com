@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "version": "1.4.0",
-  "startedAt": "2026-11-20T08:48:01.758Z",
-  "finishedAt": "2026-11-20T08:48:51.886Z",
-  "durationMs": 50128,
+  "version": "1.4.1",
+  "startedAt": "2026-11-22T15:23:36.073Z",
+  "finishedAt": "2026-11-22T15:24:24.825Z",
+  "durationMs": 48751,
   "exitCode": 0,
-  "sourceDigest": "e7f92ea614a81894f3be7e47ddf12cfd70a9f4343aadc437b2378ef077126657",
+  "sourceDigest": "6210523cb9c423c64bb45c8957a55579a7256209a78a84ee67c390b447c3f2b5",
   "scope": "Yerel Node testleri; veritabanı sahte bağlantı + izole taklitler. Üretim kabul kanıtı değildir. Tarayıcı/DB betikleri ayrıca raporlanır.",
   "summary": {
-    "total": 292,
-    "passed": 292,
+    "total": 308,
+    "passed": 308,
     "failed": 0,
     "skipped": 0,
     "notRun": 0
@@ -41,8 +41,8 @@
     },
     {
       "name": "TXT/FMT",
-      "total": 45,
-      "passed": 45,
+      "total": 46,
+      "passed": 46,
       "failed": 0,
       "skipped": 0,
       "notRun": 0
@@ -57,24 +57,24 @@
     },
     {
       "name": "Sınav değerlendirme",
-      "total": 99,
-      "passed": 99,
+      "total": 110,
+      "passed": 110,
       "failed": 0,
       "skipped": 0,
       "notRun": 0
     },
     {
       "name": "Sonuç hesaplama",
-      "total": 15,
-      "passed": 15,
+      "total": 17,
+      "passed": 17,
       "failed": 0,
       "skipped": 0,
       "notRun": 0
     },
     {
       "name": "Karne ve PDF",
-      "total": 35,
-      "passed": 35,
+      "total": 36,
+      "passed": 36,
       "failed": 0,
       "skipped": 0,
       "notRun": 0
@@ -113,8 +113,8 @@
     },
     {
       "name": "Arayüz ve mobil",
-      "total": 1,
-      "passed": 1,
+      "total": 2,
+      "passed": 2,
       "failed": 0,
       "skipped": 0,
       "notRun": 0
@@ -142,2044 +142,2156 @@
       "file": "tests/8050.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 0.736908
+      "durationMs": 0.641447
     },
     {
       "name": "8050: 19 satırlık örneğin kimliksiz 9. satırı raporlanır, satırlar sessizce atlanmaz",
       "file": "tests/8050.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 2.427963
+      "durationMs": 1.709725
     },
     {
       "name": "7108 → gerçek 8050: ad-soyad birleşir, numara/kitapçık/TC/cevaplar doğru konumlara taşınır",
       "file": "tests/8050.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 1.541182
+      "durationMs": 1.052419
     },
     {
       "name": "8050: sınav numarası hedefte yoksa kayıp uyarısı; özgün FMT baytları indirmede korunur",
       "file": "tests/8050.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 1.23144
+      "durationMs": 1.777734
     },
     {
       "name": "takvim API 2.500 satırı 100'lü gruplarla kaydeder, geçersiz ve tekrarları izole eder; geri alma kapsamı güvenlidir",
       "file": "tests/api-v105.test.ts",
       "category": "API ve sistem sağlığı",
       "status": "passed",
-      "durationMs": 98.581906
+      "durationMs": 95.100768
     },
     {
       "name": "hesap daveti özeti saklanır, token tek kullanımlıktır ve süresi dolunca reddedilir",
       "file": "tests/api-v105.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 523.844857
+      "durationMs": 497.788928
     },
     {
       "name": "takvim ve eşleştirme yönetim uçları kimliksiz ve bayi erişimini reddeder",
       "file": "tests/api-v105.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 0.78593
+      "durationMs": 0.849418
     },
     {
       "name": "şifre sıfırlanınca eski JWT reddedilir; yeni oturum kabul edilir",
       "file": "tests/auth.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 36.453309
+      "durationMs": 33.723482
     },
     {
       "name": "yönetici oluşturduğu hesap şifre belirlemeden yönetim uçlarına erişemez",
       "file": "tests/auth.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 2.921032
+      "durationMs": 2.725356
     },
     {
       "name": "gerçek özgün Fernus XLS ve Okulizyon XLSX: ham kaynak değerleri ve kazanımlar kayıpsız saklanır",
       "file": "tests/critical-v111.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 46.954698
+      "durationMs": 42.200075
     },
     {
       "name": "içe aktarma: onaysız ve dosyadan kopuk önizleme reddedilir; düzeltme kaydedilir, özgün satır korunur",
       "file": "tests/critical-v111.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 145.782145
+      "durationMs": 123.679533
     },
     {
       "name": "FMT gerçek koordinatlar: iki örnek, kapasite ve çakışma; başlık parametreleri boyut tahminine dönüştürülmez",
       "file": "tests/critical-v111.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 5.997106
+      "durationMs": 5.803767
     },
     {
       "name": "FMT doğrulama kanıtı kullanıcıya, okuyucuya, FMT’ye, kodlamaya ve alanlara bağlıdır",
       "file": "tests/critical-v111.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 2.47939
+      "durationMs": 2.23856
     },
     {
       "name": "ayrı F/O modülleri var; hatalı kaynak satırı düzeltilebilir önizlemeye taşınır",
       "file": "tests/critical-v111.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 5.544463
+      "durationMs": 4.708927
     },
     {
       "name": "API: açık onayı olmayan cevap anahtarı yeni sınav oluşturamaz veya yayımlayamaz",
       "file": "tests/critical-v111.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.326999
+      "durationMs": 1.261303
     },
     {
       "name": "FMT toplu kayıt doğrulama kanıtı yoksa veritabanı işlemi bile başlamaz",
       "file": "tests/critical-v111.test.ts",
       "category": "Veritabanı ve Prisma",
       "status": "passed",
-      "durationMs": 0.94506
+      "durationMs": 0.897929
     },
     {
       "name": "doğru, yanlış, boş, iptal ve ders katsayıları ayrı hesaplanır",
       "file": "tests/evaluation.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 1.734066
+      "durationMs": 1.616321
     },
     {
       "name": "yanlış götürmeyen sınav ve manuel katsayı",
       "file": "tests/evaluation.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.294849
+      "durationMs": 0.78161
     },
     {
       "name": "eksik anahtarda sonuç üretilmez",
       "file": "tests/evaluation.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.844832
+      "durationMs": 0.70735
     },
     {
       "name": "yinelenen soru ve atlanan numara reddedilir",
       "file": "tests/evaluation.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.616682
+      "durationMs": 0.569441
     },
     {
       "name": "öğrenciler okul ve şube bazında ayırt edilir",
       "file": "tests/evaluation.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.602214
+      "durationMs": 0.553691
     },
     {
       "name": "cevap anahtarı ve öğrenci sütunları tam eşleşmelidir",
       "file": "tests/evaluation.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.556858
+      "durationMs": 0.560113
     },
     {
       "name": "geçersiz öğrenci cevabı ve katsayı reddedilir",
       "file": "tests/evaluation.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.708414
+      "durationMs": 0.637048
     },
     {
       "name": "gerçek XLSX dışa aktarma ve geri okuma Türkçe / sıfırlı numaraları korur",
       "file": "tests/evaluation.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 119.738203
+      "durationMs": 112.21553
     },
     {
       "name": "v2 tek hücreli cevapları soru sırasını ve kazanımı koruyarak okur",
       "file": "tests/features-v2.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.926415
+      "durationMs": 0.757014
     },
     {
       "name": "kısa cevap zinciri soru kaymasına yol açmadan reddedilir",
       "file": "tests/features-v2.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.620639
+      "durationMs": 0.497315
     },
     {
       "name": "100 ve 500 ölçekleri iptal soruları dışarıda tutar",
       "file": "tests/features-v2.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.671645
+      "durationMs": 0.618865
     },
     {
       "name": "kurum karşılaştırması farklı okulları karıştırmaz ve önhesapla aynı sonucu verir",
       "file": "tests/features-v2.test.ts",
       "category": "Kurum izolasyonu",
       "status": "passed",
-      "durationMs": 0.897891
+      "durationMs": 0.784827
     },
     {
       "name": "kazanım kodu ve adı birlikte olmalıdır",
       "file": "tests/features-v2.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.452582
+      "durationMs": 0.417435
     },
     {
       "name": "resmî test soru sayıları ve yüzde ağırlıkları şablonlara yansır",
       "file": "tests/features-v2.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.405003
+      "durationMs": 0.37213
     },
     {
       "name": "takvim aynı gün birden çok yayın kabul eder, yinelenen sınavı reddeder",
       "file": "tests/features-v2.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.155707
+      "durationMs": 1.194016
     },
     {
       "name": "belge taramada şeffaflık beyaz zemine, tonlar gerçek siyah beyaza çevrilir",
       "file": "tests/features-v2.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.429749
+      "durationMs": 0.397448
     },
     {
       "name": "En az 150 ayrı eğitim sözü özgün veya kaynaklı olarak sunulur",
       "file": "tests/features-v2.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.598266
+      "durationMs": 0.545005
     },
     {
       "name": "Excel takvim şablonunda gerçek hücre seçim kuralları bulunur",
       "file": "tests/features-v2.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 25.85116
+      "durationMs": 24.719205
     },
     {
       "name": "FMT kütüphanesi: yayınevi adları doğru, üç yeni dosyanın özgün baytları ve kodlaması korunur",
       "file": "tests/fmt-library-files.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 0.742348
+      "durationMs": 0.619906
     },
     {
       "name": "FMT indirme API: yeni dosyaları bayi de aynı baytlarla ve .fmt adıyla alır; bilinmeyen kod reddedilir",
       "file": "tests/fmt-library-files.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 0.832077
+      "durationMs": 0.76009
     },
     {
       "name": "FMT paylaşımı: üç yayınevi birlikte paylaşılır, özgün baytlar indirilir ve iptal/süre/yanlış anahtar reddedilir",
       "file": "tests/fmt-library-files.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 4.229817
+      "durationMs": 3.882253
     },
     {
       "name": "Dosya adı: uzun Türkçe/ASCII adlarda uzantı kesilmez; yeniden adlandırma dosya türünü korur",
       "file": "tests/fmt-library-files.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 1.177257
+      "durationMs": 0.981206
     },
     {
       "name": "Dosya yönetimi API: uzantısız yeniden adlandırmada .fmt korunur, hareket dosyanın türünü değiştirmez",
       "file": "tests/fmt-library-files.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 1.61949
+      "durationMs": 1.470867
     },
     {
       "name": "Dosya paylaşımı bilgisi: yalnızca geçerli anahtar ve zaman penceresinde uzantılı ad döner",
       "file": "tests/fmt-library-files.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 2.306203
+      "durationMs": 2.147869
     },
     {
       "name": "Özdebir BLDM: özgün baytlar korunur; doğrulanan tek oturum yerleşimi listelenir",
       "file": "tests/fmt-library-files.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 1.541403
+      "durationMs": 1.424048
     },
     {
       "name": "Özdebir BLDM indirme API özgün dosyayı .bldm olarak döndürür",
       "file": "tests/fmt-library-files.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 0.618595
+      "durationMs": 0.586162
     },
     {
       "name": "Özdebir BLDM süreli paylaşımında API ve istemci dosya adını .fmt yapmaz",
       "file": "tests/fmt-library-files.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 1.522408
+      "durationMs": 1.237237
     },
     {
       "name": "F gerçek 082701: 90 soru, 6 ders; B çaprazı ayrı kitapçıkla tutarlı; kodsuz kazanım korunur",
       "file": "tests/formats-v111.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 7.028799
+      "durationMs": 5.690493
     },
     {
       "name": "O gerçek Ankara: başlık öncesi satırlar, 90 soru, A/B eşleştirmesi ve tüm kazanım sütunları",
       "file": "tests/formats-v111.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 11.650674
+      "durationMs": 9.046826
     },
     {
       "name": "F/O yanlış seçim ve bozuk çapraz cevap/soru kayıtları sessizce kabul edilmez",
       "file": "tests/formats-v111.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 10.408815
+      "durationMs": 8.987856
     },
     {
       "name": "tek F/O kazanımı fiziksel olarak ayrı cevap/kazanım kopyalarıyla arşivlenir; mevcut cevap korunur",
       "file": "tests/formats-v111.test.ts",
       "category": "Arşivleme",
       "status": "passed",
-      "durationMs": 8.9994
+      "durationMs": 8.468749
     },
     {
       "name": "sunucu XLS/XLSX içe aktarma tarayıcıyla aynı F/O sonucunu üretir",
       "file": "tests/formats-v111.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 61.550108
+      "durationMs": 53.140203
     },
     {
       "name": "toplu FMT: yinelenen isim, bozuk yerleşim ve özgün bayt uyuşmazlığı reddedilir",
       "file": "tests/formats-v111.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 3.19594
+      "durationMs": 2.736617
     },
     {
       "name": "toplu FMT API: admin sınırı, mevcut isim kontrolü ve tek işlem içinde grup kaydı",
       "file": "tests/formats-v111.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 12.723574
+      "durationMs": 12.391808
     },
     {
       "name": "Güncel ana sayfa, uygulama ve favicon sürümleri tutarlı",
       "file": "tests/formats-v111.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.801771
+      "durationMs": 0.752977
     },
     {
       "name": "FMT alan kontrolü çakışma, uzunluk ve yinelenen dersleri adlarıyla bildirir",
       "file": "tests/optical-admin.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 0.941483
+      "durationMs": 0.734953
     },
     {
       "name": "FMT örnek TXT tüm satırları inceler; kimlik alanını gizler ve bozuk satırları raporlar",
       "file": "tests/optical-admin.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 3.102413
+      "durationMs": 3.095232
     },
     {
       "name": "anahtar şablonu kullanıma hazırdır; C/D içe aktarımı sunucu ve tarayıcıda aynıdır",
       "file": "tests/optical-admin.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 5.880015
+      "durationMs": 5.892263
     },
     {
       "name": "anahtar kontrolü dersler arasında farklı kitapçık kümelerini ve eksik cevapları reddeder",
       "file": "tests/optical-admin.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 0.560887
+      "durationMs": 0.493729
     },
     {
       "name": "kayıtlı anahtar API: admin detayına erişir; eski sürümle yazma reddedilir, eksik kazanım kabul edilir",
       "file": "tests/optical-admin.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 5.633039
+      "durationMs": 5.271616
     },
     {
       "name": "kontrol özeti: numara tekrarı ve sınıf uyuşmazlığı durdurur; boş ders ve çoklu işaret uyarıdır",
       "file": "tests/optical-workflow.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 5.894081
+      "durationMs": 4.122314
     },
     {
       "name": "kontrol özeti: olası yanlış kitapçık yalnızca uyarılır, cevaplar değiştirilmez",
       "file": "tests/optical-workflow.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 5.0121
+      "durationMs": 4.286382
     },
     {
       "name": "yeniden değerlendirme: B sırası, cevap, H/X, katsayı ve ceza düzeltmeleri ham TXT ile aynı sonucu verir",
       "file": "tests/optical-workflow.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 13.717617
+      "durationMs": 11.734192
     },
     {
       "name": "soru analizi: dağılımlar, sınıf ortalamaları, kazanım ve H/X istisnaları tutarlıdır",
       "file": "tests/optical-workflow.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 5.16051
+      "durationMs": 4.919684
     },
     {
       "name": "anahtar ve TXT parmak izi sıralama/kodlama satır sonu farkına dayanıklıdır",
       "file": "tests/optical-workflow.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 4.002037
+      "durationMs": 3.892211
     },
     {
       "name": "sonuç sürümleri API: eski anlık kopya korunur, önizleme bağlanır, yayın kontrolü ve erişim taşıma uygulanır",
       "file": "tests/optical-workflow.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 27.831039
+      "durationMs": 22.367742
     },
     {
       "name": "erişim iptali sınavın tüm sürümlerini kapsar ve bayi kapsamını korur",
       "file": "tests/optical-workflow.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 0.950109
+      "durationMs": 0.846001
     },
     {
       "name": "7108: dört satır iki öğrenciye birleşir; karma A/B ve B kazanım eşleştirmesi örnek karne netlerini verir",
       "file": "tests/optical.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 5.839799
+      "durationMs": 6.032407
     },
     {
       "name": "7108: bozuk uzunluk, kitapçık, cevap ve ders alanı taşması reddedilir",
       "file": "tests/optical.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 15.080444
+      "durationMs": 14.894255
     },
     {
       "name": "7108: yinelenen ve çelişkili oturum birleşir; çelişkili kimlikler ayrı tutulur",
       "file": "tests/optical.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 13.502772
+      "durationMs": 13.38184
     },
     {
       "name": "7108: eksik oturum boş ders uyarısı üretir, H boş dahil doğru, X iptal, çoklu işaret yanlış sayılır",
       "file": "tests/optical.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 9.553854
+      "durationMs": 9.530997
     },
     {
       "name": "FMT ve cevap anahtarında çakışma, eksik/yinelenen kitapçık ve tutarsız katsayı reddedilir",
       "file": "tests/optical.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 6.502688
+      "durationMs": 4.615552
     },
     {
       "name": "Türkçe Windows ve UTF-8 çözülür; yanlış zorlanmış UTF-8 reddedilir",
       "file": "tests/optical.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.550216
+      "durationMs": 0.418497
     },
     {
       "name": "optik API: yalnızca admin FMT/anahtar yazar; sonuç ve yükleme kapsamı bayinin kurumlarına bağlıdır",
       "file": "tests/optical.test.ts",
       "category": "Kurum izolasyonu",
       "status": "passed",
-      "durationMs": 5.448933
+      "durationMs": 5.376844
     },
     {
       "name": "optik API: önizleme yazmaz; değerlendirme kimliksiz anlık kopya saklar ve boş ders onayı ister",
       "file": "tests/optical.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 267.996723
+      "durationMs": 258.874475
     },
     {
       "name": "Özdebir tek oturum: 9 oturumdur, 26. karakter sınıftır; dersler fiziksel soru genişlikleriyle eşleşir",
       "file": "tests/ozdebir.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 6.395836
+      "durationMs": 6.032046
     },
     {
       "name": "Özdebir B kitapçığı gerçek soru eşleştirmesini kullanır; boş kitapçık A kabul edilir ve uyarılır",
       "file": "tests/ozdebir.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 5.013954
+      "durationMs": 4.639467
     },
     {
       "name": "Özdebir 1/2 oturumları doğrulanmış sabit konumlarla okunur; 9 yerleşimine uzatılmaz",
       "file": "tests/ozdebir.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 3.672957
+      "durationMs": 3.267436
     },
     {
       "name": "Özdebir tahmini içerikten gelir; boş kitapçık yalnız olası öneridir",
       "file": "tests/ozdebir.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 2.510558
+      "durationMs": 2.219034
     },
     {
       "name": "Özdebir ad/kitapçık hataları gizlenmez; sınıf uyuşmazlığı uyarı olarak gösterilir",
       "file": "tests/ozdebir.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 3.42482
+      "durationMs": 3.143623
     },
     {
       "name": "Özdebir doğrulanmış sistem yerleşimi eski JSON ile gölgelenemez; pasif seçim korunur",
       "file": "tests/ozdebir.test.ts",
       "category": "API ve sistem sağlığı",
       "status": "passed",
-      "durationMs": 2.800114
+      "durationMs": 1.858055
     },
     {
       "name": "Özdebir API önizlemesi sistem tanımını bulur; boş kitapçığı A kabul eder ve önizlemede kayıt yazmaz",
       "file": "tests/ozdebir.test.ts",
       "category": "API ve sistem sağlığı",
       "status": "passed",
-      "durationMs": 18.190461
+      "durationMs": 14.84898
     },
     {
       "name": "Özdebir 9 öneki, kurum kodu 9 ile başlayan gerçek 8050 kaydını gölgelemez",
       "file": "tests/ozdebir.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 2.713171
+      "durationMs": 2.485946
     },
     {
       "name": "normal kullanıma izin verir, aşırı denemeyi engeller ve süre sonunda açılır",
       "file": "tests/rate-limit.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.58375
+      "durationMs": 0.55289
     },
     {
       "name": "bellek tablosu sınırlıdır ve eski kayıtlar temizlenir",
       "file": "tests/rate-limit.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.504941
+      "durationMs": 0.440699
     },
     {
       "name": "öğrenci karnesi yalnızca kendi cevaplarını ve toplu sıralamayı içerir; diğer öğrenci kaydı sızmaz",
       "file": "tests/reader-portal.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 0.675632
+      "durationMs": 0.710326
     },
     {
       "name": "FMT indirme Türkçe Windows karakterlerini ve yeni yüklemelerin özgün baytlarını korur",
       "file": "tests/reader-portal.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 0.733151
+      "durationMs": 0.609236
     },
     {
       "name": "öğrenci/veli uçları oturum ister ve öğrenci hesabı yönetim işlemlerini yapamaz",
       "file": "tests/reader-portal.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 3.090762
+      "durationMs": 1.531571
     },
     {
       "name": "sonuç listesi ve detayda kullanıcı ve yayın durumu veritabanında birlikte sınırlandırılır",
       "file": "tests/reader-portal.test.ts",
       "category": "Veritabanı ve Prisma",
       "status": "passed",
-      "durationMs": 12.943007
+      "durationMs": 12.796008
     },
     {
       "name": "bayi yalnızca kendi yönettiği hesaba ve kendi kurumundaki sonuca bağlantı verebilir; öğrenciye başka çocuk bağlanmaz",
       "file": "tests/reader-portal.test.ts",
       "category": "Kurum izolasyonu",
       "status": "passed",
-      "durationMs": 1.528709
+      "durationMs": 1.398901
     },
     {
       "name": "veli hesabı yalnızca seçili öğrenciye bağlanır, davet özeti saklanır ve geçici parola gösterilmez",
       "file": "tests/reader-portal.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 266.397211
+      "durationMs": 274.958188
     },
     {
       "name": "bağlantı kaldırma ve hesap kapatma diğer bayinin kullanıcılarına uygulanamaz",
       "file": "tests/reader-portal.test.ts",
       "category": "Kurum izolasyonu",
       "status": "passed",
-      "durationMs": 285.334038
+      "durationMs": 249.999833
     },
     {
       "name": "FMT indirme ve sonuç yayımlama API'de etkin şablon ve bayi kurumuyla sınırlandırılır",
       "file": "tests/reader-portal.test.ts",
       "category": "Kurum izolasyonu",
       "status": "passed",
-      "durationMs": 1.930546
+      "durationMs": 1.793384
     },
     {
       "name": "iki ayrı dosyadaki oturumlar TC veya numara ile birleşir; tekrar oturum bütünüyle seçilir ve kimlik çelişkisi ayrı tutulur",
       "file": "tests/result-workflow.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 27.435824
+      "durationMs": 27.398505
     },
     {
       "name": "aynı sınavdaki yüklemeler kurum raporunda toplanır; eski sürüm/deleted veri toplamı şişirmez",
       "file": "tests/result-workflow.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 18.93345
+      "durationMs": 16.254224
     },
     {
       "name": "PDF ve Excel: gerçek karne, kazanım, üç sıralama ve TC gizleme uygulanır",
       "file": "tests/result-workflow.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 210.383799
+      "durationMs": 209.447837
     },
     {
       "name": "kampüssüz tek okul: dağıtım, sayısal oturum ve çıktı öğrenci kaybetmez",
       "file": "tests/roster.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 4.291983
+      "durationMs": 4.302753
     },
     {
       "name": "kapasite yetmiyorsa sayısal çoğaltma engellenir",
       "file": "tests/roster.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.658624
+      "durationMs": 1.50982
     },
     {
       "name": "aynı okul numarası farklı okullarda kullanılabilir; TC ve okul numarası karıştırılmaz",
       "file": "tests/roster.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.583984
+      "durationMs": 1.383513
     },
     {
       "name": "seansı olmayan öğrenci varsa Excel düğmesi açık kalmaz",
       "file": "tests/roster.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 11.920281
+      "durationMs": 11.644903
     },
     {
       "name": "sayısal ekleme iframe içindeki engellenen native onaya bağlı değildir",
       "file": "tests/roster.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.615032
+      "durationMs": 1.38743
     },
     {
       "name": "liste, PDF aracı ve statik önizleme betikleri sözdizimi açısından geçerlidir",
       "file": "tests/roster.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 30.679133
+      "durationMs": 35.991477
     },
     {
       "name": "derslik ekleme gerçekten kayıt oluşturur, yineleneni reddeder ve mevcut iki oturumu korur",
       "file": "tests/roster.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 2.820983
+      "durationMs": 2.304725
     },
     {
       "name": "FMT: JSONB key order is irrelevant but coordinate, lesson order and length changes remain meaningful",
       "file": "tests/txt-archive.test.ts",
       "category": "Arşivleme",
       "status": "passed",
-      "durationMs": 0.896368
+      "durationMs": 0.86675
     },
     {
       "name": "TXT archive: original bytes round-trip, encrypted data rejects tampering, paths and owner scope are bounded",
       "file": "tests/txt-archive.test.ts",
       "category": "Arşivleme",
       "status": "passed",
-      "durationMs": 1.867867
+      "durationMs": 1.724203
     },
     {
       "name": "TXT dönüşümü: oturum satırları ve A/B kitapçıkları korunur; farklı yerleşimden geri dönüş kayıpsızdır",
       "file": "tests/txt-converter.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 4.72527
+      "durationMs": 3.952815
     },
     {
       "name": "TXT dönüşümü: sığmayan ad/numara/cevap kesilmez ve veri kaybı onayıyla da indirilemez",
       "file": "tests/txt-converter.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 3.055404
+      "durationMs": 2.688387
     },
     {
       "name": "TXT dönüşümü: eşlenmeyen işaretli ders ve tanımsız alanlar açık onay ister",
       "file": "tests/txt-converter.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 6.690682
+      "durationMs": 5.082991
     },
     {
       "name": "TXT dönüşümü: baştaki sıfırlar, sağ hizalama, Türkçe kodlama ve LF/CRLF korunur",
       "file": "tests/txt-converter.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 2.188953
+      "durationMs": 1.386278
     },
     {
       "name": "TXT dönüşümü: bozuk satır, yanlış format sabiti ve geçersiz işaret raporlanır",
       "file": "tests/txt-converter.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 5.189063
+      "durationMs": 3.193376
     },
     {
       "name": "TXT dönüşümü: boş cevap kapasitesi daraltılabilir; belirsiz ders adları otomatik eşleştirilmez",
       "file": "tests/txt-converter.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 2.096269
+      "durationMs": 2.154483
     },
     {
       "name": "TXT dönüşüm API’si etkin şablonları kullanır; hata/kayıp indirmeyi sunucuda engeller",
       "file": "tests/txt-converter.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 14.382099
+      "durationMs": 13.59972
     },
     {
       "name": "TXT soru dağılımı farkı uyarıyla değerlendirilir; eşleşmeyen ders ve taşan sorular boş kalır",
       "file": "tests/txt-permissive.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 2.665219
+      "durationMs": 2.472891
     },
     {
       "name": "sınav önerisi kısa anahtarı, B kitapçığını ve kimliksiz/yinelenen satırları karşılaştırır",
       "file": "tests/txt-permissive.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 1.214117
+      "durationMs": 1.113264
     },
     {
       "name": "v123: 131 karakterlik satır durmaz; eksik cevaplar boş, konumlar sabit kalır",
       "file": "tests/txt-permissive.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 1.261145
+      "durationMs": 1.184919
     },
     {
       "name": "v123: kimliği çelişen oturumlarda daha dolu ders, kendi kitapçığıyla kullanılır; eşitlikte ilk kalır",
       "file": "tests/txt-permissive.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 2.105165
+      "durationMs": 1.987228
     },
     {
       "name": "v123: ayrı yüklemelerde daha dolu ders korunur, oturum kitapçığı ve uyarılar kaybolmaz",
       "file": "tests/txt-permissive.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 2.00658
+      "durationMs": 1.838528
     },
     {
       "name": "v123: TXT arşivinde Admin/bayi gösterilir; silme kullanıcı kapsamıyla sınırlıdır",
       "file": "tests/txt-permissive.test.ts",
       "category": "Arşivleme",
       "status": "passed",
-      "durationMs": 1.872988
+      "durationMs": 1.689457
     },
     {
       "name": "v123: sınav önerisi sunucuya yüklemeden yerel TXT ile de alınır",
       "file": "tests/txt-permissive.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 4.812754
+      "durationMs": 4.55137
     },
     {
       "name": "v124: birleştirme katı okumada da durmaz; daha dolu kayıt, boş olmayan alanlar ve kitapçık korunur",
       "file": "tests/txt-permissive.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 4.764273
+      "durationMs": 3.717783
     },
     {
       "name": "birleşik katalog: Nartest kazanım Excel’i cevapları ve A/B eşleştirmelerini tek sınava aktarır",
       "file": "tests/unified-catalog.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 32.442274
+      "durationMs": 29.871546
     },
     {
       "name": "birleşik katalog: bayi listesi yayın bayrağından bağımsız, yalnızca hazır ve izinli sınavları döndürür",
       "file": "tests/unified-catalog.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 4.617718
+      "durationMs": 2.906958
     },
     {
       "name": "sınav düzenleme: görünürlükler bağımsız değişir, gönderilmeyen seçenek ve ceza korunur",
       "file": "tests/unified-catalog.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 18.585225
+      "durationMs": 18.87918
     },
     {
       "name": "PDF metin ayırma: değişken genişlikli NUMARASI:456 içinden yalnızca 456 alınır",
       "file": "tests/unified-catalog.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 0.83889
+      "durationMs": 0.878993
     },
     {
       "name": "PDF metin ayırma: isimde etiket ve komşu sayılar alınmaz; birden fazla segment yinelenmez",
       "file": "tests/unified-catalog.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 0.468342
+      "durationMs": 0.452802
     },
     {
       "name": "Türkçe tarih biçimleri ve Excel 1900/1904 tarihleri kaymasız dönüştürülür",
       "file": "tests/v105.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 0.78594
+      "durationMs": 0.767904
     },
     {
       "name": "2.500 satırlık gerçek XLSX dosyası tüm tarih hücreleriyle okunur",
       "file": "tests/v105.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 220.462114
+      "durationMs": 204.772924
     },
     {
       "name": "yayınevi önerileri yalnızca verilen mevcut yayınevlerini içerir, seri otomatik atanmaz",
       "file": "tests/v105.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.777124
+      "durationMs": 0.786519
     },
     {
       "name": "WhatsApp telefon normalizasyonu ve mesaj kodlaması",
       "file": "tests/v105.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.558592
+      "durationMs": 0.539535
     },
     {
       "name": "blok oyunu döndürme, çarpışma ve satır temizleme",
       "file": "tests/v105.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.654663
+      "durationMs": 0.612622
     },
     {
       "name": "tarama renkli ve gri modları gerçek piksel çıktısını değiştirir",
       "file": "tests/v105.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.386939
+      "durationMs": 0.362912
     },
     {
       "name": "v112: gerçek XLS/XLSX bağımsız API paketinde aynı 90 soruyu üretir",
       "file": "tests/v112.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 34.135303
+      "durationMs": 29.598242
     },
     {
       "name": "v112: genel CSV/TSV, eksik cevabın önizlemeye aktarılması ve Türkçe PDF",
       "file": "tests/v112.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 697.080577
+      "durationMs": 666.423137
     },
     {
       "name": "v112: metin tablo PDF okunur; tarama ve okunamayan PDF için açık yönlendirme",
       "file": "tests/v112.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 46.854599
+      "durationMs": 45.448626
     },
     {
       "name": "v112: FMT gerçek alan sırası ve kapasitesi; dosya adına veya örnek eşitliğine bağlı değil",
       "file": "tests/v112.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 7.046782
+      "durationMs": 6.703119
     },
     {
       "name": "v112: paylaşım süreleri, ay sonu ve yalnızca hash saklanması",
       "file": "tests/v112.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.648351
+      "durationMs": 0.510981
     },
     {
       "name": "v112: süreli paylaşım API tek dosya, iptal, süre aşımı ve yanlış anahtarı reddeder",
       "file": "tests/v112.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 3.948607
+      "durationMs": 3.637092
     },
     {
       "name": "v112: mevcut anahtar düzenlemesi aynı sınava yeni PDF ekler, geçmiş dosyayı silmez",
       "file": "tests/v112.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 90.352896
+      "durationMs": 82.695184
     },
     {
       "name": "v112: bayi 7108/8050 özgün FMT uç noktalarını indirir; JSON FMT olarak sunulmaz",
       "file": "tests/v112.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 2.74492
+      "durationMs": 2.483521
     },
     {
       "name": "v113: kodsuz, bilinmeyen ve kısmi kazanım; eksik cevap uydurulmaz",
       "file": "tests/v113.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 226.962796
+      "durationMs": 219.709609
     },
     {
       "name": "v113: ortak kurumun yüksek normal trafiği şüpheli sayılmaz; proxy başlıkları kullanılmaz",
       "file": "tests/v113.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 2.579438
+      "durationMs": 2.388683
     },
     {
       "name": "v113: SUPER_ADMIN dışındaki roller yönetim router'larına erişemez",
       "file": "tests/v113.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 2.600187
+      "durationMs": 2.366351
     },
     {
       "name": "v113: izleme yazma hatası ana istek akışını engellemez ve hassas alanları loglamaz",
       "file": "tests/v113.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 2.397185
+      "durationMs": 2.14795
     },
     {
       "name": "v113: paylaşım zamanı, süre ve görsel türü doğrulanır",
       "file": "tests/v113.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.78575
+      "durationMs": 0.715516
     },
     {
       "name": "v113: gerçek F/O örneklerinde tüm kazanım sütunları kaldırılınca 90 soru ve kitapçıklar korunur",
       "file": "tests/v113.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 8.252133
+      "durationMs": 7.761429
     },
     {
       "name": "v113: güvenlik deposu hata verdiğinde izleme yazması reddedilmez ve hassas gövde kaydedilmez",
       "file": "tests/v113.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 1.258721
+      "durationMs": 1.039555
     },
     {
       "name": "v114 PDF: A/B tek PDF ve ayrı PDF'lerde soru sırası; C/D ve kazanımsız tek kitapçık",
       "file": "tests/v114.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 307.906931
+      "durationMs": 293.433699
     },
     {
       "name": "v114 PDF: kurumsal SVG aynen yeniden kullanılır; logo eksikken PDF çalışır",
       "file": "tests/v114.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 50.992252
+      "durationMs": 53.505931
     },
     {
       "name": "v114 FMT kaynak: yalnızca açık kaynak işareti; dosya adı ve koordinattan F/O uydurulmaz",
       "file": "tests/v114.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 0.999352
+      "durationMs": 0.878752
     },
     {
       "name": "v114 FMT satır API: bozuk satır diğerlerini engellemez, metadata korunur; tekrar ve onaysız giriş reddedilir",
       "file": "tests/v114.test.ts",
       "category": "Giriş ve CAPTCHA",
       "status": "passed",
-      "durationMs": 22.560742
+      "durationMs": 19.501481
     },
     {
       "name": "v114 logolar: PNG/JPEG/WebP gerçek çözümleme, oran, şeffaflık ve SVG/bozuk dosya reddi",
       "file": "tests/v114.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 82.523099
+      "durationMs": 82.476393
     },
     {
       "name": "v114 PDF API: yayımlanmamış sınav gizli kalır; eski kayıtta mevcut indirmeye yönlendirme; geçersiz kitapçık reddi",
       "file": "tests/v114.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 43.566265
+      "durationMs": 42.093425
     },
     {
       "name": "v114 logo deposu arızası ana API'yi etkilemez; yönetim router'ında sunucu yetkisi zorunlu",
       "file": "tests/v114.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 1.211613
+      "durationMs": 1.511914
     },
     {
       "name": "FMT ve sınav ders adları eşleşir; soru sayısı ve sınıf denetimleri korunur",
       "file": "tests/v116-upload.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 11.948604
+      "durationMs": 9.766229
     },
     {
       "name": "yükleme API: boş FMT deposunda sistem FMT seçilir, sınıf/soru dağılımı farkıyla önizleme kaydedilir ve sonuç yeniden açılır",
       "file": "tests/v116-upload.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 52.326065
+      "durationMs": 48.250896
     },
     {
       "name": "sınav kataloğu: yayınevi/sınav, görünürlükten bağımsız; yalnız PDF kaydı da eksik açıklamasıyla listelenir",
       "file": "tests/v116-upload.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 5.068726
+      "durationMs": 3.200981
     },
     {
       "name": "v119 FMT inference: 7108/8050, confidence, aliases, ambiguity and misleading prefixes",
       "file": "tests/v119.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 7.752802
+      "durationMs": 5.368137
     },
     {
       "name": "v119 7108 regression: 1-based booklet at 51, UTF-8/1254, BOM, CRLF/LF, optional fields and errors",
       "file": "tests/v119.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 23.805697
+      "durationMs": 25.60964
     },
     {
       "name": "v119 Turnstile: server rejects missing, forged, failed, wrong-action/host and unavailable checks",
       "file": "tests/v119.test.ts",
       "category": "Giriş ve CAPTCHA",
       "status": "passed",
-      "durationMs": 1.19452
+      "durationMs": 1.108144
     },
     {
       "name": "v119 reports: independent template families and exact grade filtering across branches",
       "file": "tests/v119.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 295.353235
+      "durationMs": 306.699501
     },
     {
       "name": "v119 public grade lookup: publication, school isolation, ambiguous number and forged studentId",
       "file": "tests/v119.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 31.179315
+      "durationMs": 28.706415
     },
     {
       "name": "v119 inference/converter API accepts system layouts and keeps archived files owner-scoped",
       "file": "tests/v119.test.ts",
       "category": "Arşivleme",
       "status": "passed",
-      "durationMs": 8.853175
+      "durationMs": 8.827453
     },
     {
       "name": "v119 supplied 7108 bytes: anonymous Windows-1254 preserves four records and session join",
       "file": "tests/v119.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 3.277493
+      "durationMs": 3.623535
     },
     {
       "name": "v119 wrong saved 7108 booklet position is evaluated with an explicit fallback warning",
       "file": "tests/v119.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 10.704031
+      "durationMs": 13.712502
     },
     {
       "name": "v119 original 7108 FMT analysis and Windows-1254 TXT use identical executable positions",
       "file": "tests/v119.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 8.49978
+      "durationMs": 9.467408
     },
     {
       "name": "v120 system template rows cannot replace canonical 7108 or defeat inference",
       "file": "tests/v120.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 12.879939
+      "durationMs": 17.781425
     },
     {
       "name": "v120 all records inspected, invalid booklet remains invalid after prefix detection",
       "file": "tests/v120.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 6.26008
+      "durationMs": 5.095474
     },
     {
       "name": "v120 independent oracle: answers, D/Y/B, weighted score, sessions and determinism",
       "file": "tests/v120.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 6.601073
+      "durationMs": 5.961704
     },
     {
       "name": "v120 reCAPTCHA v2 validates provider, age, hostname, errors and replay",
       "file": "tests/v120.test.ts",
       "category": "Giriş ve CAPTCHA",
       "status": "passed",
-      "durationMs": 1.000614
+      "durationMs": 0.81872
     },
     {
       "name": "v120 UTF-16 BOM is decoded explicitly; byte offsets never replace character positions",
       "file": "tests/v120.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 4.216271
+      "durationMs": 4.000444
     },
     {
       "name": "v120 guest access capability binds exam, school and student",
       "file": "tests/v120.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 1.020282
+      "durationMs": 0.814582
     },
     {
       "name": "v120 equivalent joined/split 7108 literals are aliases, not ambiguous formats",
       "file": "tests/v120.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 5.261359
+      "durationMs": 4.956192
     },
     {
       "name": "v120 read-only inference quota is per authenticated user, separate from shared-IP uploads",
       "file": "tests/v120.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 1.658293
+      "durationMs": 1.259358
     },
     {
       "name": "v121 katsayısız 7108: D/Y/B/net korunur, puan ve katsayılı net yoktur",
       "file": "tests/v121.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 2.734401
+      "durationMs": 2.3231
     },
     {
       "name": "v121 katsayılı puan bağımsız hesapla aynı; kısmi katsayı tam puan üretmez",
       "file": "tests/v121.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 2.648398
+      "durationMs": 2.282253
     },
     {
       "name": "v121 kaynakta bulunmayan katsayı ders adından uydurulmaz; sıfır katsayı reddedilir",
       "file": "tests/v121.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.883814
+      "durationMs": 0.675601
     },
     {
       "name": "v121 Excel katsayısız neti hesaplar; açık katsayı eklendiğinde puan hesaplanır",
       "file": "tests/v121.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 0.425622
+      "durationMs": 0.402988
     },
     {
       "name": "v121 yeni sınav tanımı dosyasızdır, aynı sınav mükerrer oluşturulamaz",
       "file": "tests/v121.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 2.024863
+      "durationMs": 1.846654
     },
     {
       "name": "v121 1/2 sayfalık ve kazanımlı PDF gerçek sayfa ve içerik üretir",
       "file": "tests/v121.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 251.89859
+      "durationMs": 240.546432
     },
     {
       "name": "v121 uzun kazanım iki sayfaya kırpılmaz; çok sayfalı karne bütün metni korur",
       "file": "tests/v121.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 260.594027
+      "durationMs": 248.086032
     },
     {
       "name": "v121 katsayısız karne/Excel sıfır puan veya birinci sıra uydurmaz",
       "file": "tests/v121.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 91.612087
+      "durationMs": 75.568299
     },
     {
       "name": "v121 Test Merkezi çelişkili yeşil raporu reddeder",
       "file": "tests/v121.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 5.957601
+      "durationMs": 4.955692
     },
     {
       "name": "v121 Test Merkezi API oturumsuz ve SUPER_ADMIN dışındaki rolleri reddeder",
       "file": "tests/v121.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 0.761023
+      "durationMs": 0.485924
     },
     {
       "name": "v121 Nartest görünen adı kimlik, dosya yolu ve sahipliği değiştirmez",
       "file": "tests/v121.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 1.241408
+      "durationMs": 0.901636
     },
     {
       "name": "v121 bütün sorular iptal olduğunda sıfıra bölme veya varsayımsal puan üretilmez",
       "file": "tests/v121.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 2.880886
+      "durationMs": 4.12536
     },
     {
       "name": "İ, x ve İPTAL cevapları iptal sorusu olarak kaydedilir",
       "file": "tests/v122.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 14.443464
+      "durationMs": 5.753342
     },
     {
       "name": "sınav önerisi iptal / tümü doğru sorularını karşılaştırmadan en yakın öğrenci dizisini bulur",
       "file": "tests/v122.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.060517
+      "durationMs": 0.676192
     },
     {
       "name": "v125 90 soruluk tam / eksik oturum: 1, 2, kazanımlı PDF ve Excel ekranla aynı sonuçları kullanır",
       "file": "tests/v125-pdf.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 757.059485
+      "durationMs": 734.58838
     },
     {
       "name": "v125 gerçek dosyadan anonimleştirilmiş 209 kayıt: 105 öğrenci, 104 çift, 1 sözel",
       "file": "tests/v125.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 205.140413
+      "durationMs": 193.308389
     },
     {
       "name": "v125 gerçek tek optik: boş kitapçık varsayılan A; açık seçimle altı ders sabit konumundan okunur",
       "file": "tests/v125.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 2.797759
+      "durationMs": 2.442895
     },
     {
       "name": "v125 yalnız sözel / yalnız sayısal: olmayan oturum null, mevcut boş cevap ise sıfır nettir",
       "file": "tests/v125.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 3.179338
+      "durationMs": 2.703174
     },
     {
       "name": "v125 mükerrer oturumda bütün kayıt seçilir; farklı dersler iki satırdan karıştırılmaz",
       "file": "tests/v125.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 7.378417
+      "durationMs": 6.913554
     },
     {
       "name": "v125 aynı numara: kurum, TC ve ad çelişkileri ayrı tutulur; belirsizlik başkalarını durdurmaz",
       "file": "tests/v125.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 13.008561
+      "durationMs": 12.107293
     },
     {
       "name": "v125 yanlış FMT: doğrulanmış yapısal alternatif kullanılır, bozuk / kısa satırlar ayrıntıyla bildirilir",
       "file": "tests/v125.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 5.631927
+      "durationMs": 5.486731
     },
     {
       "name": "v125 çelişen öğrenciler kurum sonuçlarında da birleşmez; karneler engellenmez",
       "file": "tests/v125.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 8.406293
+      "durationMs": 7.664176
     },
     {
       "name": "v125 üç özgün SEKONIC FMT: S alanları, sabit kayıt türü, sınıf, kitapçık ve ders konumları doğrulanır",
       "file": "tests/v125.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 11.25575
+      "durationMs": 11.751073
     },
     {
       "name": "v125 API gerçek kayıt düzenleriyle önizler: yanlış FMT düzeltilir, tek bozuk kayıt diğer 105 karneyi engellemez",
       "file": "tests/v125.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 77.038348
+      "durationMs": 68.295489
     },
     {
       "name": "Özdebir üç ayrı sistem seçimi: özgün FMT indirme, doğru tekil öneri ve karma oturum birleştirme korunur",
       "file": "tests/v125.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 51.978949
+      "durationMs": 48.663753
     },
     {
       "name": "v126 PDF paylaşımı: token, süre, iptal, indirme ve sayaç; genel dosya URL yok",
       "file": "tests/v126-shares.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 45.03434
+      "durationMs": 41.175979
     },
     {
       "name": "v126 merkezi yönetim: başka bayinin bağlantısı değişmez, üyelik süresiz/yeniden etkin olmaz",
       "file": "tests/v126-shares.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 3.097293
+      "durationMs": 2.636469
     },
     {
       "name": "v126 profil yönetimi ve merkezi paylaşım uçları kimlik doğrulaması ve rol denetimi içerir",
       "file": "tests/v126-shares.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 0.822089
+      "durationMs": 0.696149
     },
     {
       "name": "v126 eski yüklenmiş cevap PDF güvenli depolamadan paylaşılır; depo dışı yol reddedilir",
       "file": "tests/v126-shares.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 2.52681
+      "durationMs": 2.081856
     },
     {
       "name": "v126 merkezi davet durumu: pasif hesap veya değişmiş token aktif gösterilmez; token özeti açığa çıkmaz",
       "file": "tests/v126-shares.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 1.424503
+      "durationMs": 0.920571
     },
     {
       "name": "v126 gerçek anonim TXT: Din 72, Sosyal 92, İngilizce 112; altı ders ve 105 öğrenci",
       "file": "tests/v126.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 26.033413
+      "durationMs": 26.067972
     },
     {
       "name": "v126 profili sınava özel, değiştirilebilir, mevcut katsayıları değiştirmez; ham netle affine puan",
       "file": "tests/v126.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 126.234387
+      "durationMs": 120.075824
     },
     {
       "name": "v126 ayrı yüklemeler sonuç listesinde birbirini silmez; bütün oturum korunur",
       "file": "tests/v126.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 8.774436
+      "durationMs": 8.982305
     },
     {
       "name": "v126 sayı/metin katmanı kurtarma: Unicode rakamları, bozuk font eşlemesi ve boş OCR adayı",
       "file": "tests/v126.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.767265
+      "durationMs": 0.729402
     },
     {
       "name": "v126 parola politikası ve scrypt; eski bcrypt doğrulaması korunur",
       "file": "tests/v126.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 244.510263
+      "durationMs": 244.856819
     },
     {
       "name": "v126 paylaşım anahtarı şifreli saklanır, süre ve iptal sunucuda denetlenir",
       "file": "tests/v126.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 1.489455
+      "durationMs": 1.448494
     },
     {
       "name": "v126 gerçek 427 O8126 karne: her ders D/Y/net, T=herkese doğru ve altı referans puan",
       "file": "tests/v126.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 29.996727
+      "durationMs": 36.231139
     },
     {
       "name": "v126 gerçek O8126 referansının anonim PDF ve Excel çıktısı 471,550 puan gösterir",
       "file": "tests/v126.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 77.827054
+      "durationMs": 76.975255
     },
     {
       "name": "v127 orijinal 2022 BLDM imzası ve eski manuel FMT aynı karakter konumlarıyla düzeltilir",
       "file": "tests/v127.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 57.935288
+      "durationMs": 52.536187
     },
     {
       "name": "v127 gerçek O8126 Excel: 90 soru, kazanım ve ayrı A/B anahtarlarıyla doğrulanan çaprazlar",
       "file": "tests/v127.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 46.739081
+      "durationMs": 45.554665
     },
     {
       "name": "v127 yeni üç orijinal karne: cevap ızgarası ile 18 dersin doğru/yanlış/net karşılaştırması",
       "file": "tests/v127.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 1.147622
+      "durationMs": 1.232919
     },
     {
       "name": "v127 v3 score, action, hostname, age, replay, malformed provider and network failure",
       "file": "tests/v127.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 1.152671
+      "durationMs": 1.059222
     },
     {
       "name": "v127 canlı doğrulama kapatılamaz, yerelde uzak DB engellenir, localhost geliştirme desteklenir",
       "file": "tests/v127.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 852.125633
+      "durationMs": 827.797871
     },
     {
       "name": "v127 analytics yalnız izinli sabit yollar; özel URL, kimlik ve paylaşım tokenı dışlanır",
       "file": "tests/v127.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 0.652609
+      "durationMs": 0.715125
     },
     {
       "name": "v127 gerçek kaynaklı anonim TXT ve Excel, API önizleme/onay/kayıt akışından geçer; eski manuel şablon korunur",
       "file": "tests/v127.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 154.782574
+      "durationMs": 155.018549
     },
     {
       "name": "v128 gerçek Ankara 7108: 198 kayıt, 196 öğrenci, 40 eşleşen karne, 240 D/Y/net ve 3560 fiziksel cevap",
       "file": "tests/v128.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 53.82148
+      "durationMs": 52.057266
     },
     {
       "name": "v128 Ankara puanları: 25 karneden tanı amaçlı profil, 15 ayrı karne üzerinde hata <0.001; küresel varsayılan yapılmaz",
       "file": "tests/v128.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 47.527946
+      "durationMs": 45.987921
     },
     {
       "name": "v128 7108 tanımı FMT/BLDM uzantısından, yayınevi ve sınıftan bağımsızdır; kapasite gerçek soru sayısı değildir",
       "file": "tests/v128.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 5.960466
+      "durationMs": 5.787957
     },
     {
       "name": "v128 boş cevap korunur, boş kitapçık A olur, Z reddedilir; kullanılan soruların dışı sayılmaz",
       "file": "tests/v128.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 4.334073
+      "durationMs": 4.500314
     },
     {
       "name": "v128 öğrenci ve hücre düzeltmesi özgün veriyi değiştirmez; cevap, net, puan ve oturum çaprazı yeniden hesaplanır",
       "file": "tests/v128.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 62.313554
+      "durationMs": 59.500446
     },
     {
       "name": "v128 Excel panosu çok satırlı, çok sütunlu ve boş hücreli yapıştırmada konumları korur",
       "file": "tests/v128.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 0.648471
+      "durationMs": 0.610287
     },
     {
       "name": "v128 v2 ayrı anahtar ister, v3 varsayılanı korunur; v2 token tarih/hostname/tekrar doğrulaması",
       "file": "tests/v128.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 527.222673
+      "durationMs": 493.193563
     },
     {
       "name": "v128 kapak gerçek rasterden optimize edilir; SVG ve bozuk veri reddedilir",
       "file": "tests/v128.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 29.87129
+      "durationMs": 29.24622
     },
     {
       "name": "v129 Excel/Calc: CRLF, CR, LF, quoted tabs/newlines, doubled quotes, Turkish and empty cells survive",
       "file": "tests/v129.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 0.591444
+      "durationMs": 0.574841
     },
     {
       "name": "v129 paste: 5×5, 90×1 and 90×8 start at selected cell, grow rows and never truncate",
       "file": "tests/v129.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.175233
+      "durationMs": 1.067699
     },
     {
       "name": "v130 gerçek anonim O8126 cevapları: 1/2 sayfa, tüm dersler, Türkçe, genel katılım ve toplu sayfa numaraları",
       "file": "tests/v130.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 473.217336
+      "durationMs": 409.205477
     },
     {
       "name": "v130 aşırı uzun kazanım ve farklı sınıf: bütün metinler devam sayfasına geçer, üretim reddedilmez",
       "file": "tests/v130.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 178.76867
+      "durationMs": 180.243245
     },
     {
       "name": "v130 gerçek O8126 anahtarındaki 87 kaynak kazanımı açıklama ve bütün kodlarıyla iki A4 sayfaya sığar",
       "file": "tests/v130.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 130.298138
+      "durationMs": 128.309982
     },
     {
       "name": "v132 TOTP: bağımsız RFC 6238 SHA1 test vektörleri, base32 ve tekrar sayacı",
       "file": "tests/v132.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.250385
+      "durationMs": 1.291169
     },
     {
       "name": "v132 MFA anahtarı AEAD ile mühürlenir; değiştirilen şifreli veri reddedilir; kurtarma kodları benzersiz ve hashlenir",
       "file": "tests/v132.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 1.068793
+      "durationMs": 1.011472
     },
     {
       "name": "v132 bölge kuralları: bayi/yayınevi/il/ilçe birlikte; serbest erişim, tüm yayınevleri ve il genelinde izin",
       "file": "tests/v132.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 0.770451
+      "durationMs": 0.740694
     },
     {
       "name": "v132 Excel güvenliği: gerçek XLSX açılır; sahte ZIP boyutu, ZIP traversal ve büyük dosya reddedilir",
       "file": "tests/v132.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 13.566802
+      "durationMs": 14.883976
     },
     {
       "name": "v132 güvenilir cihaz çerezi: canlıda Secure, HttpOnly, SameSite Strict ve 30 gün",
       "file": "tests/v132.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.433907
+      "durationMs": 0.37743
     },
     {
       "name": "v133 sıralama eski bağımsız tarama hesabıyla aynı: eşitlik, 1e-8 tolerans, boş puan, sınıf, il ve ilçe",
       "file": "tests/v133.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 103.486952
+      "durationMs": 140.054833
     },
     {
       "name": "v133 Excel sınırı aşan CSV/XLSX kısmi okunmaz; boş hücre, Türkçe, sıfırlı numara ve eski XLS korunur",
       "file": "tests/v133.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 29.539395
+      "durationMs": 35.251786
     },
     {
       "name": "v133 Excel ve PDF öğrenci sırası eşit/boş/sıfır/negatif puanlarda aynı kalır",
       "file": "tests/v133.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 1.351816
+      "durationMs": 1.399373
     },
     {
       "name": "v133 analitik sunucu allowlist istemciyle aynı; özel bağlantılar ve rastgele yollar alınmaz",
       "file": "tests/v133.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.386598
+      "durationMs": 0.321605
     },
     {
       "name": "v133 temsil oturumu yönetici cihazı iptal/süre sonu/yanlış sahiplik veya MFA kanıtı yokken reddedilir",
       "file": "tests/v133.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 2.935198
+      "durationMs": 3.169691
     },
     {
       "name": "v133 güncel yönetici doğrulaması başka kullanıcı veya temsil oturumuyla kullanılamaz",
       "file": "tests/v133.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 0.587857
+      "durationMs": 0.51023
     },
     {
       "name": "v134 konum kaynağı: 81 il, 973 benzersiz ilçe ve doğru ebeveyn ilişkisi",
       "file": "tests/v134.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.746536
+      "durationMs": 0.679237
     },
     {
       "name": "v134 bölgesel yetki eski yazımlar ve standart listeyle aynı kapsamı korur",
       "file": "tests/v134.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 0.29236
+      "durationMs": 0.270138
     },
     {
       "name": "v134 altı karne tasarımında dört bağımsız katılım kombinasyonu: tekli ve toplu PDF, değişmeyen sonuç",
       "file": "tests/v134.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 3572.759836
+      "durationMs": 2997.945014
     },
     {
       "name": "v134 Excel katılım sütunları dört kombinasyonda başlık ve satırla eşleşir",
       "file": "tests/v134.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 1.063553
+      "durationMs": 0.719854
     },
     {
       "name": "v134 yalnız PDF anahtarında yayın için yapılandırılmış veri gerekmez; optik açmak hâlâ doğrulanır",
       "file": "tests/v134.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 0.575174
+      "durationMs": 0.380335
     },
     {
       "name": "v134 il/ilçe sıralaması kanonik ve eski ASCII konumları aynı grupta toplar",
       "file": "tests/v134.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.695464
+      "durationMs": 1.167937
     },
     {
       "name": "v134 deployment ön kontrolü: API site key eksikliği, yanlış public key ve frontend sırrı reddedilir",
       "file": "tests/v134.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 1.092789
+      "durationMs": 1.025819
     },
     {
       "name": "v137 karne altındaki site adresi tekli/toplu bütün şablonlarda kapatılabilir; varsayılan ve sayfa numaraları korunur",
       "file": "tests/v134.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 1609.195994
+      "durationMs": 1514.142204
     },
     {
       "name": "v137 sınava özel logo oranı korunur; platform markası her sayfanın sağ altında kalır",
       "file": "tests/v134.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 226.847298
+      "durationMs": 200.841279
     },
     {
       "name": "v137 logo yüklemesi URL, SVG, bozuk içerik ve büyük görseli reddeder",
       "file": "tests/v134.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 46.30389
+      "durationMs": 44.714836
     },
     {
       "name": "v135 5.000 sentetik kayıt: tüm satırlar incelenir ve değerlendirilir; 5.001 ve uzun satır reddedilir",
       "file": "tests/v135.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 192.602912
+      "durationMs": 184.289255
     },
     {
       "name": "v135 FMT regresyonu: önceki kaynakla aynı aday, güven ve skor; örnekleme yok",
       "file": "tests/v135.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 745.558155
+      "durationMs": 705.938871
     },
     {
       "name": "v135 Excel şablonu ID ve baştaki sıfırları korur; sahte XLSX, formül ve SIL reddedilir",
       "file": "tests/v135.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 10.519253
+      "durationMs": 11.879675
     },
     {
       "name": "v135 ürün fiyatı kuruşa yuvarlanır, tek geçersiz ilişkide hiçbir yazma yapılmaz",
       "file": "tests/v135.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 2.785857
+      "durationMs": 2.794987
     },
     {
       "name": "v135 kişisel kodlar rastgele, yalnız özetlenir; numara tekrarında farklı kimlikler karışmaz",
       "file": "tests/v135.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 43.745621
+      "durationMs": 40.177962
     },
     {
       "name": "v135 kurum kod PDF çıktısı Türkçe metin ve sıfırlı numarayı korur",
       "file": "tests/v135.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 50.234963
+      "durationMs": 46.668891
     },
     {
       "name": "v136 parser optimization preserves 7108 identities, conflicts, sessions, warnings and scores",
       "file": "tests/v136.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 263.114544
+      "durationMs": 251.066999
     },
     {
       "name": "v136 4995 row complete 7108 is evaluated with all questions",
       "file": "tests/v136.test.ts",
       "category": "7108 ve 8050",
       "status": "passed",
-      "durationMs": 871.580664
+      "durationMs": 843.364508
     },
     {
       "name": "v136 indexed merging preserves full and split sessions, duplicates and conflicts",
       "file": "tests/v136.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 89.944873
+      "durationMs": 95.559861
     },
     {
       "name": "v136 transport messages reflect HTTP, network and timeout; cancellation stays cancellation",
       "file": "tests/v136.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 22.709372
+      "durationMs": 22.574981
     },
     {
       "name": "v136 exam matching field plans preserve exact percentages and compared counts",
       "file": "tests/v136.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 331.849027
+      "durationMs": 325.505964
     },
     {
       "name": "v137 plain audit descriptions, JSON and malformed legacy history remain renderable",
       "file": "tests/v137.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.619276
+      "durationMs": 0.527172
     },
     {
       "name": "v137 object, text transport and legacy encoded snapshots retain every answer; corrupt snapshots cannot become empty edits",
       "file": "tests/v137.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 53.441162
+      "durationMs": 55.377841
     },
     {
       "name": "v137 full and already merged imports preserve answers when merging is enabled or disabled",
       "file": "tests/v137.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 110.419395
+      "durationMs": 112.212493
     },
     {
       "name": "v137 search minimization filters sensitive submissions without changing search behavior",
       "file": "tests/v137.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.795809
+      "durationMs": 0.843767
     },
     {
       "name": "v137 only designated direct owner may access games",
       "file": "tests/v137.test.ts",
       "category": "Kimlik doğrulama ve güvenlik",
       "status": "passed",
-      "durationMs": 0.354137
+      "durationMs": 0.630135
     },
     {
       "name": "v137 hidden booklet foundation keeps original source and refuses different versions, answers and missing rights",
       "file": "tests/v137.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.680421
+      "durationMs": 0.756783
     },
     {
       "name": "v137 CPU pool rejects a third simultaneous job and preserves canonical answers",
       "file": "tests/v137.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 168.733854
+      "durationMs": 170.970804
     },
     {
       "name": "v138 FMT display collapses byte-identical system references without rewriting IDs or merging similar names",
       "file": "tests/v138.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 8.009295
+      "durationMs": 7.067633
     },
     {
       "name": "v138 CPU admission reserves account memory and shares two atomic slots without a fixed student penalty",
       "file": "tests/v138.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 2.012981
+      "durationMs": 1.619777
     },
     {
       "name": "v138 combined reader and parse worker preserves the previous two-call results for merged and separate imports",
       "file": "tests/v138.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 196.259116
+      "durationMs": 188.019822
     },
     {
       "name": "v139 duyuru yaşam döngüsü: kontrollü saatte başlangıç/bitiş sınırları ve pasif durum",
       "file": "tests/v139.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 0.75903
+      "durationMs": 0.48378
     },
     {
       "name": "v139 duyuru yayın süresi ileri başlangıçtan yedi gün; süresiz yayın açık seçim ister",
       "file": "tests/v139.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.785834
+      "durationMs": 1.608615
     },
     {
       "name": "v139 zamanlanmış paylaşım: eski boş başlangıç, Türkiye saati, özel bitiş ve süresiz",
       "file": "tests/v139.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.622141
+      "durationMs": 0.644582
     },
     {
       "name": "v139 geçmiş sürümler doğrulanabilir, hassas içerik ve uydurulmuş tarih içermez",
       "file": "tests/v139.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.537943
+      "durationMs": 0.564692
     },
     {
       "name": "v139 yardım envanteri gerçek JSX kontrollerini kararlı kimliklerle ve birebir kayıtla eşler",
       "file": "tests/v139.test.ts",
       "category": "Kullanıcı yetkileri",
       "status": "passed",
-      "durationMs": 176.747527
+      "durationMs": 181.550794
     },
     {
       "name": "v139 ZIP gerçek UTF-8 adları, CRC ve ayrı PDF baytlarını bağımsız okuyucuya korur",
       "file": "tests/v139.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 4.395108
+      "durationMs": 4.691704
     },
     {
       "name": "v139 toplu PDF kaynakları istek kapsamında kalır; tekli ve ortak kaynaklı karne aynı metni üretir",
       "file": "tests/v139.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 341.951683
+      "durationMs": 345.327316
     },
     {
       "name": "v139 karne indirme parçalanmış çerçeveleri birleştirir; yarım veya hatalı aktarımı başarılı saymaz",
       "file": "tests/v139.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 6.449918
+      "durationMs": 5.990107
     },
     {
       "name": "v139 iptal edilen ZIP geçici öğrenci dosyalarını temizler ve ortak CPU yuvasını serbest bırakır",
       "file": "tests/v139.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 7.859402
+      "durationMs": 5.623598
     },
     {
       "name": "v140 Excel roundtrip preserves crosses, Turkish labels, outcomes, source, profile and cancellations",
       "file": "tests/v140.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 4.037354
+      "durationMs": 3.951983
     },
     {
       "name": "v140 single booklet, H, 3/4/5 choices and missing answers retain current validation meanings",
       "file": "tests/v140.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.745354
+      "durationMs": 0.723421
     },
     {
       "name": "v140 A to B direction, absent sessions and edited student numbers survive reevaluation",
       "file": "tests/v140.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.951301
+      "durationMs": 0.897799
     },
     {
       "name": "v140 duplicate and wrong booklet destinations fail before saving",
       "file": "tests/v140.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.336134
+      "durationMs": 0.320583
     },
     {
       "name": "v140 change summary separates score effects from outcome text and requires typed approval",
       "file": "tests/v140.test.ts",
       "category": "Sonuç hesaplama",
       "status": "passed",
-      "durationMs": 0.545086
+      "durationMs": 0.528934
     },
     {
       "name": "v140 immutable exam structures accept custom lesson counts and reject unsupported structures",
       "file": "tests/v140.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.228083
+      "durationMs": 1.222089
     },
     {
       "name": "v140 publisher paging is bounded, normalized and never widens public active scope",
       "file": "tests/v140.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 1.774682
+      "durationMs": 1.727429
     },
     {
       "name": "v140 history import reports existing and failed events without losing successes or guessing dates",
       "file": "tests/v140.test.ts",
       "category": "Karne ve PDF",
       "status": "passed",
-      "durationMs": 0.415132
+      "durationMs": 0.447361
     },
     {
       "name": "v140 guide identities deduplicate record rows and preserve explicit semantic variants",
       "file": "tests/v140.test.ts",
       "category": "Arayüz ve mobil",
       "status": "passed",
-      "durationMs": 1.166858
+      "durationMs": 1.130907
     },
     {
       "name": "v140 CSV formula starters and paths are safe; numeric identifiers remain text",
       "file": "tests/v140.test.ts",
       "category": "Excel ve dosya işlemleri",
       "status": "passed",
-      "durationMs": 0.501444
+      "durationMs": 0.499259
     },
     {
       "name": "v140 export filters cannot cross data types or accept invalid dates/grades",
       "file": "tests/v140.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.980717
+      "durationMs": 1.022634
     },
     {
       "name": "v140 retention protects key revision history and cleanup, enforces critical age",
       "file": "tests/v140.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.464115
+      "durationMs": 0.440889
     },
     {
       "name": "v140 legacy empty keys remain editable and their original JSON is retained in revision audit",
       "file": "tests/v140.test.ts",
       "category": "Sınav değerlendirme",
       "status": "passed",
-      "durationMs": 0.694788
+      "durationMs": 0.809362
     },
     {
       "name": "v140 custom optical structures cannot bypass physical FMT capacity through permissive row mode",
       "file": "tests/v140.test.ts",
       "category": "TXT/FMT",
       "status": "passed",
-      "durationMs": 1.039167
+      "durationMs": 1.045046
+    },
+    {
+      "name": "v141 student analysis uses only the selected student and the established multiple mark rule",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 0.910532
+    },
+    {
+      "name": "v141 Turkish normalization, aliases, misspellings and all 126 intent phrases are understood",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 14.012676
+    },
+    {
+      "name": "v141 bounded conversation resolves lesson, previous exam and report follow-ups without peer lookup",
+      "file": "tests/v141.test.ts",
+      "category": "Karne ve PDF",
+      "status": "passed",
+      "durationMs": 2.511875
+    },
+    {
+      "name": "v141 last five evidence excludes older exams and missing outcomes are not invented",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 0.896577
+    },
+    {
+      "name": "v141 different scales prevent score comparisons, records and decline diagnoses",
+      "file": "tests/v141.test.ts",
+      "category": "Sonuç hesaplama",
+      "status": "passed",
+      "durationMs": 0.715386
+    },
+    {
+      "name": "v141 one-question evidence cannot produce a strong or repeated weakness conclusion",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 0.619816
+    },
+    {
+      "name": "v141 general question analysis preserves blank multiple marks, missing lessons, H and X semantics",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 0.61132
+    },
+    {
+      "name": "v141 anonymous general analysis suppresses cohorts below five and never serializes identity metadata",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 1.500001
+    },
+    {
+      "name": "v141 psychometric sample limits and constant response variance produce honest nulls",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 0.884404
+    },
+    {
+      "name": "v141 corrected point biserial recognizes inverse items without automatically declaring an error",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 0.736666
+    },
+    {
+      "name": "v141 canonical booklet mapping is reused by general analysis",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 0.820313
+    },
+    {
+      "name": "v141 study suggestions require repeated eligible evidence and discard questionable items",
+      "file": "tests/v141.test.ts",
+      "category": "Arayüz ve mobil",
+      "status": "passed",
+      "durationMs": 2.383914
+    },
+    {
+      "name": "v141 FMT metadata suggestions preserve ambiguity and do not merge same-name different-content files",
+      "file": "tests/v141.test.ts",
+      "category": "TXT/FMT",
+      "status": "passed",
+      "durationMs": 2.344089
+    },
+    {
+      "name": "v141 branch filtering suppresses a small complementary group to limit subtraction disclosure",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 0.61129
+    },
+    {
+      "name": "v141 school suggestions recheck only eligible items after removing anomalous questions",
+      "file": "tests/v141.test.ts",
+      "category": "Sınav değerlendirme",
+      "status": "passed",
+      "durationMs": 0.652127
+    },
+    {
+      "name": "v141 welcome achievements require prior comparable own scores and never invent success",
+      "file": "tests/v141.test.ts",
+      "category": "Sonuç hesaplama",
+      "status": "passed",
+      "durationMs": 0.434608
     }
   ],
   "scripts": [
@@ -2571,20 +2683,17 @@
     {
       "name": "v140-browser.cjs",
       "type": "Tarayıcı / entegrasyon",
-      "status": "passed",
-      "note": "Yerel API/Web ve Chromium harness başarıyla tamamlandı."
+      "status": "not_run"
     },
     {
       "name": "v140-history.cjs",
       "type": "Tarayıcı / entegrasyon",
-      "status": "passed",
-      "note": "30 sürüm/RC tarihçesi ve bakım durumunda 3 hedefli kontrol."
+      "status": "not_run"
     },
     {
       "name": "v140-http.cjs",
       "type": "Tarayıcı / entegrasyon",
-      "status": "passed",
-      "note": "20 sentetik localhost PostgreSQL/HTTP grubu; production kabulü değildir."
+      "status": "not_run"
     },
     {
       "name": "v140-serve.cjs",
@@ -2594,8 +2703,37 @@
     {
       "name": "v140-ui.py",
       "type": "Tarayıcı / entegrasyon",
+      "status": "not_run"
+    },
+    {
+      "name": "v141-browser.cjs",
+      "type": "Tarayıcı / entegrasyon",
       "status": "passed",
-      "note": "17 Chromium grubu; sıfır pageerror, masaüstü/mobil ve 10 palet."
+      "checks": 16
+    },
+    {
+      "name": "v141-http.cjs",
+      "type": "Tarayıcı / entegrasyon",
+      "status": "passed",
+      "checks": 19
+    },
+    {
+      "name": "v141-performance.cjs",
+      "type": "Tarayıcı / entegrasyon",
+      "status": "passed",
+      "checks": 3
+    },
+    {
+      "name": "v141-serve.cjs",
+      "type": "Tarayıcı / entegrasyon",
+      "status": "passed",
+      "checks": 1
+    },
+    {
+      "name": "v141-ui.py",
+      "type": "Tarayıcı / entegrasyon",
+      "status": "passed",
+      "checks": 16
     },
     {
       "name": "visual-audit.cjs",

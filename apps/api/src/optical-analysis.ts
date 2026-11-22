@@ -4,7 +4,7 @@ export function analyzeSnapshot(snapshot:Snapshot,branch?:string){
   const students=snapshot.data.students.filter(s=>!branch||s.branch===branch),data={...snapshot.data,students},summary=opticalSummary(data,snapshot.penalty),count=students.length;
   const questions=data.questions.map((q,i)=>{
     const distribution:Record<string,number>={A:0,B:0,C:0,D:0,E:0,"*":0,"Boş":0};let correct=0,wrong=0,blank=0;
-    for(const s of students){if(s.missingLessons?.includes(q.lesson))continue;const answer=s.answers[i]||"Boş";distribution[answer]=(distribution[answer]??0)+1;if(q.answer==="X")continue;if(q.answer==="H"||s.answers[i]===q.answer)correct++;else if(!s.answers[i])blank++;else wrong++;}
+    for(const s of students){if(s.missingLessons?.includes(q.lesson))continue;const answer=s.answers[i]||"Boş";distribution[answer]=(distribution[answer]??0)+1;if(q.answer==="X")continue;if(q.answer==="H"||s.answers[i]===q.answer)correct++;else if(!s.answers[i]||s.answers[i]==="*"&&q.multipleMark==="blank")blank++;else wrong++;}
     return {lesson:q.lesson,number:q.number,answer:q.answer,outcomeCode:q.outcomeCode??"",outcomeName:q.outcomeName??"",correct,wrong,blank,success:correct+wrong+blank?correct/(correct+wrong+blank)*100:null,distribution,diagnostic:!/[HX]/.test(q.answer)};
   });
   const outcomes=new Map<string,{lesson:string;code:string;name:string;questionCount:number;correct:number;wrong:number;blank:number}>();

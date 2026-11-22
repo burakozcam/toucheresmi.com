@@ -1,3 +1,6 @@
+import {studentWelcome} from './student-welcome';
+import {heavyWorkGuard} from './heavy-work';
+import {accountInsights,studentAnnouncements,respondToStudent} from './student-services';
 import {compatibleStudent} from "./result-data";
 import {encryptShareToken} from "./share-security";
 import {examView} from "./result-routes";
@@ -127,3 +130,12 @@ readerRouter.get("/my-results/:id/pdf",reader,wrap(async(req,res)=>{
  const found=await ownExam(req);if(!found){res.status(404).json({error:"Yayımlanmış sonuç bulunamadı veya hesabınıza bağlı değil."});return;}
  res.attachment("ogrenci-karnesi.pdf").type("application/pdf").send(await reportPdf(await enrichReportView(found.view),{kind:"cards",order:"name",hideIdentity:true,studentId:found.person.id,templateId,showGeneralParticipation,showSchoolParticipation,showSiteAddress}));
 }));
+
+const insightsGuard=heavyWorkGuard(2,1,true);
+const studentOnly:express.RequestHandler=(q:AuthenticatedRequest,r,n)=>{if(q.user!.role!==Role.STUDENT){r.status(403).json({error:"Asistan yalnız öğrenci hesabına açıktır."});return;}n();};
+readerRouter.get('/student-insights',studentOnly,insightsGuard,wrap(async(q,r)=>{r.json(await accountInsights(q.user!.id));}));
+readerRouter.get('/student-welcome',studentOnly,wrap(async(q,r)=>{
+ const [welcome,announcements]=await Promise.all([studentWelcome('account',q.user!.id),studentAnnouncements(q.user!.schoolId,q.user!.id)]);
+ r.json({...welcome,announcements});
+}));
+readerRouter.post('/student-assistant',studentOnly,new RequestLimiter(30,60_000).middleware(),insightsGuard,wrap(async(q,r)=>{r.json(respondToStudent(q.body,await accountInsights(q.user!.id),await studentAnnouncements(q.user!.schoolId,q.user!.id)));}));

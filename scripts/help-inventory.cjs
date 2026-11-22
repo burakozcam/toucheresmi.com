@@ -1,7 +1,7 @@
 /* Run explicitly after adding controls. IDs are written once and survive DOM changes. */
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 const root=path.resolve(__dirname,'..'),app=path.join(root,'apps/web/app');
-const files=[...fs.readdirSync(path.join(app,'panel')).filter(n=>n.endsWith('.tsx')&&!/^(help-|training-scene|sidebar-resize|break-game|block-game|store-management)/.test(n)).map(n=>'panel/'+n),'pdf-duzenleyici/editor.tsx','pdf-duzenleyici/scanner.tsx','location-fields.tsx','password-field.tsx','report-type-buttons.tsx','answer-pdf-options.tsx','sinav-takvimi/schedule-calendar.tsx','sinav-degerlendir/report-card.tsx','theme-toggle.tsx','human-verification.tsx'];
+const files=[...fs.readdirSync(path.join(app,'panel')).filter(n=>n.endsWith('.tsx')&&!/^(help-|training-scene|sidebar-resize|break-game|block-game|store-management)/.test(n)).map(n=>'panel/'+n),'student-workspace.tsx','pdf-duzenleyici/editor.tsx','pdf-duzenleyici/scanner.tsx','location-fields.tsx','password-field.tsx','report-type-buttons.tsx','answer-pdf-options.tsx','sinav-takvimi/schedule-calendar.tsx','sinav-degerlendir/report-card.tsx','theme-toggle.tsx','human-verification.tsx'];
 const records={},summary=[],reserved=new Set(files.flatMap(f=>[...fs.readFileSync(path.join(app,f),"utf8").matchAll(/data-help-id="([^"]+)"/g)].map(m=>m[1])));
 for(const relative of files){const file=path.join(app,relative),source=fs.readFileSync(file,'utf8'),tree=ts.createSourceFile(file,source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX),inserts=[];let serial=0,count=0;
  function text(n){

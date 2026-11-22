@@ -70,7 +70,7 @@ test("sonuç sürümleri API: eski anlık kopya korunur, önizleme bağlanır, y
     const oldChecks=await invoke("/results/:id/checks");assert.ok(oldChecks.body.blockers.some((v:string)=>v.includes("yeni sürümü")));
     const checks=await invoke("/results/:id/checks","v2");assert.equal(checks.body.blockers.length,0);
     const publish=await invoke("/results/:id/publication","v2",{published:true,reviewToken:checks.body.reviewToken,confirmWarnings:true});assert.equal(publish.status,200);assert.equal(results[0].studentPublished,false);assert.equal(results[1].studentPublished,true);assert.ok(calls.every(c=>c.where.school.dealerId==="dealer"));
-    const analysis=await invoke("/results/:id/analysis","v2");assert.equal(analysis.body.studentCount,2);
+    const analysis=await invoke("/results/:id/analysis","v2");assert.equal(analysis.body.studentCount,null);assert.equal(analysis.body.suppressed,true);assert.deepEqual(analysis.body.questions,[]);
   }finally{for(const[o,k,v]of originals.reverse())o[k]=v;}
 });
 test("erişim iptali sınavın tüm sürümlerini kapsar ve bayi kapsamını korur",async()=>{

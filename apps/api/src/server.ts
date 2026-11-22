@@ -1,3 +1,4 @@
+import {examAnalyticsRouter} from './exam-analytics-routes';
 import {auditMaintenanceRouter} from './audit-maintenance';
 import {exportRouter} from './exports';
 import {recordKeyRevision,revisionFingerprint} from './key-revision';
@@ -71,7 +72,7 @@ app.use(express.json({ limit: "1mb" }));
 // Audit only stable route templates and record references; no bodies, queries or credentials.
 app.use((request:AuthenticatedRequest,response,next)=>{
  const path=request.path,method=request.method.toUpperCase();
- if(!path.startsWith('/api/')||['/api/search-history','/api/activity/navigation'].includes(path)){next();return;}
+ if(!path.startsWith('/api/')||['/api/search-history','/api/activity/navigation','/api/student-assistant','/api/student-portal/assistant'].includes(path)){next();return;}
  const mutation=['POST','PUT','PATCH','DELETE'].includes(method),read=method==='GET'&&/\/(?:export|download|pdf)(?:\/|$)/.test(path);
  if(!mutation&&!read){next();return;}
  response.once('finish',()=>{
@@ -283,6 +284,7 @@ function toPublicPublisher(publisher: { id: string; name: string; normalizedName
 app.use(scheduleRouter);
 app.use(storeRouter);
 app.use(studentPortalRouter);
+app.use('/api/exam-analytics',examAnalyticsRouter);
 app.use("/api/admin", publisherTransferRouter);
 
 app.get("/api/health", (_request, response) => {

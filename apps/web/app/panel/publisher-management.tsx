@@ -3,7 +3,7 @@ import UiIcon from "../ui-icon";
 
 import ActionButton from "./action-button";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import type { FormEvent } from "react";
 import { API_URL } from "../../lib/api";
 
@@ -30,7 +30,9 @@ type PublisherRequest = {
 };
 
 export default function PublisherManagement({ token, role }: { token: string; role: "SUPER_ADMIN" | "DEALER" | "SCHOOL_ADMIN" | "STUDENT" | "PARENT" }) {
+  const createDialog=useRef<HTMLDialogElement>(null);
   const [creating,setCreating]=useState(false),[contact,setContact]=useState({email:"",phone:"",active:true});
+  useEffect(()=>{if(creating)createDialog.current?.showModal();},[creating]);
   const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [requests, setRequests] = useState<PublisherRequest[]>([]);
   const [query, setQuery] = useState("");
@@ -217,7 +219,7 @@ export default function PublisherManagement({ token, role }: { token: string; ro
           <input data-help-id="panel-publisher-management-2" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Yayınevi ara..." />
         </label>
         {role !== "SUPER_ADMIN" && (
-          <ActionButton data-help-id="panel-publisher-management-3" intent="manage" type="button" className="button button-navy" onClick={() => document.getElementById("publisher-request-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+          <ActionButton data-help-id="panel-publisher-management-3" intent="manage" type="button" className="button button-navy" onClick={() => setCreating(true)}>
             Yayınevi ekleme talebi gönder
           </ActionButton>
         )}
@@ -261,9 +263,9 @@ export default function PublisherManagement({ token, role }: { token: string; ro
           )}
         </div>
 
-        {(role !== "SUPER_ADMIN" || creating) && (
-          <form id="publisher-request-form" className="publisher-form" onSubmit={submitPublisherRequest}>
-            <h3>{role==="SUPER_ADMIN"?"Yeni yayınevi":"Yayınevi ekleme talebi"}</h3>
+        {creating && (
+          <dialog ref={createDialog} className="publisher-create-dialog" onCancel={()=>setCreating(false)} aria-labelledby="publisher-create-title"><form id="publisher-request-form" className="publisher-form" onSubmit={submitPublisherRequest}>
+            <div className="studio-actions"><h3 id="publisher-create-title">{role==="SUPER_ADMIN"?"Yeni yayınevi":"Yayınevi ekleme talebi"}</h3><button data-help-id="panel-publisher-management-15x" type="button" className="button button-quiet" disabled={submitting} onClick={()=>setCreating(false)}>Kapat</button></div>
             <label>
               Yayınevi adı
               <input data-help-id="panel-publisher-management-13" value={publisherName} onChange={(event) => setPublisherName(event.target.value)} maxLength={180} placeholder="Örn. A Plus" required />
@@ -273,7 +275,7 @@ export default function PublisherManagement({ token, role }: { token: string; ro
               <textarea data-help-id="panel-publisher-management-14" value={description} onChange={(event) => setDescription(event.target.value)} rows={4} maxLength={1000} placeholder="İsteğe bağlı açıklama" />
             </label>
             {role==="SUPER_ADMIN"&&<><label>E-posta<input data-help-id="panel-publisher-management-15" type="email" maxLength={254} value={contact.email} onChange={e=>setContact({...contact,email:e.target.value})}/></label><label>Telefon<input data-help-id="panel-publisher-management-16" maxLength={40} value={contact.phone} onChange={e=>setContact({...contact,phone:e.target.value})}/></label><label className="checkbox-row"><input data-help-id="panel-publisher-management-17" type="checkbox" checked={contact.active} onChange={e=>setContact({...contact,active:e.target.checked})}/>Aktif</label><p>Logoyu oluşturduktan sonra Yayınevi Logoları bölümünden ekleyebilirsiniz.</p></>}<ActionButton data-help-id="panel-publisher-management-18" intent="save" loading={submitting} className="button button-navy" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : role==="SUPER_ADMIN"?"Yayınevini kaydet":"Talebi gönder"}</ActionButton>
-          </form>
+          </form></dialog>
         )}
       </div>
 

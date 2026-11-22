@@ -1,3 +1,11 @@
+# v1.4.1 · 2026-11-22 · yerel geliştirme, BLOCKED
+
+- Öğrenciye özel deterministik Türkçe asistan; ortak Analizim, kanıta dayalı kazanım haritası, hafif rekor/gelişim karşılaması ve ihtiyatlı uyarılar. Hesap ve kişisel kodla giriş; harici LLM yok.
+- Yetkili anonim genel analiz, soru kalite ölçüleri/PDF, gerekçeli inceleme ve okul çalışma önerileri. Küçük grup ve kurum kapsamı korumaları.
+- İki sayfalık cevap/kazanım yerleşimi, kompakt cevap kayıtları, yayınevi arama/modal, FMT önerileri, sade paylaşım ve Mola Alanı.
+- Mevcut ana sayfa sahneleri ve yardım oynatma geliştirildi. Salt okunur tarama, gerçek localhost yetki testleri ve güvenli 403 inceleme belgesi eklendi.
+- Yeni bağımlılık/migration veya canlı işlem yok. Sürüm tam READY değildir: güvenlik uyarıları ve açık kabul maddeleri [v141 raporunda](docs/v141-release-report.md).
+
 # v1.4.0 · 2026-11-20 · yerel geliştirme, üretim kabulü açık
 
 - Duyuru kayıt geri bildirimi ve tekrar kilidi, 30 belgeli geçmiş sürüm/RC için sayımlı idempotent arşiv aktarımı.

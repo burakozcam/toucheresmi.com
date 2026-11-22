@@ -22,7 +22,7 @@
     },
     {
       "file": "panel/answer-key-management.tsx",
-      "controls": 39
+      "controls": 40
     },
     {
       "file": "panel/audit-log-management.tsx",
@@ -93,6 +93,10 @@
       "controls": 1
     },
     {
+      "file": "panel/exam-analytics.tsx",
+      "controls": 13
+    },
+    {
       "file": "panel/exam-management.tsx",
       "controls": 5
     },
@@ -155,6 +159,10 @@
     {
       "file": "panel/fmt-sharing.tsx",
       "controls": 9
+    },
+    {
+      "file": "panel/fmt-suggestions.tsx",
+      "controls": 2
     },
     {
       "file": "panel/layout.tsx",
@@ -230,7 +238,7 @@
     },
     {
       "file": "panel/publisher-management.tsx",
-      "controls": 22
+      "controls": 23
     },
     {
       "file": "panel/publisher-select.tsx",
@@ -238,7 +246,7 @@
     },
     {
       "file": "panel/publisher-transfer.tsx",
-      "controls": 4
+      "controls": 5
     },
     {
       "file": "panel/reader-accounts.tsx",
@@ -294,7 +302,7 @@
     },
     {
       "file": "panel/share-links.tsx",
-      "controls": 15
+      "controls": 14
     },
     {
       "file": "panel/share-schedule.tsx",
@@ -319,6 +327,10 @@
     {
       "file": "panel/txt-converter.tsx",
       "controls": 12
+    },
+    {
+      "file": "student-workspace.tsx",
+      "controls": 10
     },
     {
       "file": "pdf-duzenleyici/editor.tsx",
@@ -361,7 +373,7 @@
       "controls": 1
     }
   ],
-  "total": 754,
+  "total": 781,
   "needsLabelReview": [
     "pdf-duzenleyici-editor-1"
   ]

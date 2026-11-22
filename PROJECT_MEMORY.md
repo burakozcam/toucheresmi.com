@@ -1,6 +1,6 @@
 # Kurumsal Sınav — Proje hafızası
 
-Son güncelleme: 20 Kasım 2026 · v1.4.0 yerel çalışma · üretim kabulü açık. Son rapor: `docs/v140-release-report.md`; devam kaydı `docs/v139-progress.md` son bölümü. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
+Son güncelleme: 22 Kasım 2026 · v1.4.1 yerel çalışma · **BLOCKED**, bütün kapsamıyla READY değil. Son rapor: `docs/v141-release-report.md`; güvenlik/dağıtım: `docs/v141-security-and-deployment.md`. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
 
 ## Amaç ve mimari
 
@@ -187,3 +187,20 @@ Mevcut plan/kurulum: Veridyen cPanel + Passenger, Neon PostgreSQL, ayrı Next We
 - Merkezî exports SUPER_ADMIN; CSV/XLSX güvenliği, imzalı kapsam+digest, özgün TXT/FMT ve manifest. Audit önizlemesi asOf ile kendi loglarından korunur. Tam audit arşivi mevcut TXT anahtarıyla özel dizinde şifrelenir; indirme SHA ve ONAYLA olmadan temizlik olmaz, süresi dolan en çok100 kayıt. Anahtar revision/cleanup süresiz korunur. Audit cron'u yok; mevcut teknik SystemEvent/analytics timer'ı korunur.
 - Eski PDF testleri ilk koşumda output/pdf/v126 ve v130 örneklerini yeniden yazdı. Başlangıç yedeği bulunamadı; önceki baytlar korunmuş/geri yüklenmiş sayılmaz. Kullanıcı bilgilendirildi. Bu üç test artık test-results/regression-pdfs kullanır. Bundan sonra output altına yazan testleri çalıştırmadan hedef yollarını inceleyin. Özgün TXT/FMT ve canlı veriler etkilenmedi.
 - Şablonda keyfi oturum dağılımı/TYT/AYT, bazı isimle seçiciler, yıl alanı olmayan katalog yıl filtreleri, sınırsız streaming, bütün koşullu yardım/tema kabulü ve canlı hosting performansı açık. Yedekleme merkezi yalnız hazırlık sayfasıdır. Son test sayıları ve süreç kapanışı rapor teslim ekindedir.
+
+
+## v1.4.1 — öğrenci, anonim analiz ve kabul
+
+- Rapor: `docs/v141-release-report.md`, 82 maddelik başlangıç/son durum tablosu. Canlı DB/deploy/restart/izin/duyuru/commit/push yok; başlangıçtaki untracked kullanıcı PDF klasörleri korunur. Yeni bağımlılık ve migration yok.
+- `student-insights.ts` mevcut opticalSummary/merge motorunu; `student-assistant.ts` 18 niyet/126 kaynak ifade, normalizasyon ve sınırlı ders/sınav bağlamını kullanır. Yalnız STUDENT; PARENT/admin/bayi dışlanır. İki öğrenci girişinde ortak StudentWorkspace. Sohbet yalnız bileşen belleğinde en fazla 12 soru; salt okunur POST’lar mutasyon audit’i üretmez. Karşılama student-welcome.ts ile en fazla beş kaydın yalnız kendi satır/özetini SQL’de ayırır; sınıf JSON’u uygulamaya taşınmaz, puan yeniden hesaplanmaz. Kişisel kod yolunda identityKey doğrulanır. Kanıtlı aynı içerik/kuralda puan rekoru ve anlamlı net artışı ortak welcomeHighlights ile hesaplanır. Oturumda aynı sonuç bildirimi yinelenmez; ağır analiz isteğe bağlıdır.
+- Hesap analizi en son 100 açık grant metadata’sından en fazla beş uygun sınavı seçer; içerik/kural eşdeğerliği yoksa sayısal gelişim/gerileme iddiası üretmez. Tek sorudan kesin kazanım sonucu çıkarılmaz. Kişisel kodda mevcut açık grant ve revizyon çözümleme kullanılır; yeni numarayla otomatik ilişki yok.
+- `exam-quality.ts` mevcut canonical A sırası ve soru analizine eklenir. <5 ve küçük tamamlayıcı şube gizlenir; sınıf kırılımı/kimlik metadata’sı DTO’ya girmez. Korelasyon en az20 tam katılım, KR-20 ayrıca en az5 tanısal soru; sıfır varyansta null. Şüpheli işaret otomatik hata kararı değildir. Okul önerisi ≥2 sınav/≥3 uygun soruyla, anormal sorular çıkarıldıktan sonra yeniden hesaplanır.
+- `/api/exam-analytics` kendi rol/kapsamlı okul listesine sahiptir; SCHOOL_ADMIN eski genel `/api/schools` engelini aşarak tüm kurumları göremez. Analiz en fazla5.000 kaynak öğrenci/100 yükleme, worker2 ve kullanıcı1 etkin iş sınırındadır; dağıtık kuyruk değildir. İnceleme AuditLog’da kurum+sınav+fingerprint ile saklanır; bayi canEditResult ve PDF canExport kuralları uygulanır. EXAM_QUESTION_REVIEW fiziksel temizlik dışında kalır.
+- Genel analizde mevcut çoklu işaret=boş politikası düzeltildi. Eski `/results/:id/analysis` küçük grupta artık null count/suppressed alır; eski UI açık mesaj verir. İki sayfalık şablonda ders içinde anahtar/öğrenci çifti ve tam kazanımlar; 87 Özdebir kazanımı iki A4’te korunur, çok uzun içerik devam eder.
+- Kompakt listeler mevcut işlemleri korur. FMT önerileri isim/içerik/yerleşim/katalog kapasitesiyle ihtiyatlıdır; FMT sınava otomatik bağlanmaz. Paylaşımda tek kategori seçimi; yayınevi native modal ve arama; oyun motorları aynı, menü Mola Alanı.
+- Son yerel kabul: 308/308 çevrimdışı test, 19 gerçek HTTP/DB ve 16 Chromium grubu; API/Web build, Prisma validate, yeni boş DB’de mevcut26 migration. Test Merkezi kaynak digest’i ve kabul JSON’u son kaynakla eşleşir. Önceki ayrı e2e betikleri bu sürümde not_run kalır.
+- Yerel test DB yalnız bu oturumun ks-v141-test, 127.0.0.1:55451/ks_v141. Test harness sabit bu DB’yi ister; eski/production DB kullanılmaz. Kanıtlar test-results/v141 içinde Git dışı; ui-seed.json sentetik erişim tokenı/kodu içerir, dağıtılmaz.
+- Güncel npm audit gerçekten çalıştı: effect/Prisma zincirinde3 yüksek, Next15.5.28’de1 orta paket kaydı. Kullanıcı otomatik paket yükseltmesini yasakladığı için değiştirilmedi. Yeni canlı 403 kök nedeni doğrulanmadı; yerel public varlıklar200 ve izinler okunabilir. Güvenlik/gerçek veri hazırlığı belgesi hukuki uygunluk ilanı değildir.
+- Yerel saf hesap benchmark’ı5.000×90 için genel analiz yaklaşık81ms, süreç RSS yaklaşık121MB; DB/ağ/Passenger/eşzamanlı toplu PDF kapasitesi değildir. Gerçek düşük güçlü cihaz ve bütün koşullu ekran/tema kabulü açık.
+
+- Teslimde 4021 API/3121 Web portları kapalı; yalnız ks-v141-test durduruldu. Sentetik kayıtlar/kanıtlar ve kullanıcının önceki PDF klasörleri silinmedi.

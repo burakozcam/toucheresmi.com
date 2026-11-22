@@ -284,7 +284,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                   <p>{item.publisher.name}</p>
                   <small>{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small>
                   {!readOnly&&<div className="answer-inline-publication"><label className="checkbox-row"><input data-help-id="panel-answer-key-management-18" type="checkbox" checked={item.published} disabled={submitting||bulkWorking} onChange={e=>void setPublication(item,e.target.checked,item.showInEvaluation)}/>Cevap Anahtarları sayfasında göster</label></div>}
-                  {!readOnly&&<CoverEditor token={token} id={item.id} initial={item.coverImage} onImage={image=>setRecords(current=>current.map(row=>row.id===item.id?{...row,coverImage:image}:row))}/>}
+                  <details className="answer-record-details"><summary data-help-id="panel-answer-key-management-22x">Dosyalar, yayınevi ve yönetim işlemleri</summary>{!readOnly&&<CoverEditor token={token} id={item.id} initial={item.coverImage} onImage={image=>setRecords(current=>current.map(row=>row.id===item.id?{...row,coverImage:image}:row))}/>}
                   {!readOnly&&<PublisherTransfer token={token} record={item} publishers={publishers} onSaved={()=>{setEditing(null);void loadData();}}/>}
                   {!readOnly && editing?.id === item.id && (
                     <form className="answer-key-edit-form" onChange={()=>setEditConfirmed(false)} onSubmit={(event) => {
@@ -330,7 +330,7 @@ export default function AnswerKeyManagement({ token, readOnly = false, initialPu
                       <ActionButton data-help-id="panel-answer-key-management-35" intent={item.published?'danger':'save'} type="button" className="button button-quiet" onClick={() => void setPublished(item, !item.published)}>{item.published ? "Yayından kaldır" : "Yeniden yayımla"}</ActionButton>
                       <ActionButton data-help-id="panel-answer-key-management-36" intent="danger" type="button" className="button button-navy danger-button" onClick={() => void deleteRecord(item.id)}>Sil</ActionButton>
                     </>}
-                  </div>
+                  </div></details>
                 </article>
               );
             })}
