@@ -1,9 +1,10 @@
+const v142Profile=process.env.KS_QA_PROFILE==='v142';
 // Exclusive new synthetic database; refuses production or earlier test databases.
 const assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
-const database='postgresql://ks141@127.0.0.1:55451/ks_v141';if(process.env.DATABASE_URL&&process.env.DATABASE_URL!==database)throw Error('Exclusive v141 localhost database required');
+const database=v142Profile?'postgresql://ks142:synthetic-v142-local-only@127.0.0.1:55452/ks_v142_acceptance':'postgresql://ks141@127.0.0.1:55451/ks_v141';if(process.env.DATABASE_URL&&process.env.DATABASE_URL!==database)throw Error('Exclusive v141 localhost database required');
 Object.assign(process.env,{NODE_ENV:'test',DATABASE_URL:database,JWT_SECRET:'v141-synthetic-signing-key-never-for-production',MFA_ENCRYPTION_KEY:'e7'.repeat(32),TXT_STORAGE_KEY:'v141-synthetic-txt-key-never-for-production',STORAGE_DIR:'/tmp/ks-v141-http',RECAPTCHA_ENABLED:'false',TURNSTILE_ENABLED:'false',WEB_ORIGIN:'http://localhost:3121',RATE_LIMIT_STORE:'memory',ALLOW_REMOTE_DATABASE:'false'});
 const {prisma}=require('../../apps/api/src/db.ts'),{app}=require('../../apps/api/src/server.ts'),{issueSession}=require('../../apps/api/src/auth-sessions.ts'),{opticalSummary}=require('../../apps/api/src/optical-core.ts'),{keyFingerprint}=require('../../apps/api/src/optical-review.ts'),{studentKey,portalCode,portalHash}=require('../../apps/api/src/student-portal.ts');
-const out='test-results/v141';fs.mkdirSync(out,{recursive:true});const checks=[],pass=name=>{checks.push({name,status:'GEÇTİ'});console.log('PASS',name);};let server;
+const out=v142Profile?'test-results/v142/regression-v141':'test-results/v141';fs.mkdirSync(out,{recursive:true});const checks=[],pass=name=>{checks.push({name,status:'GEÇTİ'});console.log('PASS',name);};let server;
 (async()=>{
  const run=crypto.randomBytes(4).toString('hex');
  const dealerA=await prisma.dealer.create({data:{name:'V141 Bayi A '+run}}),dealerB=await prisma.dealer.create({data:{name:'V141 Bayi B '+run}});
@@ -49,6 +50,6 @@ const out='test-results/v141';fs.mkdirSync(out,{recursive:true});const checks=[]
  const notifyCode=portalCode(),notifyStudent=make(schoolB).data.students[0];await prisma.studentPortal.create({data:{schoolId:schoolB.id,academicYear:'2026-2027',studentNo:'0001',codeHash:portalHash(notifyCode),grants:{create:[resultB.id,priorResult.id].map(resultId=>({resultId,studentId:'s0',identityKey:studentKey(notifyStudent)}))}}});const notifyLogin=await request('/api/student-portal/login','',{schoolId:schoolB.id,academicYear:'2026-2027',studentNo:'0001',code:notifyCode});ok(notifyLogin);response=await request('/api/student-portal/welcome',notifyLogin.data.token);ok(response);assert.equal(response.data.highlights.length,2);pass('Hafif karşılama iki öğrenci girişinde kendi özetinden rekor/gelişim bildirir; sınıf ve kimlik verisi taşımaz');
  let auditSaved;for(let attempt=0;attempt<20;attempt++){auditSaved=await prisma.auditLog.findFirst({where:{actorUserId:da.id,action:'POST /reviews',targetType:'SERVER_FAILURE'}});if(auditSaved)break;await new Promise(r=>setTimeout(r,10));}assert.ok(auditSaved,'Final denied review security audit must finish before shutdown');
  fs.writeFileSync(out+'/ui-seed.json',JSON.stringify({adminToken,daToken,saToken,aToken,parentToken,schoolId:schoolA.id,keyId:key.id,grantId:grantA.id,portalSchoolId:schoolA.id,portalCode:codeB,portalStudentNo:'0002'}));
- fs.writeFileSync(out+'/http-acceptance.json',JSON.stringify({database:'isolated localhost ks_v141',checks},null,2));
+ fs.writeFileSync(out+'/http-acceptance.json',JSON.stringify({database:v142Profile?'isolated localhost ks_v142_acceptance':'isolated localhost ks_v141',checks},null,2));
  if(process.env.V141_KEEP_SERVING==='true'){console.log('Synthetic API ready on '+base);await new Promise(()=>{});}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{fs.writeFileSync(out+'/http-progress.json',JSON.stringify({checks},null,2));if(server)await new Promise(r=>server.close(r));await prisma.$disconnect();});

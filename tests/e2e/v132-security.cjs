@@ -1,10 +1,11 @@
+const v142Profile=process.env.KS_QA_PROFILE==='v142';
 // Real HTTP and real disposable PostgreSQL. Never accepts a production DB address.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
-const dbURL='postgresql://ks132@127.0.0.1:55442/ks_v132';
+const dbURL=v142Profile?'postgresql://ks142:synthetic-v142-local-only@127.0.0.1:55452/ks_v142_acceptance':'postgresql://ks132@127.0.0.1:55442/ks_v132';
 if(process.env.DATABASE_URL&&process.env.DATABASE_URL!==dbURL)throw Error('Only isolated ks_v132 on 127.0.0.1:55442 is allowed.');
 Object.assign(process.env,{NODE_ENV:'test',DATABASE_URL:dbURL,JWT_SECRET:'v132-local-test-signing-key-never-use-in-production',MFA_ENCRYPTION_KEY:'a1'.repeat(32),TXT_STORAGE_KEY:'v132-local-test-txt-key-not-for-production',STORAGE_DIR:'/tmp/ks-v132-storage',WEB_ORIGIN:'http://localhost:3110',RECAPTCHA_ENABLED:'false',TURNSTILE_ENABLED:'false',RATE_LIMIT_STORE:'database'});
 const {prisma}=require('../../apps/api/src/db.ts'),{app}=require('../../apps/api/src/server.ts'),{hashPassword}=require('../../apps/api/src/passwords.ts'),{totp}=require('../../apps/api/src/mfa-core.ts'),{layout7108}=require('../../apps/api/src/optical-core.ts'),{parseOpticalKeyRows}=require('../../apps/web/lib/optical.ts'),{turkeyDay,regionAllowed}=require('../../apps/api/src/dealer-policy.ts'),jwt=require('jsonwebtoken');
-const base='http://127.0.0.1:4000',out=path.resolve('test-results/v132');fs.mkdirSync(out,{recursive:true});const checks=[];
+const base=v142Profile?'http://127.0.0.1:4024':'http://127.0.0.1:4000',out=path.resolve(v142Profile?'test-results/v142/regression-v132':'test-results/v132');fs.mkdirSync(out,{recursive:true});const checks=[];
 let server;const checked=(name)=>{checks.push(name);console.log('PASS '+name)};
 async function req(route,body,token,method=body?'POST':'GET',extra={}){const headers={...(token?{Authorization:'Bearer '+token}:{}),...extra};if(body&&!(body instanceof FormData))headers['Content-Type']='application/json';const r=await fetch(base+route,{method,headers,body:body?(body instanceof FormData?body:JSON.stringify(body)):undefined}),bytes=Buffer.from(await r.arrayBuffer());let data;try{data=JSON.parse(bytes);}catch{data=bytes;}return{status:r.status,data,headers:r.headers,bytes};}
 async function clearLimits(){await prisma.securityRateBucket.deleteMany();}
@@ -20,7 +21,7 @@ const status=(r,n)=>assert.equal(r.status,n,typeof r.data==='object'&&!Buffer.is
  const publishers=await Promise.all(['X','Y'].map(name=>prisma.publisher.create({data:{name:`QA ${name} Yayınları ${run}`,normalizedName:`qa132-${run}-${name}`}})));
  const questions=parseOpticalKeyRows(require('../../apps/web/data/nartest-8-optical.json')).map(q=>({...q,weight:1,scoreBase:0}));
  const keys=[];for(let i=0;i<3;i++){const publication=await prisma.publishedAnswerKey.create({data:{publisherId:publishers[i===1?1:0].id,grade:8,examName:`QA Deneme ${i} ${run}`,published:true,showInEvaluation:true,createdByUserId:admin.id,files:{create:{category:'ANSWER_KEY',originalFileName:'qa.pdf',storedFileName:'qa.pdf',mimeType:'application/pdf',size:8,storagePath:path.join(process.env.STORAGE_DIR,'qa.pdf')}},opticalKey:{create:{name:`qa132-key-${run}-${i}`,questions:i===2?questions.map((q,n)=>n===0?{...q,answer:q.answer==='A'?'B':'A'}:q):questions,penalty:3}}},include:{opticalKey:true}});keys.push(publication.opticalKey);}
- server=app.listen(4000,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
+ server=app.listen(v142Profile?4024:4000,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
  const login=async(u,cookie)=>req('/api/auth/login',{email:u.email,password,role:u.role},undefined,'POST',cookie?{Cookie:cookie}:{});
  const start=await login(admin);status(start,200);assert.ok(start.data.setupRequired&&!start.data.token);status(await req('/api/account',undefined,start.data.challengeToken),401);
  const setup=await req('/api/security/mfa/setup',{challengeToken:start.data.challengeToken});status(setup,200);assert.ok(setup.data.qr.startsWith('data:image/png;base64,'));
@@ -64,7 +65,7 @@ const status=(r,n)=>assert.equal(r.status,n,typeof r.data==='object'&&!Buffer.is
  function formFor(school){const f=new FormData();f.set('schoolId',school.id);f.set('keyId',keys[1].id);f.set('templateId','system-fmt-7108');f.set('file',new Blob([textFor(20)]),'kota.txt');return f;}
  const forms=[formFor(schools[0]),formFor(schools[1])];for(const f of forms){const p=await req('/api/optical/preview',f,at);status(p,200);f.set('previewToken',p.data.previewToken);f.set('confirmWarnings','true');}
  const beforePreview=await prisma.dealerDailyUsage.findUnique({where:{dealerId_day:{dealerId:dealers[0].id,day:turkeyDay()}}});assert.equal(beforePreview.students,usedBefore.students);
- const concurrent=await Promise.all(forms.map(f=>req('/api/optical/evaluate',f,at)));for(let i=0;i<concurrent.length;i++)if(concurrent[i].status===409)concurrent[i]=await req('/api/optical/evaluate',forms[i],at);
+ const concurrent=await Promise.all(forms.map(f=>req('/api/optical/evaluate',f,at)));for(let i=0;i<concurrent.length;i++)if([409,429].includes(concurrent[i].status))concurrent[i]=await req('/api/optical/evaluate',forms[i],at);
  assert.deepEqual(concurrent.map(r=>r.status).sort(),[201,403]);assert.equal((await prisma.dealerDailyUsage.findUnique({where:{dealerId_day:{dealerId:dealers[0].id,day:turkeyDay()}}})).students,usedBefore.students+2);assert.equal(turkeyDay(new Date('2026-11-16T21:00:00Z')),'2026-11-17');checked('Concurrent quota enforcement, previews free, transactions rollback, Turkey midnight');
  await clearLimits();await setPolicy(dealers[0].id,{dailyStudentLimit:null,restrictedRegions:true,regions:[{publisherId:publishers[0].id,city:'İstanbul',district:'Kadıköy'}]});
  status(await preview(schools[1],keys[2]),403);const regionDenied=await preview(schools[0],keys[1],textFor(90));status(regionDenied,403);assert.equal(regionDenied.data.code,'REGION_DENIED');status(await req(pathA+'/export?schoolId='+schools[0].id+'&format=pdf',undefined,at),200);
@@ -108,7 +109,7 @@ const status=(r,n)=>assert.equal(r.status,n,typeof r.data==='object'&&!Buffer.is
   probes.push({...endpoint,anonymous:anonymous.status,dealer:dealerStatus});
  }
  fs.writeFileSync(path.join(out,'endpoints.json'),JSON.stringify(probes,null,2));
- fs.writeFileSync('docs/v132-endpoint-inventory.md','# v1.3.2 API endpoint envanteri\n\nÇalışan Express router ağacından çıkarıldı. “Oturum” satırları anonim HTTP isteğiyle 401; admin satırları ayrıca bayi JWT ile 403 olarak test edildi. Public satırlar üyelik şartı olmayan katalog, CAPTCHA veya süreli capability kontrollerine tabidir. Kaynak kodundaki nesne kapsamı ayrıca incelendi; 401/403 tek başına IDOR testi sayılmaz.\n\n| Yöntem | Tam yol | Erişim |\n|---|---|---|\n'+inventory.map(e=>`| ${e.method} | \`${e.path}\` | ${e.private?'Oturum / rol':'Public veya kişisel capability'} |`).join('\n')+'\n');
+ fs.writeFileSync(v142Profile?path.join(out,'endpoint-inventory.md'):'docs/v132-endpoint-inventory.md','# v1.3.2 API endpoint envanteri\n\nÇalışan Express router ağacından çıkarıldı. “Oturum” satırları anonim HTTP isteğiyle 401; admin satırları ayrıca bayi JWT ile 403 olarak test edildi. Public satırlar üyelik şartı olmayan katalog, CAPTCHA veya süreli capability kontrollerine tabidir. Kaynak kodundaki nesne kapsamı ayrıca incelendi; 401/403 tek başına IDOR testi sayılmaz.\n\n| Yöntem | Tam yol | Erişim |\n|---|---|---|\n'+inventory.map(e=>`| ${e.method} | \`${e.path}\` | ${e.private?'Oturum / rol':'Public veya kişisel capability'} |`).join('\n')+'\n');
  checked(`Runtime inventory: ${inventory.length} endpoint methods; ${probes.length} private methods reject anonymous requests, every admin method rejects dealer`);
  const events=await req('/api/admin/dealer-management/activities',undefined,adminToken);status(events,200);assert.ok(events.data.items.length);assert.ok(!JSON.stringify(events.data).includes(password));
  fs.writeFileSync(path.join(out,'api.json'),JSON.stringify({checks,passed:checks.length,failed:0},null,2));

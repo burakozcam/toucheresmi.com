@@ -1,5 +1,6 @@
 "use client";
 
+import FloatingPanel from "./floating-panel";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 export type SearchOption = { id: string; label: string; detail?: string };
@@ -24,18 +25,10 @@ export default function SearchableSelect({
   }, [options, query]);
 
   useEffect(() => {
-    const closeOutside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !root.current?.contains(event.target)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
-  }, []);
-
-  useEffect(() => {
     if (open) search.current?.focus();
   }, [open]);
   useEffect(() => {
-    if (open && filtered[activeIndex]) document.getElementById(`searchable-option-${filtered[activeIndex].id}`)?.scrollIntoView({ block: "nearest" });
+    if (open && filtered[activeIndex]) document.getElementById(`${listId}-${filtered[activeIndex].id}`)?.scrollIntoView({ block: "nearest" });
   }, [activeIndex, filtered, open]);
 
   function choose(option: SearchOption) {
@@ -53,12 +46,12 @@ export default function SearchableSelect({
   }
 
   return <div className="publisher-select searchable-select" ref={root} onKeyDown={event=>{if(event.key==="Escape"){event.preventDefault();setOpen(false);trigger.current?.focus();}}}>
-    <button data-help-id="panel-searchable-select-1" data-help-label="Aranabilir seçim listesini aç" ref={trigger} type="button" className="publisher-select-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onClick={() => { setOpen((isOpen) => !isOpen); setQuery(""); setActiveIndex(0); }}>
+    <button data-help-id="panel-searchable-select-1" data-help-label="Aranabilir seçim listesini aç" ref={trigger} type="button" className="publisher-select-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?listId:undefined} disabled={disabled} onClick={() => { setOpen((isOpen) => !isOpen); setQuery(""); setActiveIndex(0); }}>
       <span>{selected ? <>{selected.label}{selected.detail && <small>{selected.detail}</small>}</> : label}</span><span aria-hidden="true">⌄</span>
     </button>
-    {open && <div className="publisher-select-popover">
-      <input data-help-id="panel-searchable-select-2" ref={search} type="search" role="combobox" aria-label={`${label} içinde ara`} aria-controls={listId} aria-expanded="true" aria-autocomplete="list" aria-activedescendant={filtered[activeIndex] ? `searchable-option-${filtered[activeIndex].id}` : undefined} value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); }} onKeyDown={onSearchKeyDown} placeholder={placeholder}/>
-      <ul id={listId} role="listbox" aria-label={label}>{filtered.map((option, index) => <li key={option.id} role="presentation" className={index === activeIndex ? "publisher-option-active" : ""}><button data-help-id="panel-searchable-select-3" type="button" id={`searchable-option-${option.id}`} role="option" aria-selected={option.id === value} onPointerMove={() => setActiveIndex(index)} onClick={() => choose(option)}>{option.label}{option.detail && <small>{option.detail}</small>}</button></li>)}{!filtered.length && <li className="publisher-option-empty" role="option" aria-disabled="true">{query.trim()?"Eşleşen kayıt bulunamadı.":emptyMessage}</li>}</ul>
-    </div>}
+    {open && !disabled && <FloatingPanel anchor={trigger} onClose={()=>setOpen(false)} className="publisher-select-popover searchable-select-popover">
+      <input data-help-id="panel-searchable-select-2" ref={search} type="search" role="combobox" aria-label={`${label} içinde ara`} aria-controls={listId} aria-expanded="true" aria-autocomplete="list" aria-activedescendant={filtered[activeIndex] ? `${listId}-${filtered[activeIndex].id}` : undefined} value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); }} onKeyDown={onSearchKeyDown} placeholder={placeholder}/>
+      <ul id={listId} role="listbox" aria-label={label}>{filtered.map((option, index) => <li key={option.id} role="presentation" className={index === activeIndex ? "publisher-option-active" : ""}><button data-help-id="panel-searchable-select-3" type="button" id={`${listId}-${option.id}`} role="option" aria-selected={option.id === value} onPointerMove={() => setActiveIndex(index)} onClick={() => choose(option)}>{option.label}{option.detail && <small>{option.detail}</small>}</button></li>)}{!filtered.length && <li className="publisher-option-empty" role="option" aria-disabled="true">{query.trim()?"Eşleşen kayıt bulunamadı.":emptyMessage}</li>}</ul>
+    </FloatingPanel>}
   </div>;
 }

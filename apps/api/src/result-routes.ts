@@ -47,6 +47,23 @@ export async function examView(schoolId:string,keyId:string,publishedOnly=false,
 }
 resultRouter.get("/report-templates",(_req,res)=>{res.json(reportTemplates);});
 async function allowed(req:AuthenticatedRequest,schoolId:string){return prisma.school.findFirst({where:{id:schoolId,...scope(req)},select:{id:true}});}
+// A compact, scoped exam/institution index. Do not transfer student snapshots for selection.
+resultRouter.get("/result-catalog",wrap(async(req,res)=>{
+ const schools=await prisma.school.findMany({where:{active:true,...scope(req)},select:{id:true,name:true,city:true,district:true},orderBy:{name:'asc'},take:1001});
+ if(schools.length>1000)throw new SecurityError(422,'Rapor kataloğu 1.000 kurum sınırını aşıyor. Kurum kapsamını yöneticiyle daraltın.');
+ if(!schools.length){res.json({schools:[],exams:[]});return;}
+ const rows=await prisma.$queryRaw<Array<{id:string;schoolId:string;name:string;publisher:string;grade:number|null;uploadCount:bigint;createdAt:Date}>>(Prisma.sql`
+  SELECT k.id,r."schoolId",COALESCE(p."examName",k.name) AS name,COALESCE(pub.name,'') AS publisher,p.grade,
+         COUNT(*) AS "uploadCount",MAX(r."createdAt") AS "createdAt"
+  FROM "OpticalResult" r JOIN "OpticalKey" k ON k.id=r."keyId"
+  LEFT JOIN "PublishedAnswerKey" p ON p.id=k."publicationId" LEFT JOIN "Publisher" pub ON pub.id=p."publisherId"
+  WHERE r."schoolId" IN (${Prisma.join(schools.map(s=>s.id))}) AND (r.snapshot->>'deletedAt') IS NULL
+    AND NOT EXISTS(SELECT 1 FROM "OpticalResult" n WHERE n."supersedesId"=r.id)
+  GROUP BY k.id,r."schoolId",p."examName",pub.name,p.grade ORDER BY MAX(r."createdAt") DESC LIMIT 5001`);
+ if(rows.length>5000)throw new SecurityError(422,'Rapor kataloğu 5.000 sınav/kurum ilişkisini aşıyor. Kurum kapsamını yöneticiyle daraltın.');
+ const exams=new Map<string,any>();for(const row of rows){const existing=exams.get(row.id);if(existing){existing.schoolIds.push(row.schoolId);existing.uploadCount+=Number(row.uploadCount);}else{const {schoolId,...exam}=row;exams.set(row.id,{...exam,uploadCount:Number(row.uploadCount),schoolIds:[schoolId]});}}
+ res.json({schools,exams:[...exams.values()]});
+}));
 resultRouter.get("/result-exams",wrap(async(req,res)=>{const schoolId=z.string().min(1).parse(req.query.schoolId);if(!await allowed(req,schoolId)){res.status(403).json({error:"Kurum erişimi yok."});return;}
  const rows=await withResultSnapshots(prisma,await prisma.opticalResult.findMany({where:{schoolId,nextRevision:null},omit:{snapshot:true},include:{key:{include:{publication:{select:{examName:true,publisher:{select:{name:true}}}}}}},orderBy:{createdAt:"desc"}}));
  const grouped=new Map<string,any>();for(const row of rows.filter(r=>!isDeleted(r.snapshot))){const snapshot=row.snapshot as any;const current=grouped.get(row.keyId);if(current){current.uploadCount++;continue;}grouped.set(row.keyId,{id:row.keyId,name:row.key.publication?.examName??snapshot.keyName,publisher:row.key.publication?.publisher?.name??"",createdAt:row.createdAt,uploadCount:1});}res.json([...grouped.values()]);

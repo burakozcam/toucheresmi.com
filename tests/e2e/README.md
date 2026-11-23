@@ -215,3 +215,16 @@ Kanıtlar `test-results/v137`; seed/token dosyaları paylaşılmaz. İş sonunda
 Aynı izole sentetik DB’de logo migration’ını uyguladıktan sonra `node --import tsx tests/e2e/v137-report-logo.cjs` çalışır. Yeni sahte kurum/sınav/diğer bayi fixture’ları oluşturur; logo kaydetme, kurum/sınav izolasyonu, gerçek PDF, devre dışı bırakma ve sonuç snapshot’ını koruma denetimleri yapar. Seed, `test-results/v137/report-logo/ui-seed.json` içindedir; paylaşılmaz.
 
 Web’i yerel4015 API ile build/start ve `v137-serve.cjs` ile API’yi başlattıktan sonra `python3 tests/e2e/v137-report-logo-ui.py` gerçek bayi arayüzünde yükleme/kaydetme/PDF indirme, mobil/tema ve kalıcılığı doğrular. `tests/v134.test.ts` geniş/dik/kare logoları ve hatalı görsel retlerini de içerir. Poppler çıktıları ve sentetik PDF’ler test-results altında; kullanıcının mevcut PDF’leri değiştirilmez. İş sonunda kendi servis/konteynerlerinizi durdurun.
+
+## v1.4.2: geçici PostgreSQL ve gerçek Chromium kabulü
+
+`tests/e2e/v142-env.cjs` yalnız **127.0.0.1:55452 / ks_v142_acceptance** adresini kabul eder; farklı bir `DATABASE_URL` ile çalışmayı reddeder. Üretim veritabanına bağlanmaz. Bu adreste ayrı, silinebilir bir PostgreSQL 16 test ortamı hazırlayın; mevcut migration zincirini yalnız bu test veritabanına uygulayın. Test ortamı parolası/kayıtları sentetiktir; üretim yapılandırmasına kopyalamayın. Yeni şema migration'ı yoktur.
+
+- `NEXT_PUBLIC_API_URL=http://localhost:4022 npm run build -w @optik/web`
+- `node tests/e2e/v142-browser.cjs`: yeni sentetik fixture'lar ve HTTP kontrolleri; ardından localhost API 4022 / Web 3122, Chromium masaüstü/tablet/mobil ve tema/menü/rapor/FMT/PDF/bayi dönüşü; kendi başlattığı sunucuları kapanışta sonlandırır.
+- `node --import tsx tests/e2e/v142-http.cjs`: yalnız yeni API kabulü; tek başına yerel geçici port açar ve kapatır.
+- `KS_QA_PROFILE=v142 node --import tsx tests/e2e/v132-security.cjs`: mevcut kapsamlı yetki/oturum/değerlendirme paketi aynı izole DB'de, 4024 portunda. 429 iş korumasından sonra yeniden gönderilen isteğin de kota sınırını aşamadığı doğrulanır; koruma gevşetilmez.
+- `KS_QA_PROFILE=v142 node --import tsx tests/e2e/v141-http.cjs`: öğrenci/veli/analiz/asistan/karne regresyonu aynı izole DB'de. Bu iki eski dosyada varsayılan v132/v141 test adresleri korunur; alternatif profil de sabit localhost adresidir.
+- `npm run check:static -- --with-build`: public ve derlenmiş Next statik dosyaları için salt okunur izin denetimi.
+
+Birim/regresyon: `npm test`. `test-results/v142` ekran görüntüleri, sentetik indirmeler ve JSON kabul kayıtlarını içerir. `ui-seed.json` **yalnız sentetik test oturumları** içerir, `.gitignore` kapsamındadır ve paylaşılmamalıdır. Tarayıcı testleri localhost dışındaki HTTP(S) isteklerini engeller. Test build'i üretim artifact'ı değildir. Çıktıları önceki sürüm test klasörleri veya gerçek kullanıcı dosyalarıyla karıştırmayın.

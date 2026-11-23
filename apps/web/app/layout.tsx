@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="tr" data-theme="light" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{__html: "try{document.documentElement.dataset.theme=localStorage.getItem('kurumsal-theme')==='dark'?'dark':'light';var p=localStorage.getItem('kurumsal-palette');if(['emerald-gold', 'pink-olive', 'navy-copper', 'burgundy-champagne', 'sapphire-silver', 'charcoal-turquoise', 'purple-lavender', 'forest-cream', 'petrol-coral', 'midnight-ice'].includes(p))document.documentElement.dataset.palette=p}catch(e){}"}}/></head>
+      <head><script dangerouslySetInnerHTML={{__html: "try{document.documentElement.dataset.theme=localStorage.getItem('kurumsal-theme')==='dark'?'dark':'light'}catch(e){}"}}/></head>
       <body><AnalyticsConsent/><VisitorTracker/><SplashScreen />{children}</body>
     </html>
   );

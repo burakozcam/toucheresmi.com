@@ -28,6 +28,7 @@ type User = {
   phone: string | null;
   active: boolean;
   createdAt: string;
+  lastLoginAt: string | null;
 };
 
 type MemberRow = {
@@ -39,6 +40,7 @@ type MemberRow = {
   phone: string | null;
   status: "PENDING" | "APPROVED" | "REJECTED" | "INACTIVE";
   createdAt: string;
+  lastLoginAt?: string | null;
 };
 
 export default function RegistrationRequests({ token }: { token: string }) {
@@ -224,7 +226,7 @@ export default function RegistrationRequests({ token }: { token: string }) {
         <div className="member-table-wrap">
           <table className="member-table">
             <thead>
-              <tr><th>Ad Soyad</th><th>E-posta</th><th>Kayıt Tarihi</th><th>Onay Durumu</th><th>İşlemler</th></tr>
+              <tr><th>Ad Soyad</th><th>E-posta</th><th>Kayıt Tarihi</th><th>Son Giriş</th><th>Onay Durumu</th><th>İşlemler</th></tr>
             </thead>
             <tbody>
               {rows.map((row) => {
@@ -234,6 +236,7 @@ export default function RegistrationRequests({ token }: { token: string }) {
                     <td data-label="Ad Soyad"><strong>{row.firstName} {row.lastName}</strong>{row.phone && <small>{row.phone}</small>}</td>
                     <td data-label="E-posta">{row.email}</td>
                     <td data-label="Kayıt Tarihi"><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("tr-TR")}</time></td>
+                    <td data-label="Son Giriş">{row.lastLoginAt?<time dateTime={row.lastLoginAt}>{new Date(row.lastLoginAt).toLocaleString("tr-TR",{timeZone:"Europe/Istanbul",dateStyle:"short",timeStyle:"medium"})}</time>:row.kind==="request"?"—":"Giriş kaydı yok"}</td>
                     <td data-label="Onay Durumu"><span className={`registration-status status-${row.status.toLowerCase()}`}>{statusLabels[row.status]}</span></td>
                     <td data-label="İşlemler">
                       <div className="member-actions">

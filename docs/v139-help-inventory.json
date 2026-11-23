@@ -86,7 +86,7 @@
     },
     {
       "file": "panel/dealer-management.tsx",
-      "controls": 23
+      "controls": 24
     },
     {
       "file": "panel/dealer-status.tsx",
@@ -110,7 +110,7 @@
     },
     {
       "file": "panel/exam-results.tsx",
-      "controls": 22
+      "controls": 28
     },
     {
       "file": "panel/exam-template-picker.tsx",
@@ -127,6 +127,10 @@
     {
       "file": "panel/file-management.tsx",
       "controls": 27
+    },
+    {
+      "file": "panel/floating-panel.tsx",
+      "controls": 0
     },
     {
       "file": "panel/fmt-bulk-upload.tsx",
@@ -162,6 +166,10 @@
     },
     {
       "file": "panel/fmt-suggestions.tsx",
+      "controls": 2
+    },
+    {
+      "file": "panel/fmt-workspace.tsx",
       "controls": 2
     },
     {
@@ -218,7 +226,7 @@
     },
     {
       "file": "panel/page.tsx",
-      "controls": 23
+      "controls": 25
     },
     {
       "file": "panel/password-setup.tsx",
@@ -366,14 +374,14 @@
     },
     {
       "file": "theme-toggle.tsx",
-      "controls": 3
+      "controls": 1
     },
     {
       "file": "human-verification.tsx",
       "controls": 1
     }
   ],
-  "total": 781,
+  "total": 790,
   "needsLabelReview": [
     "pdf-duzenleyici-editor-1"
   ]

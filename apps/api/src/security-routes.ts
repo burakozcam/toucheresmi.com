@@ -31,8 +31,15 @@ async function challengedUser(token: string, purpose: string) {
   if (!user?.active || claims.role !== user.role || claims.credentialVersion !== credentialVersion(user.passwordHash) || user.role === "DEALER" && !user.dealer?.active) throw new SecurityError(401, "Hesap etkin değil veya şifresi değişmiş.");
   return user;
 }
-async function logCompletedLogin(id:string){
- try{await prisma.auditLog.create({data:{actorUserId:id,actorName:id,action:"AUTH_LOGIN_SUCCESS",targetType:"User",targetId:id,summary:"Kimlik doğrulama tamamlandı ve oturum oluşturuldu."}});}catch{console.error("Completed login audit could not be recorded");}
+async function completedSession(user:any,q:express.Request,options:{trustedDeviceId?:string}={}){
+ return prisma.$transaction(async tx=>{
+  const current=await tx.user.findUniqueOrThrow({where:{id:user.id}});
+  if(!current.active||current.passwordHash!==user.passwordHash||current.role!==user.role||current.twoFactorEnabled!==user.twoFactorEnabled)throw new SecurityError(401,"Hesap değişmiş. Yeniden giriş yapın.");
+  const result=await issueSession(current,q,options,tx);
+  await tx.user.update({where:{id:user.id},data:{lastLoginAt:new Date()}});
+  await tx.auditLog.create({data:{actorUserId:user.id,actorName:user.id,action:"AUTH_LOGIN_SUCCESS",targetType:"User",targetId:user.id,summary:"Kimlik doğrulama tamamlandı ve oturum oluşturuldu."}});
+  return result;
+ },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
 }
 export async function completePasswordLogin(user: any, q: express.Request, r: express.Response) {
   if (user.role === "DEALER") { const dealer = user.dealerId ? await prisma.dealer.findUnique({ where: { id: user.dealerId } }) : null; if (!dealer?.active) throw new SecurityError(401, "Bayi hesabı etkin değil."); }
@@ -40,10 +47,9 @@ export async function completePasswordLogin(user: any, q: express.Request, r: ex
   if (user.twoFactorEnabled) {
     const token = cookieToken(q), trusted = token && /^[A-Za-z0-9_-]{43}$/.test(token) ? await prisma.trustedDevice.findUnique({ where: { tokenHash: hash(token) } }) : null;
     if (!trusted || trusted.userId !== user.id || trusted.revokedAt || +trusted.expiresAt <= Date.now() || trusted.credentialVersion !== credentialVersion(user.passwordHash)) { r.json({ mfaRequired: true, setupRequired: false, challengeToken: challenge(user, false) }); return; }
-    const result = await issueSession(user, q, { trustedDeviceId: trusted.id });
-    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }); await logCompletedLogin(user.id);r.json(result); return;
+    r.json(await completedSession(user,q,{trustedDeviceId:trusted.id}));return;
   }
-  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });const result=await issueSession(user,q);await logCompletedLogin(user.id);r.json(result);
+  r.json(await completedSession(user,q));
 }
 securityRouter.use("/api/security", (_q, r, n) => { r.setHeader("Cache-Control", "private, no-store"); r.setHeader("Referrer-Policy", "no-referrer"); n(); });
 securityRouter.use("/api/security/mfa", new RequestLimiter(12, 10 * 60_000, 10_000, "mfa").middleware());
@@ -126,6 +132,16 @@ securityRouter.delete("/api/security/sessions/:id", requireAuth, wrap(async (q, 
 securityRouter.delete("/api/security/devices/:id", requireAuth, wrap(async (q, r) => {
   if (q.user!.actorAdminId) throw new SecurityError(403, "Temsil oturumunda kullanılamaz.");
   await prisma.trustedDevice.updateMany({ where: { id: String(q.params.id), userId: q.user!.id }, data: { revokedAt: new Date() } }); r.status(204).end();
+}));
+// Use the preserved parent bearer, even if the short-lived dealer session has expired.
+securityRouter.post("/api/security/impersonation/end",requireAuth,wrap(async(q,r)=>{
+ if(q.user!.role!=="SUPER_ADMIN"||q.user!.actorAdminId)throw new SecurityError(403,"Asıl yönetici oturumu gerekir.");
+ await prisma.$transaction(async tx=>{
+  await tx.$queryRaw`SELECT "id" FROM "AuthSession" WHERE "id"=${q.user!.sessionId} FOR UPDATE`;
+  const sessions=await tx.authSession.findMany({where:{parentSessionId:q.user!.sessionId,actorAdminId:q.user!.id,revokedAt:null},select:{id:true,userId:true}});
+  await tx.authSession.updateMany({where:{parentSessionId:q.user!.sessionId,actorAdminId:q.user!.id,revokedAt:null},data:{revokedAt:new Date()}});
+  for(const session of sessions){const effective=await tx.user.findUnique({where:{id:session.userId},select:{dealerId:true}});await tx.auditLog.create({data:{actorUserId:q.user!.id,actorName:q.user!.id,action:"IMPERSONATION_END",targetType:"Dealer",targetId:effective?.dealerId,summary:JSON.stringify({sessionId:session.id,effectiveUserId:session.userId,dealerId:effective?.dealerId})}});}
+ });r.json({message:"Bayi geçişi sonlandırıldı."});
 }));
 securityRouter.post("/api/security/logout", requireAuth, wrap(async (q, r) => {
   await prisma.authSession.updateMany({ where: { OR: [{ id: q.user!.sessionId, userId: q.user!.id }, { parentSessionId: q.user!.sessionId, actorAdminId: q.user!.id }] }, data: { revokedAt: new Date() } });

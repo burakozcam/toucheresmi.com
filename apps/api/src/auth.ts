@@ -32,6 +32,7 @@ export async function requireAuth(request: AuthenticatedRequest, response: Respo
       if (!device || device.userId !== user.id || device.revokedAt || +device.expiresAt <= Date.now() || device.credentialVersion !== session.credentialVersion) { response.status(401).json({ error: "Güvenilir cihaz izni sonlandırıldı." }); return; }
     }
     if (session.actorAdminId) {
+      if(typeof claims.dealerId!=="string"||claims.dealerId!==user.dealerId){await prisma.authSession.updateMany({where:{id:session.id},data:{revokedAt:new Date()}});response.status(401).json({error:"Temsil edilen bayi kapsamı değişti. Geçişi yeniden başlatın."});return;}
       const [actor, parent] = await Promise.all([prisma.user.findUnique({ where: { id: session.actorAdminId } }), prisma.authSession.findUnique({ where: { id: session.parentSessionId ?? "__none__" } })]);
       if (user.role !== "DEALER" || !actor?.active || actor.role !== "SUPER_ADMIN" || !actor.twoFactorEnabled || !parent || parent.actorAdminId || parent.role !== "SUPER_ADMIN" || parent.userId !== actor.id || parent.revokedAt || +parent.expiresAt <= Date.now() || parent.credentialVersion !== credentialVersion(actor.passwordHash) || !parent.mfaVerifiedAt && !parent.trustedDeviceId) { response.status(401).json({ error: "Temsil oturumu sonlandı." }); return; }
       if (parent.trustedDeviceId) {

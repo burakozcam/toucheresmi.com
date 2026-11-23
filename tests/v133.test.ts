@@ -58,7 +58,7 @@ test("v133 temsil oturumu yönetici cihazı iptal/süre sonu/yanlış sahiplik v
  prisma.user.findUnique=(async({where}:any)=>where.id==='admin'?actor:dealer)as any;
  prisma.authSession.findUnique=(async({where}:any)=>where.id==='child'?child:parent)as any;
  prisma.trustedDevice.findUnique=(async()=>device)as any;
- const token=jwt.sign({jti:'child',role:'DEALER',credentialVersion:version},env.JWT_SECRET,{subject:'dealer',expiresIn:'1m'});
+ const token=jwt.sign({jti:'child',dealerId:'d',role:'DEALER',credentialVersion:version},env.JWT_SECRET,{subject:'dealer',expiresIn:'1m'});
  async function check(){let status=200,allowed=false;await requireAuth({header:()=>`Bearer ${token}`}as any,{status(n:number){status=n;return this;},json(){}}as any,(e?:any)=>{if(e)throw e;allowed=true;});return{status,allowed};}
  try{
   assert.deepEqual(await check(),{status:200,allowed:true});

@@ -1,3 +1,12 @@
+# v1.4.2 · 2026-11-23 · yerel geliştirme, READY FOR STAGING
+
+- Ana sayfa açıklaması/sırası, daha geniş mevcut animasyonlar; yapay başlık ve üst renk seçici kaldırıldı. İşaretli renk bölgesinin referansı yok; bu madde kısmen açık.
+- Açılır kategori menüsü, URL/geçmiş ve kaydedilmemiş değişiklik uyarıları; yayınevi sınav kartları ve sınav → kurum → rapor alanı.
+- Tek FMT yönetim/paylaşım alanı, eski bağlantı uyumu, belirgin dönüştürücü/paylaşım/PDF kartları ve ortak soldan işlem hizası.
+- Mevcut Son Giriş alanının atomik kaydı ve Türkiye saatiyle kullanıcı listesinde gösterimi.
+- URL'ye token koymadan aynı sekmede bayi portalına tam yetkili geçiş; gerçek aktör/bayi denetimi, imzalı bayi kapsamı ve asıl oturuma dönüş.
+- 312 birim/regresyon, 21 yeni HTTP, 22 güvenlik, 19 öğrenci/analiz ve 25 Chromium kontrolü geçti. Yeni migration/bağımlılık veya canlı işlem yok. Ayrıntılar ve açıklar: [v142 raporu](docs/v142-release-report.md).
+
 # v1.4.1 · 2026-11-22 · yerel geliştirme, BLOCKED
 
 - Öğrenciye özel deterministik Türkçe asistan; ortak Analizim, kanıta dayalı kazanım haritası, hafif rekor/gelişim karşılaması ve ihtiyatlı uyarılar. Hesap ve kişisel kodla giriş; harici LLM yok.

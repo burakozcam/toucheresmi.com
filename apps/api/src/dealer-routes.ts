@@ -59,8 +59,10 @@ admin.post("/dealers/:id/users", wrap(async (q, r) => {
 admin.post("/dealers/:id/impersonate", wrap(async (q, r) => {
   const parent = await assertFreshAdmin(q.user!);
   const session = await prisma.$transaction(async tx => { await assertFreshAdmin(q.user!, tx);
+    await tx.$queryRaw`SELECT "id" FROM "AuthSession" WHERE "id"=${parent.id} FOR UPDATE`;
     const target = await tx.user.findFirst({ where: { dealerId: String(q.params.id), role: "DEALER", active: true, mustChangePassword: false, dealer: { active: true } }, orderBy: { createdAt: "asc" } });
     if (!target) throw new SecurityError(404, "Etkin ve şifresi kurulmuş bayi kullanıcısı bulunamadı.");
+    await tx.authSession.updateMany({where:{parentSessionId:parent.id,actorAdminId:q.user!.id,revokedAt:null},data:{revokedAt:new Date()}});
     const issued = await issueSession(target, q, { actorAdminId: q.user!.id, parentSessionId: parent.id, expiresAt: new Date(Math.min(Date.now() + 15 * 60_000, +parent.expiresAt)) }, tx);
     await activity(tx, { ...q.user!, dealerId: target.dealerId }, "IMPERSONATION_START");
     await tx.auditLog.create({ data: { actorUserId: q.user!.id, actorName: q.user!.id, action: "IMPERSONATION_START", targetType: "Dealer", targetId: target.dealerId } }); return issued;

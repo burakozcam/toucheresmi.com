@@ -79,7 +79,7 @@ app.use((request:AuthenticatedRequest,response,next)=>{
   if(!request.user)return;
   const route=request.route?.path;if(typeof route!=='string')return;
   const targetId=Object.values(request.params).find((v):v is string=>typeof v==='string')??null;
-  void recordAudit(request.user.actorAdminId??request.user.id,`${method} ${route}`,response.statusCode<400?'SERVER_SUCCESS':'SERVER_FAILURE',targetId,`Sunucu işlemi ${response.statusCode<400?'tamamlandı':'başarısız'} (HTTP ${response.statusCode}).`);
+  void recordAudit(request.user.actorAdminId??request.user.id,`${method} ${route}`,response.statusCode<400?'SERVER_SUCCESS':'SERVER_FAILURE',targetId,JSON.stringify({message:`Sunucu işlemi ${response.statusCode<400?'tamamlandı':'başarısız'} (HTTP ${response.statusCode}).`,...(request.user.actorAdminId?{actorAdminId:request.user.actorAdminId,effectiveUserId:request.user.id,dealerId:request.user.dealerId}: {})}));
  });next();
 });
 
@@ -759,6 +759,7 @@ app.get(
           phone: true,
           active: true,
           createdAt: true,
+          lastLoginAt: true,
         },
         orderBy: { createdAt: "desc" },
       });

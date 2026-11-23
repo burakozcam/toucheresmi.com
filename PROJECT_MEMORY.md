@@ -1,6 +1,6 @@
 # Kurumsal Sınav — Proje hafızası
 
-Son güncelleme: 22 Kasım 2026 · v1.4.1 yerel çalışma · **BLOCKED**, bütün kapsamıyla READY değil. Son rapor: `docs/v141-release-report.md`; güvenlik/dağıtım: `docs/v141-security-and-deployment.md`. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
+Son güncelleme: 23 Kasım 2026 · v1.4.2 yerel çalışma · **READY FOR STAGING**, üretim yayını yapılmadı. Son rapor: `docs/v142-release-report.md`; dağıtım kontrolü: `DEPLOYMENT.md` v1.4.2 bölümü. 1. maddedeki işaretli renk alanı referanssız olduğundan KISMEN; v1.4.1 bağımlılık uyarıları ve canlı ortam kabulü açıktır. Bu dosya sır içermez. Yeni oturumda önce bu dosyayı, `git status` çıktısını ve son sürüm raporunu okuyun.
 
 ## Amaç ve mimari
 
@@ -204,3 +204,12 @@ Mevcut plan/kurulum: Veridyen cPanel + Passenger, Neon PostgreSQL, ayrı Next We
 - Yerel saf hesap benchmark’ı5.000×90 için genel analiz yaklaşık81ms, süreç RSS yaklaşık121MB; DB/ağ/Passenger/eşzamanlı toplu PDF kapasitesi değildir. Gerçek düşük güçlü cihaz ve bütün koşullu ekran/tema kabulü açık.
 
 - Teslimde 4021 API/3121 Web portları kapalı; yalnız ks-v141-test durduruldu. Sentetik kayıtlar/kanıtlar ve kullanıcının önceki PDF klasörleri silinmedi.
+
+
+## v1.4.2 yerel teslim notu
+
+Başlangıç commit'i `45c3013aaa2484991c3218993cddf2875284f961`; commit/push/deploy yok. Ana sayfa sıralaması ve animasyon boyutları, ortak tema/işlem stilleri, açılır kategori menüsü ve URL geçmişi, rapor çalışma alanı, birleşik FMT, Son Giriş ve bayi temsil dönüşü yerelde tamamlandı. Eski FMT adresleri `fmt-upload` alanına açılır. Okul yöneticisinin yalnız anonim analiz yetkisi korunur. Rapor kataloğu 1.000 kurum/5.000 ilişki sınırını açık hatayla bildirir; öğrenci snapshot'larını katalogda taşımaz.
+
+Temsil tokenı artık URL'ye verilmez; imzalı bayi kimliği içerir ve her istekte asıl/çocuk AuthSession doğrulanır. Asıl oturum sekmeye özel sessionStorage'da tutulur. `/api/security/impersonation/end` yalnız asıl yöneticiyle çocukları iptal eder. Normal çıkış asıl oturum/çocukları sonlandırır. Mevcut bayi iş yetkileri korunur; temsil sırasında şifre/MFA/hesap sahibinin güvenlik ayarları değiştirilemez.
+
+Yeni migration veya paket yükseltmesi yok. Mevcut 26 migration yalnız yeni geçici localhost PostgreSQL'de doğrulandı. 312/312 birim/regresyon, 21/21 yeni HTTP, 22/22 kapsamlı güvenlik, 19/19 öğrenci/analiz ve 25/25 Chromium kontrolü geçti. Test çıktıları `test-results/v142` altında; sentetik oturum fixture'ı paylaşılmaz. Kaynak public ve `.next/static` izin kontrolü `npm run check:static -- --with-build`; canlı izin ve HTTP 200 kontrolü ayrıca operatör tarafından yapılır. Yerel build localhost:4022 içindir, canlıya kopyalanmaz. Ayrıntılar `docs/v142-release-report.md` içindedir.
