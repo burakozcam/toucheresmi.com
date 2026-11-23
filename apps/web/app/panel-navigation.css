@@ -34,9 +34,36 @@
 }
 .dashboard .sidebar .side-nav .nav-category { font-weight: 700; color: var(--blue); }
 .dashboard .sidebar .side-nav .nav-submenu {
-  margin: 8px 0 2px 10px;
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-left: 10px;
+  visibility: hidden;
+  transition: grid-template-rows 260ms ease, visibility 0s 260ms;
+}
+.dashboard .sidebar .side-nav .nav-submenu[data-expanded="true"] {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition-delay: 0s;
+}
+.dashboard .sidebar .side-nav .nav-submenu-clip {
+  min-height: 0;
+  overflow: hidden;
   padding-left: 8px;
   border-left: 1px solid color-mix(in srgb, var(--blue) 30%, var(--line));
+}
+.dashboard .sidebar .side-nav .nav-submenu-list { padding-block: 8px 2px; }
+.dashboard .sidebar .side-nav .nav-submenu .nav-item {
+  opacity: 0;
+  transform: translateY(-5px);
+  /* Override the shared button transition: only opening rows are staggered.
+     CSS transitions reverse from their current position on rapid toggles. */
+  transition: opacity 90ms ease, transform 90ms ease,
+    background-color 200ms ease, color 200ms ease, border-color 200ms ease !important;
+}
+.dashboard .sidebar .side-nav .nav-submenu[data-expanded="true"] .nav-item {
+  opacity: 1;
+  transform: none;
+  transition-delay: var(--submenu-delay), var(--submenu-delay), 0s, 0s, 0s !important;
 }
 .dashboard .sidebar .side-nav .nav-submenu .nav-item + .nav-item { margin-top: 6px; }
 .dashboard .sidebar .side-nav .nav-item > .nav-item-icon { color: var(--muted); }
@@ -60,19 +87,10 @@
 }
 .dashboard .sidebar .side-nav .nav-item[aria-current="page"] > .nav-item-icon { color: currentColor; }
 @media (hover: hover) and (pointer: fine) {
-  .dashboard .sidebar .side-nav :is(.nav-category, .nav-item):hover {
+  .dashboard .sidebar .side-nav :is(.nav-category:not([data-current="true"]), .nav-item:not([aria-current="page"])):hover {
     background: color-mix(in srgb, var(--blue) 12%, var(--surface));
     border-color: var(--blue);
     color: var(--blue);
-  }
-  .dashboard .sidebar .side-nav .nav-category[data-current="true"]:hover {
-    background: color-mix(in srgb, var(--menu-green) 20%, var(--surface));
-    border-color: color-mix(in srgb, var(--menu-green) 80%, var(--ink));
-    color: var(--menu-green);
-  }
-  .dashboard .sidebar .side-nav .nav-item[aria-current="page"]:hover {
-    background: color-mix(in srgb, var(--blue) 20%, var(--surface));
-    border-color: color-mix(in srgb, var(--blue) 80%, var(--ink));
   }
 }
 .dashboard .sidebar .side-nav :is(.nav-category, .nav-item):focus-visible {
@@ -80,5 +98,8 @@
   outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .dashboard .sidebar .side-nav .nav-category-arrow { transition: none; }
+  .dashboard .sidebar .side-nav :is(.nav-category-arrow, .nav-submenu),
+  .dashboard .sidebar .side-nav .nav-submenu[data-expanded] .nav-item {
+    transition: none !important;
+  }
 }

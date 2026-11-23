@@ -25,7 +25,7 @@ import ReleaseMark from "../release-mark";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent } from "react";
 import ThemeToggle from "../theme-toggle";
 import PasswordSetup from "./password-setup";
 const PdfEditor=dynamic(()=>import("../pdf-duzenleyici/editor"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
@@ -271,8 +271,24 @@ export default function PanelPage() {
           {groups.map((group,index)=>{
             const items=group.items.filter(item=>canOpenSection(item.id,authUser?.role??'',authUser?.canPlayGames)).filter(item=>!(item.id==='answer-keys'&&authUser?.role==='SUPER_ADMIN'));
             const expanded=!!openGroups[group.title];
-            const current=items.some(item=>item.id===section);
-            return items.length>0&&<div className="nav-group" key={group.title}><button data-help-id="panel-page-5xx" className="nav-category" data-current={current} aria-expanded={expanded} aria-controls={`nav-category-${index}`} onClick={()=>setOpenGroups(v=>({...v,[group.title]:!expanded}))}>{group.title}<span className="nav-category-arrow" aria-hidden="true"><UiIcon name="chevron-right"/></span></button><div className="nav-submenu" id={`nav-category-${index}`} hidden={!expanded}>{items.map(item=><button data-help-id="panel-page-4" data-operation={item.id} aria-current={section===item.id?'page':undefined} className={`nav-item ${section===item.id?'nav-active':''}`} key={item.id} onClick={()=>{setSection(item.id);setMenuOpen(false);}}><span className="nav-item-icon" aria-hidden="true"><UiIcon name={item.id}/></span>{item.label}{item.id==='contact-inbox'&&unreadMessages>0&&<span className="sidebar-unread-badge">{unreadMessages} yeni</span>}{item.id==='contact-inbox'&&unreadMessageError&&<span className="sidebar-unread-error" title={unreadMessageError}>!</span>}</button>)}</div></div>;
+            const current=items.some(item=>canonicalSection(item.id)===section);
+            return items.length>0&&<div className="nav-group" key={group.title}>
+              <button data-help-id="panel-page-5xx" data-help-label="Menü bölümünü aç veya kapat" className="nav-category" data-current={current} aria-expanded={expanded} aria-controls={`nav-category-${index}`} onClick={()=>setOpenGroups(v=>({...v,[group.title]:!v[group.title]}))}>
+                {group.title}<span className="nav-category-arrow" aria-hidden="true"><UiIcon name="chevron-right"/></span>
+              </button>
+              <div className="nav-submenu" id={`nav-category-${index}`} data-expanded={expanded} aria-hidden={!expanded} inert={!expanded}>
+                <div className="nav-submenu-clip"><div className="nav-submenu-list">
+                  {items.map((item,itemIndex)=>{
+                    const selected=canonicalSection(item.id)===section;
+                    return <button data-help-id="panel-page-4" data-operation={item.id} aria-current={selected?'page':undefined} className={`nav-item ${selected?'nav-active':''}`} style={{'--submenu-delay':`${itemIndex*20}ms`} as CSSProperties} key={item.id} onClick={()=>{setSection(item.id);setMenuOpen(false);}}>
+                      <span className="nav-item-icon" aria-hidden="true"><UiIcon name={item.id}/></span>{item.label}
+                      {item.id==='contact-inbox'&&unreadMessages>0&&<span className="sidebar-unread-badge">{unreadMessages} yeni</span>}
+                      {item.id==='contact-inbox'&&unreadMessageError&&<span className="sidebar-unread-error" title={unreadMessageError}>!</span>}
+                    </button>;
+                  })}
+                </div></div>
+              </div>
+            </div>;
           })}
         </nav>
         <div className="sidebar-bottom"><div className="support-box"><span>?</span><p><strong>Yardıma mı ihtiyacınız var?</strong><small>Destek ekibimize ulaşın.</small></p><Link data-help-id="panel-page-5x" href="/contact#contact-form"><UiIcon name="arrow-right"/></Link></div><ActionButton data-help-id="panel-page-5" intent="neutral" className="logout-button" onClick={()=>void logout()}><span>↪</span> Güvenli çıkış yap</ActionButton></div>

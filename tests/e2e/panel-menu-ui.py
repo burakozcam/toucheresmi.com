@@ -41,19 +41,22 @@ with sync_playwright() as p:
  category=page.locator('.nav-category').first;selected=page.locator('[data-operation=results]')
  for theme in ['light','dark']:
   page.evaluate('(t)=>document.documentElement.dataset.theme=t',theme)
+  page.wait_for_timeout(320)
   category.scroll_into_view_if_needed();category.press('Enter');expect(category).to_have_attribute('aria-expanded','false')
   page.mouse.move(900,50);page.wait_for_timeout(230);closed=state(category)
   category.hover();page.wait_for_timeout(230);hover=state(category);stable(closed,hover)
-  assert closed['bg']!=hover['bg'] and closed['border']!=hover['border']
+  assert closed['bg']==hover['bg'] and closed['border']==hover['border'] and closed['color']==hover['color'],(theme,closed,hover)
   category.press('Space');expect(category).to_have_attribute('aria-expanded','true')
   page.mouse.move(900,50);page.wait_for_timeout(230);opened=state(category);active=state(selected)
+  expect(category).to_have_css('color','rgb(35, 128, 86)' if theme=='light' else 'rgb(115, 213, 164)')
+  expect(selected).to_have_css('color','rgb(46, 101, 197)' if theme=='light' else 'rgb(139, 178, 255)')
   assert opened['bg']==closed['bg'] and opened['color']!=active['color'] and opened['border']!=active['border']
   transform=category.locator('.nav-category-arrow').evaluate('(e)=>getComputedStyle(e).transform')
   matrix=[float(v) for v in transform.removeprefix('matrix(').removesuffix(')').split(',')]
   assert all(abs(a-b)<.001 for a,b in zip(matrix,[0,1,-1,0,0,0])),transform
   assert category.locator('.nav-category-arrow').evaluate('(e)=>getComputedStyle(e).transitionDuration')=='0.2s'
   selected.hover();page.wait_for_timeout(230);selected_hover=state(selected);stable(active,selected_hover)
-  assert selected_hover['bg']!=active['bg'] and selected_hover['border']!=active['border']
+  assert selected_hover['bg']==active['bg'] and selected_hover['border']==active['border'] and selected_hover['color']==active['color']
   inactive=page.locator('[data-operation=exam]');inactive.scroll_into_view_if_needed();page.mouse.move(900,50);page.wait_for_timeout(230);normal=state(inactive)
   inactive.hover();page.wait_for_timeout(230);over=state(inactive);stable(normal,over)
   assert over['bg']!=normal['bg'] and over['border']!=normal['border']
@@ -76,6 +79,37 @@ with sync_playwright() as p:
   category.scroll_into_view_if_needed();page.mouse.move(900,50);page.wait_for_timeout(230)
   page.locator('.sidebar').screenshot(path=str(out/f'menu-{theme}.png'))
   check(theme+': tüm satırlar kutulu; hover/press kaydırmaz; yeşil ve mavi kalıcı; ok ve klavye odağı çalışır')
+ # Height interpolation and row ordering use real browser frames, including reversal.
+ submenu=page.locator('#'+category.get_attribute('aria-controls'))
+ category.click();page.wait_for_timeout(320)
+ expect(submenu).to_have_attribute('inert','')
+ assert submenu.bounding_box()['height']==0
+ category.focus();page.keyboard.press('Tab');expect(page.locator('.nav-category').nth(1)).to_be_focused()
+ frames=category.evaluate('''async e=>{
+  const list=document.getElementById(e.getAttribute('aria-controls')),rows=[...list.querySelectorAll('.nav-item')],samples=[];
+  e.click();const start=performance.now();
+  await new Promise(resolve=>{function frame(now){samples.push({ms:now-start,height:list.getBoundingClientRect().height,opacity:rows.map(r=>+getComputedStyle(r).opacity)});if(now-start<330)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame);});
+  return {samples,delays:rows.map(r=>getComputedStyle(r).transitionDelay),finalHeight:list.getBoundingClientRect().height};
+ }''')
+ assert any(0<s['height']<frames['finalHeight'] for s in frames['samples']),frames
+ assert any(s['opacity'][0]>s['opacity'][-1] for s in frames['samples']),frames
+ assert frames['samples'][-1]['opacity']==[1]*6,frames
+ assert [float(d.split(',')[0].rstrip('s')) for d in frames['delays']]==[i*.02 for i in range(6)],frames
+ (out/'submenu-animation.json').write_text(json.dumps(frames,indent=2))
+ category.evaluate('''async e=>{for(let i=0;i<7;i++){e.click();await new Promise(r=>setTimeout(r,25));}}''')
+ page.wait_for_timeout(320);expect(category).to_have_attribute('aria-expanded','false');assert submenu.bounding_box()['height']==0
+ category.press('Enter');page.keyboard.press('Tab');expect(page.locator('[data-operation=exam]')).to_be_focused()
+ page.wait_for_timeout(320);assert submenu.bounding_box()['height']==frames['finalHeight']
+ check('260 ms yükseklik geçişi ve 20 ms sıralı satırlar gerçek karelerde görüldü; hızlı ters geçiş takılmadı, kapalı liste odak almaz')
+ # The longest category still completes within 300 ms (11 rows, last delay 200 ms).
+ longest=page.locator('.nav-category').filter(has_text=re.compile('^Yönetim$'))
+ if longest.get_attribute('aria-expanded')=='true':longest.click()
+ page.wait_for_timeout(320)
+ long_list=page.locator('#'+longest.get_attribute('aria-controls'))
+ longest.click();page.wait_for_timeout(310)
+ for row in long_list.locator('.nav-item').all():expect(row).to_have_css('opacity','1')
+ assert long_list.locator('.nav-item').last.evaluate('(e)=>getComputedStyle(e).transitionDelay.split(",")[0]')=='0.2s'
+ longest.click()
  # Keep one category open for compact populated-screen screenshots.
  for button in page.locator('.nav-category').all()[1:]:
   if button.get_attribute('aria-expanded')=='true':button.click()
@@ -149,6 +183,24 @@ with sync_playwright() as p:
   expect(page.locator('.nav-category[data-current=true]')).to_have_count(1)
   category.scroll_into_view_if_needed();page.locator('.sidebar').screenshot(path=str(out/f'menu-selection-{theme}.png'))
  check('Birden fazla açık grupta yalnız seçili ekranın ana başlığı yeşil; bölüm değişince eski başlık kurumsal maviye döner')
+ for path in ['/panel?section=fmt-upload','/panel?section=fmt-edit']:
+  page.goto(base+path);expect(page.locator('.fmt-workspace')).to_be_visible()
+  fmt_category=page.locator('.nav-category').filter(has_text=re.compile('^FMT Yönetimi$'));fmt_selected=page.locator('[data-operation=fmt-upload]')
+  expect(fmt_category).to_have_attribute('data-current','true');expect(fmt_selected).to_have_attribute('aria-current','page')
+  expect(page.locator('.nav-category[data-current=true]')).to_have_count(1)
+  page.reload();expect(fmt_selected).to_have_attribute('aria-current','page');expect(fmt_category).to_have_attribute('data-current','true')
+  expect(fmt_category).to_have_css('color','rgb(35, 128, 86)');expect(fmt_selected).to_have_css('color','rgb(46, 101, 197)')
+  page.mouse.move(900,50);page.wait_for_timeout(320);green=state(fmt_category);blue=state(fmt_selected)
+  fmt_category.hover();page.wait_for_timeout(230);assert state(fmt_category)['bg']==green['bg']
+  fmt_selected.hover();page.wait_for_timeout(230);assert state(fmt_selected)['bg']==blue['bg']
+  category.click();expect(fmt_category).to_have_attribute('data-current','true');expect(category).to_have_attribute('data-current','false')
+  page.mouse.move(900,50);page.wait_for_timeout(320);page.locator('.sidebar').screenshot(path=str(out/('fmt-menu-'+path.split('=')[1]+'.png')))
+ check('FMT ekranı ve eski doğrudan FMT adresi yenilemede yeşil başlık/mavi satırı korur; başka menüyü açmak seçimi değiştirmez')
+ nav('pdf-tools');expect(page.locator('.pdf-primary-tools')).to_be_visible()
+ for label in ['PDF Düzenleyici','Dosya ve Sayfa İşlemleri','Belge Tarama']:
+  expect(page.locator('.pdf-primary-tools strong').get_by_text(label,exact=True)).to_be_visible()
+ for button in page.locator('.side-nav .nav-category, .side-nav .nav-item').all():assert button.evaluate('(e)=>getComputedStyle(e).textTransform')=='none'
+ check('Ana/alt menü ve PDF araç başlıklarında doğal Türkçe yazım; FMT, PDF ve TXT kısaltmaları korunur')
  auth('DEALER');desk=page.locator('.exam-results-desk');expect(desk.locator('.evaluation-card')).to_have_count(2)
  assert 'Sentetik İzmir Kurumu' not in desk.inner_text()
  response=context.request.get(api+'/api/optical/result-exams/exam-a?schoolId=school-b',headers={'Authorization':'Bearer '+tokens['DEALER']});assert response.status==403
@@ -160,8 +212,13 @@ with sync_playwright() as p:
  response=context.request.get(api+'/api/optical/result-catalog',headers={'Authorization':'Bearer '+tokens['SCHOOL_ADMIN']});assert response.status==403
  response=context.request.get(api+'/api/exam-analytics/?schoolId=school-b&keyId=exam-a',headers={'Authorization':'Bearer '+tokens['SCHOOL_ADMIN']});assert response.status==404
  check('Okul yöneticisinin eski analiz erişimi korunur; kişisel sonuç/rapor ve başka kurum erişimi açılmaz')
- page.emulate_media(reduced_motion='reduce');assert float(page.locator('.nav-category-arrow').first.evaluate('(e)=>getComputedStyle(e).transitionDuration').rstrip('s')) <= .00001
- check('Hareket azaltma tercihi ok animasyonunu kapatır')
+ auth('SUPER_ADMIN')
+ page.emulate_media(reduced_motion='reduce')
+ category.click();expect(category).to_have_attribute('aria-expanded','false');assert submenu.bounding_box()['height']==0
+ category.click();expect(category).to_have_attribute('aria-expanded','true')
+ for el in [category.locator('.nav-category-arrow'),submenu,*submenu.locator('.nav-item').all()]:assert el.evaluate('(e)=>getComputedStyle(e).transitionDuration')=='0s'
+ expect(selected).to_have_css('opacity','1');assert submenu.bounding_box()['height']>0
+ check('Hareket azaltma tercihinde yükseklik, satır ve ok geçişleri atlanır')
  page.goto(base+'/');hero=page.locator('.real-report-hero');expect(hero).to_be_visible()
  page.locator('.splash-screen').wait_for(state='hidden') if page.locator('.splash-screen').count() else None
  image=hero.locator('img');expect(image).to_have_attribute('src','/home-report.webp?v=2')

@@ -44,6 +44,7 @@ app.get('/api/account',requireAuth,(q,r)=>{const u=users[q.user.id];r.json({id:u
 app.get('/api/admin/contact-messages',requireAuth,(_,r)=>r.json({items:[],unreadCount:0}));
 app.get('/api/dealer-policy',requireAuth,(_,r)=>r.json({dailyUsed:0,dailyStudentLimit:null,dailyRemaining:null,restrictedRegions:false}));
 app.get('/api/optical/result-exams/:id/report-logo',requireAuth,(_,r)=>r.json({image:null,enabled:false,canEdit:false}));
+app.get('/api/optical/fmt-library',requireAuth,(_,r)=>r.json([]));
 app.use('/api/optical',requireAuth,(q,r,next)=>['SUPER_ADMIN','DEALER'].includes(q.user.role)?next():r.status(403).json({error:'Bu işlem için yetkiniz yok.'}),resultRouter);
 app.use('/api/exam-analytics',examAnalyticsRouter);
 app.use((e,q,r,next)=>{console.error(e.message);r.status(e.status||500).json({error:e.message});});
