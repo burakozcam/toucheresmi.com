@@ -17,6 +17,6 @@
     "modules": "/home/kurums22/nodevenv/api/22/lib/node_modules",
     "node": "/home/kurums22/nodevenv/api/22/bin/node"
   },
-  "documentRoots": ["/home/kurums22/web", "/home/kurums22/api", "/home/kurums22/public_html"],
+  "documentRoots": ["/home/kurums22/web", "/home/kurums22/api"],
   "protectedFiles": []
 }

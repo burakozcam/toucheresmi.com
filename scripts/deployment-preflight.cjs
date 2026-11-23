@@ -4,7 +4,8 @@ const errors=[];const need=name=>{if(!environment[name]?.trim())errors.push(`${n
 function https(name){need(name);try{const u=new URL(environment[name]);if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash)throw Error();}catch{errors.push(`${name} geçerli, kimlik bilgisi içermeyen HTTPS URL olmalı`);}}
 if(nodeMajor!==22)errors.push('Üretim ön kontrolü Node.js 22 gerektirir');
 https('NEXT_PUBLIC_API_URL');https('WEB_ORIGIN');
-for(const name of ['DATABASE_URL','JWT_SECRET','TXT_STORAGE_KEY','MFA_ENCRYPTION_KEY','STORAGE_DIR'])need(name);
+// TXT_STORAGE_KEY is optional in the API; its existing JWT_SECRET fallback stays unchanged.
+for(const name of ['DATABASE_URL','JWT_SECRET','MFA_ENCRYPTION_KEY','STORAGE_DIR'])need(name);
 if(environment.RATE_LIMIT_STORE!=='database')errors.push('RATE_LIMIT_STORE database olmalı');
 if(environment.RECAPTCHA_ENABLED!=='true')errors.push('Üretim reCAPTCHA etkin olmalı');
 const v2=environment.RECAPTCHA_VERSION==='v2';

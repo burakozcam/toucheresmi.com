@@ -11,12 +11,12 @@ function fixture(t) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'ks-veridyen-')); t.after(() => fs.rmSync(home, { recursive: true, force: true }));
   const sourceRoot = path.join(home, 'github-deploy'), stateRoot = path.join(sourceRoot, '.manual-deploy'); fs.mkdirSync(stateRoot, { recursive: true, mode: 0o700 });
   const c = { user: os.userInfo().username, homeRoot: home, sourceRoot, stateRoot, dependencyPolicy: 'reuse-live-exact', protectedFiles: [], documentRoots: [] };
-  const versions = { next: '15.5.28', react: '19.1.0', express: '5.1.0', '@prisma/client': '6.19.3' }, lock = { packages: {} };
+  const versions = { next: '15.5.29', react: '19.3.1', 'react-dom': '19.3.1', express: '5.1.0', '@prisma/client': '6.19.3' }, lock = { packages: {} };
   for (const app of ['web', 'api']) {
     const root = path.join(home, app), modules = path.join(home, 'nodevenv', app, '22/lib/node_modules'); fs.mkdirSync(modules, { recursive: true }); fs.mkdirSync(root);
     c[app] = { appRoot: app, root, modules, node: process.execPath }; c.documentRoots.push(root);
     fs.symlinkSync(app === 'web' ? path.relative(root, modules) : modules, path.join(root, 'node_modules'));
-    const dependencies = app === 'web' ? { next: '^15.3.2', react: '^19.1.0' } : { express: '^5.1.0', '@prisma/client': '^6.8.2' };
+    const dependencies = app === 'web' ? { next: '15.5.29', react: '^19.1.0', 'react-dom': '^19.1.0' } : { express: '^5.1.0', '@prisma/client': '^6.8.2' };
     data(path.join(root, 'package.json'), { version: '1.4.2', scripts: { start: 'node custom.cjs' }, dependencies });
     data(path.join(sourceRoot, 'apps', app, 'package.json'), { version: '1.4.3', dependencies });
     for (const name of Object.keys(dependencies)) { data(path.join(modules, name, 'package.json'), { name, version: versions[name] }); lock.packages['node_modules/' + name] = { version: versions[name] }; }
@@ -85,7 +85,7 @@ test('state/source/live overlap and source inside HTTP document root are rejecte
   f.c.stateRoot = path.join(f.c.sourceRoot, '.manual-deploy'); f.c.documentRoots = [f.home]; f.rewrite(); A.throws(() => d.loadConfig(f.configFile, f.c.sourceRoot), /HTTP/);
 });
 test('Next patch mismatch is diagnosed before any native stop or live installation', t => {
-  const f = fixture(t); data(path.join(f.c.web.modules, 'next/package.json'), { version: '15.5.29' }); A.throws(() => d.checkDependencies(f.c), /canlı=15.5.29, lock=15.5.28/); A.deepEqual(f.calls, []); A.equal(oldApi(f.c), 'old-api');
+  const f = fixture(t); data(path.join(f.c.web.modules, 'next/package.json'), { version: '15.5.28' }); A.throws(() => d.checkDependencies(f.c), /canlı=15.5.28, lock=15.5.29/); A.deepEqual(f.calls, []); A.equal(oldApi(f.c), 'old-api');
 });
 test('API dependency and generated Prisma schema mismatches fail closed', t => {
   const f = fixture(t); data(path.join(f.c.api.modules, 'express/package.json'), { version: '4.0.0' }); A.throws(() => d.checkDependencies(f.c), /express/);
@@ -203,4 +203,36 @@ test('runtime trace validates split app files and rejects build-only or unmapped
 test('ready/rollback journal cannot redirect source or backup paths outside private state', async t => {
   const f = fixture(t), tx = transaction(f); tx.release = f.c.web.root; await A.rejects(d.rollback(f.c, tx, f.io), /özel durum/); A.equal(f.calls.length, 0);
   tx.release = path.dirname(tx.backup); tx.backup = f.c.api.root; await A.rejects(d.rollback(f.c, tx, f.io), /Yedek özel/); A.equal(f.calls.length, 0);
+});
+test('Next 15.5.29 and existing React/React DOM 19.3.1 pass without changing nodevenv', t => {
+  const f = fixture(t), before = ['web', 'api'].map(a => d.inventory(f.c[a].modules));
+  A.equal(d.checkDependencies(f.c).next, '15.5.29');
+  A.equal(d.resolvePackage(f.c.web.modules, 'react').version, '19.3.1');
+  A.equal(d.resolvePackage(f.c.web.modules, 'react-dom').version, '19.3.1');
+  A.deepEqual(['web', 'api'].map(a => d.inventory(f.c[a].modules)), before); A.deepEqual(f.calls, []);
+});
+test('preflight permits absent/empty TXT_STORAGE_KEY while still requiring JWT_SECRET', t => {
+  const f = fixture(t), { validateEnvironment } = require('../scripts/deployment-preflight.cjs');
+  const originalJWT = f.apiEnv.JWT_SECRET; delete f.apiEnv.TXT_STORAGE_KEY;
+  const records = Object.fromEntries(['web', 'api'].map(a => [a, d.selected(f.c, f.io.get(), a)]));
+  const env = d.environment(f.c, records); A.equal(env.JWT_SECRET, originalJWT); A.equal(env.TXT_STORAGE_KEY, undefined);
+  A.deepEqual(validateEnvironment({ ...env, TXT_STORAGE_KEY: '' }, 22), []);
+  A(validateEnvironment({ ...env, JWT_SECRET: '', TXT_STORAGE_KEY: 'synthetic-txt' }, 22).includes('JWT_SECRET eksik'));
+});
+test('public_html alias stays intact and real Web htaccess stays protected during deploy', async t => {
+  const actual = require('../scripts/deploy/veridyen.json'); A.deepEqual(actual.documentRoots, ['/home/kurums22/web', '/home/kurums22/api']);
+  const f = fixture(t), alias = path.join(f.home, 'public_html'); fs.symlinkSync('web', alias);
+  d.loadConfig(f.configFile, f.c.sourceRoot); const r = ready(f);
+  A(r.protected.some(p => p.path === path.join(f.c.web.root, '.htaccess')));
+  A(r.protected.every(p => !p.path.startsWith(alias + '/')));
+  await d.deploy(f.c, f.io); A.equal(fs.readlinkSync(alias), 'web');
+  A.equal(fs.readFileSync(path.join(alias, '.htaccess'), 'utf8'), 'original web rules');
+});
+test('repository lock pins Next and required Next packages to 15.5.29, retaining React 19.3.1', t => {
+  const lock = require('../package-lock.json'), web = require('../apps/web/package.json'), next = lock.packages['node_modules/next'];
+  A.equal(web.dependencies.next, '15.5.29'); A.equal(lock.packages['apps/web'].dependencies.next, '15.5.29'); A.equal(next.version, '15.5.29');
+  const required = { '@next/env': next.dependencies['@next/env'], ...Object.fromEntries(Object.entries(next.optionalDependencies).filter(([name]) => name.startsWith('@next/swc-'))) };
+  for (const [name, version] of Object.entries(required)) { A.equal(version, '15.5.29'); const pkg = lock.packages['node_modules/' + name]; A.equal(pkg.version, version); A(pkg.resolved.endsWith('-15.5.29.tgz')); A.match(pkg.integrity, /^sha512-/); }
+  A.equal(lock.packages['node_modules/react'].version, '19.3.1'); A.equal(lock.packages['node_modules/react-dom'].version, '19.3.1');
+  const f = fixture(t), apps = f.io.get().map(a => ({ ...a, selectedVersion: '22.23.3' })); A.equal(d.selected(f.c, apps, 'web').selectedVersion, '22.23.3');
 });

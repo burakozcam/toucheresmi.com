@@ -1,5 +1,18 @@
 # v1.4.3 — Veridyen ayrı Web/API ve nodevenv uyumluluk raporu
 
+## Next 15.5.29 takip düzeltmesi — 23 Kasım 2026
+
+- `apps/web/package.json` ve lock workspace kaydı Next **15.5.29**'a tam sabitlendi. Next, `@next/env` ve sekiz SWC paketinin adres/bütünlük kayıtları npm'in resmi registry metadata'sıyla güncellendi. Next dışındaki tüm lock paket kayıtlarının önceki hâliyle aynı kaldığı doğrulandı; React/React DOM **19.3.1** ve PostCSS dahil diğer bağımlılıklar yükseltilmedi.
+- Mevcut `reuse-live-exact` nodevenv politikası değişmedi. 15.5.29 eşleşmesi kabul edilir; farklı sürüm ve hazırlıktan sonra değişen nodevenv yine reddedilir. Canlıya paket kurulumu eklenmedi. Bildirilen Node 22.23.3 için kayıt seçimi testi de geçer; gerçek sunucuda çalıştırılmadı.
+- Ön kontrolde `TXT_STORAGE_KEY` zorunluluğu kaldırıldı. API config ve TXT arşiv kodu değiştirilmedi; mevcut `JWT_SECRET` fallback'i ve JWT zorunluluğu korundu.
+- Gerçek ve örnek Veridyen yapılandırmasında yalnız gerçek Web/API document root'ları bırakıldı. `public_html → web` bağlantısı ayrı bir kök olarak zorunlu değil; bağlantı ve gerçek Web yolundaki `.htaccess` korunur.
+- **İlgili testler: 39/39 geçti.** Ek kabul: gerçek sürüm çiftleri/nodevenv değişmezliği, Next alt paket/lock tutarlılığı, opsiyonel TXT anahtarı/JWT zorunluluğu ve public_html symlink'iyle gerçek yol koruması. İzole kopyada `npm ci --dry-run --ignore-scripts --offline` başarılı; o kopyada node_modules oluşmadı. Script syntax, JSON ve diff kontrolleri geçti.
+- Hover, API config/TXT fallback ve mevcut Next ürün yapılandırması checksum'ları aynı. Yerel kurulu modüller değiştirilmedi; bu yüzden eski yerel Next ile yanıltıcı bir üretim build'i çalıştırılmadı. Sunucu bağlantısı, deploy/rollback, DB değişikliği ve Git commit/push yapılmadı.
+
+Bu takipte değişen dosyalar: `apps/web/package.json`, `package-lock.json`, `scripts/deployment-preflight.cjs`, iki `scripts/deploy/*.json` yapılandırması, `tests/v143-deployment.test.cjs` ve bu iki dağıtım belgesi. Aşağıdaki ilk uyumluluk çalışmasının sürüm/build sayıları tarihsel kanıttır; güncel pin ve ön kontrol bilgisi bu bölümdür.
+
+---
+
 23 Kasım 2026, Europe/Istanbul. Bu takip çalışması yalnız dağıtım uyumluluğudur. **Hover, Next ürün yapılandırması, API işlevleri ve paket sürümleri bu turda değiştirilmedi.** Sunucuya bağlanılmadı; gerçek `prepare`/`deploy`/`rollback`, CloudLinux komutu, Git commit/push/pull veya veritabanı işlemi çalıştırılmadı.
 
 ## Sonuç ve uygulanabilir yöntem
