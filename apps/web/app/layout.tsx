@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { SITE_NAME, SITE_URL, SITE_VERSION } from "../config/site";
 import "./styles.css";
+import "./interactions.css";
 import AnalyticsConsent from "./analytics-consent";
 import VisitorTracker from "./visitor-tracker";
 import SplashScreen from "./splash-screen";

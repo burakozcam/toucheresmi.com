@@ -2,7 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Avoid child-process module resolution failures on Node 22 build hosts.
-  experimental: { webpackBuildWorker: false },
+  experimental: {
+    webpackBuildWorker: false,
+    ...(process.env.KS_LOW_RESOURCE_BUILD === "1"
+      ? { cpus: 1, workerThreads: false, memoryBasedWorkersCount: false }
+      : {}),
+  },
   async headers() {
     const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").origin;
     const csp = ["default-src 'self'", "base-uri 'self'", "object-src 'none'", "frame-ancestors 'self'", "form-action 'self'", "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.google.com https://www.gstatic.com https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com"+(process.env.NODE_ENV!=="production"?" 'unsafe-eval'":""), "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "font-src 'self' data: https://fonts.gstatic.com", `img-src 'self' data: blob: ${apiOrigin}`, `connect-src 'self' ${apiOrigin} https://www.google.com https://www.gstatic.com https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com`, "worker-src 'self' blob:", "frame-src 'self' blob: https://www.google.com https://recaptcha.google.com https://maps.google.com https://challenges.cloudflare.com"].join("; ");

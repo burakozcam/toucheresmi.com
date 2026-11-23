@@ -19,3 +19,6 @@ apps/web/public/araclar/pdf-text-recovery.js
 
 # Python browser-test cache
 __pycache__/
+
+# Private manual deployment builds, Passenger/env backups and transaction journals.
+.manual-deploy/

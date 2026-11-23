@@ -1,3 +1,4 @@
+import { API_VERSION } from './version';
 import {examAnalyticsRouter} from './exam-analytics-routes';
 import {auditMaintenanceRouter} from './audit-maintenance';
 import {exportRouter} from './exports';
@@ -288,7 +289,8 @@ app.use('/api/exam-analytics',examAnalyticsRouter);
 app.use("/api/admin", publisherTransferRouter);
 
 app.get("/api/health", (_request, response) => {
-  response.json({ status: "ok" });
+  response.setHeader("Cache-Control", "no-store");
+  response.json({ status: "ok", version: API_VERSION });
 });
 
 

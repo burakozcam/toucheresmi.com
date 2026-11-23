@@ -1,0 +1,63 @@
+/* v1.4.3 — shared pointer/keyboard feedback. No dimensions or event handlers change.
+   Individual translate composes with positioned controls' existing transforms. */
+:root {
+  --interaction-shadow: 0 5px 14px #172b4d24;
+  --interaction-tint: #2e65c50c;
+}
+:root[data-theme="dark"] {
+  --interaction-shadow: 0 5px 16px #0006;
+  --interaction-tint: #8bb2ff12;
+}
+:is(button, input[type="button"], input[type="submit"], input[type="reset"], .button,
+    a.workspace-choice, a.pdf-center-card, a.catalog-book, .interactive-card) {
+  transition: translate 200ms ease, background-color 200ms ease, color 200ms ease,
+    border-color 200ms ease, box-shadow 200ms ease !important;
+}
+:is(button, input[type="button"], input[type="submit"], input[type="reset"], .button,
+    a.workspace-choice, a.pdf-center-card, a.catalog-book, .interactive-card):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+/* A single duration overrides older component-specific transition shorthands. */
+:is(.workspace-choice, .evaluation-card)[aria-pressed="true"] {
+  --interaction-selection: inset 3px 0 var(--blue);
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(button, input[type="button"], input[type="submit"], input[type="reset"], .button,
+      a.workspace-choice, a.pdf-center-card, a.catalog-book, .interactive-card):where(:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"])):hover {
+    translate: 0 -2px;
+    /* Inset tint preserves intent/selected colors and gradients in both themes. */
+    box-shadow: var(--interaction-shadow), inset 0 0 0 999px var(--interaction-tint),
+      var(--interaction-selection, 0 0 transparent) !important;
+  }
+}
+:is(button, input[type="button"], input[type="submit"], input[type="reset"], .button,
+    a.workspace-choice, a.pdf-center-card, a.catalog-book, .interactive-card):where(:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"])):active {
+  translate: 0 1px;
+  box-shadow: inset 0 1px 3px #0002 !important;
+}
+:is(button, input[type="button"], input[type="submit"], input[type="reset"], .button,
+    .interactive-card):is(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
+  translate: none;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(button, input[type="button"], input[type="submit"], input[type="reset"], .button,
+      a.workspace-choice, a.pdf-center-card, a.catalog-book, .interactive-card) {
+    translate: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  /* Keep positional button transforms (for example password toggles) intact. */
+  :is(.calendar-day, .whatsapp-float, .catalog-book, .solution-cards article, .answer-key-card):hover {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  :is(.brand, .showcase-book) :is(.brand-mark, .book-cover),
+  .theme-toggle .theme-icon {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "user": "kurums22",
+  "homeRoot": "/home/kurums22",
+  "sourceRoot": "/home/kurums22/github-deploy",
+  "stateRoot": "/home/kurums22/github-deploy/.manual-deploy",
+  "selectorBin": "cloudlinux-selector",
+  "dependencyPolicy": "reuse-live-exact",
+  "web": {
+    "appRoot": "web",
+    "root": "/home/kurums22/web",
+    "modules": "/home/kurums22/nodevenv/web/22/lib/node_modules",
+    "node": "/home/kurums22/nodevenv/web/22/bin/node"
+  },
+  "api": {
+    "appRoot": "api",
+    "root": "/home/kurums22/api",
+    "modules": "/home/kurums22/nodevenv/api/22/lib/node_modules",
+    "node": "/home/kurums22/nodevenv/api/22/bin/node"
+  },
+  "documentRoots": ["/home/kurums22/web", "/home/kurums22/api", "/home/kurums22/public_html"],
+  "protectedFiles": []
+}
