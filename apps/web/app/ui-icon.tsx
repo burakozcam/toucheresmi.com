@@ -3,6 +3,7 @@ const paths:Record<string,string>={
  bolt:"M13 2 4 14h7l-1 8 10-13h-7l0-7Z",
  cpu:"M6 6h12v12H6V6Zm3 3h6v6H9V9ZM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4",
  "arrow-right":"M4 12h16m-6-6 6 6-6 6",
+ "chevron-right":"m9 5 7 7-7 7",
  "arrow-left":"M20 12H4m6-6-6 6 6 6",
  tick:"m5 12 4 4L19 6",
  arrow:"M5 19 19 5M5 5h14v14",

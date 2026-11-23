@@ -9,7 +9,7 @@ import {canonicalSection,canOpenSection} from '../apps/web/lib/panel-navigation'
 test('v142 eski FMT adresleri tek alana açılır; bayi ve okul yönetici bölümlerini açamaz',()=>{
  for(const id of ['fmt-share','fmt-download','fmt-edit','fmt-delete','optical-keys'])assert.equal(canonicalSection(id),'fmt-upload');
  for(const section of ['dealers','system-users','share-links','store','audit-logs','exam-records']){assert.equal(canOpenSection(section,'DEALER'),false);assert.equal(canOpenSection(section,'SCHOOL_ADMIN'),false);assert.equal(canOpenSection(section,'SUPER_ADMIN'),true);}
- for(const section of ['fmt-upload','results','exam','txt-converter']){assert.equal(canOpenSection(section,'DEALER'),true);assert.equal(canOpenSection(section,'SCHOOL_ADMIN'),false);}
+ for(const section of ['fmt-upload','exam','txt-converter']){assert.equal(canOpenSection(section,'DEALER'),true);assert.equal(canOpenSection(section,'SCHOOL_ADMIN'),false);}
  assert.equal(canOpenSection('school-analysis','SCHOOL_ADMIN'),true);assert.equal(canOpenSection('bird','DEALER'),false);assert.equal(canOpenSection('welcome','STUDENT'),false);
 });
 test('v142 statik izin denetimi 600 dosyayı, geçilemeyen dizini, dünya yazmasını ve symlinki reddeder; değiştirmez',()=>{

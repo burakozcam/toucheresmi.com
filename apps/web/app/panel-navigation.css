@@ -1,0 +1,84 @@
+/* Sidebar-only surfaces: only the current category stays green, the current screen blue. */
+.dashboard .sidebar .side-nav {
+  --menu-green: #238056;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--blue) 3%, var(--surface));
+}
+:root[data-theme="dark"] .dashboard .sidebar .side-nav { --menu-green: #73d5a4; }
+.dashboard .sidebar .side-nav .nav-group {
+  margin: 0 0 8px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+}
+.dashboard .sidebar .side-nav .nav-group:last-child { margin-bottom: 0; }
+.dashboard .sidebar .side-nav :is(.nav-category, .nav-item) {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--blue) 4%, var(--surface));
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-transform: none;
+  /* Override the shared button lift/press without changing other controls. */
+  translate: none !important;
+  transform: none;
+  box-shadow: none !important;
+}
+.dashboard .sidebar .side-nav .nav-category { font-weight: 700; color: var(--blue); }
+.dashboard .sidebar .side-nav .nav-submenu {
+  margin: 8px 0 2px 10px;
+  padding-left: 8px;
+  border-left: 1px solid color-mix(in srgb, var(--blue) 30%, var(--line));
+}
+.dashboard .sidebar .side-nav .nav-submenu .nav-item + .nav-item { margin-top: 6px; }
+.dashboard .sidebar .side-nav .nav-item > .nav-item-icon { color: var(--muted); }
+.dashboard .sidebar .side-nav .nav-category-arrow {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: currentColor;
+  transition: transform 200ms ease;
+}
+.dashboard .sidebar .side-nav .nav-category-arrow .ui-icon { width: 16px; height: 16px; }
+.dashboard .sidebar .side-nav .nav-category[data-current="true"] {
+  background: color-mix(in srgb, var(--menu-green) 13%, var(--surface));
+  border-color: var(--menu-green);
+  color: var(--menu-green);
+}
+.dashboard .sidebar .side-nav .nav-category[aria-expanded="true"] .nav-category-arrow { transform: rotate(90deg); }
+.dashboard .sidebar .side-nav .nav-item[aria-current="page"] {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.dashboard .sidebar .side-nav .nav-item[aria-current="page"] > .nav-item-icon { color: currentColor; }
+@media (hover: hover) and (pointer: fine) {
+  .dashboard .sidebar .side-nav :is(.nav-category, .nav-item):hover {
+    background: color-mix(in srgb, var(--blue) 12%, var(--surface));
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+  .dashboard .sidebar .side-nav .nav-category[data-current="true"]:hover {
+    background: color-mix(in srgb, var(--menu-green) 20%, var(--surface));
+    border-color: color-mix(in srgb, var(--menu-green) 80%, var(--ink));
+    color: var(--menu-green);
+  }
+  .dashboard .sidebar .side-nav .nav-item[aria-current="page"]:hover {
+    background: color-mix(in srgb, var(--blue) 20%, var(--surface));
+    border-color: color-mix(in srgb, var(--blue) 80%, var(--ink));
+  }
+}
+.dashboard .sidebar .side-nav :is(.nav-category, .nav-item):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard .sidebar .side-nav .nav-category-arrow { transition: none; }
+}
