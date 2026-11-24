@@ -1,105 +1,29 @@
-/* Sidebar-only surfaces: only the current category stays green, the current screen blue. */
-.dashboard .sidebar .side-nav {
-  --menu-green: #238056;
-  padding: 8px;
-  border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--line));
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--blue) 3%, var(--surface));
-}
-:root[data-theme="dark"] .dashboard .sidebar .side-nav { --menu-green: #73d5a4; }
-.dashboard .sidebar .side-nav .nav-group {
-  margin: 0 0 8px;
-  padding: 5px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: var(--surface);
-}
-.dashboard .sidebar .side-nav .nav-group:last-child { margin-bottom: 0; }
-.dashboard .sidebar .side-nav :is(.nav-category, .nav-item) {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--line));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--blue) 4%, var(--surface));
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.5;
-  text-transform: none;
-  /* Override the shared button lift/press without changing other controls. */
-  translate: none !important;
-  transform: none;
-  box-shadow: none !important;
-}
-.dashboard .sidebar .side-nav .nav-category { font-weight: 700; color: var(--blue); }
-.dashboard .sidebar .side-nav .nav-submenu {
-  display: grid;
-  grid-template-rows: 0fr;
-  margin-left: 10px;
-  visibility: hidden;
-  transition: grid-template-rows 260ms ease, visibility 0s 260ms;
-}
-.dashboard .sidebar .side-nav .nav-submenu[data-expanded="true"] {
-  grid-template-rows: 1fr;
-  visibility: visible;
-  transition-delay: 0s;
-}
-.dashboard .sidebar .side-nav .nav-submenu-clip {
-  min-height: 0;
-  overflow: hidden;
-  padding-left: 8px;
-  border-left: 1px solid color-mix(in srgb, var(--blue) 30%, var(--line));
-}
-.dashboard .sidebar .side-nav .nav-submenu-list { padding-block: 8px 2px; }
-.dashboard .sidebar .side-nav .nav-submenu .nav-item {
-  opacity: 0;
-  transform: translateY(-5px);
-  /* Override the shared button transition: only opening rows are staggered.
-     CSS transitions reverse from their current position on rapid toggles. */
-  transition: opacity 90ms ease, transform 90ms ease,
-    background-color 200ms ease, color 200ms ease, border-color 200ms ease !important;
-}
-.dashboard .sidebar .side-nav .nav-submenu[data-expanded="true"] .nav-item {
-  opacity: 1;
-  transform: none;
-  transition-delay: var(--submenu-delay), var(--submenu-delay), 0s, 0s, 0s !important;
-}
-.dashboard .sidebar .side-nav .nav-submenu .nav-item + .nav-item { margin-top: 6px; }
-.dashboard .sidebar .side-nav .nav-item > .nav-item-icon { color: var(--muted); }
-.dashboard .sidebar .side-nav .nav-category-arrow {
-  display: inline-flex;
-  flex: 0 0 auto;
-  color: currentColor;
-  transition: transform 200ms ease;
-}
-.dashboard .sidebar .side-nav .nav-category-arrow .ui-icon { width: 16px; height: 16px; }
-.dashboard .sidebar .side-nav .nav-category[data-current="true"] {
-  background: color-mix(in srgb, var(--menu-green) 13%, var(--surface));
-  border-color: var(--menu-green);
-  color: var(--menu-green);
-}
-.dashboard .sidebar .side-nav .nav-category[aria-expanded="true"] .nav-category-arrow { transform: rotate(90deg); }
-.dashboard .sidebar .side-nav .nav-item[aria-current="page"] {
-  background: var(--blue-soft);
-  border-color: var(--blue);
-  color: var(--blue);
-}
-.dashboard .sidebar .side-nav .nav-item[aria-current="page"] > .nav-item-icon { color: currentColor; }
-@media (hover: hover) and (pointer: fine) {
-  .dashboard .sidebar .side-nav :is(.nav-category:not([data-current="true"]), .nav-item:not([aria-current="page"])):hover {
-    background: color-mix(in srgb, var(--blue) 12%, var(--surface));
-    border-color: var(--blue);
-    color: var(--blue);
-  }
-}
-.dashboard .sidebar .side-nav :is(.nav-category, .nav-item):focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 2px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .dashboard .sidebar .side-nav :is(.nav-category-arrow, .nav-submenu),
-  .dashboard .sidebar .side-nav .nav-submenu[data-expanded] .nav-item {
-    transition: none !important;
-  }
-}
+/* One dark sidebar. Color communicates the current section and screen. */
+.dashboard .sidebar{--menu-green:#79ddb1;--menu-blue:#a8cbff;background:#142237;color:#d9e3f2;border-right-color:#25374e;padding-inline:12px}
+.dashboard .sidebar .side-nav{padding:4px 0 12px;border:0;border-radius:0;background:transparent;scrollbar-color:#3a4b63 transparent}
+.dashboard .sidebar .side-nav .nav-group{margin:0;padding:2px 0;border:0;border-radius:0;background:transparent}
+.dashboard .sidebar .side-nav :is(.nav-category,.nav-item){display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:8px 10px;border:0;border-radius:6px;background:transparent;color:#d9e3f2;font-family:inherit;font-size:14px;font-weight:500;line-height:1.45;text-align:left;text-transform:none;translate:none!important;transform:none;box-shadow:none!important;cursor:pointer;transition:background-color 140ms ease,color 140ms ease!important}
+.dashboard .sidebar .side-nav .nav-category{font-weight:650;justify-content:flex-start}
+.dashboard .sidebar .side-nav :is(.nav-category-icon,.nav-item-icon){display:grid;place-items:center;flex:0 0 18px;width:18px;height:20px;color:#98abc4}
+.dashboard .sidebar .side-nav .nav-label{display:block;flex:1;width:auto;min-width:0;color:inherit;font-size:inherit;overflow-wrap:anywhere}
+.dashboard .sidebar .side-nav .nav-category-arrow{display:flex;flex:0 0 16px;margin-left:auto;color:#98abc4;transition:transform 160ms ease}
+.dashboard .sidebar .side-nav .nav-category-arrow .ui-icon{width:16px;height:16px}
+.dashboard .sidebar .side-nav .nav-category[aria-expanded=true] .nav-category-arrow{transform:rotate(90deg)}
+.dashboard .sidebar .side-nav .nav-submenu{display:grid;grid-template-rows:0fr;visibility:hidden;margin-left:18px;transition:grid-template-rows 200ms ease,visibility 0s 200ms}
+.dashboard .sidebar .side-nav .nav-submenu[data-expanded=true]{grid-template-rows:1fr;visibility:visible;transition-delay:0s}
+.dashboard .sidebar .side-nav .nav-submenu-clip{min-height:0;overflow:hidden;border-left:1px solid #31435b;padding-left:8px}
+.dashboard .sidebar .side-nav .nav-submenu-list{padding:3px 0 5px}
+.dashboard .sidebar .side-nav .nav-submenu .nav-item{opacity:0;transform:translateY(-4px);transition:opacity 80ms ease,transform 80ms ease,background-color 140ms ease,color 140ms ease!important}
+.dashboard .sidebar .side-nav .nav-submenu[data-expanded=true] .nav-item{opacity:1;transform:none;transition-delay:var(--submenu-delay),var(--submenu-delay),0s,0s!important}
+.dashboard .sidebar .side-nav .nav-submenu .nav-item+.nav-item{margin-top:2px}
+.dashboard .sidebar .side-nav .nav-category[data-current=true]{color:var(--menu-green);background:#1c3d39}
+.dashboard .sidebar .side-nav .nav-category[data-current=true] :is(.nav-category-icon,.nav-category-arrow){color:inherit}
+.dashboard .sidebar .side-nav .nav-item[aria-current=page]{color:var(--menu-blue);background:#233e61}
+.dashboard .sidebar .side-nav .nav-item[aria-current=page]>.nav-item-icon{color:inherit}
+@media(hover:hover) and (pointer:fine){.dashboard .sidebar .side-nav :is(.nav-category,.nav-item):hover{background:#2a3d55;color:#f1f5fc}.dashboard .sidebar .side-nav .nav-category[data-current=true]:hover{background:#245046;color:var(--menu-green)}.dashboard .sidebar .side-nav .nav-item[aria-current=page]:hover{background:#2c4e78;color:var(--menu-blue)}}
+.dashboard .sidebar .side-nav :is(.nav-category,.nav-item):focus-visible{outline:2px solid #9cc4ff;outline-offset:-2px}
+.dashboard .sidebar .sidebar-brand{color:#f1f5fc}.dashboard .sidebar .brand-light{color:#b5c4da}
+.dashboard .sidebar .sidebar-profile{background:transparent;color:#e0e9f7;border-color:#31435b}.dashboard .sidebar .sidebar-profile strong{color:#e0e9f7}.dashboard .sidebar .sidebar-profile small{color:#a5b6cf}
+.dashboard .sidebar .sidebar-bottom{border-color:#31435b}.dashboard .sidebar .support-box{background:#1d3048;color:#e0e9f7;border-color:#31435b}.dashboard .sidebar .support-box :is(strong,small){color:inherit}.dashboard .sidebar .logout-button{color:#d9e3f2;background:transparent;border-color:#31435b}
+.dashboard .sidebar .sidebar-resize{background:#25374e;color:#bbcee8;border-color:#3b506d}
+@media(prefers-reduced-motion:reduce){.dashboard .sidebar .side-nav :is(.nav-category-arrow,.nav-submenu),.dashboard .sidebar .side-nav .nav-submenu[data-expanded] .nav-item{transition:none!important}}

@@ -1,3 +1,29 @@
+# v1.4.5 · 2026-11-24 · yerel geliştirme
+
+### 1. Ana sayfadan çalışma planına geçiş
+
+Ana sayfanın ortasına renkli takvim animasyonu ve giriş gerektirmeyen `/calisma-plani` bağlantısı eklendi.
+
+### 2. Seviyeye uygun etkinlikler
+
+İlkokul, Ortaokul, Lise ve Özel seçimi; renkli/simgeli ders ve yaşam kartları, özel ad/renk/simge seçimi eklendi.
+
+### 3. Haftalık planlama ve tarayıcı kaydı
+
+30 dakikalık Pazartesi–Pazar takvimi, değiştirilebilir görünür saatler, sürükleme/taşıma/süre/düzenleme/silme, çakışma koruması, mobil gün sekmeleri ve yerel otomatik kayıt eklendi.
+
+### 4. İndirilebilir plan
+
+Tarayıcıda yatay A4 PDF, JPG ve gerçek düzenlenebilir `.xlsx` üretimi; Türkçe, uzun ad ve dolu hafta kontrolleri eklendi. Mevcut yerel kütüphaneler kullanılır.
+
+### 5. Manuel yayın ve sürüm doğrulaması
+
+Başarılı build sonrasında eski Next route cache geri alınabilir özel dizine ayrılır. `verify:release` canlı API sürümünü, `/panel` HTML'sindeki manifest JS adını ve gerçek JS içeriğini HTTP üzerinden doğrular. [Manuel yayın sırası ve dört aşamalı NPROC kaydı](docs/v145-manual-deployment.md) eklendi. Sürümler 1.4.5; bağımlılık yükseltmesi ve canlı işlem yok.
+
+### 6. Sol menüyü sadeleştirme
+
+Tek parça koyu kenar çubuğu, hizalı ikonlar, kompakt ve tam genişlikte tıklanabilir satırlar. Bulunulan ana bölüm yeşil, aktif alt ekran mavi kalır; başka bir menüyü açmak aktif bölümü değiştirmez. Hareket ettirmeyen hover/odak, hızlı kademeli açılış/kapanış ve azaltılmış hareket desteği korunur. Panel içerik alanı ve mevcut yetkiler korunur.
+
 # v1.4.2 · 2026-11-23 · yerel geliştirme, READY FOR STAGING
 
 - Ana sayfa açıklaması/sırası, daha geniş mevcut animasyonlar; yapay başlık ve üst renk seçici kaldırıldı. İşaretli renk bölgesinin referansı yok; bu madde kısmen açık.

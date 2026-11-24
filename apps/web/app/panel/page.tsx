@@ -274,14 +274,14 @@ export default function PanelPage() {
             const current=items.some(item=>canonicalSection(item.id)===section);
             return items.length>0&&<div className="nav-group" key={group.title}>
               <button data-help-id="panel-page-5xx" data-help-label="Menü bölümünü aç veya kapat" className="nav-category" data-current={current} aria-expanded={expanded} aria-controls={`nav-category-${index}`} onClick={()=>setOpenGroups(v=>({...v,[group.title]:!v[group.title]}))}>
-                {group.title}<span className="nav-category-arrow" aria-hidden="true"><UiIcon name="chevron-right"/></span>
+                <span className="nav-category-icon" aria-hidden="true"><UiIcon name={group.items[0].id}/></span><span className="nav-label">{group.title}</span><span className="nav-category-arrow" aria-hidden="true"><UiIcon name="chevron-right"/></span>
               </button>
               <div className="nav-submenu" id={`nav-category-${index}`} data-expanded={expanded} aria-hidden={!expanded} inert={!expanded}>
                 <div className="nav-submenu-clip"><div className="nav-submenu-list">
                   {items.map((item,itemIndex)=>{
                     const selected=canonicalSection(item.id)===section;
                     return <button data-help-id="panel-page-4" data-operation={item.id} aria-current={selected?'page':undefined} className={`nav-item ${selected?'nav-active':''}`} style={{'--submenu-delay':`${itemIndex*20}ms`} as CSSProperties} key={item.id} onClick={()=>{setSection(item.id);setMenuOpen(false);}}>
-                      <span className="nav-item-icon" aria-hidden="true"><UiIcon name={item.id}/></span>{item.label}
+                      <span className="nav-item-icon" aria-hidden="true"><UiIcon name={item.id}/></span><span className="nav-label">{item.label}</span>
                       {item.id==='contact-inbox'&&unreadMessages>0&&<span className="sidebar-unread-badge">{unreadMessages} yeni</span>}
                       {item.id==='contact-inbox'&&unreadMessageError&&<span className="sidebar-unread-error" title={unreadMessageError}>!</span>}
                     </button>;

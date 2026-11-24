@@ -54,6 +54,8 @@ function fixture(t) {
   put(path.join(c.source, 'apps/web/app/interactions.css'), '.card:hover { transform: scale(1.02) }');
   put(path.join(c.web.root, '.next/BUILD_ID'), 'old-web');
   put(path.join(c.web.root, '.next/static/old.js'), 'keep old chunk');
+  put(path.join(c.web.root, '.next/server/route-cache/APP_PAGE/arbitrary-old-hash/panel.html'), 'old cached panel');
+  put(path.join(c.web.root, '.next/server/route-cache/APP_PAGE/arbitrary-old-hash/panel.rsc'), 'old cached RSC');
   put(path.join(c.api.root, 'dist/src/server.js'), 'old-api');
   put(path.join(c.web.root, 'public/uploads/user.pdf'), 'nested user PDF');
   put(path.join(c.web.root, 'public/custom-user-file.pdf'), 'unknown user PDF');
@@ -80,6 +82,8 @@ function fixture(t) {
       for (const n of ['build-manifest.json', 'routes-manifest.json', 'required-server-files.json']) put(path.join(cwd, '.next', n), '{}');
       put(path.join(cwd, '.next/server/app/page.js'), 'new server');
       put(path.join(cwd, '.next/static/new.js'), 'new chunk');
+      put(path.join(cwd, '.next/app-build-manifest.json'), JSON.stringify({ pages: { '/panel/page': ['static/chunks/app/panel/page-new.js'] } }));
+      put(path.join(cwd, '.next/static/chunks/app/panel/page-new.js'), 'new panel chunk');
       put(path.join(cwd, '.next/cache/large-cache'), 'do not transfer');
     }
   }
@@ -232,4 +236,33 @@ test('actual child process failure is printed and produces a failed command', ()
 test('the real CLI refuses the local workspace without touching any server path', () => {
   const r = spawnSync(process.execPath, [path.resolve(__dirname, '../scripts/quick-deploy.cjs')], { encoding: 'utf8' });
   A.equal(r.status, 1); A.match(r.stderr, /yalnız \/home\/kurums22\/github-deploy/);
+});
+
+test('old APP_PAGE cache is quarantined after successful builds, independent of hash', t => {
+  const f = fixture(t);
+  const cache = path.join(f.c.web.root, '.next/server/route-cache');
+  d.deploy(f.c, (...args) => {
+    A.equal(read(path.join(cache, 'APP_PAGE/arbitrary-old-hash/panel.html')), 'old cached panel');
+    f.execute(...args);
+    if (args[0] === 'Web Next.js derlemesi') {
+      put(path.join(args[3], '.next/server/app/panel.html'), 'new panel HTML');
+      put(path.join(args[3], '.next/server/route-cache/new-build/entry'), 'new build cache');
+    }
+  });
+  A(!fs.existsSync(path.join(cache, 'APP_PAGE')));
+  A.equal(read(path.join(cache, 'new-build/entry')), 'new build cache');
+  A.equal(read(path.join(f.c.web.root, '.next/server/app/panel.html')), 'new panel HTML');
+  const root = path.join(f.c.source, '.quick-deploy-route-cache');
+  const saved = path.join(root, fs.readdirSync(root)[0]);
+  A.equal(read(path.join(saved, 'route-cache/APP_PAGE/arbitrary-old-hash/panel.rsc')), 'old cached RSC');
+  A.equal(JSON.parse(read(path.join(saved, 'restore.json'))).original, cache);
+  A.equal(fs.statSync(root).mode & 0o777, 0o700);
+});
+test('a symlink route cache is refused before artifact transfer', t => {
+  const f = fixture(t), cache = path.join(f.c.web.root, '.next/server/route-cache');
+  fs.renameSync(cache, path.join(f.home, 'external-cache'));
+  fs.symlinkSync(path.join(f.home, 'external-cache'), cache);
+  const before = f.before();
+  A.throws(() => d.deploy(f.c, f.execute), /hedefi symlink/);
+  A.deepEqual(f.before(), before);
 });
