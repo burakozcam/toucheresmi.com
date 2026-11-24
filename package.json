@@ -17,12 +17,13 @@
     "test:report": "node tests/build-test-report.cjs",
     "check:static": "node scripts/static-assets-preflight.cjs",
     "verify:release": "node scripts/verify-release.cjs",
-    "test:v145": "node --import tsx --test tests/study-plan.test.ts && node --test tests/quick-deploy.test.cjs tests/verify-release.test.cjs"
+    "test:v145": "node --import tsx --test tests/study-plan.test.ts && node --test tests/quick-deploy.test.cjs tests/verify-release.test.cjs",
+    "test:v146": "node --import tsx tests/e2e/v146-http.cjs"
   },
   "engines": {
     "node": ">=20.9"
   },
-  "version": "1.4.5",
+  "version": "1.4.6",
   "overrides": {
     "postcss": "^8.5.23",
     "deepmerge-ts": "^8.0.0"

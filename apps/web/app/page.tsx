@@ -44,6 +44,6 @@ export default async function Home() {
 
     <section className="institution-section" id="kurumlar"><div><p className="hero-tag">KURUMLARA ÖZEL</p><h2>Arkasında güçlü<br />bir sistem var.</h2><p>Birbiriyle koordineli çalışan değerlendirme, analiz, raporlama ve güvenlik modülleri. Karmaşık işlemler, sade bir kullanıcı deneyimi.</p><div className="hero-buttons"><Link className="button" href="/contact">Birlikte çalışalım <UiIcon name="arrow"/></Link><Link className="institution-login" href="/login">Kurum girişi <UiIcon name="arrow-right"/></Link></div></div><SystemArchitecture/></section>
     <AnnouncementDiscovery/><HelpDiscovery/><ScheduledShareDiscovery/><section className="home-tool-links" aria-label="Öğrenci araçları"><Link href="/sinav-takvimi"><span>01 / PLANLA</span><strong>Bir sonraki denemen<br /> ne zaman?</strong><small>Sınav takvimine git <UiIcon name="arrow"/></small></Link><Link href="/sinav-degerlendir"><span>02 / DEĞERLENDİR</span><strong>Cevapların elinde.<br /> Karneni oluştur.</strong><small>Sınav değerlendirmeyi aç <UiIcon name="arrow"/></small></Link><PdfDiscovery/></section>
-    <BlogPreview/><SiteFooter/>
+    <BlogPreview/><SiteFooter home/>
   </main>;
 }

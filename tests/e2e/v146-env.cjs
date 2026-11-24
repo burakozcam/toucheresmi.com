@@ -1,0 +1,3 @@
+const database='postgresql://ks146:synthetic-v146-local-only@127.0.0.1:55466/ks_v146_acceptance';
+if(process.env.DATABASE_URL&&process.env.DATABASE_URL!==database)throw Error('Exclusive v146 localhost database required');
+Object.assign(process.env,{NODE_ENV:'test',DATABASE_URL:database,JWT_SECRET:'v146-synthetic-session-secret-not-for-production',MFA_ENCRYPTION_KEY:'e6'.repeat(32),TXT_STORAGE_KEY:'v146-synthetic-storage-key-not-for-production',STORAGE_DIR:'/tmp/ks-v146-storage',RECAPTCHA_ENABLED:'false',TURNSTILE_ENABLED:'false',WEB_ORIGIN:'http://localhost:3146',RATE_LIMIT_STORE:'memory',ALLOW_REMOTE_DATABASE:'false'});

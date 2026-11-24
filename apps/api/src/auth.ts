@@ -4,9 +4,10 @@ import { Role } from "@prisma/client";
 import { env } from "./config";
 import { prisma } from "./db";
 import { credentialVersion } from "./credentials";
+import { accessIsValid, temporaryPathAllowed } from "./temporary-core";
 export { credentialVersion } from "./credentials";
 export interface AuthenticatedRequest extends Request {
-  user?: { id: string; role: Role; dealerId: string | null; schoolId: string | null; mustChangePassword?: boolean; sessionId?: string; actorAdminId?: string; parentSessionId?: string };
+  user?: { id: string; role: Role; dealerId: string | null; schoolId: string | null; mustChangePassword?: boolean; sessionId?: string; actorAdminId?: string; parentSessionId?: string; temporary?: {id:string;scopes:string[];expiresAt:Date} };
 }
 export async function requireAuth(request: AuthenticatedRequest, response: Response, next: NextFunction): Promise<void> {
   const authorization = request.header("authorization"), token = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
@@ -42,6 +43,12 @@ export async function requireAuth(request: AuthenticatedRequest, response: Respo
     }
     request.user = { id: user.id, role: user.role, dealerId: user.dealerId, schoolId: user.schoolId, mustChangePassword: user.mustChangePassword, sessionId: session.id, ...(session.actorAdminId ? { actorAdminId: session.actorAdminId, parentSessionId: session.parentSessionId! } : {}) };
     const pathname = request.originalUrl?.split("?")[0];
+    if (user.role === 'TEMPORARY') {
+      const grant = await prisma.temporaryAccess.findUnique({where:{userId:user.id}});
+      if (!grant || !accessIsValid(grant) || +session.expiresAt > +grant.expiresAt) { response.status(401).json({error:'Geçici erişim sona erdi.'}); return; }
+      if (!temporaryPathAllowed(request.method, pathname || '', grant.scopes)) { response.status(403).json({error:'Bu işlem geçici erişim kapsamında değil.'}); return; }
+      request.user.temporary = {id:grant.id,scopes:grant.scopes,expiresAt:grant.expiresAt};
+    }
     if (session.actorAdminId && pathname?.startsWith("/api/account") && request.method !== "GET") { response.status(403).json({ error: "Temsil oturumunda bayi hesap bilgileri ve şifresi değiştirilemez." }); return; }
     if (user.mustChangePassword && !(pathname === "/api/account/password" || pathname === "/api/account" && request.method === "GET" || pathname === "/api/security/logout")) { response.status(403).json({ code: "PASSWORD_CHANGE_REQUIRED", error: "Devam etmek için kendi şifrenizi belirlemelisiniz." }); return; }
     next();

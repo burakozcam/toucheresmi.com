@@ -83,3 +83,5 @@ import "./v142.test";
 import "./panel-navigation.test";
 
 import "./study-plan.test";
+
+import "./v146.test";

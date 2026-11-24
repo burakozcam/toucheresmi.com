@@ -1,0 +1,6 @@
+'use client';
+import {useEffect,useRef,useState} from 'react';
+import Link from 'next/link';
+import {API_URL} from '../../lib/api';
+import {storeTemporarySession} from '../temporary-login';
+export default function DirectLogin(){const started=useRef(false),[message,setMessage]=useState('Giriş bağlantısı kontrol ediliyor…'),[failed,setFailed]=useState(false);useEffect(()=>{if(started.current)return;started.current=true;const key=new URLSearchParams(location.hash.slice(1)).get('key');history.replaceState(null,'','/gecici-giris');if(!key){setMessage('Bağlantı anahtarı bulunamadı. Erişim kodunuzla devam edebilirsiniz.');setFailed(true);return;}void fetch(`${API_URL}/api/temporary/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key}),referrerPolicy:'no-referrer'}).then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error||'Bağlantı kullanılamadı.');storeTemporarySession(d);setMessage('Giriş başarılı');requestAnimationFrame(()=>location.replace('/panel'));}).catch(e=>{setMessage(e.message);setFailed(true);});},[]);return <section className="direct-temporary-login"><h1>KurumsalSınav · Geçici Erişim</h1><p role="status">{message}</p>{failed&&<Link className="button button-navy" href="/login?type=temporary">Geçici Giriş ile Devam Et</Link>}</section>;}

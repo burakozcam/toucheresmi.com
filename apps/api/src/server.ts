@@ -1,3 +1,6 @@
+import { panelNotificationsRouter } from "./panel-notifications";
+import { temporaryRouter } from "./temporary-access";
+import { supportRouter } from "./support";
 import { API_VERSION } from './version';
 import {examAnalyticsRouter} from './exam-analytics-routes';
 import {auditMaintenanceRouter} from './audit-maintenance';
@@ -234,7 +237,7 @@ const upload = multer({
 const loginSchema = z.object({
   email: z.string().email().max(254),
   password: z.string().min(1).max(128),
-  role: z.nativeEnum(Role),
+  role: z.enum(["SUPER_ADMIN","DEALER","SCHOOL_ADMIN","STUDENT","PARENT"]),
 });
 
 const publisherRequestSchema = z.object({
@@ -339,7 +342,7 @@ const profileSelect = { dealerId: true, avatar: true, id: true, email: true, fir
 app.get("/api/account", requireAuth, async (request: AuthenticatedRequest, response, next) => {
   try {
     const account=await prisma.user.findUniqueOrThrow({ where: { id: request.user!.id }, select: profileSelect });
-    response.json({...account,canPlayGames:ownerGameAccess(account,request.user!.actorAdminId),impersonation:request.user!.actorAdminId?{dealerName:(await prisma.dealer.findUnique({where:{id:request.user!.dealerId!},select:{name:true}}))?.name,expiresAt:(await prisma.authSession.findUniqueOrThrow({where:{id:request.user!.sessionId}})).expiresAt}:null});
+    response.json({...account,...(request.user!.temporary?{temporary:request.user!.temporary}:{}),canPlayGames:ownerGameAccess(account,request.user!.actorAdminId),impersonation:request.user!.actorAdminId?{dealerName:(await prisma.dealer.findUnique({where:{id:request.user!.dealerId!},select:{name:true}}))?.name,expiresAt:(await prisma.authSession.findUniqueOrThrow({where:{id:request.user!.sessionId}})).expiresAt}:null});
   } catch (error) { next(error); }
 });
 const profileSchema = z.object({
@@ -752,7 +755,7 @@ app.get(
   async (_request: AuthenticatedRequest, response, next) => {
     try {
       const users = await prisma.user.findMany({
-        where: { role: { not: Role.SUPER_ADMIN } },
+        where: { role: { notIn: [Role.SUPER_ADMIN,Role.TEMPORARY] } },
         select: {
           id: true,
           firstName: true,
@@ -2036,6 +2039,9 @@ app.use(systemRouter);
 app.use(testCenterRouter);
 app.use(contentRouter);
 app.use(announcementRouter);
+app.use(supportRouter);
+app.use(panelNotificationsRouter);
+app.use(temporaryRouter);
 app.use(exportRouter);
 app.use(auditMaintenanceRouter);
 app.use(fmtShareRouter);

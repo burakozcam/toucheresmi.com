@@ -1,4 +1,5 @@
 "use client";
+import TemporaryLogin from "../temporary-login";
 import MfaLogin, {type SecurityLogin} from "../mfa-login";
 import {getHumanToken} from "../../lib/human-token";
 import PasswordField from "../password-field";
@@ -16,6 +17,7 @@ const loginTypes = [
   { id: "dealer", title: "Bayi Girişi", description: "Bayi hesabınızla giriş yapın", available: true, icon: "⌂" },
   { id: "admin", title: "Yönetici Girişi", description: "Sistem yönetici hesabınızla giriş yapın", available: true, icon: "⚙" },
   { id: "institution", title: "Kurum Girişi", description: "Okul veya kurum hesabınızla giriş yapın", available: false, icon: "▦" },
+  { id: "temporary", title: "Geçici Giriş", description: "Erişim kodunuzla giriş yapın", available: true, icon: "key-clock" },
   { id: "student", title: "Öğrenci Girişi", description: "Sınav sonuçlarınıza ulaşın", available: true, icon: "♙" },
   { id: "parent", title: "Veli Girişi", description: "Çocuğunuzun sonuçlarına ulaşın", available: true, icon: "♧" },
 ] as const;
@@ -37,6 +39,7 @@ export default function LoginPage() {
     const params=new URLSearchParams(location.search);const type=params.get("type")??params.get("role");
     if(["student","parent","STUDENT","PARENT"].includes(type??"")){location.replace("/sonuclar#ogrenci-girisi");return;}
     if(type==="admin")setSelectedType("admin");
+    if(type==="temporary"){setSelectedType("temporary");return;}
     const token=sessionStorage.getItem("kurumsal-auth-token");
     if(!token)return;
     const controller=new AbortController();
@@ -157,7 +160,7 @@ export default function LoginPage() {
           <p className="login-subtitle">{registering ? "Bilgileriniz yönetici onayına gönderilir." : "Devam etmek için giriş türünüzü seçin."}</p>
           {!registering && <div className="login-types">
             {loginTypes.filter(t=>!["admin","student","parent"].includes(t.id)).map((type) => <button className={`login-type ${selectedType === type.id ? "active" : ""} ${!type.available ? "unavailable" : ""}`} key={type.id} onClick={() => selectType(type.id, type.available)} type="button">
-              <span className="login-type-icon"><UiIcon name={type.id==="dealer"?"book":type.id==="admin"?"settings":type.id==="institution"?"school":"users"}/></span>
+              <span className="login-type-icon"><UiIcon name={type.id==="dealer"?"book":type.id==="admin"?"settings":type.id==="institution"?"school":type.id==="temporary"?"key-clock":"users"}/></span>
               <span className="login-type-copy"><strong>{type.title}</strong><small>{type.description}</small></span>
               <span className="login-type-arrow">{selectedType === type.id ? "●" : "○"}</span>
             </button>)}
@@ -169,14 +172,14 @@ export default function LoginPage() {
             <label>E-posta<div className="input-wrap"><input name="email" type="email" autoComplete="email" maxLength={254} required /></div></label>
             <label>Şifre <small>(en az 15 karakter)</small><PasswordField name="password" newPassword/></label>
             <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Üyelik talebi gönder"} <span><UiIcon name="arrow-right"/></span></button>
-          </form> : selectedType === "admin" ? null : selectedType !== "institution" ? <form className="login-form" onSubmit={submitLogin}>
+          </form> : selectedType === "temporary" ? <TemporaryLogin/> : selectedType === "admin" ? null : selectedType !== "institution" ? <form className="login-form" onSubmit={submitLogin}>
             <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>
             <label>Şifre<PasswordField name="password" placeholder="Şifrenizi girin"/></label>
             <HumanVerification key={attempt} action={registering?"register":"login"} onToken={setHumanToken}/><button className="button button-navy login-submit" type="submit" disabled={submitting}>{submitting ? "Giriş yapılıyor..." : "Giriş Yap"} <span><UiIcon name="arrow-right"/></span></button>
           </form> : <div className="inactive-panel"><span>i</span><p>Bu giriş türü şu anda kullanıma kapalı. Erişim için sistem yöneticisine başvurun.</p></div>}
           {message && <p className={`login-message ${success ? "message-success" : "message-error"}`} role="status">{success ? "✓" : "!"} {message}</p>}
           <p className="field-help">Öğrenci ve veli hesaplarını kurumunuzun bayisi oluşturur; ilk şifrenizi verilen davet bağlantısından belirleyin.</p>
-          <p className="login-help">{registering ? "Zaten hesabınız var?" : "Üye olmak mı istiyorsunuz?"} <button type="button" className="auth-switch" onClick={() => { setRegistering(!registering); setMessage(""); setSuccess(false); }}>{registering ? "Giriş yapın" : "Üye ol"}</button></p>
+          {selectedType!=="temporary"&&<p className="login-help">{registering ? "Zaten hesabınız var?" : "Üye olmak mı istiyorsunuz?"} <button type="button" className="auth-switch" onClick={() => { setRegistering(!registering); setMessage(""); setSuccess(false); }}>{registering ? "Giriş yapın" : "Üye ol"}</button></p>}
           <p className="login-help"><Link href="/sonuclar#ogrenci-girisi">Öğrenci ve veli girişi <UiIcon name="arrow-right"/> Sonuçlar</Link></p>
           {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <Link href="/contact#contact-form">Bize ulaşın</Link></p>}
           <div className="admin-login-area"><button type="button" className="button button-quiet" onClick={()=>{setRegistering(false);selectType("admin",true);}}>⚙ Yönetici Girişi</button><p className="field-help">Yalnızca sistem yöneticileri içindir.</p>{selectedType==="admin"&&!registering&&<form className="login-form" onSubmit={submitLogin}>

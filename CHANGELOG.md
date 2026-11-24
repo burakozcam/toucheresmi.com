@@ -1,3 +1,15 @@
+# v1.4.6 · 2026-11-24 · yerel geliştirme
+
+1. Koyu panel kenar çubuğunda iki temada özgün renkli, kesilmeyen logo.
+2. Araçlar ana/alt menülerinde benzersiz ve yetki kapsamındaki okunmamış bildirim sayıları.
+3. Sunucuda doğrulanmış kullanıcı türü rozeti.
+4. Özel görselli destek talepleri, durum/yanıt geçmişi, okunmamış rozetleri ve Süper Admin gelen kutusu.
+5. Tek zeminli kilit/örnek Şifreniz oturum kontrolü; hızlı giriş geciktirilmez.
+6. Yalnız ana sayfada lacivert marka kapanışı.
+7. Süreli/sınırlı Geçici Üyeler; hash'li kod, ayrı tek kullanımlık link anahtarı, kapsam duvarı, iptal/süre kontrolü ve kullanıcı tarafından gönderilen WhatsApp mesajı.
+
+**Migration gerekir:** `20261124180000_v146_support_temporary`. Operatör migration ve canlı Prisma Client üretimini quick-deploy'dan **önce** yapmalıdır. [Manuel yayın](docs/v146-manual-deployment.md), [testler ve sınırlar](docs/v146-release-report.md). Commit/push/canlı işlem yapılmadı; bağımlılık güncellemesi yok.
+
 # v1.4.5 · 2026-11-24 · yerel geliştirme
 
 ### 1. Ana sayfadan çalışma planına geçiş

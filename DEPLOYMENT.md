@@ -1,6 +1,8 @@
 # KurumsalSınav dağıtım prosedürü
 
-**v1.4.5 için güncel manuel Veridyen akışı:** [yayın sırası, geri alınabilir route cache, canlı HTTP doğrulaması ve dört aşamalı NPROC ölçümü](docs/v145-manual-deployment.md). Aşağıdaki tarihsel prosedürler bu akışın yerine kullanılmamalıdır.
+**v1.4.6 için güncel manuel Veridyen akışı:** [zorunlu migration, gerçek API Prisma Client üretimi, manuel dağıtım ve doğrulama](docs/v146-manual-deployment.md).
+
+**v1.4.5 temel akışı:** [yayın sırası, geri alınabilir route cache, canlı HTTP doğrulaması ve dört aşamalı NPROC ölçümü](docs/v145-manual-deployment.md). Aşağıdaki tarihsel prosedürler bu akışın yerine kullanılmamalıdır.
 
 Bu belge v1.4.0 yerel çalışmasının geçiş önkoşullarını da içerir. Yeni kapsam ve açık kabul maddeleri için [v1.4.0 raporunu](docs/v140-release-report.md) okuyun. `20261120120000_v140_exam_structures` canlıya uygulanmadı. v1.3.9 tam kabulü henüz verilmedi; [açık kabul maddelerini](docs/v139-release-report.md) kapatmadan yayımlamayın. Önceki kabul ve sınırlar için [v1.3.8 raporunu](docs/v138-release-report.md), önceki migration adımları için v1.3.5/v1.3.7 raporlarını birlikte okuyun. Canlıya aktarım operatörün kontrollü işlemidir; bu geliştirme çalışması dağıtım yapmaz. Mevcut cPanel / CloudLinux / LiteSpeed / Passenger, Node.js 22 ve Neon korunur. Sunucuda rsync ve pg_dump gerektiren adım yoktur.
 

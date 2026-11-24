@@ -228,3 +228,30 @@ Web’i yerel4015 API ile build/start ve `v137-serve.cjs` ile API’yi başlatt�
 - `npm run check:static -- --with-build`: public ve derlenmiş Next statik dosyaları için salt okunur izin denetimi.
 
 Birim/regresyon: `npm test`. `test-results/v142` ekran görüntüleri, sentetik indirmeler ve JSON kabul kayıtlarını içerir. `ui-seed.json` **yalnız sentetik test oturumları** içerir, `.gitignore` kapsamındadır ve paylaşılmamalıdır. Tarayıcı testleri localhost dışındaki HTTP(S) isteklerini engeller. Test build'i üretim artifact'ı değildir. Çıktıları önceki sürüm test klasörleri veya gerçek kullanıcı dosyalarıyla karıştırmayın.
+
+
+## v1.4.5: planlayıcı, menü ve çıktılar (DB gerekmez)
+
+```sh
+KS_LOW_RESOURCE_BUILD=1 NEXT_PUBLIC_API_URL=http://localhost:4045 node node_modules/next/dist/bin/next build apps/web
+NEXT_PUBLIC_API_URL=http://localhost:4045 node node_modules/next/dist/bin/next start apps/web --hostname 127.0.0.1 --port 3145
+```
+
+Ayrı terminalde `python3 tests/e2e/v145-ui.py` çalıştırın. Chromium/Playwright gerekir. Tarayıcı localhost:4045 API yanıtlarını sentetik hesap/boş katalogla karşılar; API sunucusu, gerçek oturum veya veritabanı gerekmez. Dış ağ engellenir. Gerçek sürükleme/taşıma/süre/çakışma, mobil dokunma, yerel kayıt, dolu 336 kartlık haftanın üç indirmesi, menü durumu/klavye/hareket ve ana sayfa bağlantısı test edilir. Kanıtlar `test-results/v145` altındadır. İş sonunda kendi Web önizlemenizi durdurun. Bu localhost derlemesi canlıya taşınmaz.
+
+`npm run test:v145` plan modeli ile yalnız geçici dosya sistemleri ve localhost HTTP üzerinde dağıtım/doğrulama senaryolarını çalıştırır. Veridyen, Passenger veya Neon’a erişmez. Canlı yayın ve NPROC ölçümleri için `docs/v145-manual-deployment.md` kullanın.
+
+
+## v1.4.6: destek ve geçici erişim (yalnız yeni test DB)
+
+Yeni, silinebilir PostgreSQL 16 konteynerini `127.0.0.1:55466` üzerinde kullanıcı `ks146`, sentetik parola `synthetic-v146-local-only`, veritabanı `ks_v146_acceptance` ile hazırlayın. Mevcut kullanıcı/üretim DB'sini kullanmayın. Migration zincirini yalnız bu yeni veritabanına uygulayın ve Prisma Client'ı yerelde üretin:
+
+```sh
+DATABASE_URL=postgresql://ks146:synthetic-v146-local-only@127.0.0.1:55466/ks_v146_acceptance node node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma
+DATABASE_URL=postgresql://ks146:synthetic-v146-local-only@127.0.0.1:55466/ks_v146_acceptance node node_modules/prisma/build/index.js generate --schema apps/api/prisma/schema.prisma
+npm run test:v146
+```
+
+HTTP testi kendi geçici localhost sunucusunu açar/kapatır, gerçek Prisma/veritabanı işlemleri ve test saati kullanır. `v146-env.cjs` farklı DB adresini reddeder. Yeni fixture hesapları üretir; `test-results/v146/ui-seed.json` yalnız sentetik oturum/kod/bağlantı içerir ve paylaşılmaz.
+
+Üretim Web'i `NEXT_PUBLIC_API_URL=http://localhost:4046 KS_LOW_RESOURCE_BUILD=1 node node_modules/next/dist/bin/next build apps/web` ile üretin. Ayrı terminallerde `node --import tsx tests/e2e/v146-serve.cjs` ve `NEXT_PUBLIC_API_URL=http://localhost:4046 node node_modules/next/dist/bin/next start apps/web --hostname 127.0.0.1 --port 3146` açın; ardından `python3 tests/e2e/v146-ui.py`. Yeni UI koşumu için önce HTTP testini yeniden çalıştırarak yeni tek kullanımlık bağlantı ve okunmamış bildirim fixture'ları oluşturun. Dış tarayıcı ağı engellenir. Test sonunda yalnız kendi servislerinizi ve v146 test konteynerinizi durdurun. Localhost Web build'i canlıya taşınmaz; gerçek yayın için `docs/v146-manual-deployment.md` kullanılır.

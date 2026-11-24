@@ -1,5 +1,7 @@
 /** Small local SVG icons: consistent geometry, no icon font or external dependency. */
 const paths:Record<string,string>={
+ "key-clock":"M14 6a5 5 0 1 1-3 8l-6 7H2v-4l7-7a5 5 0 0 1 5-4M18 2v5l3 2M17 11h.01",
+ support:"M4 14v-3a8 8 0 0 1 16 0v3M4 11H2v7h4v-7m14 0h2v7h-4v-7m2 7c0 3-3 4-8 4",
  bolt:"M13 2 4 14h7l-1 8 10-13h-7l0-7Z",
  cpu:"M6 6h12v12H6V6Zm3 3h6v6H9V9ZM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4",
  "arrow-right":"M4 12h16m-6-6 6 6-6 6",

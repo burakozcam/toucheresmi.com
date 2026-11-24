@@ -8,6 +8,7 @@ datasource db {
 }
 
 enum Role {
+  TEMPORARY
   SUPER_ADMIN
   DEALER
   SCHOOL_ADMIN
@@ -52,6 +53,9 @@ enum AnswerKeyFileCategory {
 }
 
 model User {
+  temporaryAccess TemporaryAccess?
+  supportTickets SupportTicket[]
+  supportUpdates SupportUpdate[]
   sessions AuthSession[]
   trustedDevices TrustedDevice[]
   twoFactorSecret String?
@@ -1020,4 +1024,62 @@ model OpticalExamTemplate {
   createdById String
   createdAt DateTime @default(now())
   @@index([createdById, createdAt])
+}
+
+
+enum SupportStatus {
+  SENT
+  RECEIVED
+  IN_PROGRESS
+  RESOLVED
+}
+
+model SupportTicket {
+  id String @id @default(cuid())
+  number Int @unique @default(autoincrement())
+  userId String
+  category String
+  subject String
+  description String @db.Text
+  status SupportStatus @default(SENT)
+  version Int @default(1)
+  ownerReadVersion Int @default(1)
+  adminReadVersion Int @default(0)
+  imageName String?
+  technical Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  updates SupportUpdate[]
+  @@index([userId,updatedAt])
+  @@index([category,status,updatedAt])
+}
+
+model SupportUpdate {
+  id String @id @default(cuid())
+  ticketId String
+  authorId String
+  version Int
+  body String @db.Text
+  status SupportStatus?
+  createdAt DateTime @default(now())
+  ticket SupportTicket @relation(fields:[ticketId],references:[id],onDelete:Cascade)
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  @@unique([ticketId,version])
+}
+
+model TemporaryAccess {
+  id String @id @default(cuid())
+  userId String @unique
+  note String
+  scopes String[]
+  codeHash String @unique
+  linkHash String? @unique
+  linkUsedAt DateTime?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdById String
+  createdAt DateTime @default(now())
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  @@index([expiresAt,revokedAt])
 }

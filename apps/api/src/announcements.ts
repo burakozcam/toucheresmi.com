@@ -16,7 +16,7 @@ async function targets(tx:Prisma.TransactionClient,audience:string,ids:string[])
  const count=audience==='DEALER_IDS'?await tx.dealer.count({where:{id:{in:unique}}}):audience==='SCHOOL_IDS'?await tx.school.count({where:{id:{in:unique}}}):await tx.user.count({where:{id:{in:unique},role:{in:[Role.SUPER_ADMIN,Role.DEALER]}}});
  if(count!==unique.length)throw new SecurityError(400,'Hedeflerden biri bulunamadı veya panel kullanıcısı değil.');return unique;
 }
-async function visibility(q:AuthenticatedRequest,now:Date):Promise<Prisma.AnnouncementWhereInput>{
+export async function visibility(q:AuthenticatedRequest,now:Date):Promise<Prisma.AnnouncementWhereInput>{
  const user=q.user!,schools=user.dealerId?await prisma.school.findMany({where:{dealerId:user.dealerId},select:{id:true}}):[];
  return {AND:[{OR:[{audience:'ALL'},{audience:user.role===Role.SUPER_ADMIN?'ADMINS':'DEALERS'},{audience:'USER_IDS',targets:{some:{targetId:user.id}}},...(user.dealerId?[{audience:'DEALER_IDS',targets:{some:{targetId:user.dealerId}}},{audience:'SCHOOL_IDS',targets:{some:{targetId:{in:schools.map(s=>s.id)}}}}]:[])]},{OR:[{source:{not:'ANSWER_KEY'}},{publication:{published:true,publishedAt:{lte:now},publisher:{active:true},OR:[{opticalKey:{active:true}},{files:{some:{category:'ANSWER_KEY'}}}]}}]}]};
 }

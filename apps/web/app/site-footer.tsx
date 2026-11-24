@@ -2,9 +2,9 @@ import ConsentPreferences from "./consent-preferences";
 import ReleaseMark from "./release-mark";
 import Link from "next/link";
 
-export default function SiteFooter() {
+export default function SiteFooter({home=false}:{home?:boolean}) {
   return (
-    <footer className="site-footer">
+    <footer className={`site-footer ${home?"home-brand-finale":""}`}>
       <Link className="brand" href="/" aria-label="Kurumsal Sınav ana sayfa">
         <span className="brand-mark">K</span>
         <span>kurumsal<span className="brand-light">sinav.com</span></span>
