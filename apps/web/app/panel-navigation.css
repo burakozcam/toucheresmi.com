@@ -40,10 +40,12 @@
 .dashboard .sidebar-rail .brand-mark{width:30px;height:30px;background:#192e53;color:#fff;font-size:16px}
 .dashboard .sidebar{position:fixed;z-index:32;inset:0 auto 0 0;width:min(var(--panel-sidebar-width,260px),calc(100vw - 32px));height:100svh;transform:translateX(-105%);visibility:hidden;transition:transform .25s ease,visibility 0s .25s;box-shadow:var(--shadow);padding-bottom:env(safe-area-inset-bottom);overscroll-behavior:contain}
 .dashboard .sidebar.sidebar-open{transform:translateX(0);visibility:visible;transition-delay:0s}
-.dashboard .sidebar-top{flex-shrink:0;padding-top:calc(8px + env(safe-area-inset-top))}
-.dashboard .sidebar .sidebar-close{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:44px;padding:8px 12px;border:1px solid #b95161;border-radius:7px;background:#7f2033;color:#fff;font-family:inherit;font-size:14px;font-weight:700;line-height:1.4;cursor:pointer}
+.dashboard .sidebar-top{display:flex;align-items:center;gap:4px;flex-shrink:0;padding-top:calc(8px + env(safe-area-inset-top))}
+.dashboard .sidebar .sidebar-top .sidebar-brand{flex:1;min-width:0;width:auto}
+.dashboard .sidebar .sidebar-top .sidebar-brand-word{flex-wrap:wrap}
+.dashboard .sidebar .sidebar-close{display:flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;min-height:44px;padding:0;border:1px solid #3b506d;border-radius:7px;background:#1d3048;color:#e0e9f7;font-family:inherit;line-height:1;cursor:pointer}
 .dashboard .sidebar .sidebar-close>span{font-size:27px;font-weight:400;line-height:1}
-.dashboard .sidebar .sidebar-close:focus-visible{outline:2px solid #ffb6c1;outline-offset:2px}
+.dashboard .sidebar .sidebar-close:focus-visible{outline:2px solid #a8cbff;outline-offset:2px}
 .dashboard .sidebar .side-nav{min-height:0;overscroll-behavior:contain}
 .dashboard .sidebar .sidebar-profile,.dashboard .sidebar .sidebar-bottom{flex-shrink:0}
 .dashboard .sidebar-overlay{position:fixed;z-index:31;inset:0;background:#07152b99;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease,visibility 0s .25s;touch-action:none}
@@ -51,7 +53,9 @@
 .dashboard .dashboard-main{position:relative;z-index:0;margin-left:var(--panel-rail-width);outline:none;transition:margin-left .25s ease}
 @media(min-width:1001px){.dashboard[data-menu-open=true] .dashboard-main{margin-left:var(--panel-sidebar-width,260px)}}
 @media(max-width:1000px){.dashboard{display:block}.dashboard .dashboard-main{margin-left:var(--panel-rail-width);transition:none}.dashboard .mobile-menu{display:inline-flex;flex:0 0 36px;align-items:center;justify-content:center;min-height:44px;padding:0}.dashboard .sidebar-resize{display:none}}
+/* The global preference shortcut returns when the mobile drawer closes. */
+@media(max-width:1000px){body:has(.dashboard[data-menu-open=true])>.cookie-preference-link{display:none}}
 @media(max-width:680px){.dashboard .dashboard-header{flex-wrap:wrap;gap:8px;padding:10px 12px}.dashboard .breadcrumbs{flex:1;min-width:150px}.dashboard .dashboard-actions{margin-left:auto}.dashboard .sidebar .sidebar-profile{margin-block:6px 10px}.dashboard .sidebar .sidebar-brand{margin-block:10px}}
-@media(hover:hover) and (pointer:fine){.dashboard .sidebar-rail button:hover{background:#2a3d55;color:#f1f5fc}.dashboard .sidebar .sidebar-close:hover{background:#9e2940}}
+@media(hover:hover) and (pointer:fine){.dashboard .sidebar-rail button:hover{background:#2a3d55;color:#f1f5fc}.dashboard .sidebar .sidebar-close:hover{background:#2a3d55;color:#fff}}
 @media(prefers-reduced-motion:reduce){.dashboard .sidebar,.dashboard .sidebar-overlay,.dashboard .dashboard-main{transition:none}}
 @media print{.sidebar-rail,.sidebar-overlay{display:none!important}.dashboard .dashboard-main{margin-left:0!important}}

@@ -294,8 +294,8 @@ export default function PanelPage() {
       <div className="sidebar-overlay" data-open={menu.open&&menu.compact} aria-hidden="true" onClick={()=>menu.close()}/>
       <aside id="panel-sidebar" ref={menu.sidebar} className={`sidebar ${menu.open ? "sidebar-open" : ""}`} inert={!menu.open} aria-label="Yönetim menüsü" role={menu.open&&menu.compact?'dialog':undefined} aria-modal={menu.open&&menu.compact?true:undefined}>
         <SidebarResize/>
-        <div className="sidebar-top"><button data-help-id="panel-menu-close" className="sidebar-close" type="button" onClick={()=>menu.close()}><span aria-hidden="true">×</span> Menü’yü kapat</button>
-        <button data-help-id="panel-page-2" className="brand sidebar-brand" onClick={() => setSection("welcome")} aria-label="Kurumsal Sınav panel karşılama sayfası"><span className="brand-mark">K</span><span className="sidebar-brand-word"><span>kurumsal</span><span className="brand-light">sinav.com</span></span></button></div>
+        <div className="sidebar-top"><button data-help-id="panel-page-2" className="brand sidebar-brand" onClick={() => setSection("welcome")} aria-label="Kurumsal Sınav panel karşılama sayfası"><span className="brand-mark">K</span><span className="sidebar-brand-word"><span>kurumsal</span><span className="brand-light">sinav.com</span></span></button>
+        <button data-help-id="panel-menu-close" className="sidebar-close" type="button" aria-label="Menüyü kapat" onClick={()=>menu.close()}><span aria-hidden="true">×</span></button></div>
         <button data-help-id="panel-page-3" className="sidebar-profile profile-link" onClick={() => setSection("account")}><span className="profile-avatar">{profile.avatar ? <img src={profile.avatar} alt="Profil fotoğrafı"/> : profile.firstName.slice(0, 1).toUpperCase() || "B"}</span><span><strong>{`${profile.firstName} ${profile.lastName}`}</strong><small>Hesap ayarlarını aç <UiIcon name="arrow"/></small></span><span className="online-dot" /></button>
         <nav className="side-nav" aria-label="Yönetim menüsü">
           {visibleGroups.map(group=>{

@@ -32,11 +32,19 @@ with sync_playwright() as p:
   expect(pg.locator('.sidebar-rail')).to_be_visible()
   pg.wait_for_function('()=>document.body.style.position!=="fixed" && document.body.style.overflow!=="hidden" && document.documentElement.style.overflow!=="hidden"')
   assert pg.locator('.sidebar-overlay').evaluate('e=>getComputedStyle(e).pointerEvents')=='none'
+  expect(pg.locator('.cookie-preference-link')).to_be_visible()
  def opened(pg):
   expect(pg.locator('.dashboard')).to_have_attribute('data-menu-open','true')
-  expect(pg.get_by_role('button',name='Menü’yü kapat',exact=True)).to_be_visible()
+  expect(pg.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True)).to_be_visible()
   expect(pg.locator('.sidebar-overlay')).to_have_attribute('data-open','true')
   pg.wait_for_function('()=>document.body.style.position==="fixed" && document.documentElement.style.overflow==="hidden"');pg.wait_for_function('()=>document.querySelector(".sidebar").getBoundingClientRect().left>=-0.5')
+  expect(pg.locator('.cookie-preference-link')).not_to_be_visible()
+  close=pg.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).bounding_box()
+  brand=pg.locator('.sidebar-brand').bounding_box()
+  assert close['width']>=43.99 and close['height']>=43.99, close
+  assert abs((close['y']+close['height']/2)-(brand['y']+brand['height']/2))<2
+  assert close['x']>=brand['x']+brand['width']
+  assert pg.locator('.logout-button').evaluate('e=>{const r=e.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest(".logout-button")===e}')
  def fits(pg):assert pg.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
  try:
   ctx,page=context();closed(page)
@@ -45,23 +53,23 @@ with sync_playwright() as p:
   tools.tap();expect(tools).to_have_attribute('aria-expanded','false');tools.tap();expect(tools).to_have_attribute('aria-expanded','true')
   assert page.locator('.sidebar').evaluate('e=>getComputedStyle(e).transitionDuration')=='0.25s, 0s'
   page.wait_for_timeout(240);page.screenshot(path=str(OUT/'mobile-open.png'))
-  page.get_by_role('button',name='Menü’yü kapat',exact=True).tap();closed(page)
+  page.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).tap();closed(page)
   page.get_by_role('button',name='FMT Yönetimi menüsünü aç',exact=True).tap();opened(page)
   expect(page.locator('.nav-category').filter(has_text='FMT Yönetimi')).to_have_attribute('aria-expanded','true')
-  page.get_by_role('button',name='Menü’yü kapat',exact=True).tap();closed(page)
+  page.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).tap();closed(page)
   page.get_by_role('button',name='Araçlar menüsünü aç',exact=True).tap();opened(page)
   page.locator('[data-operation=pdf-tools]').tap();closed(page)
   expect(page.locator('.pdf-editor')).to_be_visible();assert 'section=pdf-tools' in page.url
   assert page.evaluate('window.scrollY')==0
   fits(page);page.screenshot(path=str(OUT/'mobile-selected-tool.png'))
-  passed('Touch 390×844: rail → open → Tools toggle closed/open → red close → reopen → select PDF tool; drawer/backdrop close and chosen screen is visible')
+  passed('Touch 390×844: rail → open → Tools toggle closed/open → logo-row close → reopen → select PDF tool; drawer/backdrop close and chosen screen is visible')
   # Restore real scroll position on dismiss; touch scroll must work again afterwards.
   page.evaluate('window.scrollTo(0,250)');y=page.evaluate('window.scrollY');assert y>0
   page.get_by_role('button',name='Araçlar menüsünü aç',exact=True).tap();opened(page)
   assert page.evaluate('document.body.style.top')==f'-{y}px'
   page.locator('.side-nav').evaluate('e=>e.scrollTop=e.scrollHeight')
-  assert page.get_by_role('button',name='Menü’yü kapat',exact=True).bounding_box()['y']<20
-  page.get_by_role('button',name='Menü’yü kapat',exact=True).tap();closed(page)
+  assert page.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).bounding_box()['y']<50
+  page.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).tap();closed(page)
   page.wait_for_timeout(280);assert abs(page.evaluate('window.scrollY')-y)<2
   cdp=ctx.new_cdp_session(page)
   cdp.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':220,'y':650}]})
@@ -85,12 +93,12 @@ with sync_playwright() as p:
     page.evaluate('(t)=>document.documentElement.dataset.theme=t',theme);page.wait_for_timeout(280)
     closed(page);fits(page);page.screenshot(path=str(OUT/f'rail-{width}-{theme}.png'))
     page.get_by_role('button',name='Araçlar menüsünü aç',exact=True).tap();opened(page);fits(page)
-    assert page.get_by_role('button',name='Menü’yü kapat',exact=True).bounding_box()['y']<20
+    assert page.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).bounding_box()['y']<50
     page.screenshot(path=str(OUT/f'drawer-{width}-{theme}.png'))
-    page.get_by_role('button',name='Menü’yü kapat',exact=True).tap();closed(page)
+    page.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).tap();closed(page)
   page.emulate_media(reduced_motion='reduce');page.get_by_role('button',name='Araçlar menüsünü aç',exact=True).tap();opened(page)
   assert page.locator('.sidebar').evaluate('e=>getComputedStyle(e).transitionDuration.split(",").every(t=>parseFloat(t)<=0.001)')
-  page.get_by_role('button',name='Menü’yü kapat',exact=True).tap();closed(page)
+  page.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).tap();closed(page)
   passed('320/390/768/844 touch layouts, portrait/landscape and light/dark: accessible close, no overflow; reduced-motion preference respected')
   # Breakpoint changes must release the mobile body lock.
   page.get_by_role('button',name='Araçlar menüsünü aç',exact=True).tap();opened(page)
@@ -102,7 +110,7 @@ with sync_playwright() as p:
   desk,dp=context(1440,1000,False)
   expect(dp.locator('.dashboard')).to_have_attribute('data-menu-open','true');dp.wait_for_timeout(300)
   assert dp.locator('.dashboard-main').bounding_box()['x']==310
-  dp.get_by_role('button',name='Menü’yü kapat',exact=True).click();closed(dp);dp.wait_for_timeout(300)
+  dp.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).click();closed(dp);dp.wait_for_timeout(300)
   assert dp.locator('.dashboard-main').bounding_box()['x']==56
   dp.get_by_role('button',name='Araçlar menüsünü aç',exact=True).click();expect(dp.locator('.dashboard')).to_have_attribute('data-menu-open','true')
   dp.wait_for_timeout(300);assert dp.locator('.dashboard-main').bounding_box()['x']==310
@@ -110,7 +118,7 @@ with sync_playwright() as p:
   expect(dp.locator('.dashboard')).to_have_attribute('data-menu-open','true');fits(dp)
   for theme in ['light','dark']:
    dp.evaluate('(t)=>document.documentElement.dataset.theme=t',theme);dp.wait_for_timeout(280);dp.screenshot(path=str(OUT/f'desktop-open-{theme}.png'))
-  dp.get_by_role('button',name='Menü’yü kapat',exact=True).click();dp.wait_for_timeout(300);dp.screenshot(path=str(OUT/'desktop-rail.png'));desk.close()
+  dp.locator('.sidebar').get_by_role('button',name='Menüyü kapat',exact=True).click();dp.wait_for_timeout(300);dp.screenshot(path=str(OUT/'desktop-rail.png'));desk.close()
   passed('Desktop close expands content to icon rail; reopen preserves saved 310px width; selecting tool keeps desktop menu open')
   for scopes,allowed in [(['PDF_TOOLS'],['Araçlar']),(['FMT_DEMO'],['FMT Yönetimi'])]:
    temp,tp=context(role='TEMPORARY',scopes=scopes);closed(tp)

@@ -13,6 +13,7 @@ export const temporaryRouter = express.Router();
 const wrap = (fn: (q:AuthenticatedRequest,r:express.Response)=>Promise<void>):express.RequestHandler => async(q,r,n)=>{try{await fn(q as AuthenticatedRequest,r);}catch(e){n(e);}};
 const admin = express.Router();
 admin.use(requireAuth, requireRole('SUPER_ADMIN'));
+const permissionsInput=z.object({scopes:z.array(z.enum(TEMP_SCOPES)).min(1).max(TEMP_SCOPES.length),dealerId:z.string().min(1).optional()}).strict().refine(input=>input.scopes.includes('DEALER_EXAMS')===Boolean(input.dealerId),{message:'Bayi sınav yetkisi ve bağlı bayi birlikte seçilmelidir.'});
 const select = {id:true,note:true,scopes:true,expiresAt:true,revokedAt:true,createdAt:true,user:{select:{dealerId:true,dealer:{select:{name:true}}}}} as const;
 function output(grant: {id:string;expiresAt:Date}, secrets: {code:string;key:string}) {
   return {...grant,code:secrets.code,link:`${env.WEB_ORIGIN}/gecici-giris#key=${secrets.key}`};
@@ -34,6 +35,22 @@ admin.post('/',wrap(async(q,r)=>{
   r.status(201).json(output(grant,secrets));
 }));
 async function locked(tx: any,id:string) {await tx.$queryRaw`SELECT id FROM "TemporaryAccess" WHERE id=${id} FOR UPDATE`;const grant=await tx.temporaryAccess.findUnique({where:{id}});if(!grant)throw new SecurityError(404,'Erişim bulunamadı.');return grant;}
+admin.patch('/:id',wrap(async(q,r)=>{
+  const input=permissionsInput.parse(q.body);
+  const saved=await prisma.$transaction(async tx=>{
+    const grant=await locked(tx,String(q.params.id));
+    if(!accessIsValid(grant))throw new SecurityError(409,'Süresi dolmuş veya iptal edilmiş erişimin yetkileri düzenlenemez. Yeni bir erişim oluşturun.');
+    if(input.dealerId&&!await tx.dealer.findFirst({where:{id:input.dealerId,active:true},select:{id:true}}))throw new SecurityError(400,'Etkin bir bayi seçin.');
+    await tx.user.update({where:{id:grant.userId},data:{dealerId:input.dealerId??null}});
+    const result=await tx.temporaryAccess.update({where:{id:grant.id},data:{scopes:[...new Set(input.scopes)]},select});
+    // End existing sessions so an open panel cannot retain an old menu or dealer context.
+    // The reusable code, one-use link state and expiry are deliberately preserved.
+    await tx.authSession.updateMany({where:{userId:grant.userId,revokedAt:null},data:{revokedAt:new Date()}});
+    await tx.auditLog.create({data:{actorUserId:q.user!.id,actorName:q.user!.id,action:'TEMPORARY_PERMISSIONS_UPDATE',targetType:'TemporaryAccess',targetId:grant.id,summary:JSON.stringify({previousScopes:grant.scopes,scopes:result.scopes,dealerId:input.dealerId??null})}});
+    return result;
+  });
+  r.json(saved);
+}));
 for(const action of ['revoke','rotate'] as const)admin.post(`/:id/${action}`,wrap(async(q,r)=>{
   const secrets=action==='rotate'?newAccessSecrets():null;
   const saved=await prisma.$transaction(async tx=>{

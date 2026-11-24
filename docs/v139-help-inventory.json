@@ -342,7 +342,7 @@
     },
     {
       "file": "panel/temporary-members.tsx",
-      "controls": 10
+      "controls": 15
     },
     {
       "file": "panel/test-center.tsx",
@@ -397,7 +397,7 @@
       "controls": 1
     }
   ],
-  "total": 828,
+  "total": 833,
   "needsLabelReview": [
     "pdf-duzenleyici-editor-1"
   ]
