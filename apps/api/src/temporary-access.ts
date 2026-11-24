@@ -13,17 +13,21 @@ export const temporaryRouter = express.Router();
 const wrap = (fn: (q:AuthenticatedRequest,r:express.Response)=>Promise<void>):express.RequestHandler => async(q,r,n)=>{try{await fn(q as AuthenticatedRequest,r);}catch(e){n(e);}};
 const admin = express.Router();
 admin.use(requireAuth, requireRole('SUPER_ADMIN'));
-const select = {id:true,note:true,scopes:true,expiresAt:true,revokedAt:true,createdAt:true} as const;
+const select = {id:true,note:true,scopes:true,expiresAt:true,revokedAt:true,createdAt:true,user:{select:{dealerId:true,dealer:{select:{name:true}}}}} as const;
 function output(grant: {id:string;expiresAt:Date}, secrets: {code:string;key:string}) {
   return {...grant,code:secrets.code,link:`${env.WEB_ORIGIN}/gecici-giris#key=${secrets.key}`};
 }
 admin.get('/',wrap(async(_q,r)=>{const rows=await prisma.temporaryAccess.findMany({select,orderBy:{createdAt:'desc'},take:500});r.json({rows,serverNow:new Date()});}));
+admin.get('/dealers',wrap(async(_q,r)=>{r.json(await prisma.dealer.findMany({where:{active:true},select:{id:true,name:true},orderBy:{name:'asc'}}));}));
 admin.post('/',wrap(async(q,r)=>{
-  const input=z.object({note:z.string().trim().min(1).max(100),unit:z.enum(['minute','hour','day','month','year']),value:z.number().int(),scopes:z.array(z.enum(TEMP_SCOPES)).min(1).max(2)}).strict().parse(q.body);
+  const input=z.object({note:z.string().trim().min(1).max(100),unit:z.enum(['minute','hour','day','month','year']),value:z.number().int(),scopes:z.array(z.enum(TEMP_SCOPES)).min(1).max(3),dealerId:z.string().min(1).optional()}).strict().parse(q.body);
   if(!DURATION_OPTIONS[input.unit].some(v=>v===input.value))throw new SecurityError(400,'Geçersiz süre seçimi.');
+  const dealerAccess=input.scopes.includes('DEALER_EXAMS');
+  if(dealerAccess!==Boolean(input.dealerId))throw new SecurityError(400,'Bayi sınav yetkisi ve bağlı bayi birlikte seçilmelidir.');
   const secrets=newAccessSecrets(),now=new Date(),expiresAt=accessExpiry(input.unit,input.value,now);
   const grant=await prisma.$transaction(async tx=>{
-    const user=await tx.user.create({data:{email:`temporary-${crypto.randomUUID()}@access.invalid`,passwordHash:crypto.randomBytes(48).toString('hex'),firstName:input.note,lastName:'',role:'TEMPORARY'}});
+    if(dealerAccess&&!await tx.dealer.findFirst({where:{id:input.dealerId,active:true},select:{id:true}}))throw new SecurityError(400,'Etkin bir bayi seçin.');
+    const user=await tx.user.create({data:{email:`temporary-${crypto.randomUUID()}@access.invalid`,passwordHash:crypto.randomBytes(48).toString('hex'),firstName:input.note,lastName:'',role:'TEMPORARY',dealerId:input.dealerId??null}});
     const saved=await tx.temporaryAccess.create({data:{userId:user.id,note:input.note,scopes:[...new Set(input.scopes)],codeHash:accessHash('code',secrets.code),linkHash:accessHash('link',secrets.key),expiresAt,createdById:q.user!.id},select});
     await tx.auditLog.create({data:{actorUserId:q.user!.id,actorName:q.user!.id,action:'TEMPORARY_CREATE',targetType:'TemporaryAccess',targetId:saved.id,summary:'Süreli erişim oluşturuldu; kimlik bilgileri kayda alınmadı.'}});return saved;
   });
@@ -50,8 +54,9 @@ temporaryRouter.post('/api/temporary/login',ipLimit.middleware(),credentialLimit
   const session=await prisma.$transaction(async tx=>{
     // A parameter cannot name a SQL column. Use two fixed tagged templates instead.
     const found=isLink?await tx.$queryRaw<Array<{id:string}>>`SELECT id FROM "TemporaryAccess" WHERE "linkHash"=${hash} FOR UPDATE`:await tx.$queryRaw<Array<{id:string}>>`SELECT id FROM "TemporaryAccess" WHERE "codeHash"=${hash} FOR UPDATE`;
-    const grant=found[0]?await tx.temporaryAccess.findUnique({where:{id:found[0].id},include:{user:true}}):null;
+    const grant=found[0]?await tx.temporaryAccess.findUnique({where:{id:found[0].id},include:{user:{include:{dealer:{select:{active:true}}}}}}):null;
     if(!grant||!grant.user.active||grant.user.role!=='TEMPORARY'||!accessIsValid(grant))throw new SecurityError(401,'Erişim geçersiz, iptal edilmiş veya süresi dolmuş.');
+    if(grant.scopes.includes('DEALER_EXAMS')&&(!grant.user.dealerId||!grant.user.dealer?.active))throw new SecurityError(401,'Bağlı bayi artık etkin değil.');
     if(isLink){const used=await tx.temporaryAccess.updateMany({where:{id:grant.id,linkHash:hash,linkUsedAt:null,revokedAt:null,expiresAt:{gt:new Date()}},data:{linkUsedAt:new Date()}});if(used.count!==1)throw new SecurityError(409,'Bağlantı daha önce kullanıldı. Kodunuz hâlâ geçerliyse Geçici Giriş ile devam edin.');}
     const issued=await issueSession(grant.user,q,{expiresAt:grant.expiresAt},tx);
     await tx.user.update({where:{id:grant.userId},data:{lastLoginAt:new Date()}});

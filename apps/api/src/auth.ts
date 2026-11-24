@@ -48,6 +48,12 @@ export async function requireAuth(request: AuthenticatedRequest, response: Respo
       if (!grant || !accessIsValid(grant) || +session.expiresAt > +grant.expiresAt) { response.status(401).json({error:'Geçici erişim sona erdi.'}); return; }
       if (!temporaryPathAllowed(request.method, pathname || '', grant.scopes)) { response.status(403).json({error:'Bu işlem geçici erişim kapsamında değil.'}); return; }
       request.user.temporary = {id:grant.id,scopes:grant.scopes,expiresAt:grant.expiresAt};
+      if (grant.scopes.includes('DEALER_EXAMS')) {
+        if (!user.dealerId || !user.dealer?.active || claims.dealerId !== user.dealerId) { response.status(401).json({error:'Geçici erişimin bayi kapsamı artık geçerli değil.'}); return; }
+        // The persisted identity/session remain TEMPORARY. Reuse dealer guards
+        // only after current grant validation and the explicit route allowlist.
+        request.user.role = 'DEALER';
+      }
     }
     if (session.actorAdminId && pathname?.startsWith("/api/account") && request.method !== "GET") { response.status(403).json({ error: "Temsil oturumunda bayi hesap bilgileri ve şifresi değiştirilemez." }); return; }
     if (user.mustChangePassword && !(pathname === "/api/account/password" || pathname === "/api/account" && request.method === "GET" || pathname === "/api/security/logout")) { response.status(403).json({ code: "PASSWORD_CHANGE_REQUIRED", error: "Devam etmek için kendi şifrenizi belirlemelisiniz." }); return; }

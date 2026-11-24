@@ -9,6 +9,7 @@ import { env } from "./config";
 import type { AuthenticatedRequest } from "./auth";
 import { SecurityError } from "./security-errors";
 import { studentNumberKey } from "./result-identity";
+import { assertTemporaryDealer } from "./temporary-dealer";
 
 type User = NonNullable<AuthenticatedRequest["user"]>;
 export type DealerPermission = "canCreateSchool" | "canEditSchool" | "canEvaluate" | "canDeleteResult" | "canEditResult" | "canReevaluate" | "canExport";
@@ -23,7 +24,8 @@ export async function dealerPermission(user: User, permission: DealerPermission,
   if (user.role !== "DEALER" || !user.dealerId) throw new SecurityError(403, "Bu işlem için bayi yetkisi gerekir.");
   if (lock) await db.$queryRaw`SELECT "id" FROM "Dealer" WHERE "id" = ${user.dealerId} FOR UPDATE`;
   const [dealer, account] = await Promise.all([db.dealer.findUnique({ where: { id: user.dealerId }, include: { regions: true } }), db.user.findUnique({ where: { id: user.id }, select: { active: true, role: true, dealerId: true } })]);
-  if (!dealer?.active || !account?.active || account.role !== "DEALER" || account.dealerId !== user.dealerId) throw new SecurityError(401, "Bayi hesabı artık etkin değil.");
+  if (!dealer?.active || !account?.active || account.dealerId !== user.dealerId || (user.temporary ? account.role !== 'TEMPORARY' : account.role !== 'DEALER')) throw new SecurityError(401, "Bayi hesabı artık etkin değil.");
+  if (user.temporary) await assertTemporaryDealer(user, db);
   if (!dealer[permission]) throw new SecurityError(403, "Bu işlem yetkiniz yönetici tarafından kapatılmış.", "DEALER_PERMISSION_DISABLED");
   return dealer as Dealer & { regions: { publisherId: string | null; city: string | null; district: string | null }[] };
 }

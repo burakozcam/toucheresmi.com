@@ -255,3 +255,10 @@ npm run test:v146
 HTTP testi kendi geçici localhost sunucusunu açar/kapatır, gerçek Prisma/veritabanı işlemleri ve test saati kullanır. `v146-env.cjs` farklı DB adresini reddeder. Yeni fixture hesapları üretir; `test-results/v146/ui-seed.json` yalnız sentetik oturum/kod/bağlantı içerir ve paylaşılmaz.
 
 Üretim Web'i `NEXT_PUBLIC_API_URL=http://localhost:4046 KS_LOW_RESOURCE_BUILD=1 node node_modules/next/dist/bin/next build apps/web` ile üretin. Ayrı terminallerde `node --import tsx tests/e2e/v146-serve.cjs` ve `NEXT_PUBLIC_API_URL=http://localhost:4046 node node_modules/next/dist/bin/next start apps/web --hostname 127.0.0.1 --port 3146` açın; ardından `python3 tests/e2e/v146-ui.py`. Yeni UI koşumu için önce HTTP testini yeniden çalıştırarak yeni tek kullanımlık bağlantı ve okunmamış bildirim fixture'ları oluşturun. Dış tarayıcı ağı engellenir. Test sonunda yalnız kendi servislerinizi ve v146 test konteynerinizi durdurun. Localhost Web build'i canlıya taşınmaz; gerçek yayın için `docs/v146-manual-deployment.md` kullanılır.
+
+
+## Mobil menü ve simge şeridi
+
+DB gerekmez. `NEXT_PUBLIC_API_URL=http://localhost:4046 KS_LOW_RESOURCE_BUILD=1 npm run build -w @optik/web` ile yerel build üretin; `NEXT_PUBLIC_API_URL=http://localhost:4046 npm run start -w @optik/web -- --hostname 127.0.0.1 --port 3146` ile açın. Ardından `python3 tests/e2e/mobile-menu.py` çalıştırın.
+
+Test 4046 API yanıtlarını tarayıcıda sentetik hesaplarla karşılar, dış HTTP(S) trafiğini engeller. Dokunmatik 320/390/768/844 görünümler, iki tema, aç/kapat/araç seçimi, touchStart/touchMove/touchEnd ile kapanış sonrası kaydırma, katman ve odak temizliği, azaltılmış hareket, masaüstü genişliği ve rol filtreleri denetlenir. Kanıtlar `test-results/mobile-menu` altındadır; ayrıntılar `docs/mobile-menu-fix.md`. Fiziksel telefon testi değildir. İş sonunda yalnız kendi localhost Web sürecinizi kapatın; yerel API adresiyle oluşan build canlıya taşınmaz.

@@ -8,7 +8,7 @@ export const sessionLabel = (request?: Request) => (request?.header?.("user-agen
 export async function issueSession(user: any, request?: Request, options: { mfaVerifiedAt?: Date; trustedDeviceId?: string; actorAdminId?: string; parentSessionId?: string; expiresAt?: Date } = {}, db: any = prisma) {
   const expiresAt = options.expiresAt ?? new Date(Date.now() + 8 * 3600_000);
   const session = await db.authSession.create({ data: { userId: user.id, role: user.role, credentialVersion: credentialVersion(user.passwordHash), expiresAt, label: sessionLabel(request), ...options } });
-  const token = jwt.sign({ role: user.role, credentialVersion: session.credentialVersion, jti: session.id, ...(options.actorAdminId?{dealerId:user.dealerId}:{}) }, env.JWT_SECRET, { subject: user.id, expiresIn: Math.max(1, Math.floor((+expiresAt - Date.now()) / 1000)) });
+  const token = jwt.sign({ role: user.role, credentialVersion: session.credentialVersion, jti: session.id, ...(options.actorAdminId || user.role === 'TEMPORARY' ? {dealerId:user.dealerId} : {}) }, env.JWT_SECRET, { subject: user.id, expiresIn: Math.max(1, Math.floor((+expiresAt - Date.now()) / 1000)) });
   return { token, user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, role: user.role, mustChangePassword: user.mustChangePassword }, expiresAt };
 }
 export async function assertFreshAdmin(user: any, db: any = prisma) {

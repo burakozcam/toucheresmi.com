@@ -226,7 +226,7 @@
     },
     {
       "file": "panel/page.tsx",
-      "controls": 25
+      "controls": 32
     },
     {
       "file": "panel/password-setup.tsx",
@@ -309,6 +309,10 @@
       "controls": 3
     },
     {
+      "file": "panel/session-gate.tsx",
+      "controls": 0
+    },
+    {
       "file": "panel/share-links.tsx",
       "controls": 14
     },
@@ -325,8 +329,20 @@
       "controls": 7
     },
     {
+      "file": "panel/support-workspace.tsx",
+      "controls": 19
+    },
+    {
       "file": "panel/system-center.tsx",
       "controls": 8
+    },
+    {
+      "file": "panel/temporary-fmt.tsx",
+      "controls": 2
+    },
+    {
+      "file": "panel/temporary-members.tsx",
+      "controls": 10
     },
     {
       "file": "panel/test-center.tsx",
@@ -381,7 +397,7 @@
       "controls": 1
     }
   ],
-  "total": 790,
+  "total": 828,
   "needsLabelReview": [
     "pdf-duzenleyici-editor-1"
   ]

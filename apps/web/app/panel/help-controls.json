@@ -11019,5 +11019,83 @@
     "min": "",
     "max": "",
     "review": false
+  },
+  "panel-page-temporary-exam": {
+    "id": "panel-page-temporary-exam",
+    "file": "apps/web/app/panel/page.tsx",
+    "tag": "button",
+    "type": "button",
+    "label": "Sınav Yükle",
+    "options": [],
+    "accept": "",
+    "required": false,
+    "min": "",
+    "max": "",
+    "review": false
+  },
+  "panel-page-temporary-results": {
+    "id": "panel-page-temporary-results",
+    "file": "apps/web/app/panel/page.tsx",
+    "tag": "button",
+    "type": "button",
+    "label": "Sınav Sonuçları",
+    "options": [],
+    "accept": "",
+    "required": false,
+    "min": "",
+    "max": "",
+    "review": false
+  },
+  "panel-temporary-members-dealer": {
+    "id": "panel-temporary-members-dealer",
+    "file": "apps/web/app/panel/temporary-members.tsx",
+    "tag": "select",
+    "type": "select",
+    "label": "Bağlı bayi",
+    "options": [],
+    "accept": "",
+    "required": true,
+    "min": "",
+    "max": "",
+    "review": false
+  },
+  "panel-menu-rail-open": {
+    "id": "panel-menu-rail-open",
+    "file": "apps/web/app/panel/page.tsx",
+    "tag": "button",
+    "type": "button",
+    "label": "Yönetim menüsünü aç",
+    "options": [],
+    "accept": "",
+    "required": false,
+    "min": "",
+    "max": "",
+    "review": false
+  },
+  "panel-menu-rail-group": {
+    "id": "panel-menu-rail-group",
+    "file": "apps/web/app/panel/page.tsx",
+    "tag": "button",
+    "type": "button",
+    "label": "Simgeyle menü bölümünü aç",
+    "options": [],
+    "accept": "",
+    "required": false,
+    "min": "",
+    "max": "",
+    "review": false
+  },
+  "panel-menu-close": {
+    "id": "panel-menu-close",
+    "file": "apps/web/app/panel/page.tsx",
+    "tag": "button",
+    "type": "button",
+    "label": "Menü’yü kapat",
+    "options": [],
+    "accept": "",
+    "required": false,
+    "min": "",
+    "max": "",
+    "review": false
   }
 }
