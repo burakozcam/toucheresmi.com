@@ -2063,7 +2063,7 @@ app.use(
     response.locals.failureKind = error instanceof Prisma.PrismaClientKnownRequestError || error instanceof Prisma.PrismaClientInitializationError ? "DATABASE_ERROR" : /pdf/i.test(_request.route?.path ?? "") ? "PDF_ERROR" : "SERVER_ERROR";
     console.error("API request failed", { category: error instanceof Prisma.PrismaClientKnownRequestError ? "DATABASE" : "SERVER", route: _request.route?.path ?? "unknown" });
     const requestId=crypto.randomUUID();
-    console.error("API failure reference",{requestId,route:_request.route?.path??"unknown",category:response.locals.failureKind});
+    console.error("API failure reference",{requestId,route:_request.route?.path??"unknown",category:response.locals.failureKind,...(error instanceof Prisma.PrismaClientKnownRequestError&&/^P[0-9]{4}$/.test(error.code)?{prismaCode:error.code}:{}),...(_request.route?.path==="/evaluate"?{operationStep:response.locals.evaluationStep??"prepare"}:{})});
     response.status(500).json({ error: `İşlem sunucuda tamamlanamadı. Tekrar denemeden önce kayıt durumunu kontrol edin. Destek takip kodu: ${requestId}`,code:"INTERNAL_ERROR",requestId });
   },
 );

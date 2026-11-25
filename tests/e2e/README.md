@@ -262,3 +262,17 @@ HTTP testi kendi geçici localhost sunucusunu açar/kapatır, gerçek Prisma/ver
 DB gerekmez. `NEXT_PUBLIC_API_URL=http://localhost:4046 KS_LOW_RESOURCE_BUILD=1 npm run build -w @optik/web` ile yerel build üretin; `NEXT_PUBLIC_API_URL=http://localhost:4046 npm run start -w @optik/web -- --hostname 127.0.0.1 --port 3146` ile açın. Ardından `python3 tests/e2e/mobile-menu.py` çalıştırın.
 
 Test 4046 API yanıtlarını tarayıcıda sentetik hesaplarla karşılar, dış HTTP(S) trafiğini engeller. Dokunmatik 320/390/768/844 görünümler, iki tema, aç/kapat/araç seçimi, touchStart/touchMove/touchEnd ile kapanış sonrası kaydırma, katman ve odak temizliği, azaltılmış hareket, masaüstü genişliği ve rol filtreleri denetlenir. Kanıtlar `test-results/mobile-menu` altındadır; ayrıntılar `docs/mobile-menu-fix.md`. Fiziksel telefon testi değildir. İş sonunda yalnız kendi localhost Web sürecinizi kapatın; yerel API adresiyle oluşan build canlıya taşınmaz.
+
+## Öğrenci girişi, değerlendirme ve ana sayfa kabulü
+
+`tests/e2e/student-evaluation-env.cjs` yalnız `127.0.0.1:55476/ks_student_evaluation` sentetik PostgreSQL adresini kabul eder. Yeni, silinebilir PostgreSQL 16 ortamı `ksqa` kullanıcısı ve `synthetic-local-only` test parolasıyla hazırlanır. Mevcut migration zincirini yalnız bu yeni test DB’sine uygulayın; yeni şema veya bağımlılık eklenmemiştir.
+
+```sh
+DATABASE_URL=postgresql://ksqa:synthetic-local-only@127.0.0.1:55476/ks_student_evaluation node node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma
+node --import tsx tests/e2e/student-evaluation-http.cjs
+KS_LOW_RESOURCE_BUILD=1 NEXT_PUBLIC_API_URL=http://localhost:4076 npm run build -w @optik/web
+```
+
+Ayrı terminallerde `node --import tsx tests/e2e/student-evaluation-serve.cjs` ve `NEXT_PUBLIC_API_URL=http://localhost:4076 npm run start -w @optik/web -- --hostname 127.0.0.1 -p 3176` çalıştırın; ardından `python3 tests/e2e/student-evaluation-ui.py`. HTTP testi gerçek Prisma/HTTP, yeni sentetik kayıtlar, 555/678 ekleme-güncelleme, tekrar yükleme, kurum/öğrenci izolasyonu, kontrollü geç transaction hatası ve güvenli tanılama kullanır. UI testi ilk kurum listesini gerçek API’den alır; boş/hata/eski yanıt senaryolarını ayrıca tarayıcıda denetler. Gerçek kişisel kod, öğrenci A/B ve veli parola girişi, PDF/asistan, 320/390/1440 genişlik, iki tema ve hareket tercihleri kapsanır. Dış tarayıcı HTTP(S) trafiği engellidir. Arka arkaya UI koşumlarında korumaları gevşetmeyin; kendi sentetik API sürecinizi yeniden başlatarak süreç içi test sayaçlarını sıfırlayın.
+
+Kanıtlar `test-results/student-evaluation` altındadır. `ui-seed.json` yalnız sentetik oturum/parola/kod içerir ve paylaşılmaz. Localhost Web derlemesi yayın paketi değildir. İş sonunda yalnız kendi API/Web süreçlerinizi ve test konteynerinizi kapatın. Manuel GitHub → cPanel akışı değişmemiştir.

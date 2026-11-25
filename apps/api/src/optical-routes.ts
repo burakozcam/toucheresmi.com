@@ -1,3 +1,4 @@
+import {evaluationChanges} from './evaluation-changes';
 import {batchReevaluationRouter} from './batch-reevaluation';
 import {examStructure,builtinExamTemplates} from './exam-template-core';
 import {recordKeyRevision,requireKeyConfirmation,revisionFingerprint} from './key-revision';
@@ -73,7 +74,7 @@ opticalRouter.use((req:AuthenticatedRequest,res,next)=>{res.on("finish",()=>{if(
 opticalRouter.use(batchReevaluationRouter,examReportLogoRouter,resultEditRouter,resultRouter,txtArchiveRouter);
 type Handler = (req: AuthenticatedRequest,res: express.Response)=>Promise<void>;
 const wrap = (handler: Handler): express.RequestHandler => async(req,res,next)=>{
-  try {await handler(req as AuthenticatedRequest,res);} catch(error) {
+  try {res.locals??={};await handler(req as AuthenticatedRequest,res);} catch(error) {
     if(error instanceof SecurityError){next(error);return;}
     if(error instanceof z.ZodError){res.status(400).json({error:error.issues[0]?.message ?? "Geçersiz veri."});return;}
     if(error instanceof Prisma.PrismaClientKnownRequestError){
@@ -353,11 +354,12 @@ for(const endpoint of ["preview","evaluate"]){
     const activeRows=previousRows.filter(row=>!isDeleted(row.snapshot));
     const separateParent=input.mergeSessions==="false"&&reprocessing?activeRows.find(row=>archived.some(item=>{const context=evaluatedContext(item,school.id,key.id);return context?.id===row.id||context?.seriesId===row.seriesId;})):undefined;
     if(separateParent&&(separateParent.snapshot as any).mergeSessions!==false){res.status(400).json({error:"Bu dosya birleştirilmiş oturumda değerlendirildi. Birleştirme modunu kullanın veya önceki değerlendirmeyi kaldırın."});return;}
-    const parent=input.mergeSessions==="true"&&(!duplicate||isDeleted((duplicate as any).snapshot)||reprocessing)?activeRows[0]:separateParent;
-    const calculated=await cpuJob<{data:typeof data;summary:ReturnType<typeof opticalSummary>}>({kind:'summary',data,previous:parent&&input.mergeSessions==="true"?(parent.snapshot as any).data:undefined,replaceKeys:[...replaceKeys],penalty:key.penalty});data=calculated.data;
+    const parent=input.mergeSessions==="true"?activeRows[0]:separateParent;
+    const calculated=await cpuJob<{data:typeof data;summary:ReturnType<typeof opticalSummary>}>({kind:'summary',data,previous:parent&&input.mergeSessions==="true"?(parent.snapshot as any).data:undefined,replaceKeys:[...replaceKeys],preferIncoming:true,penalty:key.penalty});data=calculated.data;
     const snapshot={mergeSessions:input.mergeSessions==="true",expectedGrade:key.publication?.grade,keyFingerprint:keyFingerprint(key.questions,key.penalty),data,summary:calculated.summary,penalty:key.penalty,schoolName:school.name,templateName:template.name,keyName:key.publication?.examName??key.name};
+    const changes=evaluationChanges(parent?(parent.snapshot as any).data:undefined,data);
     const checks=reviewSnapshot(snapshot);
-    if(duplicate&&!isDeleted((duplicate as any).snapshot)&&!reprocessing)checks.blockers.push("Bu TXT aynı kurum ve sınav için zaten yüklendi. Sonuç Al ekranından mevcut kaydı açın.");
+    if(input.mergeSessions==="false"&&duplicate&&!isDeleted((duplicate as any).snapshot)&&!reprocessing)checks.blockers.push("Bu TXT aynı kurum ve sınav için zaten yüklendi. Sonuç Al ekranından mevcut kaydı açın.");
     const uploadFingerprint=checksum(canonicalJson({schoolId:school.id,fileIds:input.fileIds,template:opticalLayoutSchema.parse(template.layout),key:snapshot.keyFingerprint,uploadChecksum,parent:parent?.id,merged:checksum(canonicalJson(safeSnapshot(snapshot).data))}));
     if(endpoint==="preview"){
       const dealer=await dealerPermission(req.user!,"canEvaluate");
@@ -366,10 +368,11 @@ for(const endpoint of ["preview","evaluate"]){
        const known=previousRows.flatMap(row=>(row.snapshot as any).data?.students??[]);
        if(data.students.some(person=>!known.some(old=>compatibleStudent(old,person))))throw regionError();
       }
-      res.json({...safeSnapshot(snapshot),resourceManagement:{enabled:true,scope:"shared-storage-and-process-memory",persistentQueue:false},checks,previewToken:seal("upload",req.user!.id,school.id,uploadFingerprint)});return;}
+      res.json({...safeSnapshot(snapshot),changes,resourceManagement:{enabled:true,scope:"shared-storage-and-process-memory",persistentQueue:false},checks,previewToken:seal("upload",req.user!.id,school.id,uploadFingerprint)});return;}
     if(!input.previewToken||!validSeal(input.previewToken,"upload",req.user!.id,school.id,uploadFingerprint)){res.status(409).json({error:"Önce TXT’yi kontrol edin. Anahtar veya dosya değiştiyse önizlemeyi yenileyin."});return;}
     if(checks.blockers.length){res.status(409).json({error:checks.blockers.join(" ")});return;}
     if(checks.warnings.length && input.confirmWarnings!=="true"){res.status(400).json({error:"Kontrol özetindeki uyarıları önizlemede inceleyip onaylayın."});return;}
+    res.locals.evaluationStep="authorize";
     const result=await prisma.$transaction(async tx=>{
       const authorization=await authorizeEvaluation(tx,req.user!,school.id,key.id,data.students);
       // Recheck ownership immediately before writing, not just when rendering the selector.
@@ -380,23 +383,36 @@ for(const endpoint of ["preview","evaluate"]){
       if(keyFingerprint(stillAvailable.questions,stillAvailable.penalty)!==snapshot.keyFingerprint)throw new z.ZodError([{code:"custom",path:[],message:"Cevap anahtarı değişti. Önizlemeyi yenileyin."}]);
       const repeatedItem=await tx.opticalResult.findFirst({where:{schoolId:school.id,keyId:key.id,templateId:template.id,uploadChecksum},select:{id:true}});
       const [repeated]=await withResultSnapshots(tx,repeatedItem?[repeatedItem]:[]);
-      if(repeated&&!isDeleted(repeated.snapshot)&&!reprocessing)throw new z.ZodError([{code:"custom",path:[],message:"Bu TXT zaten kaydedildi. Sınav Sonuçları ekranından açın."}]);
+      if(input.mergeSessions==="false"&&repeated&&!isDeleted(repeated.snapshot)&&!reprocessing)throw new z.ZodError([{code:"custom",path:[],message:"Bu TXT zaten kaydedildi. Sınav Sonuçları ekranından açın."}]);
+      res.locals.evaluationStep="template";
       const systemTemplate=systemEvaluationTemplate(input.templateId);
       const currentTemplate=systemTemplate
         ? await tx.opticalTemplate.upsert({where:{id:template.id},update:{},create:{...systemTemplate,id:template.id,layout:systemTemplate.layout as Prisma.InputJsonValue}})
         : await tx.opticalTemplate.findFirst({where:{id:template.id,active:true}});
       if(!currentTemplate||currentTemplate.active===false||canonicalJson(opticalLayoutSchema.parse(currentTemplate.layout))!==canonicalJson(opticalLayoutSchema.parse(template.layout)))throw new z.ZodError([{code:"custom",path:[],message:"FMT değişti veya pasif yapıldı. Önizlemeyi yenileyin."}]);
-      if(parent){const currentItem=await tx.opticalResult.findFirst({where:{id:parent.id,nextRevision:null,school:scope(req)},select:{id:true}});const [current]=await withResultSnapshots(tx,currentItem?[currentItem]:[]);if(!current||isDeleted(current.snapshot))throw new Error("Oturum kaydı değişti. Dosyayı yeniden değerlendirin.");}
+      res.locals.evaluationStep="parent";
+      if(parent){const currentItem=await tx.opticalResult.findFirst({where:{id:parent.id,nextRevision:null,school:scope(req)},select:{id:true}});const [current]=await withResultSnapshots(tx,currentItem?[currentItem]:[]);if(!current||isDeleted(current.snapshot))throw new SecurityError(409,"Oturum kaydı değişti. Dosyayı yeniden değerlendirin.");}
+      // Replaying identical valid answers must not create a revision, revoke publication,
+      // or change reader grants. Archive metadata still commits in the same transaction.
+      if(parent&&!changes.added&&!changes.updated&&(parent.snapshot as any).keyFingerprint===snapshot.keyFingerprint){
+       res.locals.evaluationStep="archive-reuse";
+       if(input.fileIds){const updated=await tx.opticalTxtFile.updateMany({where:{id:{in:input.fileIds},deletedAt:null,...archiveScope(req.user!)},data:{evaluatedAt:new Date(),resultId:parent.id}});if(updated.count!==input.fileIds.length)throw new SecurityError(409,"TXT arşivi değişti. Dosya listesini yenileyin.");await tx.opticalTxtUse.createMany({data:input.fileIds.map(fileId=>({fileId,resultId:parent.id})),skipDuplicates:true});}
+       return {...parent,reused:true};
+      }
+      res.locals.evaluationStep="create-result";
       const snapshotJson=JSON.stringify(snapshot),largeSnapshot=Buffer.byteLength(snapshotJson)>1024*1024;
       const created=await tx.opticalResult.create({data:{schoolId:school.id,templateId:template.id,keyId:key.id,createdById:req.user!.id,filename:files.map(file=>file.originalname).join(" + ").slice(0,200),...(parent?{seriesId:parent.seriesId,revision:parent.revision+1,supersedesId:parent.id,studentPublished:false}:{}),uploadChecksum,snapshot:largeSnapshot?{}:snapshot as unknown as Prisma.InputJsonValue},select:{id:true,createdAt:true,studentPublished:true,revision:true,seriesId:true}});
       if(largeSnapshot)await writeResultSnapshot(tx,created.id,snapshotJson);
+      res.locals.evaluationStep="reader-grants";
       if(parent){await carryReaderGrants(tx,parent,created.id,snapshot.data);if(parent.studentPublished)await tx.opticalResult.update({where:{id:parent.id},data:{studentPublished:false}});}
+      res.locals.evaluationStep="archive";
       if(input.fileIds){const updated=await tx.opticalTxtFile.updateMany({where:{id:{in:input.fileIds},deletedAt:null,...archiveScope(req.user!)},data:{evaluatedAt:new Date(),resultId:created.id}});if(updated.count!==input.fileIds.length)throw new Error("TXT arşivi değişti. Dosya listesini yenileyin.");await tx.opticalTxtUse.createMany({data:input.fileIds.map(fileId=>({fileId,resultId:created.id})),skipDuplicates:true});}
+      res.locals.evaluationStep="activity";
       await activity(tx,req.user!,"EVALUATE",{schoolId:school.id,keyId:key.id,publisherId:authorization.publisherId,city:authorization.school.city,district:authorization.school.district,studentCount:inputStudentCount,resultId:created.id});
       return created;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
     if(!result){res.status(403).json({error:"Kurum erişimi değişti. Listeyi yenileyin."});return;}
-    res.status(201).json({id:result.id,createdAt:result.createdAt,studentPublished:result.studentPublished,revision:result.revision,seriesId:result.seriesId,checks,evaluationStatus:checks.warnings.length?"completed_with_warnings":"completed",schoolId:school.id,keyId:key.id,...safeSnapshot(snapshot)});
+    res.status("reused" in result?200:201).json({changes,reused:"reused" in result,id:result.id,createdAt:result.createdAt,studentPublished:result.studentPublished,revision:result.revision,seriesId:result.seriesId,checks,evaluationStatus:checks.warnings.length?"completed_with_warnings":"completed",schoolId:school.id,keyId:key.id,...safeSnapshot(snapshot)});
   }));
 }
 // Lazy deletion browser: aggregate JSON in PostgreSQL; never transfer student snapshots.

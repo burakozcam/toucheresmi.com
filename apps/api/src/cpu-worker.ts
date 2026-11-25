@@ -18,7 +18,7 @@ parentPort!.on('message',(job:CpuJob)=>{
    case 'reader':value=evaluationReader(job.text,job.selected,job.templates,job.missingBooklet);break;
    case 'match':value=matchExamAnswers(job.text,job.layout,job.questions);break;
    case 'parse':value=parseOptical(job.text,job.layout,job.questions,job.school,{...job.options,hashIdentity:identityHash,...(job.encrypt?{encryptIdentity}:{})});break;
-   case 'summary':{const keys=new Set(job.replaceKeys),data=job.previous?mergeStudentData(job.previous,job.data,student=>keys.has(student.identityHash??'')||keys.has(`${student.branch.split('-')[0]}:${studentNumberKey(student.studentNo??student.id)}`)):job.data;value={data,summary:opticalSummary(data,job.penalty)};break;}
+   case 'summary':{const keys=new Set(job.replaceKeys),data=job.previous?mergeStudentData(job.previous,job.data,student=>job.preferIncoming===true||keys.has(student.identityHash??'')||keys.has(`${student.branch.split('-')[0]}:${studentNumberKey(student.studentNo??student.id)}`)):job.data;value={data,summary:opticalSummary(data,job.penalty)};break;}
   }
   parentPort!.postMessage({ok:true,value});
  }catch(error){const known=error instanceof SecurityError;parentPort!.postMessage({ok:false,status:known?error.status:422,code:known?error.code:'TXT_PROCESSING_FAILED',message:error instanceof Error?error.message:'TXT işlenemedi. Dosya ve FMT seçimini kontrol edin.'});}

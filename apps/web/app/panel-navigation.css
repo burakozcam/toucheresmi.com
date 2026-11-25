@@ -59,3 +59,7 @@
 @media(hover:hover) and (pointer:fine){.dashboard .sidebar-rail button:hover{background:#2a3d55;color:#f1f5fc}.dashboard .sidebar .sidebar-close:hover{background:#2a3d55;color:#fff}}
 @media(prefers-reduced-motion:reduce){.dashboard .sidebar,.dashboard .sidebar-overlay,.dashboard .dashboard-main{transition:none}}
 @media print{.sidebar-rail,.sidebar-overlay{display:none!important}.dashboard .dashboard-main{margin-left:0!important}}
+/* SVG controls retain a full touch target even when their text is hidden. */
+.dashboard .header-logout{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;flex-shrink:0}
+.dashboard .header-logout .ui-icon{width:20px;height:20px;flex-shrink:0}
+@media(max-width:680px){.dashboard .dashboard-actions{gap:6px;flex-shrink:0}.dashboard .dashboard-actions :is(.theme-toggle,.header-avatar){width:44px;min-width:44px;height:44px}.dashboard .header-logout{font-size:0;padding:8px}.dashboard .breadcrumbs{min-width:0;overflow-wrap:anywhere}}

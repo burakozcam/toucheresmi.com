@@ -56,7 +56,8 @@ test("yükleme API: boş FMT deposunda sistem FMT seçilir, sınıf/soru dağıl
     assert.equal((await call("/evaluate",{...body,schoolId:"forbidden",previewToken:preview.body.previewToken})).status,403);
     const saved=await call("/evaluate",{...body,previewToken:preview.body.previewToken});assert.equal(saved.status,201);assert.equal(results.length,1);assert.equal(templates.length,1);
     const opened=await call("/results/:id");assert.deepEqual(opened.body.data,saved.body.data);assert.deepEqual(opened.body.summary,opticalSummary(opened.body.data,3));
-    assert.equal((await call("/preview")).body.checks.blockers.length,1);
+    const repeatedPreview=await call("/preview");assert.equal(repeatedPreview.body.checks.blockers.length,0);
+    const repeated=await call("/evaluate",{...body,previewToken:repeatedPreview.body.previewToken});assert.equal(repeated.status,200);assert.equal(repeated.body.reused,true);assert.equal(results.length,1);
     const previousSummary=structuredClone(opened.body.summary);key.questions=[];
     const missingKey=await call("/results/:id/checks");assert.equal(missingKey.status,200);assert.ok(missingKey.body.blockers.some((message:string)=>message.includes("Güncel cevap anahtarı")));
     assert.deepEqual((await call("/results/:id")).body.summary,previousSummary);

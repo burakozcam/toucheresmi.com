@@ -1,0 +1,3 @@
+const database='postgresql://ksqa:synthetic-local-only@127.0.0.1:55476/ks_student_evaluation';
+if(process.env.DATABASE_URL&&process.env.DATABASE_URL!==database)throw Error('Exclusive disposable localhost test database required');
+Object.assign(process.env,{NODE_ENV:'test',DATABASE_URL:database,JWT_SECRET:'student-evaluation-synthetic-signing-secret-only',MFA_ENCRYPTION_KEY:'e8'.repeat(32),TXT_STORAGE_KEY:'student-evaluation-synthetic-storage-secret-only',STORAGE_DIR:'/tmp/ks-student-evaluation-storage',RECAPTCHA_ENABLED:'false',TURNSTILE_ENABLED:'false',WEB_ORIGIN:'http://localhost:3176',RATE_LIMIT_STORE:'memory',ALLOW_REMOTE_DATABASE:'false'});

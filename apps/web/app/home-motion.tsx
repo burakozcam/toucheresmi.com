@@ -22,17 +22,5 @@ export function PublisherRibbon({ publishers }: { publishers: { id: string; name
   </section>;
 }
 
-export function HomeEffects(){
- useEffect(()=>{
-  const hero=document.querySelector<HTMLElement>('.real-report-hero');
-  if(!('IntersectionObserver' in window))return;
-  const motion=matchMedia('(prefers-reduced-motion: reduce)');let visible=false;
-  const sync=()=>{if(hero)hero.dataset.floating=String(visible&&!document.hidden&&!motion.matches);};
-  const visibility=new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;sync();});if(hero)visibility.observe(hero);
-  document.addEventListener('visibilitychange',sync);motion.addEventListener('change',sync);sync();
-  const nodes=document.querySelectorAll<HTMLElement>('.home-exams,.institution-section,.home-tool-links');
-  const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(!entry.isIntersecting)return;entry.target.setAttribute('data-entered','true');observer.unobserve(entry.target);}),{threshold:.12});
-  nodes.forEach(node=>{node.dataset.motion='ready';observer.observe(node);});
-  return()=>{visibility.disconnect();observer.disconnect();document.removeEventListener('visibilitychange',sync);motion.removeEventListener('change',sync);nodes.forEach(node=>delete node.dataset.motion);};
- },[]);return null;
-}
+// Promotional headings stay still; motion belongs to the demonstrated workflows.
+export function HomeEffects(){return null;}

@@ -159,8 +159,8 @@ export default function LoginPage() {
           <h2>{registering ? "Üyelik talebi oluşturun" : "Hesabınıza giriş yapın"}</h2>
           <p className="login-subtitle">{registering ? "Bilgileriniz yönetici onayına gönderilir." : "Devam etmek için giriş türünüzü seçin."}</p>
           {!registering && <div className="login-types">
-            {loginTypes.filter(t=>!["admin","student","parent"].includes(t.id)).map((type) => <button className={`login-type ${selectedType === type.id ? "active" : ""} ${!type.available ? "unavailable" : ""}`} key={type.id} onClick={() => selectType(type.id, type.available)} type="button">
-              <span className="login-type-icon"><UiIcon name={type.id==="dealer"?"book":type.id==="admin"?"settings":type.id==="institution"?"school":type.id==="temporary"?"key-clock":"users"}/></span>
+            {loginTypes.filter(t=>!["admin","parent"].includes(t.id)).map((type) => <button className={`login-type ${selectedType === type.id ? "active" : ""} ${!type.available ? "unavailable" : ""}`} key={type.id} onClick={() => type.id==="student" ? location.assign("/sonuclar") : selectType(type.id, type.available)} type="button">
+              <span className="login-type-icon"><UiIcon name={type.id==="dealer"?"book":type.id==="admin"?"settings":type.id==="institution"?"school":type.id==="temporary"?"key-clock":"student"}/></span>
               <span className="login-type-copy"><strong>{type.title}</strong><small>{type.description}</small></span>
               <span className="login-type-arrow">{selectedType === type.id ? "●" : "○"}</span>
             </button>)}
@@ -180,7 +180,6 @@ export default function LoginPage() {
           {message && <p className={`login-message ${success ? "message-success" : "message-error"}`} role="status">{success ? "✓" : "!"} {message}</p>}
           <p className="field-help">Öğrenci ve veli hesaplarını kurumunuzun bayisi oluşturur; ilk şifrenizi verilen davet bağlantısından belirleyin.</p>
           {selectedType!=="temporary"&&<p className="login-help">{registering ? "Zaten hesabınız var?" : "Üye olmak mı istiyorsunuz?"} <button type="button" className="auth-switch" onClick={() => { setRegistering(!registering); setMessage(""); setSuccess(false); }}>{registering ? "Giriş yapın" : "Üye ol"}</button></p>}
-          <p className="login-help"><Link href="/sonuclar#ogrenci-girisi">Öğrenci ve veli girişi <UiIcon name="arrow-right"/> Sonuçlar</Link></p>
           {!registering && <p className="login-help">Girişle ilgili desteğe mi ihtiyacınız var? <Link href="/contact#contact-form">Bize ulaşın</Link></p>}
           <div className="admin-login-area"><button type="button" className="button button-quiet" onClick={()=>{setRegistering(false);selectType("admin",true);}}>⚙ Yönetici Girişi</button><p className="field-help">Yalnızca sistem yöneticileri içindir.</p>{selectedType==="admin"&&!registering&&<form className="login-form" onSubmit={submitLogin}>
             <label>E-posta<div className="input-wrap"><span>✉</span><input name="email" type="email" autoComplete="username" placeholder="E-posta adresiniz" required /></div></label>

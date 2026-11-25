@@ -1,5 +1,8 @@
 /** Small local SVG icons: consistent geometry, no icon font or external dependency. */
 const paths:Record<string,string>={
+ logout:"M10 3H4v18h6M14 8l5 4-5 4M8 12h12",
+ menu:"M3 6h18M3 12h18M3 18h18",
+ student:"m2 8 10-5 10 5-10 5L2 8Zm4 3v6c4 3 8 3 12 0v-6m4-3v8",
  tools:"M3 8h18v13H3V8Zm5 0V4h8v4M3 13h18m-11-2v4h4v-4",
  "key-clock":"M14 6a5 5 0 1 1-3 8l-6 7H2v-4l7-7a5 5 0 0 1 5-4M18 2v5l3 2M17 11h.01",
  support:"M4 14v-3a8 8 0 0 1 16 0v3M4 11H2v7h4v-7m14 0h2v7h-4v-7m2 7c0 3-3 4-8 4",

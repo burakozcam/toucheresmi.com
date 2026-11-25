@@ -15,7 +15,7 @@ export type CpuJob=
  |{kind:'reader';text:string;selected:OpticalLayout;templates:Parameters<typeof evaluationReader>[2];missingBooklet?:string}
  |{kind:'parse';text:string;layout:OpticalLayout;questions:OpticalQuestion[];school:string;options:{missingBooklet?:'A'|'B'|'C'|'D';allowMismatch?:boolean;mergeSessions?:boolean};encrypt:boolean}
  |{kind:'match';text:string;layout:OpticalLayout;questions:OpticalQuestion[]}
- |{kind:'summary';data:OpticalData;previous?:OpticalData;replaceKeys:string[];penalty:number};
+ |{kind:'summary';data:OpticalData;previous?:OpticalData;replaceKeys:string[];preferIncoming?:boolean;penalty:number};
 // Bounded process-local pool. No Redis, background daemon, permanent queue or DB client.
 // Workers are created lazily and terminated after idle time; Passenger may restart safely.
 type Slot={worker:Worker;busy:boolean;idle?:ReturnType<typeof setTimeout>};

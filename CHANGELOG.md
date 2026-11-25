@@ -1,3 +1,12 @@
+# v1.4.7 · 2026-11-26 · yerel geliştirme
+
+- Öğrenci giriş kartı; yalnız kişisel kodla giriş, düzeltilmiş il/ilçe kurum listesi ve numara sorgusunda güvenli kod/hesapla devam etme.
+- Sonuç, karne ve Öğrenci Asistanı erişimi; iki öğrenci ve veli hesabı arasında yetki izolasyonu.
+- Aynı sınava yeni öğrenci ekleme, son geçerli cevapları uygulama, aynı cevap tekrarında sonuç sürümünü kullanma; eklenen/güncellenen/değişmeyen sayıları ve güvenli hata tanılaması.
+- Mobil SVG kontrol simgeleri; açık uçlu değerlendirme ve Öğrenci Asistanı tanıtımları; gerçek el yazısı fotoğrafının taramayla basılı denklemlere dönüşmesi.
+
+Yeni migration veya bağımlılık yok. Bildirilen canlı değerlendirme HTTP 500'ünün kök nedeni yerelde doğrulanmadı. [Doğrulama ve açık noktalar](docs/mobile-menu-fix.md). Commit/push/canlı dağıtım yapılmadı.
+
 # v1.4.6 · 2026-11-24 · yerel geliştirme
 
 1. Koyu panel kenar çubuğunda iki temada özgün renkli, kesilmeyen logo.

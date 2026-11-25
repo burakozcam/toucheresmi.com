@@ -59,7 +59,7 @@ export function mergeStudentData(previous:OpticalData,next:OpticalData,replaceSt
   for(const [session,record]of Object.entries(groups)){
    const overlapping=Object.entries(current).filter(([,r])=>r.lessons.some(l=>record.lessons.includes(l)));
    const oldMarks=overlapping.reduce((n,[,r])=>n+r.marks,0);
-   if(overlapping.length){duplicateRecords++;mergeWarnings.push(`${incoming.studentNo??incoming.id}: aynı oturum tekrarında en dolu kayıt bütünüyle seçildi; eşitlikte ilk kayıt korundu.`);if(!replaceStudent?.(incoming)&&record.marks<=oldMarks)continue;}
+   if(overlapping.length){duplicateRecords++;const replace=replaceStudent?.(incoming);mergeWarnings.push(replace?`${incoming.studentNo??incoming.id}: aynı oturum için son yüklenen geçerli kayıt bütünüyle seçildi.`:`${incoming.studentNo??incoming.id}: aynı oturum tekrarında en dolu kayıt bütünüyle seçildi; eşitlikte ilk kayıt korundu.`);if(!replace&&record.marks<=oldMarks)continue;}
    // A single-optic candidate replaces a split pair only as a whole. A lone split
    // cannot replace half of an existing single record.
    if(overlapping.some(([,r])=>r.lessons.some(l=>!record.lessons.includes(l)))){mergeWarnings.push(`${incoming.studentNo??incoming.id}: tek optikle kısmen çakışan oturum ayrı inceleme gerektiriyor; mevcut bütün kayıt korundu.`);continue;}
