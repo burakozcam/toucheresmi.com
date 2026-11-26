@@ -1,3 +1,5 @@
+import {lookupStudentResults,publicResultSummary} from "./public-results";
+import {studentNumberKey} from "./result-identity";
 import {studentWelcome} from './student-welcome';
 import {studentInsights,studentExam} from './student-insights';
 import {studentAnnouncements,respondToStudent} from './student-services';
@@ -26,7 +28,16 @@ const year=z.string().regex(/^20\d{2}-20\d{2}$/).refine(v=>Number(v.slice(5))===
 const wrap=(fn:(q:AuthenticatedRequest,r:express.Response)=>Promise<unknown>):express.RequestHandler=>async(q,r,n)=>{try{r.setHeader("Cache-Control","private, no-store");await fn(q as AuthenticatedRequest,r);}catch(e){if(e instanceof z.ZodError){r.status(400).json({error:e.issues.map(i=>i.message).join("; ")});return;}n(e);}};
 const scope=(q:AuthenticatedRequest)=>q.user!.role===Role.SUPER_ADMIN?{}:q.user!.role===Role.SCHOOL_ADMIN?{id:q.user!.schoolId??"__none__"}:{dealerId:q.user!.dealerId??"__none__"};
 const manager=express.Router();manager.use(requireAuth,(q:AuthenticatedRequest,r,n)=>{if(!["SUPER_ADMIN","SCHOOL_ADMIN","DEALER"].includes(q.user!.role)){r.status(403).json({error:"Öğrenci kodu yönetme yetkiniz yok."});return;}n();});
-manager.get("/schools",wrap(async(q,r)=>r.json(await prisma.school.findMany({where:{active:true,...scope(q)},select:{id:true,name:true},orderBy:{name:"asc"}}))));
+manager.get("/schools",wrap(async(q,r)=>r.json(await prisma.school.findMany({where:{active:true,...scope(q)},select:{id:true,name:true,publicNumberLookup:true},orderBy:{name:"asc"}}))));
+manager.patch("/schools/:id/sharing",wrap(async(q,r)=>{
+ const {publicNumberLookup}=z.object({publicNumberLookup:z.boolean()}).parse(q.body);
+ await prisma.$transaction(async tx=>{
+ const school=await tx.school.findFirst({where:{AND:[{id:String(q.params.id),active:true},scope(q)]}});
+ if(!school)throw new SecurityError(404,"Kurum bulunamadı veya yetkiniz yok.");
+ await tx.school.update({where:{id:school.id},data:{publicNumberLookup}});
+ await tx.auditLog.create({data:{actorUserId:q.user!.id,actorName:"Kurum yöneticisi",action:"SCHOOL_RESULT_SHARING",targetId:school.id,summary:publicNumberLookup?"Yayımlanmış sonuç özetleri öğrenci numarasıyla sorgulamaya açıldı.":"Öğrenci numarasıyla sonuç sorgulama kapatıldı."}});
+ });r.json({publicNumberLookup});
+}));
 manager.get("/results",wrap(async(q,r)=>{const schoolId=z.string().min(1).parse(q.query.schoolId);const rows=await prisma.opticalResult.findMany({where:{schoolId,nextRevision:null,school:{active:true,...scope(q)}},select:{id:true,snapshot:true,createdAt:true}});r.json(rows.filter(v=>!isDeleted(v.snapshot)).map(v=>({id:v.id,name:(v.snapshot as any).keyName,createdAt:v.createdAt,students:(v.snapshot as any).data.students.map((s:any)=>({id:s.id,name:s.name,studentNo:s.studentNo??s.id,branch:s.branch}))})));}));
 manager.get("/students",wrap(async(q,r)=>{const schoolId=z.string().min(1).parse(q.query.schoolId),academicYear=year.parse(q.query.academicYear);r.json(await prisma.studentPortal.findMany({where:{schoolId,academicYear,school:{active:true,...scope(q)}},select:{id:true,studentNo:true,academicYear:true,grants:{select:{resultId:true,studentId:true}}},orderBy:{studentNo:"asc"}}));}));
 manager.post("/students",new RequestLimiter(30,10*60_000).middleware(),wrap(async(q,r)=>{
@@ -66,13 +77,17 @@ publicPortal.post("/login",wrap(async(q,r)=>{
  if(matches.length!==1)throw new SecurityError(404,"Kişisel kod geçersiz, yenilenmiş veya iptal edilmiş. Kurumunuzdan güncel kodunuzu isteyin.");
  const portal=matches[0],token=jwt.sign({purpose:"STUDENT_PORTAL",version:portal.version},env.JWT_SECRET,{subject:portal.id,expiresIn:"20m",algorithm:"HS256"});r.json({token});
 }));
-// Current policy requires a capability or an authenticated account for every personal report.
-// Do not probe whether a guessed student number exists or disclose a name/result here.
+// Public summaries require explicit school consent; this never issues a personal session.
 publicPortal.post("/lookup-number",wrap(async(q,r)=>{
  const data=z.object({city:z.string().max(100),district:z.string().max(100),schoolId:z.string().min(1).max(100),studentNo:z.string().trim().min(1).max(100)}).parse(q.body),geo=resolveLocation(data.city,data.district);
- const school=geo?await prisma.school.findFirst({where:{id:data.schoolId,active:true},select:{city:true,district:true}}):null;
+ const school=geo?await prisma.school.findFirst({where:{id:data.schoolId,active:true},select:{city:true,district:true,publicNumberLookup:true}}):null;
  if(!geo||!school||locationKey(school.city??"")!==locationKey(geo.city)||locationKey(school.district??"")!==locationKey(geo.district))throw new SecurityError(400,"İl, ilçe ve kurum seçimini kontrol edin.");
- r.json({requiresVerification:true,message:"Kişisel karne ve asistan için kurumunuz kişisel kod veya hesap doğrulaması istiyor. Bir yöntem seçerek devam edin."});
+ if(!school.publicNumberLookup)throw new SecurityError(403,"Bu kurum öğrenci numarasıyla sonuç paylaşımını açmamış. Kişisel kodunuz veya hesabınızla giriş yapın.");
+ const limit=await attempts.checkShared(portalHash(`number:${data.schoolId}:${studentNumberKey(data.studentNo)}`));
+ if(!limit.allowed){r.setHeader("Retry-After",limit.retryAfter);throw new SecurityError(429,"Çok sık deneme yapıldı. Daha sonra tekrar deneyin.");}
+ const found=await lookupStudentResults({schoolId:data.schoolId,identifier:data.studentNo},undefined,true);
+ if(!found.length)throw new SecurityError(404,"Bu kurumda öğrenci numaranızla eşleşen yayımlanmış sonuç bulunamadı.");
+ r.json({results:found.map(publicResultSummary)});
 }));
 async function authorized(q:AuthenticatedRequest,withResults=true){let claims:any;try{claims=jwt.verify(q.header("authorization")?.replace(/^Bearer /,"")??"",env.JWT_SECRET,{algorithms:["HS256"]});}catch{throw new SecurityError(401,"Öğrenci oturumu sona erdi.");}if(claims.purpose!=="STUDENT_PORTAL"||typeof claims.sub!=="string")throw new SecurityError(401,"Öğrenci oturumu geçersiz.");const portal=await prisma.studentPortal.findFirst({where:{id:claims.sub,version:claims.version,school:{active:true}},include:{grants:withResults?{include:{result:true}}:false}});if(!portal)throw new SecurityError(401,"Kod yenilendi veya erişim kapatıldı.");return portal;}
 export async function portalResults(portal:any){const output=[];for(const grant of portal.grants){

@@ -150,6 +150,7 @@ model Dealer {
 }
 
 model School {
+  publicNumberLookup Boolean @default(false)
   examReportLogos ExamReportLogo[]
   studentPortals StudentPortal[]
   opticalResults OpticalResult[]

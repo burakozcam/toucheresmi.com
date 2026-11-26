@@ -86,3 +86,5 @@ import "./study-plan.test";
 
 import "./v146.test";
 import "./temporary-dealer.test";
+
+import "./v148.test";

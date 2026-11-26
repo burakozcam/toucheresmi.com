@@ -226,7 +226,7 @@
     },
     {
       "file": "panel/page.tsx",
-      "controls": 32
+      "controls": 33
     },
     {
       "file": "panel/password-setup.tsx",
@@ -326,7 +326,7 @@
     },
     {
       "file": "panel/student-code-management.tsx",
-      "controls": 7
+      "controls": 12
     },
     {
       "file": "panel/support-workspace.tsx",
@@ -397,7 +397,7 @@
       "controls": 1
     }
   ],
-  "total": 833,
+  "total": 839,
   "needsLabelReview": [
     "pdf-duzenleyici-editor-1"
   ]

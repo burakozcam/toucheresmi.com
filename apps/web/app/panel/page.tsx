@@ -26,6 +26,7 @@ const SystemCenter=dynamic(()=>import("./system-center"),{loading:()=> <div clas
 const BlogManagement=dynamic(()=>import("./blog-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 const FileManagement=dynamic(()=>import("./file-management"),{loading:()=> <div className="panel-loading" role="status" aria-busy="true">Ekran yükleniyor…</div>});
 import { readProfileImage } from "../../lib/admin-request";
+import TurkishFlag from "../turkish-flag";
 import ReleaseMark from "../release-mark";
 
 import Link from "next/link";
@@ -354,7 +355,7 @@ export default function PanelPage() {
             <p>{section === "exam" ? "Sınav dosyanızı seçin, değerlendirme ve raporlama sürecini başlatın." : activePage.description}</p>
             <ActionButton data-help-id="panel-page-19" intent="manage" id="main-action" className="button button-navy" onClick={() => window.alert("Bu özellik sonraki geliştirme adımında aktif edilecek.")}><span><UiIcon name="add"/></span> {activePage.action}</ActionButton>
           </section>}
-          <div className="dashboard-footnote"><span><UiIcon name="grid"/></span> Optik sınav yönetiminiz için ihtiyacınız olan her şey tek panelde. <ReleaseMark/></div>
+          <footer className="dashboard-footnote"><div className="panel-footer-brand"><Link data-help-id="panel-page-33" className="brand" href="/" aria-label="Kurumsal Sınav ana sayfa"><span className="brand-mark">K</span><span>kurumsal<span className="brand-light">sinav.com</span></span></Link><TurkishFlag/></div><div className="panel-footer-release"><ReleaseMark academicYear="2026 - 2027"/></div></footer>
         </div>
       </section>
     </main>

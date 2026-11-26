@@ -1,5 +1,5 @@
 "use client";
-import {useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import UiIcon from "./ui-icon";
 
 import SecurityLock from './security-lock';
@@ -31,67 +31,48 @@ export function BatchScene(){
  return <section ref={root} className="demo-scene demo-batch" aria-label="Temsili toplu değerlendirme ve rapor seçimi"><div className="scene-player"><div className="demo-paper"><WindowTop label="Kurum ve sınıf sonuçları"/><div className="scene-batch-number"><small>SEÇİLİ KURUM · ÖRNEK DENEME</small><strong>{done?'Sonuçları incele':'Seçimleri kontrol et'}</strong><p>{['TXT kayıtları hazır','Önizleme ve eşleşmeler kontrol ediliyor','Değerlendir ve kaydet','Kurum ve sınıf sonuçları hazır','Öğrenci karnesi seçiliyor','PDF veya Excel çıktısı seçiliyor'][step]}</p></div><div className="scene-batch-students">{['Örnek Öğrenci A','Örnek Öğrenci B','Örnek Öğrenci C'].map((name,i)=><div key={name}><span>{name}</span><span>8-{i? 'B':'A'}</span><b>{done?'✓ Sonuç hazır':'Kontrol'}</b></div>)}</div><div className="scene-report-choices">{['Okul Sonuç Karnesi','Sınıf Sonuç Listesi','Öğrenci Karnesi'].map((label,i)=><span key={label} data-active={done&&Math.min(2,step-3)===i}><UiIcon name={i===2?'document':'results'}/>{label}</span>)}</div><div className="scene-footer"><span>SEÇİLİ KURUM VE SINAV</span><strong>{step===5?'PDF · Excel':'Kurum → sınıf → öğrenci'}</strong></div></div><SceneProgress/></div><div><p className="hero-tag">BÜTÜN KURUM, DÜZENLİ SONUÇLAR</p><h2>Kurumundan sınıfına.<br/>Sonuçlar bir arada.</h2><p>Öğrenci kayıtlarını topluca değerlendir. Kurum ve sınıf sonuçlarını incele, öğrenci karnesini seç; PDF veya Excel çıktısını al.</p><p className="field-help">Temsili iş akışı · işlem süresi veya kapasite gösterimi değildir.</p>{controls}</div></section>;
 }
 
-// This is a local, scripted demonstration; the photograph is never sent to an OCR service.
+// Scripted local handwriting illustration; no OCR or grading service is called.
 export function OpenEndedScene(){
- const {root,step,controls}=useHomeScene(13000,100,true);
- const scanned=Math.min(1,Math.max(0,(step-5)/48)),scanning=step>5&&scanned<1;
- const readFirst=scanned>=.4,readSecond=scanned>=.75;
+ const {root,step,controls}=useHomeScene(6500,100,true),[imageFailed,setImageFailed]=useState(false);
+ const image=useRef<HTMLImageElement>(null);
+ useEffect(()=>{if(image.current?.complete&&!image.current.naturalWidth)setImageFailed(true);},[]);
+ const scanned=Math.min(1,Math.max(0,(step-2)/52)),scanning=step>2&&scanned<1;
  const rubric=[
   {label:'Denklemleri taraf tarafa topla',expression:'4x = 20',points:3},
   {label:'x değerini bul',expression:'x = 5',points:3},
   {label:'Yerine koyarak y değerini bul',expression:'y = 8 − 2 · 5 = −2',points:4},
  ];
  return <section ref={root} className="demo-scene demo-open-ended" aria-labelledby="open-ended-title">
-  <div>
-   <p className="hero-tag">AÇIK UÇLU SORU DEĞERLENDİRME</p>
-   <h2 id="open-ended-title">Yazılı cevabı ölçütlerle değerlendir.</h2>
+  <div><p className="hero-tag">AÇIK UÇLU SORU DEĞERLENDİRME</p><h2 id="open-ended-title">Yazılı cevabı ölçütlerle değerlendir.</h2>
    <div className="demo-labels"><span>Geliştirme aşamasında</span><span>Örnek değerlendirme</span></div>
-   <p>Öğrencinin kâğıda yazdığı cevap taranarak metne dönüştürülür. Sistem, cevabı öğretmenin belirlediği ölçütlere göre adım adım değerlendirir ve her adımdan kaç puan alındığını gösterir. Okunması zor veya puanı belirsiz yanıtlar öğretmenin incelemesine sunulur.</p>
-   {controls}
+   <p>Öğrencinin kâğıda yazdığı cevap taranarak metne dönüştürülür. Sistem, cevabı öğretmenin belirlediği ölçütlere göre adım adım değerlendirir ve her adımdan kaç puan alındığını gösterir. Okunması zor veya puanı belirsiz yanıtlar öğretmenin incelemesine sunulur.</p>{controls}
   </div>
-  <div className="scene-player"><div className="demo-paper">
-   <WindowTop label="Örnek değerlendirme"/>
+  <div className="scene-player"><div className="demo-paper"><WindowTop label="Örnek değerlendirme"/>
    <div className="open-demo-content">
-    <div className="open-demo-sheet">
-     <div className="open-demo-source-heading"><small>MATEMATİK · EL YAZISI SORU</small><span data-scanning={scanning}><i/>{scanned===1?'Metne dönüştürüldü':scanning?'Taranıyor…':'Taramaya hazır'}</span></div>
-     <h3>Denklem sisteminde x ve y’yi bul.</h3>
+    <div className="open-demo-question"><small>SORU · MATEMATİK</small><h3>2x + y = 8, 2x − y = 12 ise x ve y’yi bul.</h3></div>
+    <div className="open-demo-sheet"><div className="open-demo-source-heading"><small>ÖĞRENCİNİN EL YAZISI CEVABI</small><span data-scanning={scanning}><i/>{scanned===1?'Tarama tamamlandı':scanning?'Taranıyor…':'Taramaya hazır'}</span></div>
      <div className="open-demo-photo" data-scanned={scanned===1}>
-      <img src="/open-ended-equations.jpg" width="904" height="1122" alt="El yazısıyla 2x + y = 8 ve 2x − y = 12 denklemleri; x ve y değerleri soruluyor." loading="lazy" decoding="async"/>
-      <svg className="open-demo-typeset" viewBox="0 0 904 520" aria-hidden="true" focusable="false" style={{clipPath:`inset(0 0 ${(1-scanned)*100}% 0)`}}>
-       {/* Reuse only the photograph's empty upper margin as the paper behind the typed text. */}
-       <svg width="904" height="520" viewBox="0 0 904 320" preserveAspectRatio="none"><image href="/open-ended-equations.jpg" width="904" height="1122"/></svg>
-       <g className="open-demo-equations"><text x="88" y="173">2x + y = 8</text><text x="632" y="173">x = ?</text><text x="88" y="345">2x − y = 12</text><text x="632" y="345">y = ?</text></g>
-      </svg>
+      {!imageFailed?<img ref={image} src="/open-ended-solution-v148.webp" width="960" height="640" alt="Örnek öğrenci çözümü: 4x = 20; x = 5; y = 8 − 2 · 5 = −2." loading="lazy" decoding="async" onError={()=>setImageFailed(true)}/>:<div className="open-demo-fallback" role="img" aria-label="El yazısı görselinin yerel metin yedeği"><span>4x = 20</span><span>x = 5</span><span>y = 8 − 2 · 5 = −2</span></div>}
+      <div className="open-demo-read-overlay" aria-hidden="true">{rubric.map((r,i)=><span key={r.expression} data-visible={scanned>=[.3,.57,.84][i]}/>)}</div>
       {scanning&&<i className="open-demo-scan" aria-hidden="true" style={{top:`${scanned*100}%`}}><span/></i>}
-     </div>
-     <div className="open-demo-source-caption"><span>El yazısı → basılı metin</span><span>{scanned===1?'2 / 2 denklem':readFirst?'1 / 2 denklem':'Görüntü okunuyor'}</span></div>
+     </div><div className="open-demo-source-caption"><span>Temsili el yazısı</span><span>{rubric.filter((_,i)=>scanned>=[.3,.57,.84][i]).length} / 3 satır</span></div>
     </div>
-    <div className="open-demo-transcript" aria-label="Fotoğraftan okunan soru">
-     <small>FOTOĞRAFTAN OKUNAN SORU</small>
-     <div className="open-demo-read-lines"><p data-visible={readFirst}><span>2x + y = 8</span><span>x = ?</span></p><p data-visible={readSecond}><span>2x − y = 12</span><span>y = ?</span></p></div>
-    </div>
-    <div className="open-demo-rubric">
-     <small>ÖĞRETMENİN ONAYLADIĞI ÖLÇÜTLER · ÖRNEK ÇÖZÜM</small>
-     <p className="open-demo-solution-note">Fotoğrafta yalnız soru var. Aşağıdaki adımlar örnek çözümü gösterir.</p>
-     {rubric.map(({label,expression,points},i)=><div key={label} data-done={step>=59+i*9}><span>{step>=59+i*9?<UiIcon name="tick"/>:<i/>}<span className="open-demo-rubric-label">{label}<span className="open-demo-expression" data-visible={step>=59+i*9}>{expression}</span></span></span><strong>{step>=59+i*9?points:'—'} / {points}</strong></div>)}
-    </div>
-    <div className="open-demo-final" data-visible={step>=87}>
-     <strong className="open-demo-math-result">x = 5 <span>y = −2</span></strong><p>Örnek çözüm her iki denklemi de sağlar.</p><span>Örnek değerlendirme: 10 / 10 · Öğretmen onayına sunulur</span>
-    </div>
-   </div>
-  </div><SceneProgress/></div>
+    <div className="open-demo-transcript" aria-label="Öğrenci cevabından okunan metin"><small>TARAMA ÇIKTISI</small><div className="open-demo-read-lines">{rubric.map((r,i)=><p key={r.expression} data-visible={scanned>=[.3,.57,.84][i]}>{r.expression}</p>)}</div></div>
+    <div className="open-demo-rubric"><small>ÖĞRETMENİN ONAYLADIĞI ÖLÇÜTLER</small>{rubric.map(({label,points},i)=><div key={label} data-done={step>=60+i*9}><span>{step>=60+i*9?<UiIcon name="tick"/>:<i/>}<span>{label}</span></span><strong>{step>=60+i*9?points:'—'} / {points}</strong></div>)}</div>
+    <div className="open-demo-final" data-visible={step>=88}><strong>10 <small>/ 10</small></strong><p>x = 5 · y = −2</p><span>Örnek değerlendirme · Öğretmen onayına sunulur</span></div>
+   </div></div><SceneProgress/></div>
  </section>;
 }
 
 const assistantExamples=[
- {question:'Son sınavdan kaç aldım?',title:'Son sınavın',text:'Örnek Fen Denemesi · 420 / 500 puan · 72 net',kind:'score'},
+ {question:'Son sınavdan kaç aldım?',title:'Son sınavın',text:'Örnek Deneme · 420 / 500 puan · 72 net',kind:'score'},
  {question:'Hangi kazanımlarda zorlanıyorum?',title:'Tekrar edebileceğin konular',text:'Üslü ifadeler: 3 sınavda 12 soru, 5 yanlış. Kısa bir konu tekrarıyla başlayabilirsin.',kind:'outcomes'},
  {question:'Son iki sınavı karşılaştır',title:'Son iki örnek sonuç',text:'Önceki sınav: 68 net → Son sınav: 72 net. Net farkı: +4. Sınavların zorlukları farklı olabilir.',kind:'compare'},
 ];
 export function StudentAssistantScene(){
- const {root,step,controls}=useHomeScene(18000,100,true);
+ const {root,step,controls}=useHomeScene(10500,100,true);
  return <section ref={root} className="demo-scene demo-student-assistant" aria-labelledby="assistant-demo-title"><div><p className="hero-tag">ÖĞRENCİ ASİSTANI</p><h2 id="assistant-demo-title">Karnen ve sınav geçmişin hakkında soru sor</h2><p>Son karneni aç, zorlandığın konuları gör ve sınav sonuçlarını karşılaştır. Öğrenci Asistanı, yalnızca sana açılmış sonuçlardan yanıt verir.</p><span className="demo-data-label">Örnek öğrenci verileri</span>{controls}</div><div className="scene-player"><div className="demo-paper assistant-demo-paper"><WindowTop label="Öğrenci Asistanı"/><div className="assistant-demo-intro"><span className="brand-mark">K</span><div><strong>Sonuçlarına birlikte bakalım.</strong><small>Örnek öğrenci verileri</small></div></div><div className="assistant-demo-chat">{assistantExamples.map((item,i)=>{
- const progress=step-i*33,characters=Math.floor(Math.max(0,Math.min(1,progress/19))*item.question.length),answered=progress>=24;
- return <div className="assistant-demo-turn" key={item.question} hidden={progress<0}><div className="assistant-demo-question"><span>{item.question.slice(0,characters)}</span>{!answered&&<i className="assistant-demo-cursor"/>}</div>{answered&&<div className="assistant-demo-answer" data-kind={item.kind}><small>{item.title}</small><p>{item.text}</p>{item.kind==='score'&&<div className="assistant-demo-meter"><i/></div>}{item.kind==='compare'&&<div className="assistant-demo-comparison"><span>Önceki <b>68 net</b></span><UiIcon name="arrow-right"/><span>Son <b>72 net</b></span></div>}</div>}</div>;
+ const active=Math.min(2,Math.floor(step/34)),progress=step-i*34,characters=Math.floor(Math.max(0,Math.min(1,progress/10))*item.question.length),answered=progress>=10;
+ return <div className="assistant-demo-turn" key={item.question} hidden={active!==i}><div className="assistant-demo-question"><span>{item.question.slice(0,characters)}</span>{!answered&&<i className="assistant-demo-cursor"/>}</div>{answered&&<div className="assistant-demo-answer" data-kind={item.kind} key={`${item.kind}-${step<10}`}><small>{item.title}</small><p>{item.text}</p>{item.kind==='score'&&<div className="assistant-demo-meter"><i/></div>}{item.kind==='outcomes'&&<div className="assistant-demo-outcomes"><strong>Üslü ifadeler</strong><span>12 soruda 5 yanlış · 3 sınav</span><i/></div>}{item.kind==='compare'&&<div className="assistant-demo-comparison"><span>Önceki <b>68 net</b><i style={{width:'75.6%'}}/></span><span>Son <b>72 net</b><i style={{width:'80%'}}/></span></div>}</div>}</div>;
  })}</div><div className="scene-footer"><span>YAYIMLANMIŞ KİŞİSEL SONUÇLAR</span><strong>Örnek gösterim</strong></div></div><SceneProgress/></div></section>;
 }

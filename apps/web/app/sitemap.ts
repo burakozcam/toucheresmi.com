@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/cevap-anahtarlari`, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/sinav-degerlendir`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${SITE_URL}/sinav-takvimi`, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${SITE_URL}/calisma-plani`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/pdf-duzenleyici`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/verilerinizin-guvenligi`, changeFrequency: "monthly", priority: 0.4 },
     { url: `${SITE_URL}/blog`, changeFrequency: "weekly", priority: 0.7 },

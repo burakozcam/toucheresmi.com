@@ -1,3 +1,14 @@
+# v1.4.8 · 2026-11-26 · yerel geliştirme ve kabul
+
+- Öğrenci numarası sorgusu, kurumun açık paylaşım izniyle yalnız yayımlanmış sonuç özetini aynı ekranda gösterir; kişisel oturum oluşturmaz. Yeni kurum paylaşım alanı varsayılan kapalıdır.
+- Tek öğrenci kod alanı 16 karakterli sınav kodunu mevcut doğrulama/kapsamıyla, 24 karakterli kişisel kodu kişisel oturumuyla açar. Kodun harfleri korunur, uç boşlukları temizlenir.
+- Öğrenci Erişim Kodları: numarayla sonuç arama, açık seçim/onay adımı, kodlu öğrenci sayısı açıklaması, istek durumları, tek öğrenci yenileme ve kurum/yıl bilgili Excel/PDF yenileme onayı.
+- Değerlendirme tamamlanma penceresi yalnız gerçek uyarıları ve pozitif tanılama sayaçlarını gösterir; sıfır sayaçlar uyarı oluşturmaz.
+- Açık uçlu demo: yerel el yazısı çözüm görseli, soru/cevap ayrımı, eşzamanlı tarama/metin ve 3+3+4 puan; kısa akış ve okunabilir hata yedeği. Asistan: sabit alanda tek sahne, hızlı yazma ve küçük veri kartları.
+- Panel alt bilgisi: marka + oranı korunan Türk bayrağı, otomatik sürüm rozeti ve yalnız panelde “2026 - 2027”. Ana sayfada blog altı ve footer geçişi yaklaşık yarıya indirildi.
+- Mevcut sitemap’e kanonik `/calisma-plani` eklendi. Dinamik API kesintisinde temel sayfalar korunur.
+- Yeni migration: `20261126120000_public_number_lookup`; yeni bağımlılık yok. GitHub → cPanel akışı korundu; canlı işlem/dağıtım yapılmadı. Kabul ve yayın notları: `docs/v148-release-report.md`.
+
 # v1.4.7 · 2026-11-26 · yerel geliştirme
 
 - Öğrenci giriş kartı; yalnız kişisel kodla giriş, düzeltilmiş il/ilçe kurum listesi ve numara sorgusunda güvenli kod/hesapla devam etme.

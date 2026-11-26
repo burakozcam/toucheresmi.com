@@ -276,3 +276,22 @@ KS_LOW_RESOURCE_BUILD=1 NEXT_PUBLIC_API_URL=http://localhost:4076 npm run build 
 Ayrı terminallerde `node --import tsx tests/e2e/student-evaluation-serve.cjs` ve `NEXT_PUBLIC_API_URL=http://localhost:4076 npm run start -w @optik/web -- --hostname 127.0.0.1 -p 3176` çalıştırın; ardından `python3 tests/e2e/student-evaluation-ui.py`. HTTP testi gerçek Prisma/HTTP, yeni sentetik kayıtlar, 555/678 ekleme-güncelleme, tekrar yükleme, kurum/öğrenci izolasyonu, kontrollü geç transaction hatası ve güvenli tanılama kullanır. UI testi ilk kurum listesini gerçek API’den alır; boş/hata/eski yanıt senaryolarını ayrıca tarayıcıda denetler. Gerçek kişisel kod, öğrenci A/B ve veli parola girişi, PDF/asistan, 320/390/1440 genişlik, iki tema ve hareket tercihleri kapsanır. Dış tarayıcı HTTP(S) trafiği engellidir. Arka arkaya UI koşumlarında korumaları gevşetmeyin; kendi sentetik API sürecinizi yeniden başlatarak süreç içi test sayaçlarını sıfırlayın.
 
 Kanıtlar `test-results/student-evaluation` altındadır. `ui-seed.json` yalnız sentetik oturum/parola/kod içerir ve paylaşılmaz. Localhost Web derlemesi yayın paketi değildir. İş sonunda yalnız kendi API/Web süreçlerinizi ve test konteynerinizi kapatın. Manuel GitHub → cPanel akışı değişmemiştir.
+
+
+## v1.4.8: öğrenci erişimi, kod yönetimi ve tanıtımlar
+
+Yalnız bu görev için oluşturulan yeni, silinebilir PostgreSQL 16 ortamı: `127.0.0.1:55478/ks_v148_acceptance`, kullanıcı `ksqa`, sentetik parola `synthetic-local-only`. `v148-env.cjs` başka `DATABASE_URL` kabul etmez. Canlı Neon/veri kullanılmaz.
+
+```sh
+DATABASE_URL=postgresql://ksqa:synthetic-local-only@127.0.0.1:55478/ks_v148_acceptance node node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma
+DATABASE_URL=postgresql://ksqa:synthetic-local-only@127.0.0.1:55478/ks_v148_acceptance node node_modules/prisma/build/index.js generate --schema apps/api/prisma/schema.prisma
+node --import tsx tests/e2e/v148-http.cjs
+KS_LOW_RESOURCE_BUILD=1 NEXT_PUBLIC_API_URL=http://localhost:4078 API_INTERNAL_URL=http://127.0.0.1:4078 npm run build -w @optik/web
+node tests/e2e/v148-browser.cjs
+```
+
+HTTP kabulü gerçek Express/Prisma ve transaction işlemleriyle numara/kurum/yayın sınırlarını, 16/24 karakterli kodları, tek öğrenci kod oluşturma/yenileme/iptalini, rol/kurum izolasyonunu ve Excel/PDF yenileme/oturum kapanmasını sınar. Rollback deneyi yalnız geçici test DB’sinde trigger kullanır. Fixture’lar sentetiktir; gerçek kullanıcı kodu yazılmaz.
+
+Tarayıcı çalıştırıcısı localhost:4078 API ile üretim Web’i localhost:3178 üzerinde kendisi açar ve sonunda kapatır. Python Playwright + Chromium gerekir. `v148-ui.py` gerçek yönetim/öğrenci akışlarını, kontrollü gecikmiş kurum listelerini, 320/390/1440 iki tema, hareket/durdurma/yeniden oynatmayı, görsel hatası yedeğini ve HTTP sitemap/robots/asset yanıtlarını doğrular. `v148-evaluation-ui.py` gerçek panel kontrollerinde yalnız preview/evaluate yanıtlarını sentetik olarak değiştirerek sıfır uyarı, gerçek uyarı ve başarısız işlemi ayırır. Son olarak API kapalıyken sitemap HTTP fallback’i denenir. Tüm dış tarayıcı ağı engellenir.
+
+Kanıtlar `test-results/v148` altındadır. `ui-seed.json`, yönetim ekran görüntüleri ve kod indirmeleri sentetik erişim bilgisi içerir; paylaşılmaz, Git dışındadır. Önceki `student-evaluation-ui.py` eski giriş/animasyon kabulüne aittir; güncel davranış için v148 koşumunu kullanın. Yerel API adresiyle oluşan build canlıya taşınmaz. Manuel yayın adımları: `docs/v148-release-report.md`.
