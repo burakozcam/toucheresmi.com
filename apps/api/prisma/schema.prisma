@@ -53,6 +53,7 @@ enum AnswerKeyFileCategory {
 }
 
 model User {
+  enrollment StudentEnrollment?
   temporaryAccess TemporaryAccess?
   supportTickets SupportTicket[]
   supportUpdates SupportUpdate[]
@@ -150,6 +151,10 @@ model Dealer {
 }
 
 model School {
+  enrollments StudentEnrollment[]
+  studentGroups StudentGroup[]
+  digitalExams DigitalExam[]
+  studentDocuments StudentDocument[]
   publicNumberLookup Boolean @default(false)
   examReportLogos ExamReportLogo[]
   studentPortals StudentPortal[]
@@ -197,6 +202,7 @@ model OpticalTemplate {
 }
 
 model OpticalKey {
+  digitalExams DigitalExam[]
   examReportLogos ExamReportLogo[]
   id String @id @default(cuid())
   name String @unique
@@ -210,6 +216,7 @@ model OpticalKey {
 }
 
 model OpticalResult {
+  digitalAttempt DigitalAttempt?
   portalGrants StudentPortalGrant[]
   txtUses OpticalTxtUse[]
   txtFiles OpticalTxtFile[]
@@ -692,6 +699,7 @@ model ManagedFolder {
 }
 
 model ManagedFile {
+  studentDocument StudentDocument?
   id String @id @default(cuid())
   name String
   storedName String @unique
@@ -941,6 +949,8 @@ model StoreProduct {
   @@index([active,categoryId,brandId])
 }
 model StudentPortal {
+  enrollmentId String?
+  enrollment StudentEnrollment? @relation(fields:[enrollmentId], references:[id], onDelete:SetNull)
   id String @id @default(cuid())
   schoolId String
   academicYear String
@@ -1083,4 +1093,95 @@ model TemporaryAccess {
   createdAt DateTime @default(now())
   user User @relation(fields:[userId],references:[id],onDelete:Cascade)
   @@index([expiresAt,revokedAt])
+}
+
+// E-Sınav: institution-scoped roster, immutable exam definition and server-owned clock.
+model StudentEnrollment {
+  portals StudentPortal[]
+  id String @id @default(cuid())
+  schoolId String
+  userId String @unique
+  studentNo String
+  grade Int
+  branch String
+  school School @relation(fields:[schoolId], references:[id], onDelete:Restrict)
+  user User @relation(fields:[userId], references:[id], onDelete:Restrict)
+  memberships StudentGroupMember[]
+  attempts DigitalAttempt[]
+  documentAccess StudentDocumentAccess[]
+  @@unique([schoolId,studentNo])
+}
+model StudentGroup {
+  id String @id @default(cuid())
+  schoolId String
+  name String
+  school School @relation(fields:[schoolId], references:[id], onDelete:Restrict)
+  members StudentGroupMember[]
+  @@unique([schoolId,name])
+}
+model StudentGroupMember {
+  groupId String
+  enrollmentId String
+  group StudentGroup @relation(fields:[groupId], references:[id], onDelete:Cascade)
+  enrollment StudentEnrollment @relation(fields:[enrollmentId], references:[id], onDelete:Cascade)
+  @@id([groupId,enrollmentId])
+}
+model DigitalExam {
+  id String @id @default(cuid())
+  schoolId String
+  keyId String
+  creatorId String
+  name String
+  questions Json
+  penalty Int
+  grade Int
+  durationMinutes Int
+  allowTimed Boolean @default(true)
+  allowUntimed Boolean @default(false)
+  createdAt DateTime @default(now())
+  school School @relation(fields:[schoolId], references:[id], onDelete:Restrict)
+  key OpticalKey @relation(fields:[keyId], references:[id], onDelete:Restrict)
+  attempts DigitalAttempt[]
+  @@index([schoolId,createdAt])
+}
+model DigitalAttempt {
+  id String @id @default(cuid())
+  examId String
+  enrollmentId String
+  startedAt DateTime?
+  endsAt DateTime?
+  submittedAt DateTime?
+  timed Boolean?
+  answers Json @default("[]")
+  booklets Json @default("{}")
+  version Int @default(0)
+  resultId String? @unique
+  exam DigitalExam @relation(fields:[examId], references:[id], onDelete:Restrict)
+  enrollment StudentEnrollment @relation(fields:[enrollmentId], references:[id], onDelete:Restrict)
+  result OpticalResult? @relation(fields:[resultId], references:[id], onDelete:Restrict)
+  @@unique([examId,enrollmentId])
+  @@index([submittedAt,endsAt])
+}
+model StudentDocument {
+  id String @id @default(cuid())
+  schoolId String
+  fileId String @unique
+  school School @relation(fields:[schoolId], references:[id], onDelete:Restrict)
+  file ManagedFile @relation(fields:[fileId], references:[id], onDelete:Cascade)
+  access StudentDocumentAccess[]
+}
+model StudentDocumentAccess {
+  documentId String
+  enrollmentId String
+  document StudentDocument @relation(fields:[documentId], references:[id], onDelete:Cascade)
+  enrollment StudentEnrollment @relation(fields:[enrollmentId], references:[id], onDelete:Cascade)
+  @@id([documentId,enrollmentId])
+}
+model AnswerKeyImportReceipt {
+  id String @id
+  actorId String
+  requestHash String
+  publicationId String
+  createdAt DateTime @default(now())
+  @@index([actorId,createdAt])
 }

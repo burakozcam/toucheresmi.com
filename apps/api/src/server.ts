@@ -1,3 +1,4 @@
+import {opticalQuestionSchema,opticalQuestionsSchema} from './optical-core';
 import { panelNotificationsRouter } from "./panel-notifications";
 import { temporaryRouter } from "./temporary-access";
 import { supportRouter } from "./support";
@@ -12,6 +13,7 @@ import {announcementRouter,announceAnswerKey} from './announcements';
 import {memberActivityRouter} from './member-activity';
 import {searchHistoryRouter} from './search-history';
 import {ownerGameAccess} from './game-access';
+import {digitalExamRouter,startDigitalExamExpiryWorker} from './digital-exams';
 import {studentPortalRouter} from "./student-portal";
 import {storeRouter} from "./store-routes";
 import { publisherTransferRouter } from "./publisher-transfer";
@@ -252,6 +254,8 @@ const publisherDecisionSchema = z.object({
 });
 
 const answerKeyUploadBodySchema = z.object({
+  importId:z.string().uuid().optional(),
+  skipDefaultProfile:z.preprocess(v=>v===true||v==="true",z.boolean()).default(false),
   confirmPublication:z.preprocess(v=>v===true||v==="true"||v==="on",z.boolean()),
   confirmImport:z.preprocess(v=>v===true||v==="true"||v==="on",z.boolean()),
   reviewedQuestions:z.string().max(1000000).optional(),
@@ -288,6 +292,7 @@ function toPublicPublisher(publisher: { id: string; name: string; normalizedName
 app.use(scheduleRouter);
 app.use(storeRouter);
 app.use(studentPortalRouter);
+app.use(digitalExamRouter);
 app.use('/api/exam-analytics',examAnalyticsRouter);
 app.use("/api/admin", publisherTransferRouter);
 
@@ -1866,7 +1871,9 @@ const saveAnswerKey: express.RequestHandler[] = [
     }
 
     if(uploadedFiles.length&&!parsed.data.confirmPublication){removeTemporaryUploads();response.status(400).json({error:"Dosyaları ve önizlemeyi incelediğinizi açıkça onaylayın."});return;}
+    const requestHash=crypto.createHash("sha256").update(JSON.stringify({method:request.method,target:request.params.id??null,body:parsed.data,files:uploadedFiles.map(f=>({field:f.fieldname,hash:crypto.createHash("sha256").update(fs.readFileSync(f.path)).digest("hex")}))})).digest("hex");
     try {
+      if(parsed.data.importId){const receipt=await prisma.answerKeyImportReceipt.findUnique({where:{id:parsed.data.importId}});if(receipt){if(receipt.actorId!==request.user!.id||receipt.requestHash!==requestHash){response.status(409).json({error:"İşlem anahtarı farklı içerikle kullanılamaz."});return;}response.json({reused:true,answerKey:{id:receipt.publicationId},message:"Önceki kayıt doğrulandı; tekrar eklenmedi."});return;}}
       const include = { files: true, opticalKey: true, publisher: true } as const;
       const existing = automatic
         ? await prisma.publishedAnswerKey.findFirst({where:{publisherId:parsed.data.publisherId,grade:parsed.data.grade,examName:{equals:parsed.data.examName,mode:"insensitive"}},include})
@@ -1909,7 +1916,7 @@ const saveAnswerKey: express.RequestHandler[] = [
       const showInEvaluation=parsed.data.showInEvaluation??current.showInEvaluation, penalty=parsed.data.penalty??current.opticalKey?.penalty??3;
       try { evaluation=reviewed??prepareEvaluation(effectiveFiles,showInEvaluation,current.opticalKey?.questions,uploadedFiles.length>0,parsed.data.evaluationFormat); }
       catch(error){response.status(400).json({error:error instanceof Error?error.message:"Değerlendirme anahtarı okunamadı."});return;}
-      if(evaluation&&!current.opticalKey)evaluation=await configuredNewExamProfile(evaluation,pdfPublisherName??"",parsed.data.grade);
+      if(evaluation&&!current.opticalKey&&!parsed.data.skipDefaultProfile)evaluation=await configuredNewExamProfile(evaluation,pdfPublisherName??"",parsed.data.grade);
       const replacementFiles = uploadedFiles.map((file) => {
         const extension = path.extname(file.originalname).toLowerCase().replace(".", "");
         const targetDirectory = path.join(storageRoot, "answer-keys", answerKeyId);
@@ -1938,7 +1945,9 @@ const saveAnswerKey: express.RequestHandler[] = [
       const replacedCategories = [...new Set(replacementFiles.map((file) => file.category))];
       const previousFiles = current.files.filter((file) => replacedCategories.includes(file.category));
       try {
+        let replay=false;
         const updated = await prisma.$transaction(async (transaction) => {
+          if(parsed.data.importId){await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"answer-import:"+parsed.data.importId}))`;const receipt=await transaction.answerKeyImportReceipt.findUnique({where:{id:parsed.data.importId}});if(receipt){if(receipt.actorId!==request.user!.id||receipt.requestHash!==requestHash)throw Object.assign(new Error("İşlem içeriği değişmiş."),{status:409});replay=true;return transaction.publishedAnswerKey.findUniqueOrThrow({where:{id:receipt.publicationId}});}}
           // Use the same lock/order as affiliation transfer: a stale multipart edit
           // must never write the old publisher back after a successful transfer.
           await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"publisher-transfer:"+answerKeyId}))`;
@@ -1975,8 +1984,10 @@ const saveAnswerKey: express.RequestHandler[] = [
             await transaction.answerKeyFile.createMany({ data: replacementFiles });
           }
           if(isNew||!current.published||!current.opticalKey?.active&&!current.files.some(f=>f.category==='ANSWER_KEY'))await announceAnswerKey(transaction, record.id);
+          if(parsed.data.importId)await transaction.answerKeyImportReceipt.create({data:{id:parsed.data.importId,actorId:request.user!.id,requestHash,publicationId:record.id}});
           return record;
         });
+        if(replay){response.json({reused:true,answerKey:updated,message:"Önceki kayıt doğrulandı."});return;}
         replacementCommitted = true;
         for (const file of previousFiles) {
           try { if (fs.existsSync(file.storagePath)) fs.unlinkSync(file.storagePath); }
@@ -1997,6 +2008,8 @@ const saveAnswerKey: express.RequestHandler[] = [
     }
   },
 ];
+app.get("/api/admin/answer-key-imports/:id",requireAuth,requireRole(Role.SUPER_ADMIN),async(request:AuthenticatedRequest,response,next)=>{try{const row=await prisma.answerKeyImportReceipt.findFirst({where:{id:String(request.params.id),actorId:request.user!.id}});response.json({saved:!!row,publicationId:row?.publicationId});}catch(e){next(e);}});
+app.post("/api/admin/answer-key-defaults",requireAuth,requireRole(Role.SUPER_ADMIN),async(request:AuthenticatedRequest,response,next)=>{try{const data=z.object({publisher:z.string(),grade:z.number().int().min(1).max(12),questions:z.array(opticalQuestionSchema).min(1).max(300)}).parse(request.body);const {missingExamProfile}=await import('./scoring-profile');response.json({questions:opticalQuestionsSchema.parse(await missingExamProfile(data.questions,data.publisher,data.grade))});}catch(e){if(e instanceof Error)response.status(400).json({error:e.message});else next(e);}});
 app.post("/api/admin/answer-keys",...saveAnswerKey);
 app.patch("/api/admin/answer-keys/:id",...saveAnswerKey);
 
@@ -2070,5 +2083,6 @@ app.use(
 
 const port = env.PORT ?? env.API_PORT;
 if (require.main === module) {
+  startDigitalExamExpiryWorker();
   app.listen(port, () => { console.info(`API ${port} portunda çalışıyor.`); });
 }

@@ -1,3 +1,5 @@
+import {SecurityError} from './security-errors';
+import {digitalStudentInfo} from './digital-exams';
 import {studentWelcome} from './student-welcome';
 import {heavyWorkGuard} from './heavy-work';
 import {accountInsights,studentAnnouncements,respondToStudent} from './student-services';
@@ -58,6 +60,7 @@ readerRouter.post("/reader-accounts",manager,inviteLimiter,wrap(async(req,res)=>
   const invite=await invitation();
   const account=await prisma.$transaction(async tx=>{
     const current=await tx.opticalResult.findFirst({where:{id:data.resultId,nextRevision:null,school:{active:true,...schoolScope(req)}},select:{schoolId:true}});if(!current)return null;
+    if(data.role==='STUDENT'){await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`student-roster:${current.schoolId}`}))`;const no=String((student as any).studentNo??student.id);if(await tx.user.findFirst({where:{schoolId:current.schoolId,role:'STUDENT',readerStudentNo:no},select:{id:true}}))throw new SecurityError(409,'Bu kurumda öğrenci numarasına bağlı hesap zaten var. Mevcut hesaba sonuç ekleyin.');}
     const created=await tx.user.create({data:{email:data.email.toLowerCase(),firstName:data.firstName,lastName:data.lastName,role:data.role,schoolId:current.schoolId,readerManagerId:req.user!.id,readerStudentNo:data.role==="STUDENT"?((student as any).studentNo??student.id)||null:null,passwordHash:invite.passwordHash,setupTokenHash:invite.setupTokenHash,setupExpiresAt:invite.setupExpiresAt,mustChangePassword:true,studentResultAccess:{create:{resultId:data.resultId,studentNo:data.studentNo,studentName:student.name}}},select:accountSelect});
     await tx.fmtShare.create({data:{category:"MEMBERSHIP",targetId:created.id,name:`${data.firstName} ${data.lastName}`,createdById:req.user!.id,tokenHash:invite.setupTokenHash,tokenEncrypted:encryptShareToken(invite.token),expiresAt:invite.setupExpiresAt}});return created;
   });
@@ -138,4 +141,4 @@ readerRouter.get('/student-welcome',studentOnly,wrap(async(q,r)=>{
  const [welcome,announcements]=await Promise.all([studentWelcome('account',q.user!.id),studentAnnouncements(q.user!.schoolId,q.user!.id)]);
  r.json({...welcome,announcements});
 }));
-readerRouter.post('/student-assistant',studentOnly,new RequestLimiter(30,60_000).middleware(),insightsGuard,wrap(async(q,r)=>{r.json(respondToStudent(q.body,await accountInsights(q.user!.id),await studentAnnouncements(q.user!.schoolId,q.user!.id)));}));
+readerRouter.post('/student-assistant',studentOnly,new RequestLimiter(30,60_000).middleware(),insightsGuard,wrap(async(q,r)=>{r.json(respondToStudent(q.body,await accountInsights(q.user!.id),await studentAnnouncements(q.user!.schoolId,q.user!.id),await digitalStudentInfo(q.user!.id)));}));

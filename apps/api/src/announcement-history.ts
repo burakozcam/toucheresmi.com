@@ -1,5 +1,6 @@
 /** Verified product changes, no guessed live dates or infrastructure details. */
 export const releaseHistory=[
+ {version:'1.4.9',source:'docs/v149-release-report.md',summary:'E-Sınav, toplu anahtar yükleme ve öğrenci asistanı · yerel geliştirme.',content:'Öğrenci/grup atamaları, dijital optik, kontrollü sonuç yayını ve özel PDF erişimi eklendi. Toplu cevap anahtarı yükleme ve asistan geliştirildi. Canlı yayın ve tarayıcı görsel kabulü ayrıca doğrulanmalıdır.'},
  {version:'1.2.5',source:'docs/v125-release-report.md',summary:'Ayrı oturumları birleştirme ve gelişmiş karne seçenekleri.',content:'Tek ve çift oturumlu değerlendirme akışları ile öğrenci karnesi seçenekleri geliştirildi.'},
  {version:'1.3.0',source:'docs/v130-release-report.md',summary:'Yeni öğrenci karneleri ve ayrıntılı kazanım analizi.',content:'Bir ve iki sayfalık öğrenci karneleri, uzun kazanım açıklamaları ve katılım bilgileri geliştirildi.'},
  {version:'1.3.4',source:'docs/v134-release-report.md',summary:'Birleşik sınav çalışma alanı ve rapor seçenekleri.',content:'Sınav yönetimi ortak çalışma alanında toplandı. Kurum ve genel katılım bilgileri raporlarda ayrı ayrı seçilebilir hale getirildi.'},

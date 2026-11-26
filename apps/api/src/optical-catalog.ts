@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { opticalQuestionsSchema, type OpticalQuestion } from "./optical-core";
 
 export const evaluationPublicationWhere: Prisma.PublishedAnswerKeyWhereInput = {
+  showInEvaluation:true,
   files: { some: { category: "ANSWER_KEY" } },
 };
 export function evaluationQuestions(value: unknown): OpticalQuestion[] {
@@ -35,7 +36,7 @@ export function prepareEvaluation(files:FileInfo[],enabled:boolean,previous:unkn
   return null;
 }
 
-/** All exams with an answer file are listed, even when their public listing is hidden. */
+/** Evaluation consent is independent of the public answer-key listing. */
 export function evaluationExamChoice(publication:{id:string;examName:string;grade:number;publisher:{id:string;name:string};createdAt:Date;opticalKey:{id:string;questions:unknown;penalty:number}|null}) {
   let questions:OpticalQuestion[]=[];
   try{questions=evaluationQuestions(publication.opticalKey?.questions);}catch{}

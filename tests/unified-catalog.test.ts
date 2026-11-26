@@ -30,7 +30,7 @@ test("birleşik katalog: bayi listesi yayın bayrağından bağımsız, yalnızc
   const original=prisma.opticalKey.findMany;
   try{
     prisma.opticalKey.findMany=(async({where}:any)=>{
-      assert.equal(where.active,undefined);assert.deepEqual(where.publication,evaluationPublicationWhere);assert.equal(where.publication.showInEvaluation,undefined);assert.equal(where.publication.published,undefined);
+      assert.equal(where.active,undefined);assert.deepEqual(where.publication,evaluationPublicationWhere);assert.equal(where.publication.showInEvaluation,true);assert.equal(where.publication.published,undefined);
       return[{id:"opt",name:"legacy-name",active:true,penalty:3,questions:parseOpticalKeyRows(rows),publicationId:"exam",publication:{examName:"Deneme 1",grade:8,publisher:{id:"pub",name:"Nartest"}}}];
     }) as any;
     const handler=(opticalRouter as any).stack.find((x:any)=>x.route?.path==="/keys"&&x.route.methods.get).route.stack.at(-1).handle;

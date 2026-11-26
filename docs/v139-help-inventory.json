@@ -22,7 +22,7 @@
     },
     {
       "file": "panel/answer-key-management.tsx",
-      "controls": 40
+      "controls": 44
     },
     {
       "file": "panel/audit-log-management.tsx",
@@ -38,7 +38,7 @@
     },
     {
       "file": "panel/bulk-answer-keys.tsx",
-      "controls": 13
+      "controls": 22
     },
     {
       "file": "panel/bulk-exams.tsx",
@@ -93,6 +93,10 @@
       "controls": 1
     },
     {
+      "file": "panel/e-exam-management.tsx",
+      "controls": 24
+    },
+    {
       "file": "panel/exam-analytics.tsx",
       "controls": 13
     },
@@ -118,7 +122,7 @@
     },
     {
       "file": "panel/exam-workspace.tsx",
-      "controls": 1
+      "controls": 0
     },
     {
       "file": "panel/export-center.tsx",
@@ -326,7 +330,7 @@
     },
     {
       "file": "panel/student-code-management.tsx",
-      "controls": 12
+      "controls": 13
     },
     {
       "file": "panel/support-workspace.tsx",
@@ -354,7 +358,7 @@
     },
     {
       "file": "student-workspace.tsx",
-      "controls": 10
+      "controls": 11
     },
     {
       "file": "pdf-duzenleyici/editor.tsx",
@@ -397,7 +401,7 @@
       "controls": 1
     }
   ],
-  "total": 839,
+  "total": 877,
   "needsLabelReview": [
     "pdf-duzenleyici-editor-1"
   ]

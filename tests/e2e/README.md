@@ -295,3 +295,23 @@ HTTP kabulü gerçek Express/Prisma ve transaction işlemleriyle numara/kurum/ya
 Tarayıcı çalıştırıcısı localhost:4078 API ile üretim Web’i localhost:3178 üzerinde kendisi açar ve sonunda kapatır. Python Playwright + Chromium gerekir. `v148-ui.py` gerçek yönetim/öğrenci akışlarını, kontrollü gecikmiş kurum listelerini, 320/390/1440 iki tema, hareket/durdurma/yeniden oynatmayı, görsel hatası yedeğini ve HTTP sitemap/robots/asset yanıtlarını doğrular. `v148-evaluation-ui.py` gerçek panel kontrollerinde yalnız preview/evaluate yanıtlarını sentetik olarak değiştirerek sıfır uyarı, gerçek uyarı ve başarısız işlemi ayırır. Son olarak API kapalıyken sitemap HTTP fallback’i denenir. Tüm dış tarayıcı ağı engellenir.
 
 Kanıtlar `test-results/v148` altındadır. `ui-seed.json`, yönetim ekran görüntüleri ve kod indirmeleri sentetik erişim bilgisi içerir; paylaşılmaz, Git dışındadır. Önceki `student-evaluation-ui.py` eski giriş/animasyon kabulüne aittir; güncel davranış için v148 koşumunu kullanın. Yerel API adresiyle oluşan build canlıya taşınmaz. Manuel yayın adımları: `docs/v148-release-report.md`.
+
+## v1.4.9 · izole PostgreSQL / HTTP kabulü
+
+`v149-env.cjs` yalnız `127.0.0.1:55479/ks_v149_acceptance` adresini kabul eder; başka DATABASE_URL ile çalışmayı reddeder. Gerçek Express/Prisma kullanır. Bu atılabilir veritabanına migration’ları uyguladıktan sonra repo kökünde:
+
+```sh
+node --import tsx tests/e2e/v149-http.cjs
+```
+
+Excel öğrenci/ilk şifre/grup/atama/optik/teslim/yayın/karne/analiz/asistan, bayinin yetki/bölge/kota denetimi, 16/24 kodlar, kurum numara paylaşımı, toplu anahtar idempotansı ve özel PDF iptali sınanır. Sentetik oturumlar `/tmp/ks-v149-ui.json` içinde yalnız yerel kabul için tutulur; bu dosyayı ve kod/token içeren görüntüleri paylaşmayın. Gizli veri içermeyen kontrol özeti `test-results/v149/http-checks.json` altındadır.
+
+İsteğe bağlı yerel API önizlemesi: `node --import tsx tests/e2e/v149-serve.cjs` (4079). Web’i `NEXT_PUBLIC_API_URL=http://localhost:4079` ile derleyip 3179’da açın. Bu localhost build canlı yayın artifact’ı değildir.
+
+İlk oturumda CUA tarayıcı host’u kullanılamamıştı. Kullanıcının yerel Chrome/Playwright izniyle ek kabul tamamlandı: 24/24 kontrol, 34 maskelenmiş ekran görüntüsü ve ayrıntılar `docs/v149-browser-acceptance.md` içindedir. Canlı Ada Sınav doğrulaması açık kalır.
+
+### v149 gerçek Chromium ek kabulü
+
+Eksik görsel kabul tamamlandı: `docs/v149-browser-acceptance.md`. Gerçek API ve 320/390/1440 px için `node tests/e2e/v149-browser.cjs` kullanılır. Önce atılabilir v149 PostgreSQL veritabanı açık olmalı ve Web `NEXT_PUBLIC_API_URL=http://localhost:4079` ile üretim modunda derlenmelidir. Betik kendi API/Web süreçlerini kapatır; her giriş genişliği arasında API’yi yeniden başlatarak gerçek istek sınırını korur.
+
+Kurulu araçlar `PLAYWRIGHT_MODULE=/path/to/playwright` ve `CHROMIUM_PATH=/path/to/chrome` ile seçilebilir. Yalnız etkilenen gruplar `UI_ONLY=panel,layout` ile çalıştırılabilir. Test fixture’ı özel `/tmp/ks-v149-browser-fixture.json` dosyasındadır; rapora veya kaynak depoya eklemeyin. Kod alanları görüntülerde maskelenir; trace/HAR alınmaz.

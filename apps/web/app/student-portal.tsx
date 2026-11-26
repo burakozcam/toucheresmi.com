@@ -1,4 +1,5 @@
 "use client";
+import StudentExams from './student-exams';
 import dynamic from 'next/dynamic';
 const StudentWorkspace=dynamic(()=>import('./student-workspace'));
 import HumanVerification from './human-verification';
@@ -10,6 +11,7 @@ import ReportTypeButtons from './report-type-buttons';
 export const PORTAL_SESSION='kurumsal-student-portal-token';
 type Method='code'|'number'|'account';
 export default function StudentPortal(){
+ const [tab,setTab]=useState<'exams'|'results'|'analysis'|'files'>('results');
  const [publicResults,setPublicResults]=useState<any[]>([]),[humanToken,setHumanToken]=useState(''),[attempt,setAttempt]=useState(0),[method,setMethod]=useState<Method>('code'),[locations,setLocations]=useState<any[]>([]),[city,setCity]=useState(''),[district,setDistrict]=useState(''),[schools,setSchools]=useState<any[]>([]),[schoolId,setSchoolId]=useState(''),[studentNo,setNo]=useState(''),[code,setCode]=useState(''),[token,setToken]=useState(''),[reports,setReports]=useState<any[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[schoolState,setSchoolState]=useState('idle'),[schoolRetry,setSchoolRetry]=useState(0),[templateId,setTemplateId]=useState('detailed-card'),[showSiteAddress,setShowSiteAddress]=useState(true);
  async function request(path:string,body?:unknown,session=token){
   const r=await fetch(`${API_URL}/api/student-portal${path}`,{method:body?'POST':'GET',cache:'no-store',headers:{...(session?{Authorization:`Bearer ${session}`}:{ }),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
@@ -46,6 +48,7 @@ export default function StudentPortal(){
    <label>Kurum<select aria-label="Kurum" required disabled={busy||schoolState!=='ready'} value={schoolId} onChange={e=>{setSchoolId(e.target.value);setPublicResults([]);}}><option value="">Kurum seçin</option>{schools.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
    {schoolState==='loading'&&<p role="status">Kurumlar yükleniyor…</p>}{schoolState==='empty'&&<p role="status">Bu ilçede kayıtlı etkin kurum bulunamadı.</p>}{schoolState==='error'&&<p role="alert">Kurum listesi alınamadı. <button type="button" className="button button-quiet" onClick={()=>setSchoolRetry(n=>n+1)}>Yeniden dene</button></p>}
    {!locations.length&&<button type="button" className="button button-quiet" onClick={()=>setSchoolRetry(n=>n+1)}>İlleri yeniden yükle</button>}
+   {schoolId&&schools.find(s=>s.id===schoolId)?.publicNumberLookup===false&&<aside className="notice"><p>Bu kurum öğrenci numarasıyla sonuç paylaşımını açmamış.</p><div className="studio-actions"><button type="button" className="button button-navy" onClick={()=>choose('code')}>Kişisel kodumla giriş</button><button type="button" className="button button-quiet" onClick={()=>choose('account')}>Hesabımla giriş</button></div></aside>}
    <label>Öğrenci numarası<input required autoComplete="off" maxLength={100} disabled={busy} value={studentNo} onChange={e=>{setNo(e.target.value);setPublicResults([]);}}/></label>
   </>}
   {method==='code'&&code.trim().length===16&&<HumanVerification key={attempt} action="results" onToken={setHumanToken}/>}
@@ -55,11 +58,13 @@ export default function StudentPortal(){
 
  </>:<>
   <div className="studio-actions"><h2>Öğrenci Karnelerim</h2><button className="button button-quiet" onClick={()=>{sessionStorage.removeItem(PORTAL_SESSION);setToken('');setReports([]);location.assign('/sonuclar');}}>Öğrenci oturumunu kapat</button></div>
-  <StudentWorkspace key={token} token={token} portal onReport={id=>document.getElementById('student-report-'+id)?.scrollIntoView({block:'start'})} onResults={()=>document.getElementById('student-portal-reports')?.scrollIntoView({block:'start'})}/>
+  <nav className="studio-actions" aria-label="Öğrenci paneli">{([['exams','Sınavlarım'],['results','Sonuçlarım'],['analysis','Analizim'],['files','Dosyalarım']] as const).map(([id,label])=><button type="button" className={`button ${tab===id?'button-navy':'button-quiet'}`} aria-pressed={tab===id} key={id} onClick={()=>setTab(id)}>{label}</button>)}</nav>
+  {tab==='exams'&&<StudentExams token={token} mode="exams" onResults={()=>{setTab('results');void request('/reports').then(r=>r.json()).then(setReports);}}/>}{tab==='files'&&<StudentExams token={token} mode="files" onResults={()=>setTab('results')}/>}
+  <div hidden={tab==='exams'||tab==='files'}><StudentWorkspace showAnalysisInitially={tab==='analysis'} key={token} token={token} portal onReport={id=>{setTab('results');requestAnimationFrame(()=>document.getElementById('student-report-'+id)?.scrollIntoView({block:'start'}));}} onResults={()=>{setTab('results');document.getElementById('student-portal-reports')?.scrollIntoView({block:'start'});}}/></div><div hidden={tab!=='results'}>{tab==='results'&&<StudentExams token={token} mode="pending" onResults={()=>setTab('results')}/>}
   <div id="student-portal-reports"/>{!reports.length&&<p>Henüz erişime açılmış karne yok. Kurumunuz sonuçları yayımladığında burada görünecek.</p>}
   {reports.map(v=><article id={'student-report-'+v.grantId} className="public-result-item" key={v.grantId}><h3>{v.examName}</h3><p>{v.report.data.students[0].name} · {v.academicYear}</p><p>Net: {v.report.summary[0].net} · Puan: {v.report.summary[0].score??'Katsayı tanımlanmamış'}</p><details><summary>Ders ve kazanım analizini göster</summary><div className="table-scroll"><table className="result-table"><thead><tr><th>Ders</th><th>Doğru</th><th>Yanlış</th><th>Boş</th><th>Net</th></tr></thead><tbody>{v.report.summary[0].lessons.map((l:any,i:number)=><tr key={i}><td>{l.lesson??l.name}</td><td>{l.correct}</td><td>{l.wrong}</td><td>{l.blank}</td><td>{l.net}</td></tr>)}</tbody></table></div><p>Kazanım ayrıntıları PDF karnede yer alır.</p></details>
   <details><summary>Karne tasarımı ve yazdırma</summary><ReportTypeButtons value={templateId} onChange={setTemplateId}/><label className="checkbox-row"><input type="checkbox" checked={showSiteAddress} onChange={e=>setShowSiteAddress(e.target.checked)}/>Karne altında kurumsalsinav.com yazısını göster</label></details>
   {method==='code'&&code.trim().length===16&&<HumanVerification key={attempt} action="results" onToken={setHumanToken}/>}
-  <button className="button button-navy" disabled={busy} onClick={()=>void run(async()=>{const r=await request('/pdf',{grantId:v.grantId,templateId,showSiteAddress}),url=URL.createObjectURL(await r.blob()),a=document.createElement('a');a.href=url;a.download='ogrenci-karnesi.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);})}>Karnemi PDF indir</button></article>)}
+  <button className="button button-navy" disabled={busy} onClick={()=>void run(async()=>{const r=await request('/pdf',{grantId:v.grantId,templateId,showSiteAddress}),url=URL.createObjectURL(await r.blob()),a=document.createElement('a');a.href=url;a.download='ogrenci-karnesi.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);})}>Karnemi PDF indir</button></article>)}</div>
  </>}</section>;
 }

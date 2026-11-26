@@ -36,7 +36,7 @@ test("yükleme API: boş FMT deposunda sistem FMT seçilir, sınıf/soru dağıl
   patch(prisma.opticalTemplate,"findFirst",async({where}:any)=>templates.find(t=>t.id===where.id)??null);
   patch(prisma.opticalTemplate,"upsert",async({create}:any)=>{const stored=JSON.parse(canonicalJson(create));templates.push(stored);return stored;});
   patch(prisma.school,"findFirst",async({where}:any)=>where.schoolId==="forbidden"||where.id!==school.id?null:school);
-  patch(prisma.opticalKey,"findFirst",async({where}:any)=>{assert.equal(where.active,undefined);assert.equal(where.publication.showInEvaluation,undefined);return {...key,active:false};});
+  patch(prisma.opticalKey,"findFirst",async({where}:any)=>{assert.equal(where.active,undefined);assert.equal(where.publication.showInEvaluation,true);return {...key,active:false};});
   patch(prisma.opticalResult,"findMany",async()=>results);
   patch(prisma.opticalResult,"findFirst",async({where}:any)=>{const found=results.find(r=>where.id?r.id===where.id:r.uploadChecksum===where.uploadChecksum);return found?{...found,key}:null;});
   patch(prisma.opticalResult,"create",async({data}:any)=>{const r={id:"result",revision:1,seriesId:"series",createdAt:new Date(),studentPublished:false,...data};results.push(r);return r;});
@@ -69,11 +69,11 @@ test("yükleme API: boş FMT deposunda sistem FMT seçilir, sınıf/soru dağıl
 test("sınav kataloğu: yayınevi/sınav, görünürlükten bağımsız; yalnız PDF kaydı da eksik açıklamasıyla listelenir",async()=>{
   const {evaluationExamChoice,evaluationPublicationWhere}=await import("../apps/api/src/optical-catalog");
   const base={id:"exam",examName:"Ankara Yayınları 1. Sınav",grade:8,publisher:{id:"ankara",name:"Ankara Yayınları"},createdAt:new Date()};
-  assert.equal(evaluationPublicationWhere.showInEvaluation,undefined);assert.equal(evaluationPublicationWhere.published,undefined);assert.equal(evaluationPublicationWhere.publisher,undefined);
+  assert.equal(evaluationPublicationWhere.showInEvaluation,true);assert.equal(evaluationPublicationWhere.published,undefined);assert.equal(evaluationPublicationWhere.publisher,undefined);
   const ready=evaluationExamChoice({...base,opticalKey:{id:"key",questions,penalty:3}});
   assert.equal(ready.evaluationReady,true);assert.equal(ready.questionCount,90);assert.equal(ready.publisher.name,"Ankara Yayınları");
   const pdf=evaluationExamChoice({...base,opticalKey:null});assert.equal(pdf.evaluationReady,false);assert.match(pdf.evaluationIssue!,/kitapçık/);
   const {prisma}=await import("../apps/api/src/db"),{opticalRouter}=await import("../apps/api/src/optical-routes");const original=prisma.publishedAnswerKey.findMany;
-  prisma.publishedAnswerKey.findMany=(async({where}:any)=>{assert.deepEqual(where,{files:{some:{category:"ANSWER_KEY"}}});return[{...base,published:false,showInEvaluation:false,opticalKey:{id:"key",active:false,questions,penalty:3}},{...base,id:"pdf",opticalKey:null}];}) as any;
+  prisma.publishedAnswerKey.findMany=(async({where}:any)=>{assert.deepEqual(where,{showInEvaluation:true,files:{some:{category:"ANSWER_KEY"}}});return[{...base,published:false,showInEvaluation:false,opticalKey:{id:"key",active:false,questions,penalty:3}},{...base,id:"pdf",opticalKey:null}];}) as any;
   try{const handler=(opticalRouter as any).stack.find((layer:any)=>layer.route?.path==="/evaluation-exams").route.stack.at(-1).handle;let list:any;await handler({user:{role:"DEALER"}},{json(value:any){list=value;}},(error:any)=>{if(error)throw error;});assert.equal(list.length,2);assert.equal(list[0].evaluationReady,true);assert.equal(list[1].evaluationReady,false);}finally{prisma.publishedAnswerKey.findMany=original;}
 });

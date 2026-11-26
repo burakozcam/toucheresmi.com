@@ -1,0 +1,174 @@
+{
+  "engine": "158.0.8127.36",
+  "production": true,
+  "widths": [
+    320,
+    390,
+    1440
+  ],
+  "checks": [
+    "optical-320",
+    "optical-390",
+    "optical-1440",
+    "panel-320-light",
+    "panel-320-dark",
+    "panel-390-light",
+    "panel-390-dark",
+    "panel-1440-light",
+    "panel-1440-dark",
+    "layout-320",
+    "layout-390",
+    "layout-1440",
+    "home-320",
+    "home-390",
+    "home-1440",
+    "entry-number-320",
+    "entry-code16-320",
+    "entry-code24-320",
+    "entry-number-390",
+    "entry-code16-390",
+    "entry-code24-390",
+    "entry-number-1440",
+    "entry-code16-1440",
+    "entry-code24-1440"
+  ],
+  "failures": [],
+  "screenshots": [
+    "assistant-1440-dark.png",
+    "assistant-1440-light.png",
+    "assistant-320-dark.png",
+    "assistant-320-light.png",
+    "assistant-390-dark.png",
+    "assistant-390-light.png",
+    "contact-anchor-1440.png",
+    "contact-anchor-320.png",
+    "contact-anchor-390.png",
+    "cookie-320.png",
+    "digital-optic-1440.png",
+    "digital-optic-320.png",
+    "digital-optic-390-dark.png",
+    "digital-optic-390.png",
+    "exam-code-result-1440.png",
+    "exam-code-result-320.png",
+    "exam-code-result-390.png",
+    "help-1440-light.png",
+    "help-320-light.png",
+    "help-390-light.png",
+    "mascot-tracking-1440.png",
+    "number-result-1440.png",
+    "number-result-320.png",
+    "number-result-390.png",
+    "panel-footer-1440-dark.png",
+    "panel-footer-1440-light.png",
+    "panel-footer-320-dark.png",
+    "panel-footer-320-light.png",
+    "panel-footer-390-dark.png",
+    "panel-footer-390-light.png",
+    "panel-long-footer-390-dark.png",
+    "personal-result-1440.png",
+    "personal-result-320.png",
+    "personal-result-390.png"
+  ],
+  "metrics": {
+    "home-320": {
+      "mascotWidth": 72,
+      "gazeChanged": true,
+      "gazeTransform": "translate(1.1973467931002826 -2.3312986288874424)",
+      "neutral": true,
+      "reducedMotion": true,
+      "helpTouch": true,
+      "keyboard": [
+        "Enter",
+        "Space",
+        "Escape"
+      ],
+      "contactAnchorVisible": true,
+      "cookieNoOverlap": true
+    },
+    "home-390": {
+      "mascotWidth": 72,
+      "gazeChanged": true,
+      "gazeTransform": "translate(1.536628201666756 -2.12305591302782)",
+      "neutral": true,
+      "reducedMotion": true,
+      "helpTouch": true,
+      "keyboard": [
+        "Enter",
+        "Space",
+        "Escape"
+      ],
+      "contactAnchorVisible": true,
+      "cookieNoOverlap": true
+    },
+    "home-1440": {
+      "mascotWidth": 100,
+      "gazeChanged": true,
+      "gazeTransform": "translate(1.4268912594640564 -0.1938590561853599)",
+      "neutral": true,
+      "reducedMotion": true,
+      "helpTouch": false,
+      "keyboard": [
+        "Enter",
+        "Space",
+        "Escape"
+      ],
+      "contactAnchorVisible": true,
+      "cookieNoOverlap": true
+    },
+    "footer-320-light": {
+      "height": 844,
+      "doc": 844,
+      "top": 569,
+      "bottom": 814
+    },
+    "footer-320-dark": {
+      "height": 844,
+      "doc": 844,
+      "top": 569,
+      "bottom": 814
+    },
+    "footer-390-light": {
+      "height": 844,
+      "doc": 844,
+      "top": 569,
+      "bottom": 814
+    },
+    "footer-390-dark": {
+      "height": 844,
+      "doc": 844,
+      "top": 569,
+      "bottom": 814
+    },
+    "footer-1440-light": {
+      "height": 1000,
+      "doc": 1000,
+      "top": 874,
+      "bottom": 960
+    },
+    "footer-1440-dark": {
+      "height": 1000,
+      "doc": 1000,
+      "top": 874,
+      "bottom": 960
+    },
+    "layout-320": {
+      "clientWidth": 320,
+      "scrollWidth": 320
+    },
+    "layout-390": {
+      "clientWidth": 390,
+      "scrollWidth": 390
+    },
+    "layout-1440": {
+      "clientWidth": 1440,
+      "scrollWidth": 1440
+    }
+  },
+  "notes": [
+    "Sentetik veriler; gerçek öğrenci kodu kullanılmadı. Kod alanları maskelendi; trace/HAR alınmadı.",
+    "CUA host kullanılamadığı için kullanıcının izniyle yerel Chrome/Playwright kullanıldı.",
+    "Her giriş genişliği arasında yalnız test API süreci yenilendi; istek sınırları değiştirilmedi.",
+    "Iframe başlangıç kodu testte yalnız localhost ana belgeye sınırlandı.",
+    "Fiziksel telefon ve canlı Ada Sınav doğrulaması yapılmadı."
+  ]
+}

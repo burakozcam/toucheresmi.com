@@ -1,0 +1,3 @@
+const database='postgresql://ksqa:synthetic-local-only@127.0.0.1:55479/ks_v149_acceptance';
+if(process.env.DATABASE_URL&&process.env.DATABASE_URL!==database)throw Error('Exclusive v149 disposable localhost database required');
+Object.assign(process.env,{NODE_ENV:'test',DATABASE_URL:database,JWT_SECRET:'v149-synthetic-session-secret-local-only',MFA_ENCRYPTION_KEY:'e9'.repeat(32),TXT_STORAGE_KEY:'v149-synthetic-storage-key-local-only',STORAGE_DIR:'/tmp/ks-v149-storage',RECAPTCHA_ENABLED:'false',TURNSTILE_ENABLED:'false',WEB_ORIGIN:'http://localhost:3179',RATE_LIMIT_STORE:'memory',ALLOW_REMOTE_DATABASE:'false'});

@@ -9,6 +9,8 @@ import AnalyticsConsent from "./analytics-consent";
 import VisitorTracker from "./visitor-tracker";
 import SplashScreen from "./splash-screen";
 
+import './v149.css';
+
 export const metadata: Metadata = {
   verification: {google:process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION||undefined},
   metadataBase: new URL(SITE_URL),

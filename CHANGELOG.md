@@ -1,3 +1,15 @@
+# v1.4.9 · 2026-11-27 · yerel geliştirme
+
+- Öğrenci numarası paylaşımı kurum adıyla açık/kapalı gösterilir; kapalı kurumdan kod/hesap girişine geçilir. 16 ve 24 karakterli kodların ayrı yetkileri korunur. Canlı giriş arızası bu yerel çalışmayla çözülmüş sayılmadı.
+- Eski toplu elle hazırlama / daha sonra anahtar ekleme sekmeleri kaldırıldı. Toplu dosyada varsayılan yeni sınav, sıra kontrollü önizleme, dosyadan yayınevi/sınıf önerisi, aynı Excel’den kazanım, satır bazlı bağımsız yayın ve yalnız eksik katsayıları tamamlama eklendi. Kaydı kesilen yanıtlar işlem makbuzuyla doğrulanır.
+- E-Sınav: Excel öğrenci listesi, mevcut hesapları koruma, yalnız bir kez gösterilen ilk giriş şifreleri, özel gruplar, süreli/süresiz atama, otomatik cevap kaydı, sunucu süresi ve tekrara dayanıklı teslim. Mevcut puanlama/karne/analiz kullanılır; sonuç ayrıca yönetici tarafından yayımlanır.
+- Özel PDF’ler mevcut ManagedFile depolamasında saklanır; öğrenci bazlı izin, indirme ve erişim iptali sunucuda doğrulanır. İletilen URL oturum yerine geçmez.
+- Öğrenci paneline Sınavlarım, Sonuçlarım, Analizim ve Dosyalarım eklendi. Kişisel kodun E-Sınav hesabına bağlanması kurum yöneticisinin açık seçimini gerektirir.
+- Asistanda son/önceki sınav önceliği, yazım önerileri, çoklu ölçü, karşılaştırma farkı, veriyle desteklenen konu önerileri ve salt okunur sınav/dosya durumları geliştirildi.
+- Kullanıcının HTML kaynağındaki K maskotu bileşene uyarlandı; ana sayfa asistanı Duyurular altına taşındı, yalnız ana sayfaya iletişim kısayolu eklendi. Özgün statik marka logoları korundu; panel alt bilgisinin kontrastı/bayrak boyutu düzeltildi.
+- Ek kabul: gerçek Chromium ile 320/390/1440 px’de 24/24 arayüz kontrolü geçti. 320 px kurum seçici taşması ve kısa sayfa alt bilgi yüksekliği düzeltildi. Kanıt ve stage listesi: `docs/v149-browser-acceptance.md`.
+- Yeni additive migration: `20261127010000_v149_digital_exams`. Yeni bağımlılık yok. Commit/push/canlı dağıtım/Neon işlemi yapılmadı. Testler, tarayıcı aracı erişim sınırı ve manuel yayın: `docs/v149-release-report.md`.
+
 # v1.4.8 · 2026-11-26 · yerel geliştirme ve kabul
 
 - Öğrenci numarası sorgusu, kurumun açık paylaşım izniyle yalnız yayımlanmış sonuç özetini aynı ekranda gösterir; kişisel oturum oluşturmaz. Yeni kurum paylaşım alanı varsayılan kapalıdır.

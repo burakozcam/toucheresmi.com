@@ -88,3 +88,5 @@ import "./v146.test";
 import "./temporary-dealer.test";
 
 import "./v148.test";
+
+import "./v149.test";
